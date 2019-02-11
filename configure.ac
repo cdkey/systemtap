@@ -80,7 +80,7 @@ AM_PATH_PYTHON([2.6], [], [:])
 python_basename=$(basename "$PYTHON")
 AC_DEFINE_UNQUOTED([PYTHON_BASENAME], "${python_basename}",
 		   [Base name of the python2 interpreter binary.])
-if test -n "$PYTHON"; then
+if test "x$PYTHON" != "x:"; then
 AC_DEFINE([PYTHON_EXISTS], [],
 	  [The python2 interpreter binary exists.])
 fi
@@ -91,11 +91,11 @@ fi
 AS_VAR_APPEND([ac_configure_args], [" python='$PYTHON' pyexecdir='$pyexecdir'"])
 
 # Now let's try to find python version 3.
-if test "x$PYTHON_UNKNOWN" != "xno" -a "x$python_unknown_version" = "x3"; then
+if test "x$PYTHON_UNKNOWN" != "xno" -a "x$ac_cv_python_unknown_version" = "x3"; then
    AC_PATH_PROG([PYTHON3], [python])
 else
    AC_PATH_PROGS([PYTHON3],
-		 [python3 python3.5 python3.4 python3.3 python3.2 python3.1 python3.0])
+		 [python3 python3.7 python3.6 python3.5 python3.4 python3.3 python3.2 python3.1 python3.0], [:])
 fi
 python3_basename=$(basename "$PYTHON3")
 AC_DEFINE_UNQUOTED([PYTHON3_BASENAME], "${python3_basename}",
@@ -103,7 +103,7 @@ AC_DEFINE_UNQUOTED([PYTHON3_BASENAME], "${python3_basename}",
 
 # If we found python version 3, set up the other variables for python
 # version 3 that AM_PATH_PYTHON sets up for python version 2.
-if test -n "$PYTHON3"; then
+if test "x$PYTHON3" != "x:"; then
    AC_DEFINE([PYTHON3_EXISTS], [],
 	     [The python3 interpreter binary exists.])
    AC_CACHE_CHECK([for python3 version], [ac_cv_python3_version],
@@ -123,11 +123,11 @@ if test -n "$PYTHON3"; then
    		  [ac_cv_py3execdir],
 		  [ac_cv_py3execdir=`$PYTHON3 -c "import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(1,0,prefix='$PYTHON3_EXEC_PREFIX'))"`])
    AC_SUBST([py3execdir], [$ac_cv_py3execdir])
-
-   # Make sure the python3 and py3execdir variables get sent down to
-   # the subconfigure in the testsuite directory.
-   AS_VAR_APPEND([ac_configure_args], [" python3='$PYTHON3' py3execdir='$ac_cv_py3execdir'"])
 fi
+
+# Make sure the python3 and py3execdir variables get sent down to
+# the subconfigure in the testsuite directory.
+AS_VAR_APPEND([ac_configure_args], [" python3='$PYTHON3' py3execdir='$ac_cv_py3execdir'"])
 
 dnl Handle the prologues option.
 dnl
@@ -561,9 +561,9 @@ LIBS=$LIBS_no_readline
 
 dnl Allow user to choose python3 for /usr/bin/dtrace
 AC_ARG_WITH([python3],
-  AS_HELP_STRING([--with-python3],[prefer /usr/bin/python3]))
+  AS_HELP_STRING([--with-python3],[prefer python version 3]))
 AS_IF([test "x$with_python3" = "xyes"],
-      [AS_IF([test -z "$PYTHON3"],
+      [AS_IF([test "x$PYTHON3" = "x:"],
              [AC_MSG_ERROR([python version 3 is required])],
 	     [AC_SUBST(preferred_python,[$PYTHON3])])],
       [AS_IF([test "x$PYTHON" = "x:"],
@@ -735,8 +735,9 @@ AC_ARG_WITH([python2-probes],
 have_python2_support=no
 AS_IF([test "x$with_python2_probes" != "xno"],
   [dnl First, check to make sure we have the 'python-config' script.
-   AC_PATH_PROGS([PYTHON_CONFIG], [python2-config python-config], [no])
-   AS_IF([test "x$PYTHON_CONFIG" != "xno"],
+   AS_IF([test "x$PYTHON" != "x:"],
+	 [AC_PATH_PROG([PYTHON_CONFIG], [${python_basename}-config])])
+   AS_IF([test "x$PYTHON_CONFIG" != "x"],
 	 [dnl Use the 'python-config' script to find the python
 	  dnl include directories.
 	  PYTHON_CPPFLAGS=`$PYTHON_CONFIG --includes 2> /dev/null`
@@ -765,12 +766,9 @@ AC_ARG_WITH([python3-probes],
 have_python3_support=no
 AS_IF([test "x$with_python3_probes" != "xno"],
   [dnl First, check to make sure we have the 'python3-config' script.
-   pathless_python3=$(basename "$PYTHON3")
-   if test "x${pathless_python3}" == "x"; then
-	pathless_python3="python3"   
-   fi
-   AC_PATH_PROG([PYTHON3_CONFIG], [${pathless_python3}-config], [no])
-   AS_IF([test "x$PYTHON3_CONFIG" != "xno"],
+   AS_IF([test "x$PYTHON3" != "x:" ],
+	 [AC_PATH_PROG([PYTHON3_CONFIG], [${python3_basename}-config])])
+   AS_IF([test "x$PYTHON3_CONFIG" != "x"],
 	 [dnl Use the 'python3-config' script to find the python
 	  dnl include directories.
 	  PYTHON3_CPPFLAGS=`$PYTHON3_CONFIG --includes 2> /dev/null`

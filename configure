@@ -1638,7 +1638,7 @@ Optional Packages:
   --with-dracutbindir=DIR Use the dracut binary located in DIR
   --without-avahi         Do not use Avahi even if present
   --with-rpm              query rpm database for missing debuginfos
-  --with-python3          prefer /usr/bin/python3
+  --with-python3          prefer python version 3
   --with-elfutils=DIRECTORY
                           find elfutils source code in DIRECTORY
   --with-dyninst=DIRECTORY
@@ -9164,7 +9164,7 @@ cat >>confdefs.h <<_ACEOF
 #define PYTHON_BASENAME "${python_basename}"
 _ACEOF
 
-if test -n "$PYTHON"; then
+if test "x$PYTHON" != "x:"; then
 
 $as_echo "#define PYTHON_EXISTS /**/" >>confdefs.h
 
@@ -9176,7 +9176,7 @@ fi
 as_fn_append ac_configure_args " python='$PYTHON' pyexecdir='$pyexecdir'"
 
 # Now let's try to find python version 3.
-if test "x$PYTHON_UNKNOWN" != "xno" -a "x$python_unknown_version" = "x3"; then
+if test "x$PYTHON_UNKNOWN" != "xno" -a "x$ac_cv_python_unknown_version" = "x3"; then
    # Extract the first word of "python", so it can be a program name with args.
 set dummy python; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -9218,7 +9218,7 @@ fi
 
 
 else
-   for ac_prog in python3 python3.5 python3.4 python3.3 python3.2 python3.1 python3.0
+   for ac_prog in python3 python3.7 python3.6 python3.5 python3.4 python3.3 python3.2 python3.1 python3.0
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -9262,6 +9262,7 @@ fi
 
   test -n "$PYTHON3" && break
 done
+test -n "$PYTHON3" || PYTHON3=":"
 
 fi
 python3_basename=$(basename "$PYTHON3")
@@ -9273,7 +9274,7 @@ _ACEOF
 
 # If we found python version 3, set up the other variables for python
 # version 3 that AM_PATH_PYTHON sets up for python version 2.
-if test -n "$PYTHON3"; then
+if test "x$PYTHON3" != "x:"; then
 
 $as_echo "#define PYTHON3_EXISTS /**/" >>confdefs.h
 
@@ -9327,11 +9328,11 @@ fi
 $as_echo "$ac_cv_py3execdir" >&6; }
    py3execdir=$ac_cv_py3execdir
 
-
-   # Make sure the python3 and py3execdir variables get sent down to
-   # the subconfigure in the testsuite directory.
-   as_fn_append ac_configure_args " python3='$PYTHON3' py3execdir='$ac_cv_py3execdir'"
 fi
+
+# Make sure the python3 and py3execdir variables get sent down to
+# the subconfigure in the testsuite directory.
+as_fn_append ac_configure_args " python3='$PYTHON3' py3execdir='$ac_cv_py3execdir'"
 
 if test "${enable_prologues+set}" != set; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking to see if prologue searching should be the default" >&5
@@ -11395,7 +11396,7 @@ if test "${with_python3+set}" = set; then :
 fi
 
 if test "x$with_python3" = "xyes"; then :
-  if test -z "$PYTHON3"; then :
+  if test "x$PYTHON3" = "x:"; then :
   as_fn_error $? "python version 3 is required" "$LINENO" 5
 else
   preferred_python=$PYTHON3
@@ -12135,10 +12136,9 @@ fi
 
 have_python2_support=no
 if test "x$with_python2_probes" != "xno"; then :
-     for ac_prog in python2-config python-config
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
+     if test "x$PYTHON" != "x:"; then :
+  # Extract the first word of "${python_basename}-config", so it can be a program name with args.
+set dummy ${python_basename}-config; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_PYTHON_CONFIG+:} false; then :
@@ -12177,11 +12177,8 @@ $as_echo "no" >&6; }
 fi
 
 
-  test -n "$PYTHON_CONFIG" && break
-done
-test -n "$PYTHON_CONFIG" || PYTHON_CONFIG="no"
-
-   if test "x$PYTHON_CONFIG" != "xno"; then :
+fi
+   if test "x$PYTHON_CONFIG" != "x"; then :
   	  	  PYTHON_CPPFLAGS=`$PYTHON_CONFIG --includes 2> /dev/null`
 	  PYTHON_CPPFLAGS=$PYTHON_CPPFLAGS
 
@@ -12230,12 +12227,9 @@ fi
 
 have_python3_support=no
 if test "x$with_python3_probes" != "xno"; then :
-     pathless_python3=$(basename "$PYTHON3")
-   if test "x${pathless_python3}" == "x"; then
-	pathless_python3="python3"
-   fi
-   # Extract the first word of "${pathless_python3}-config", so it can be a program name with args.
-set dummy ${pathless_python3}-config; ac_word=$2
+     if test "x$PYTHON3" != "x:" ; then :
+  # Extract the first word of "${python3_basename}-config", so it can be a program name with args.
+set dummy ${python3_basename}-config; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_PYTHON3_CONFIG+:} false; then :
@@ -12261,7 +12255,6 @@ done
   done
 IFS=$as_save_IFS
 
-  test -z "$ac_cv_path_PYTHON3_CONFIG" && ac_cv_path_PYTHON3_CONFIG="no"
   ;;
 esac
 fi
@@ -12275,7 +12268,8 @@ $as_echo "no" >&6; }
 fi
 
 
-   if test "x$PYTHON3_CONFIG" != "xno"; then :
+fi
+   if test "x$PYTHON3_CONFIG" != "x"; then :
   	  	  PYTHON3_CPPFLAGS=`$PYTHON3_CONFIG --includes 2> /dev/null`
 	  PYTHON3_CPPFLAGS=$PYTHON3_CPPFLAGS
 
