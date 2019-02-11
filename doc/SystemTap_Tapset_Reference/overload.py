@@ -1,4 +1,3 @@
-#! /usr/bin/python
 # XML tree transformation for systemtap function overloading
 # This script merges all overloaded tapset function entries
 # into one entry.
@@ -45,7 +44,6 @@ def annotate(entry):
     """
     Numbers all overloaded entries.
     """
-    sys.stderr.write("entry: %s\n" % etree.tostring(entry))
     num_overloads = len(entry.xpath("refsynopsisdiv/programlisting"))
     synopsis = entry.xpath("refsynopsisdiv/programlisting")
     description = entry.xpath("refsect1[2]/para")
@@ -59,8 +57,6 @@ def merge(functions):
     """
     merged = functions[0]
 
-    sys.stderr.write("processing item %s\n" % merged.xpath("refnamediv/refname")[0].text)
-    
     # merge params
     new_params = get_params(functions)
     param_list = merged.xpath("refsect1[1]/variablelist")[0]
@@ -84,7 +80,7 @@ def merge_overloads(functions_list):
         merge(functions)
 
 def usage():
-    print "Usage: ./overload.py <xml>"
+    print("Usage: ./overload.py <xml>")
 
 def main():
     if len(sys.argv) != 2:
@@ -96,8 +92,9 @@ def main():
     refentries = [r for r in root.iter("refentry")]
     functions = collect_overloads(refentries)
     merge_overloads(functions)
-    print etree.tostring(root, encoding='UTF-8', xml_declaration=True,
-            doctype=tree.docinfo.doctype)
+    output_file = getattr(sys.stdout, "buffer", sys.stdout)
+    tree.write(output_file, encoding="UTF-8", xml_declaration=True,
+                 doctype=tree.docinfo.doctype)
 
 if __name__ == '__main__':
     main()
