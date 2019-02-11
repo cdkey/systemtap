@@ -34,8 +34,8 @@ SUFFIXES = ps pdf dvi ps tex
 .tex.dvi:
 	pwd=`pwd`; cd $(srcdir); \
 	latex -output-directory=$$pwd $<; \
-	touch $*.glo \
-	makeindex $*.glo -s nomencl.ist -o $*.gls \
+	touch $*.glo; \
+	makeindex $*.glo -s nomencl.ist -o $*.gls; \
 	latex -output-directory=$$pwd $<; \
 	latex -output-directory=$$pwd $<; \
 	latex -output-directory=$$pwd $<
