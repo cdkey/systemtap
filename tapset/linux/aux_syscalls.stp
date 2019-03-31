@@ -2442,8 +2442,12 @@ static const _stp_val_array _stp_sockopt_optname_list[] = {
 	V(SO_PEERCRED),
 	V(SO_RCVLOWAT),
 	V(SO_SNDLOWAT),
+#ifdef SO_RCVTIMEO
 	V(SO_RCVTIMEO),
+#endif
+#ifdef SO_SNDTIMEO
 	V(SO_SNDTIMEO),
+#endif
 	V(SO_SECURITY_AUTHENTICATION),
 	V(SO_SECURITY_ENCRYPTION_TRANSPORT),
 	V(SO_SECURITY_ENCRYPTION_NETWORK),
@@ -2451,7 +2455,9 @@ static const _stp_val_array _stp_sockopt_optname_list[] = {
 	V(SO_ATTACH_FILTER),
 	V(SO_DETACH_FILTER),
 	V(SO_PEERNAME),
+#ifdef SO_TIMESTAMP
 	V(SO_TIMESTAMP),
+#endif
 	V(SO_ACCEPTCONN),
 	V(SO_PEERSEC),
 	V(SO_PASSSEC),
@@ -2496,6 +2502,78 @@ static const _stp_val_array _stp_sockopt_optname_list[] = {
 #endif
 #ifdef SO_BPF_EXTENSIONS
 	V(SO_BPF_EXTENSIONS),
+#endif
+#ifdef SO_INCOMING_CPU
+	V(SO_INCOMING_CPU),
+#endif
+#ifdef SO_ATTACH_BPF
+	V(SO_ATTACH_BPF),
+#endif
+#ifdef SO_DETACH_BPF
+	V(SO_DETACH_BPF),
+#endif
+#ifdef SO_ATTACH_REUSEPORT_CBPF
+	V(SO_ATTACH_REUSEPORT_CBPF),
+#endif
+#ifdef SO_ATTACH_REUSEPORT_EBPF
+	V(SO_ATTACH_REUSEPORT_EBPF),
+#endif
+#ifdef SO_CNX_ADVICE
+	V(SO_CNX_ADVICE),
+#endif
+#ifdef SCM_TIMESTAMPING_OPT_STATS
+	V(SCM_TIMESTAMPING_OPT_STATS),
+#endif
+#ifdef SO_MEMINFO
+	V(SO_MEMINFO),
+#endif
+#ifdef SO_INCOMING_NAPI_ID
+	V(SO_INCOMING_NAPI_ID),
+#endif
+#ifdef SO_COOKIE
+	V(SO_COOKIE),
+#endif
+#ifdef SCM_TIMESTAMPING_PKTINFO
+	V(SCM_TIMESTAMPING_PKTINFO),
+#endif
+#ifdef SO_PEERGROUPS
+	V(SO_PEERGROUPS),
+#endif
+#ifdef SO_ZEROCOPY
+	V(SO_ZEROCOPY),
+#endif
+#ifdef SO_TXTIME
+	V(SO_TXTIME),
+#endif
+#ifdef SCM_TXTIME
+	V(SCM_TXTIME),
+#endif
+#ifdef SO_BINDTOIFINDEX
+	V(SO_BINDTOIFINDEX),
+#endif
+#ifdef SO_TIMESTAMP_OLD
+	V(SO_TIMESTAMP_OLD),
+#endif
+#ifdef SO_TIMESTAMPNS_OLD
+	V(SO_TIMESTAMPNS_OLD),
+#endif
+#ifdef SO_TIMESTAMPING_OLD
+	V(SO_TIMESTAMPING_OLD),
+#endif
+#ifdef SO_TIMESTAMP_NEW
+	V(SO_TIMESTAMP_NEW),
+#endif
+#ifdef SO_TIMESTAMPNS_NEW
+	V(SO_TIMESTAMPNS_NEW),
+#endif
+#ifdef SO_TIMESTAMPING_NEW
+	V(SO_TIMESTAMPING_NEW),
+#endif
+#ifdef SO_RCVTIMEO_NEW
+	V(SO_RCVTIMEO_NEW),
+#endif
+#ifdef SO_SNDTIMEO_NEW
+	V(SO_SNDTIMEO_NEW),
 #endif
 	{0, NULL}
 };
