@@ -403,7 +403,7 @@
 
 %( arch == "arm64" %?
 @define arch_syscall_prefix %( "__arm64_" %)
-@define arch_syscall0_prefix %( "" %)
+@define arch_syscall0_prefix %( "__arm64_" %)
 @define SYSC_CLONE_CLONE_FLAGS_ARGNO %( 1 %)
 @define SYSC_CLONE_STACK_START_ARGNO %( 2 %)
 @define SYSC_CLONE_PARENT_TID_UADDR_ARGNO %( 3 %)
