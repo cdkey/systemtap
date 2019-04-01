@@ -615,11 +615,11 @@ bpf_interpret(size_t ninsns, const struct bpf_insn insns[],
 	      abort();
 	    }
 	  regs[0] = dr;
-	  regs[1] = 0xdeadbeef;
-	  regs[2] = 0xdeadbeef;
-	  regs[3] = 0xdeadbeef;
-	  regs[4] = 0xdeadbeef;
-          regs[5] = 0xdeadbeef;
+	  regs[1] = 0xea7bee75;
+	  regs[2] = 0xea7bee75;
+	  regs[3] = 0xea7bee75;
+	  regs[4] = 0xea7bee75;
+          regs[5] = 0xea7bee75;
 	  goto nowrite;
 
 	case BPF_JMP | BPF_EXIT:
