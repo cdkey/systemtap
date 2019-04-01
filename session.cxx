@@ -1,5 +1,5 @@
 // session functions
-// Copyright (C) 2010-2017 Red Hat Inc.
+// Copyright (C) 2010-2019 Red Hat Inc.
 //
 // This file is part of systemtap, and is free software.  You can
 // redistribute it and/or modify it under the terms of the GNU General
@@ -491,7 +491,7 @@ systemtap_session::version ()
              "Copyright (C) 2005-2019 Red Hat, Inc. and others\n"   // PRERELEASE
              "This is free software; see the source for copying conditions.\n",
              version_string().c_str());
-  cout << _F("tested kernel versions: %s ... %s\n", "2.6.18", "5.0-rc3");   // PRERELEASE
+  cout << _F("tested kernel versions: %s ... %s\n", "2.6.18", "5.1-rc2");   // PRERELEASE
   
   cout << _("enabled features:")
 #ifdef HAVE_AVAHI
