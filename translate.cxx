@@ -7833,6 +7833,8 @@ void translate_runtime(systemtap_session& s)
                   << lex_cast_qstring(_("write fault [man error::fault] at 0x%lx"));
   s.op->newline() << "#define STAP_MSG_LOC2C_03 "
                   << lex_cast_qstring(_("divide by zero in DWARF operand (%s)"));
+  s.op->newline() << "#define STAP_MSG_LOC2C_04 "
+                  << lex_cast_qstring(_("register access fault [man error::fault]"));
 }
 
 

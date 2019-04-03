@@ -1,0 +1,11 @@
+#! stap -gp5
+
+// PR24408
+global errors
+probe oneshot {
+  try { printf("%lx", @kregister(0)) } catch { errors ++ } 
+  try { printf("%lx", @uregister(0)) } catch { errors ++ }
+  // try { printf("%lx", @kregister(-1)) } catch { errors ++ }  // but this -p4 fails on some arches with register_## fns
+  // try { printf("%lx", @uregister(-1)) } catch { errors ++ }
+}
+probe end { if (errors == 2) println ("PASS") else error ("FAIL: not enough errors") }

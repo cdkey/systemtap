@@ -30,10 +30,31 @@
 #endif
 
 
-#define k_fetch_register(regno) \
-  pt_regs_fetch_register(c->kregs, regno)
-#define k_store_register(regno, value) \
-  pt_regs_store_register(c->kregs, regno, value)
+#define check_fetch_register(regs,regno,maxregno,fn) ({		            \
+  if (regs == 0 || regno < 0 || regno > maxregno) {                         \
+        snprintf(c->error_buffer, sizeof(c->error_buffer),		    \
+		 STAP_MSG_LOC2C_04); 					    \
+    c->last_error = c->error_buffer;					    \
+    goto deref_fault;							    \
+  }                  							    \
+  fn(regs, regno);	   						    \
+})
+    
+#define check_store_register(regs,regno,maxregno,value,fn) do {		    \
+  if (regs == 0 || regno < 0 || regno > maxregno) {                         \
+        snprintf(c->error_buffer, sizeof(c->error_buffer),		    \
+		 STAP_MSG_LOC2C_04); 					    \
+    c->last_error = c->error_buffer;					    \
+    goto deref_fault;							    \
+  }                  							    \
+  fn(regs, regno, value);                                                   \
+} while(0)
+
+
+#define k_fetch_register(regno) check_fetch_register(c->kregs,regno,pt_regs_maxno,pt_regs_fetch_register)
+
+#define k_store_register(regno,value) check_store_register(c->kregs,regno,pt_regs_maxno,value,pt_regs_store_register)
+    
 
 
 /* PR 10601: user-space (user_regset) register access.
@@ -258,15 +279,22 @@ static void ursl_store64 (const struct usr_regset_lut* lut,unsigned lutsize,  in
 }
 
 
+
 #if defined (__i386__)
 
-#define u_fetch_register(regno) ursl_fetch32(url_i386, ARRAY_SIZE(url_i386), EM_386, regno)
-#define u_store_register(regno,value) ursl_store32(url_i386, ARRAY_SIZE(url_i386), EM_386, regno, value)
+#define uu_fetch_register(_regs,regno) ursl_fetch32(url_i386, ARRAY_SIZE(url_i386), EM_386, regno)
+#define uu_store_register(_regs,regno,value) ursl_store32(url_i386, ARRAY_SIZE(url_i386), EM_386, regno, value)
+
+#define u_fetch_register(regno) check_fetch_register(c->uregs,regno,ARRAY_SIZE(url_i386),uu_fetch_register)
+#define u_store_register(regno,value) check_store_register(c->uregs,regno,ARRAY_SIZE(url_i386),value,uu_store_register)
 
 #elif defined (__x86_64__)
 
-#define u_fetch_register(regno) (_stp_is_compat_task() ? ursl_fetch32(url_i386, ARRAY_SIZE(url_i386), EM_386, regno) : ursl_fetch64(url_x86_64, ARRAY_SIZE(url_x86_64), EM_X86_64, regno))
-#define u_store_register(regno,value)  (_stp_is_compat_task() ? ursl_store32(url_i386, ARRAY_SIZE(url_i386), EM_386, regno, value) : ursl_store64(url_x86_64, ARRAY_SIZE(url_x86_64), EM_X86_64, regno, value))
+#define uu_fetch_register(_regs,regno) (_stp_is_compat_task() ? ursl_fetch32(url_i386, ARRAY_SIZE(url_i386), EM_386, regno) : ursl_fetch64(url_x86_64, ARRAY_SIZE(url_x86_64), EM_X86_64, regno))
+#define uu_store_register(_regs,regno,value)  (_stp_is_compat_task() ? ursl_store32(url_i386, ARRAY_SIZE(url_i386), EM_386, regno, value) : ursl_store64(url_x86_64, ARRAY_SIZE(url_x86_64), EM_X86_64, regno, value))
+
+#define u_fetch_register(regno) check_fetch_register(c->uregs,regno,_stp_is_compat_task()?ARRAY_SIZE(url_i386):ARRAY_SIZE(url_x86_64),uu_fetch_register)
+#define u_store_register(regno,value) check_store_register(c->uregs,regnoo,_stp_is_compat_task()?ARRAY_SIZE(url_i386):ARRAY_SIZE(url_x86_64),value,uu_store_register)
 
 #endif
 
@@ -275,17 +303,17 @@ static void ursl_store64 (const struct usr_regset_lut* lut,unsigned lutsize,  in
 /* Downgrade to pt_dwarf_register access. */
 
 #define u_store_register(regno, value) \
-  pt_regs_store_register(c->uregs, regno, value)
+  check_store_register(c->uregs,regno,pt_regs_maxno,value,pt_regs_store_register)
 
 /* If we're in a 32/31-bit task in a 64-bit kernel, we need to emulate
  * 32-bitness by masking the output of pt_regs_fetch_register() */
 #ifndef CONFIG_COMPAT
 #define u_fetch_register(regno) \
-  pt_regs_fetch_register(c->uregs, regno)
+  check_fetch_register(c->uregs,regno,pt_regs_maxno,pt_regs_fetch_register)
+
 #else
 #define u_fetch_register(regno) \
-  (_stp_is_compat_task() ? (0xffffffff & pt_regs_fetch_register(c->uregs, regno)) \
-                         : pt_regs_fetch_register(c->uregs, regno))
+  check_fetch_register(c->uregs,regno,pt_regs_maxno,pt_regs_fetch_register) & (_stp_is_compat_task() ? 0xffffffff : ~(int64_t)0)
 #endif
 
 #endif /* STAPCONF_REGSET */

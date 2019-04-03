@@ -63,11 +63,10 @@
    can be pasted into an identifier name.  These definitions turn it into a
    per-register macro, defined below for machines with individually-named
    registers.  */
-#define pt_regs_fetch_register(pt_regs, regno) \
+#define pt_regs_fetch_register(pt_regs, regno)		\
   ((intptr_t) pt_dwarf_register_##regno (pt_regs))
 #define pt_regs_store_register(pt_regs, regno, value) \
   (pt_dwarf_register_##regno (pt_regs) = (value))
-
 
 #if defined (STAPCONF_X86_UNIREGS) && defined (__i386__)
 
@@ -79,6 +78,7 @@
 #define pt_dwarf_register_5(regs)  regs->bp
 #define pt_dwarf_register_6(regs)  regs->si
 #define pt_dwarf_register_7(regs)  regs->di
+#define pt_regs_maxno 7
 
 #elif defined (STAPCONF_X86_UNIREGS) && defined (__x86_64__)
 
@@ -98,7 +98,8 @@
 #define pt_dwarf_register_13(regs) regs->r13
 #define pt_dwarf_register_14(regs) regs->r14
 #define pt_dwarf_register_15(regs) regs->r15
-
+#define pt_regs_maxno 15
+  
 #elif defined __i386__
 
 /* The stack pointer is unlike other registers.  When a trap happens in
@@ -115,6 +116,7 @@
 #define pt_dwarf_register_5(regs)	regs->ebp
 #define pt_dwarf_register_6(regs)	regs->esi
 #define pt_dwarf_register_7(regs)	regs->edi
+#define pt_regs_maxno 7
 
 #elif defined __ia64__
 
@@ -125,6 +127,7 @@
   ia64_fetch_register(regno, pt_regs, &c->unwaddr)
 #define pt_regs_store_register(pt_regs,regno,value) \
   ia64_store_register(regno, pt_regs, value)
+#define pt_regs_maxno 128 /* ish */
 
 #elif defined __x86_64__
 
@@ -144,7 +147,8 @@
 #define pt_dwarf_register_13(regs)	regs->r13
 #define pt_dwarf_register_14(regs)	regs->r14
 #define pt_dwarf_register_15(regs)	regs->r15
-
+#define pt_regs_maxno 15
+  
 #elif defined __powerpc__
 
 #undef pt_regs_fetch_register
@@ -153,7 +157,8 @@
   ((intptr_t) pt_regs->gpr[regno])
 #define pt_regs_store_register(pt_regs,regno,value) \
   (pt_regs->gpr[regno] = (value))
-
+#define pt_regs_maxno 31 /* though PT_REGS_COUNT=44 */
+  
 #elif defined __mips__
 
 #undef pt_regs_fetch_register
@@ -162,6 +167,7 @@
   ((intptr_t) pt_regs->regs[regno])
 #define pt_regs_store_register(pt_regs,regno,value) \
   (pt_regs->regs[regno] = (value))
+#define pt_regs_maxno 31 /* ignore special registers */
 
 #elif defined (__aarch64__)
 
@@ -200,6 +206,7 @@
 
 #define pt_dwarf_register_30(pt_regs)	pt_regs->regs[30]
 #define pt_dwarf_register_31(pt_regs)	pt_regs->sp
+#define pt_regs_maxno 31
 
 #elif defined (__arm__)
 
@@ -209,7 +216,8 @@
   ((long) pt_regs->uregs[regno])
 #define pt_regs_store_register(pt_regs,regno,value) \
   (pt_regs->uregs[regno] = (value))
-
+#define pt_regs_maxno 17
+  
 #elif defined (__s390__) || defined (__s390x__)
 
 #undef pt_regs_fetch_register
@@ -218,7 +226,8 @@
   ((intptr_t) pt_regs->gprs[regno])
 #define pt_regs_store_register(pt_regs,regno,value) \
   (pt_regs->gprs[regno] = (value))
-
+#define pt_regs_maxno 16 /* NUM_GPRS */
+  
 #endif
 
 
