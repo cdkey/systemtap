@@ -3839,12 +3839,7 @@ synthetic_embedded_deref_call(dwflpp& dw, location_context &ctx,
   fdecl->body = blk;
 
   for (auto i = ctx.evals.begin(); i != ctx.evals.end(); ++i)
-    {
-      expr_statement *exp = new expr_statement;
-      exp->value = *i;
-      exp->tok = tok;
-      blk->statements.push_back(exp);
-    }
+    blk->statements.push_back(*i);
 
   return_statement *ret = new return_statement;
   ret->tok = tok;

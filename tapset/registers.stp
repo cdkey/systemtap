@@ -240,3 +240,9 @@ function __asmlinkage_int_arg:long(n:long)
 	asmlinkage()
 	return int_arg(n)
 }
+
+
+function __get_kregs:long() %{ /* guru */ STAP_RETVALUE = (int64_t)CONTEXT->kregs; %}
+function __get_uregs:long() %{ /* guru */ STAP_RETVALUE = (int64_t)CONTEXT->uregs; %}
+function __set_kregs(regs:long) %{ /* guru */ CONTEXT->kregs = (struct pt_regs*)STAP_ARG_regs; %}
+function __set_uregs(regs:long) %{ /* guru */ CONTEXT->uregs = (struct pt_regs*)STAP_ARG_regs; %}

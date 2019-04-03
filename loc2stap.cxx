@@ -29,7 +29,7 @@
 location_context::location_context(target_symbol *ee, expression *pp)
   : e_orig(ee), e(deep_copy_visitor::deep_copy(ee)), pointer(0), value(0),
     attr(0), dwbias(0), pc(0), fb_attr(0), cfa_ops(0), 
-    dw(0), frame_base(0)
+    dw(0), frame_base(0), function(0), param_ref_depth(0)
 {
   // If this code snippet uses a precomputed pointer, create an
   // parameter variable to hold it.
@@ -285,7 +285,11 @@ location_context::save_expression(expression *val)
   set->op = "=";
   set->left = sym;
   set->right = val;
-  this->evals.push_back(set);
+
+  expr_statement *exp = new expr_statement;
+  exp->value = set;
+  exp->tok = e->tok;
+  this->evals.push_back(exp);
 
   return sym;
 }
@@ -669,11 +673,21 @@ location_context::translate (const Dwarf_Op *expr, const size_t len,
 	    break;
 
 	  case DW_OP_GNU_entry_value:
-	    PUSH(handle_GNU_entry_value(expr[i]));
+	    {
+	      expression *result = handle_GNU_entry_value (expr[i]);
+	      if (result == NULL)
+	        DIE("DW_OP_GNU_entry_value unable to resolve value");
+	      PUSH(result);
+	    }
 	    break;
 
 	  case DW_OP_GNU_parameter_ref:
-	    DIE ("unhandled DW_OP_GNU_parameter_ref");
+	    {
+	      expression *result = handle_GNU_parameter_ref (expr[i]);
+	      if (result == NULL)
+	        DIE("DW_OP_GNU_paramter_ref unable to resolve value");
+	      PUSH(result);
+	    }
 	    break;
 
 	  default:
@@ -858,7 +872,11 @@ location_context::frame_location()
       set->op = "=";
       set->left = this->frame_base;
       set->right = fb_loc->program;
-      this->evals.push_back(set);
+
+      expr_statement *exp = new expr_statement;
+      exp->value = set;
+      exp->tok = e->tok;
+      this->evals.push_back(exp);
     }
   return this->frame_base;
 }
@@ -1660,4 +1678,237 @@ location_context::handle_GNU_entry_value (Dwarf_Op expr)
     it->second = new block (it->second, b);
 
   return ai;
+}
+
+int
+get_call_site_values(Dwarf_Die *die, Dwarf_Die *function, location_context *ctx)
+{
+  Dwarf_Die child;
+  if (dwarf_child (die, &child) == 0)
+    do
+      {
+        if (dwarf_tag (&child) != DW_TAG_GNU_call_site_parameter)
+          continue;
+
+        Dwarf_Die origin;
+        if (dwarf_attr_die (&child, DW_AT_abstract_origin, &origin) == NULL)
+          continue;
+
+        if (origin.addr != ctx->parameter_ref->addr)
+          continue;
+
+	Dwarf_Attribute op_attr;
+        if (dwarf_attr_integrate (&child, DW_AT_GNU_call_site_value, &op_attr) == NULL)
+          continue;
+
+	Dwarf_Addr lowpc;
+        if (dwarf_lowpc (die, &lowpc))
+          continue;
+
+	location_context new_ctx (ctx->e);
+	new_ctx.attr = &op_attr;
+	new_ctx.dwbias = ctx->dwbias;
+	new_ctx.pc = lowpc;
+	new_ctx.function = function;
+	new_ctx.param_ref_depth = ctx->param_ref_depth + 1;
+
+	ctx->dw->translate_call_site_value (&new_ctx, &op_attr, die, function, lowpc);
+	ctx->call_site_values.push_back (new_ctx);
+
+        break;
+      }
+    while (dwarf_siblingof (&child, &child) == 0);
+
+  return DWARF_CB_OK;
+}
+
+expression *
+location_context::handle_GNU_parameter_ref (Dwarf_Op expr)
+{
+  if (param_ref_depth >= 4)
+    throw SEMANTIC_ERROR("DW_OP_GNU_parameter_ref recursion has gone more "
+			    "than 4 levels deep.", e->tok);
+
+  Dwarf_Die param;
+  dwarf_getlocation_die (attr, &expr, &param);
+  this->parameter_ref = &param;
+
+  // To get the value of the parameter, we need to look at what was passed
+  // into the probed function from its call site. So first we need to get
+  // all the call site values for the parameter.
+  dw->focus_on_function (this->function);
+  dw->iterate_over_call_sites (get_call_site_values, this);
+
+  // Now in order to determine which call site the probed function was called
+  // from we need to unwind the registers and look at the pc value at the caller's
+  // context. We will save the current pt_regs because the unwind will override
+  // it and we want to be able to restore the registers back.
+  functioncall *get_ptregs = new functioncall;
+  get_ptregs->tok = e->tok;
+  if (this->userspace_p)
+    get_ptregs->function = std::string("__get_uregs");
+  else
+    get_ptregs->function = std::string("__get_kregs");
+  expression *saved_ptregs = save_expression (get_ptregs);
+
+  // We will do all the necessary steps within a try-catch block so any
+  // errors can be caught and the appropriate error generated
+  try_block *t = new try_block;
+  t->tok = e->tok;
+  this->evals.push_back(t);
+
+  // Generate try block
+  block *tb = new block;
+  tb->tok = e->tok;
+  t->try_block = tb;
+
+  // Attempt to unwind regs and get the pc value after unwind
+  symbol *unwind_pc = new_local("_pc_");
+  unwind_pc->tok = e->tok;
+
+  std::string unwind_code;
+  unwind_code = "/* pragma:unwind */ /* pragma:vma */"
+                "({ unsigned long addr = 0;";
+  if (this->userspace_p) {
+    unwind_code += "addr = _stp_stack_unwind_one_user(c, 1);"
+                   "c->uregs = &c->uwcontext_user.info.regs;";
+  } else {
+    unwind_code += "addr = _stp_stack_unwind_one_kernel(c, 1);"
+                   "c->kregs = &c->uwcontext_kernel.info.regs;";
+  }
+  unwind_code += "addr; })";
+
+  embedded_expr *unwind_emb = new embedded_expr;
+  unwind_emb->tok = e->tok;
+  unwind_emb->code = unwind_code;
+
+  assignment *unwind_as = new assignment;
+  unwind_as->tok = e->tok;
+  unwind_as->op = "=";
+  unwind_as->left = unwind_pc;
+  unwind_as->right = unwind_emb;
+
+  expr_statement *unwind_exp = new expr_statement;
+  unwind_exp->value = unwind_as;
+  unwind_exp->tok = e->tok;
+
+  tb->statements.push_back(unwind_exp);
+
+  // Next generate an if statment to select the call site value that
+  // corresponds to the call site the probed function was called from
+  symbol *val = new_local("_value_");
+  if_statement *valsel = NULL;
+  if_statement *prev_if = NULL;
+  for (size_t i = 0; i < call_site_values.size(); ++i)
+    {
+      location_context &ctx = call_site_values[i];
+
+      comparison *eq = new comparison;
+      eq->op = "==";
+      eq->tok = e->tok;
+      eq->left = unwind_pc;
+      eq->right = translate_address(ctx.pc);
+
+      block *thenblk = new block;
+      thenblk->tok = e->tok;
+
+      this->locals.insert(this->locals.end(), ctx.locals.begin(), ctx.locals.end());
+      this->globals.insert(this->globals.end(), ctx.globals.begin(), ctx.globals.end());
+      for (auto it = ctx.entry_probes.begin(); it != ctx.entry_probes.end(); ++it)
+        {
+         auto res = this->entry_probes.find(it->first);
+         if (res == this->entry_probes.end())
+           this->entry_probes.insert(std::pair<Dwarf_Addr, block *>(it->first, it->second));
+         else
+           res->second = new block(res->second, it->second);
+        }
+      thenblk->statements.insert(thenblk->statements.end(), ctx.evals.begin(), ctx.evals.end());
+
+      assignment *a = new assignment;
+      a->tok = e->tok;
+      a->op = "=";
+      a->left = val;
+      a->right = ctx.locations.back()->program;
+
+      expr_statement *es = new expr_statement;
+      es->value = a;
+      es->tok = e->tok;
+      thenblk->statements.push_back(es);
+
+      if_statement *is = new if_statement;
+      is->tok = e->tok;
+      is->condition = eq;
+      is->thenblock = thenblk;
+      is->elseblock = NULL;
+
+      if (prev_if) {
+        prev_if->elseblock = is;
+      } else {
+        valsel = is;
+      }
+      prev_if = is;
+  }
+
+  // It is possible that we aren't able to match to a call site and so the
+  // value of the parameter is undefined. Generate an error in this case.
+  functioncall *notfound = new functioncall;
+  notfound->tok = e->tok;
+  notfound->function = std::string("error");
+  notfound->args.push_back(new literal_string("unknown callsite"));
+  expr_statement *notfound_exp = new expr_statement;
+  notfound_exp->value = notfound;
+  notfound_exp->tok = e->tok;
+
+  if (valsel)
+    {
+      prev_if->elseblock = notfound_exp;
+      tb->statements.push_back(valsel);
+    }
+  else // special case, found no possible call sites
+    tb->statements.push_back(notfound_exp);
+
+  // Translation done, restore the pt_regs to its original value
+  functioncall *set_ptregs = new functioncall;
+  set_ptregs->tok = e->tok;
+  if (this->userspace_p)
+    set_ptregs->function = std::string("__set_uregs");
+  else
+    set_ptregs->function = std::string("__set_kregs");
+  set_ptregs->args.push_back (saved_ptregs);
+
+  expr_statement *set_exp = new expr_statement;
+  set_exp->value = set_ptregs;
+  set_exp->tok = e->tok;
+  tb->statements.push_back(set_exp);
+
+  // Generate catch block
+  block *cb = new block;
+  cb->tok = e->tok;
+  t->catch_block = cb;
+
+  // Also restore pt_regs in catch block
+  cb->statements.push_back(set_exp);
+
+  // Generate an error
+  vardecl *var = new vardecl;
+  static int counter = 0;
+  var->name = std::string("_e_") + lex_cast(counter++);
+  var->type = pe_string;
+  var->arity = 0;
+  var->synthetic = true;
+  var->tok = e->tok;
+  this->locals.push_back(var);
+  t->catch_error_var = new_symref(var);
+
+  functioncall *error = new functioncall;
+  error->tok = e->tok;
+  error->function = std::string("error");
+  error->args.push_back (t->catch_error_var);
+
+  expr_statement *err_exp = new expr_statement;
+  err_exp->value = error;
+  err_exp->tok = e->tok;
+  cb->statements.push_back(err_exp);
+
+  return val;
 }

@@ -106,6 +106,7 @@ dwflpp::~dwflpp()
   delete_map(cu_function_cache);
   delete_map(mod_function_cache);
   delete_map(cu_inl_function_cache);
+  delete_map(cu_call_sites_cache);
   delete_map(global_alias_cache);
   delete_map(cu_die_parent_cache);
 
@@ -587,6 +588,72 @@ dwflpp::iterate_over_inline_instances<void>(int (*callback)(Dwarf_Die*, void*),
     {
       int rc = (*callback)(&*i, data);
       assert_no_interrupts();
+      if (rc != DWARF_CB_OK)
+        break;
+    }
+}
+
+
+void dwflpp::cache_call_sites (Dwarf_Die* die, Dwarf_Die *function)
+{
+  Dwarf_Die origin;
+  if (dwarf_tag(die) == DW_TAG_GNU_call_site &&
+      dwarf_attr_die(die, DW_AT_abstract_origin, &origin))
+    {
+      vector<call_site_cache_t>*& v = cu_call_sites_cache[origin.addr];
+      if (!v)
+        v = new vector<call_site_cache_t>;
+      call_site_cache_t c (*die, *function);
+      v->push_back(c);
+    }
+
+  Dwarf_Die child;
+  if (dwarf_child(die, &child) == 0)
+    do
+      {
+        switch (dwarf_tag (&child))
+          {
+	  // tags that could contain call sites
+	  case DW_TAG_compile_unit:
+	  case DW_TAG_module:
+	  case DW_TAG_lexical_block:
+	  case DW_TAG_with_stmt:
+	  case DW_TAG_catch_block:
+	  case DW_TAG_try_block:
+	  case DW_TAG_entry_point:
+	  case DW_TAG_GNU_call_site:
+	    cache_call_sites(&child, function);
+	    break;
+
+	  case DW_TAG_subprogram:
+	  case DW_TAG_inlined_subroutine:
+	    cache_call_sites(&child, &child);
+
+	  // nothing to do for other tags
+	  default:
+	    break;
+	  }
+      }
+    while (dwarf_siblingof(&child, &child) == 0);
+}
+
+template<> void
+dwflpp::iterate_over_call_sites<void> (int (*callback)(Dwarf_Die*, Dwarf_Die*, void*),
+				      void *data)
+{
+  assert (cu);
+  assert (function);
+
+  if (cu_call_sites_cache_done.insert(cu->addr).second)
+    cache_call_sites(cu, NULL);
+
+  vector<call_site_cache_t>* v = cu_call_sites_cache[function->addr];
+  if (!v)
+    return;
+
+  for (auto i = v->begin(); i != v->end(); ++i)
+    {
+      int rc = (*callback)(&i->first, &i->second, data);
       if (rc != DWARF_CB_OK)
         break;
     }
@@ -2707,7 +2774,8 @@ dwflpp::find_variable_and_frame_base (vector<Dwarf_Die>& scopes,
                                       string const & local,
                                       const target_symbol *e,
                                       Dwarf_Die *vardie,
-                                      Dwarf_Attribute *fb_attr_mem)
+                                      Dwarf_Attribute *fb_attr_mem,
+                                      Dwarf_Die *funcdie)
 {
   Dwarf_Die *scope_die = &scopes[0];
   Dwarf_Attribute *fb_attr = NULL;
@@ -2749,6 +2817,8 @@ dwflpp::find_variable_and_frame_base (vector<Dwarf_Die>& scopes,
 				  : (_("alternatives: ") + sugs + ")")).c_str()),
                               e->tok);
     }
+
+  *funcdie = scopes[declaring_scope];
 
   /* Some GCC versions would output duplicate external variables, one
      without a location attribute. If so, try to find the other if it
@@ -3950,7 +4020,7 @@ dwflpp::literal_stmt_for_local (location_context &ctx,
                                 bool lvalue,
                                 Dwarf_Die *die_mem)
 {
-  Dwarf_Die vardie;
+  Dwarf_Die vardie, funcdie;
   Dwarf_Attribute fb_attr_mem, *fb_attr = NULL;
 
   // NB: when addr_loc is used for a synthesized DW_OP_addr below, then it
@@ -3958,7 +4028,8 @@ dwflpp::literal_stmt_for_local (location_context &ctx,
   Dwarf_Op addr_loc;
 
   fb_attr = find_variable_and_frame_base (scopes, ctx.pc, local, e,
-                                          &vardie, &fb_attr_mem);
+                                          &vardie, &fb_attr_mem,
+                                          &funcdie);
 
   if (sess.verbose>2)
     {
@@ -3976,6 +4047,7 @@ dwflpp::literal_stmt_for_local (location_context &ctx,
   ctx.attr = &attr_mem;
   ctx.fb_attr = fb_attr;
   ctx.dw = this;
+  ctx.function = &funcdie;
 
   if (dwarf_attr_integrate (&vardie, DW_AT_const_value, &attr_mem) == NULL
       && dwarf_attr_integrate (&vardie, DW_AT_location, &attr_mem) == NULL)
@@ -4023,6 +4095,50 @@ dwflpp::literal_stmt_for_local (location_context &ctx,
   return true;
 }
 
+struct location *
+dwflpp::translate_call_site_value (location_context *ctx,
+				   Dwarf_Attribute *attr,
+				   Dwarf_Die *die,
+				   Dwarf_Die *funcdie,
+				   Dwarf_Addr pc)
+{
+  Dwarf_Attribute fb_attr_mem, *fb_attr = NULL;
+
+  vector<Dwarf_Die> scopes = getscopes (funcdie);
+  vector<Dwarf_Die> physcopes, *fbscopes = &scopes;
+  int declaring_scope = 0;
+  for (size_t inner = declaring_scope;
+       inner < fbscopes->size() && fb_attr == NULL;
+       ++inner)
+    {
+      Dwarf_Die& scope = (*fbscopes)[inner];
+      switch (dwarf_tag (&scope))
+	{
+	default:
+	  continue;
+	case DW_TAG_subprogram:
+	  fb_attr = dwarf_attr_integrate (&scope,
+					  DW_AT_frame_base,
+					  &fb_attr_mem);
+	  break;
+	case DW_TAG_inlined_subroutine:
+	  if (declaring_scope != -1)
+	    {
+	      physcopes = getscopes_die(&scope);
+	      if (physcopes.empty())
+                throw SEMANTIC_ERROR (_F("unable to get die scopes for '%s' in an inlined subroutine",
+                                         ctx->e->sym_name().c_str()), ctx->e->tok);
+	      fbscopes = &physcopes;
+	      inner = 0;
+	      declaring_scope = -1;
+	    }
+	  break;
+	}
+    }
+
+  return translate_location (ctx, attr, die, pc, fb_attr, ctx->e, NULL);
+}
+
 Dwarf_Die*
 dwflpp::type_die_for_local (vector<Dwarf_Die>& scopes,
                             Dwarf_Addr pc,
@@ -4031,10 +4147,10 @@ dwflpp::type_die_for_local (vector<Dwarf_Die>& scopes,
                             Dwarf_Die *typedie,
 			    bool lvalue)
 {
-  Dwarf_Die vardie;
+  Dwarf_Die vardie, funcdie;
   Dwarf_Attribute attr_mem;
 
-  find_variable_and_frame_base (scopes, pc, local, e, &vardie, &attr_mem);
+  find_variable_and_frame_base (scopes, pc, local, e, &vardie, &attr_mem, &funcdie);
 
   if (dwarf_attr_die (&vardie, DW_AT_type, typedie) == NULL)
     throw SEMANTIC_ERROR(_F("failed to retrieve type attribute for '%s' [man error::dwarf]", local.c_str()), e->tok);

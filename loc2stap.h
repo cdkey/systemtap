@@ -64,10 +64,15 @@ public:
   // Temporaries required while computing EVALS and LOCATIONS.
   symbol *frame_base;
   std::vector<vardecl *> locals;
-  std::vector<expression *> evals;
+  std::vector<statement *> evals;
 
   std::vector<vardecl *> globals;
   std::map<Dwarf_Addr, block *> entry_probes;
+
+  Dwarf_Die *function;
+  Dwarf_Die *parameter_ref;
+  std::vector<location_context> call_site_values;
+  int param_ref_depth;
 
   // A set of locations which have been requested to be evaluated.
   // The last one can be considered "current", and thus the result
@@ -90,6 +95,7 @@ public:
   symbol *frame_location();
   void adapt_pointer_to_bpf(int size, int offset, bool is_signed);
   expression *handle_GNU_entry_value(Dwarf_Op expr);
+  expression *handle_GNU_parameter_ref(Dwarf_Op expr);
 
   location *translate(const Dwarf_Op *expr, size_t len, size_t start,
 		      location *input, bool may_use_fb, bool computing_value);

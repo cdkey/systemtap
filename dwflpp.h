@@ -75,6 +75,10 @@ typedef std::unordered_map<Dwarf*, cu_function_cache_t*> mod_function_cache_t;
 // inline function die -> instance die[]
 typedef std::unordered_map<void*, std::vector<Dwarf_Die>*> cu_inl_function_cache_t;
 
+// function die -> [call site die, call site function die]
+typedef std::pair<Dwarf_Die, Dwarf_Die> call_site_cache_t;
+typedef std::unordered_map<void*, std::vector<call_site_cache_t>*> cu_call_sites_cache_t;
+
 // die -> parent die
 typedef std::unordered_map<void*, Dwarf_Die> cu_die_parent_cache_t;
 
@@ -265,6 +269,15 @@ struct dwflpp
       // See comment block in iterate_over_modules()
       iterate_over_inline_instances<void>((int (*)(Dwarf_Die*, void*))callback,
                                           (void*)data);
+    }
+
+  template<typename T>
+  void iterate_over_call_sites(int (* callback)(Dwarf_Die*, Dwarf_Die*, T*),
+                               T *data)
+    {
+      // See comment block in iterate_over_modules()
+      iterate_over_call_sites<void>((int (*)(Dwarf_Die*, Dwarf_Die*, void*))callback,
+                                           (void*)data);
     }
 
   std::vector<Dwarf_Die> getscopes_die(Dwarf_Die* die);
@@ -500,6 +513,12 @@ struct dwflpp
   bool has_gnu_debugdata();
   bool has_valid_locs();
 
+  location *translate_call_site_value (location_context *ctx,
+                                       Dwarf_Attribute *attr,
+                                       Dwarf_Die *die,
+                                       Dwarf_Die *funcdie,
+                                       Dwarf_Addr pc);
+
 private:
   Dwfl * dwfl;
 
@@ -519,6 +538,10 @@ private:
   std::set<void*> cu_inl_function_cache_done; // CUs that are already cached
   cu_inl_function_cache_t cu_inl_function_cache;
   void cache_inline_instances (Dwarf_Die* die);
+
+  std::set<void*> cu_call_sites_cache_done; // CUs that are already cached
+  cu_call_sites_cache_t cu_call_sites_cache;
+  void cache_call_sites (Dwarf_Die* die, Dwarf_Die *function);
 
   mod_cu_die_parent_cache_t cu_die_parent_cache;
   void cache_die_parents(cu_die_parent_cache_t* parents, Dwarf_Die* die);
@@ -607,7 +630,8 @@ private:
                                                  std::string const & local,
                                                  const target_symbol *e,
                                                  Dwarf_Die *vardie,
-                                                 Dwarf_Attribute *fb_attr_mem);
+                                                 Dwarf_Attribute *fb_attr_mem,
+                                                 Dwarf_Die *funcdie);
 
   std::string die_location_as_string(Dwarf_Die*);
   std::string pc_location_as_function_string(Dwarf_Addr);
@@ -694,6 +718,9 @@ dwflpp::iterate_over_cus<void>(int (*callback)(Dwarf_Die*, void*),
 template<> void
 dwflpp::iterate_over_inline_instances<void>(int (*callback)(Dwarf_Die*, void*),
                                             void *data);
+template<> void
+dwflpp::iterate_over_call_sites<void>(int (*callback)(Dwarf_Die*, Dwarf_Die*, void*),
+                                      void *data);
 template<> int
 dwflpp::iterate_over_functions<void>(int (*callback)(Dwarf_Die*, void*),
                                      void *data, const std::string& function);
