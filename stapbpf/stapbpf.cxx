@@ -323,6 +323,10 @@ instantiate_maps (Elf64_Shdr *shdr, Elf_Data *data)
     curr_rlimit.rlim_cur = rlim_orig;
   if (curr_rlimit.rlim_max < rlim_max_orig) // handle overflow
     curr_rlimit.rlim_max = rlim_max_orig;
+  // TODOXXX: PR24324 -- EXPERIMENTAL fix for aggressive resource limits.
+  // Other Tools do something like this but it doesn't solve all our problems.
+  curr_rlimit.rlim_cur = RLIM_INFINITY;
+  curr_rlimit.rlim_max = RLIM_INFINITY;
 
   rc = setrlimit(RLIMIT_MEMLOCK, &curr_rlimit);
   if (rc < 0)
