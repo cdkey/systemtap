@@ -337,13 +337,7 @@ operator<< (std::ostream &o, const program &c)
 
 struct globals
 {
-  // This is an index within a numbered bpf_map.
-  typedef std::pair<unsigned short, unsigned short> map_slot;
-
-  // This associates a global variable with a given slot.
-  typedef std::unordered_map<vardecl *, map_slot> globals_map;
-
-  // This defines the shape of each bpf_map.
+  // The list of BPF maps used to store global data:
   struct bpf_map_def
   {
     unsigned type;
@@ -353,17 +347,56 @@ struct globals
     unsigned map_flags;
   };
   typedef std::vector<bpf_map_def> map_vect;
-
-  // The maps required by the bpf program, and how the global variables
-  // index into these maps.
   map_vect maps;
+
+  // Used to identify a numbered bpf_map (within map_vect):
+  using map_idx = int;
+
+  // How to locate a value within the maps, based on vardecl vd:
+  //
+  // (1) lookup globals_map[vd] --> yields map_slot ms
+  // (2) if ms.is_stat(), vd is an aggregate (scalar_stats, array_stats explained below)
+  //   - (s).count --> (scalar_stats['count'])[ms.this_idx][cpuid] if ms.is_scalar()
+  //   - (s[key]).count --> (array_stats[vd]['count'])[key][cpuid] otherwise
+  // (3) otherwise, vd is a regular value
+  //   - v --> (ms.this_map)[ms.this_idx] if ms.is_scalar()
+  //   - v[key] --> (ms.this_map)[key] otherwise
+  //
+  // Above, v is a regular value, s is a statistical aggregate.
+  // The indexing operations inside parens are performed at translation time,
+  // the indexing operations outside parens are performed at runtime.
+  //
+  // TODOXXX PR24424: For histogram data, the indexing scheme will be:
+  // - (s).histogram[n] --> (scalar_stats['histogram'])[ms.this_idx,n][cpuid]
+  // Here, map[idx,n] is map[idx << shift | n] (rudimentary multi-key map).
+  struct map_slot {
+    map_idx map_id; // -- -1 indicates is_stat()
+    int idx;        // -- -1 indicates !is_scalar()
+    bool is_scalar() { return idx >= 0; }
+    bool is_stat() { return map_id < 0; }
+    map_slot(map_idx map_id, int idx) : map_id(map_id), idx(idx) {}
+  };
+  typedef std::unordered_map<vardecl *, map_slot> globals_map;
   globals_map globals;
 
   bool empty() { return this->globals.empty(); }
 
+  // PR23476: Each statistical aggregate is represented by a percpu data structure
+  // with fields such as count, sum, ... (see struct stat_data in runtime/stat.h).
+  using stat_field = std::string; // XXX: could make an enum
+  static std::vector<stat_field> stat_fields; // XXX: initialized in bpf-translate.cxx
+  static stat_field stat_iter_field; // XXX: used to obtain keys for foreach, in, &c
+
+  // scalar_stats, array_stats: For each stats field, create one map
+  // for scalar aggregates, plus one map per one-dimensional array of
+  // aggregates.
+  typedef std::map<stat_field, map_idx> stats_map;
+  stats_map scalar_stats;
+  std::unordered_map<vardecl *, stats_map> array_stats;
+
   // Index into globals. This element represents the map of internal globals
   // used for sharing data between stapbpf and kernel-side bpf programs.
-  static const int internal_map_idx = 0;
+  static const map_idx internal_map_idx = 0;
 
   // Indicates whether exit() has been called from within a bpf program.
   struct vardecl internal_exit;
@@ -378,7 +411,7 @@ struct globals
   // PR22330: Index into globals. This element represents the
   // perf_event_map used to send messages from kernel-side bpf
   // programs to stapbpf.
-  static const int perf_event_map_idx = 1;
+  static const map_idx perf_event_map_idx = 1;
 
   // XXX: The number of elements for the perf_event_map is not known
   // at translation time and must be determined by the stapbpf loader:

@@ -861,6 +861,7 @@ program::mk_jcond(insn_inserter &ins, condition c, value *s0, value *s1,
 void
 program::load_map(insn_inserter &ins, value *dest, int src)
 {
+  assert (src >= 0); // PR23476: Ensure a stray stats reference doesn't slip through.
   insn *i = ins.new_insn();
   i->code = BPF_LD_MAP;
   i->dest = dest;

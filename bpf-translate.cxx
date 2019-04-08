@@ -493,11 +493,11 @@ bpf_unparser::emit_store(expression *e, value *val)
 
 	  key_ofs = val_ofs - 4;
 	  this_prog.mk_st(this_ins, BPF_W, frame, key_ofs,
-			  this_prog.new_imm(g->second.second));
+			  this_prog.new_imm(g->second.idx));
 	  this_prog.use_tmp_space(-key_ofs);
 
 	  this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1),
-			     g->second.first);
+			     g->second.map_id);
 	  this_prog.mk_binary(this_ins, BPF_ADD,
 			      this_prog.lookup_reg(BPF_REG_2),
 			      frame, this_prog.new_imm(key_ofs));
@@ -562,7 +562,7 @@ bpf_unparser::emit_store(expression *e, value *val)
 
           this_prog.use_tmp_space(-val_ofs);
 	  this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1),
-			     g->second.first);
+			     g->second.map_id);
           emit_mov(this_prog.lookup_reg(BPF_REG_4), this_prog.new_imm(0));
 	  this_prog.mk_call(this_ins, BPF_FUNC_map_update_elem, 4);
 	  return;
@@ -1572,7 +1572,7 @@ bpf_unparser::visit_foreach_loop(foreach_loop* s)
   if (g == glob.globals.end())
     throw SEMANTIC_ERROR(_("unknown array"), arraydecl->tok);
 
-  int map_id = g->second.first;
+  int map_id = g->second.map_id;
   value *limit = this_prog.new_reg();
   value *key = i->second;
   value *i0 = this_prog.new_imm(0);
@@ -1714,11 +1714,11 @@ bpf_unparser::visit_delete_statement (delete_statement *s)
 
 	  key_ofs = val_ofs - 4;
 	  this_prog.mk_st(this_ins, BPF_W, frame, key_ofs,
-			  this_prog.new_imm(g->second.second));
+			  this_prog.new_imm(g->second.idx));
 	  this_prog.use_tmp_space(-key_ofs);
 
 	  this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1),
-			     g->second.first);
+			     g->second.map_id);
 	  this_prog.mk_binary(this_ins, BPF_ADD,
 			      this_prog.lookup_reg(BPF_REG_2),
 			      frame, this_prog.new_imm(key_ofs));
@@ -1767,7 +1767,7 @@ bpf_unparser::visit_delete_statement (delete_statement *s)
 
           this_prog.use_tmp_space(-key_ofs);
 	  this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1),
-			     g->second.first);
+			     g->second.map_id);
 	  this_prog.mk_call(this_ins, BPF_FUNC_map_delete_elem, 2);
 	  return;
 	}
@@ -2025,6 +2025,10 @@ bpf_unparser::visit_assignment (assignment* e)
 {
   value *r = emit_expr (e->right);
 
+  if (e->op == "<<<")
+    // TODOXXX check e->type == pe_long, e->left->type == pe_stats, e->right->type == pe_long
+    throw SEMANTIC_ERROR(_("unhandled statistics aggregation"), e->tok);
+
   if (e->op != "=")
     {
       int code;
@@ -2129,11 +2133,11 @@ bpf_unparser::visit_symbol (symbol *s)
     {
       value *frame = this_prog.lookup_reg(BPF_REG_10);
       this_prog.mk_st(this_ins, BPF_W, frame, -4,
-		      this_prog.new_imm(g->second.second));
+		      this_prog.new_imm(g->second.idx));
       this_prog.use_tmp_space(4);
 
       this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1),
-			 g->second.first);
+			 g->second.map_id);
       this_prog.mk_binary(this_ins, BPF_ADD, this_prog.lookup_reg(BPF_REG_2),
 			  frame, this_prog.new_imm(-4));
       this_prog.mk_call(this_ins, BPF_FUNC_map_lookup_elem, 2);
@@ -2208,7 +2212,7 @@ bpf_unparser::visit_arrayindex(arrayindex *e)
 	}
 
       this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1),
-			 g->second.first);
+			 g->second.map_id);
 
       value *r0 = this_prog.lookup_reg(BPF_REG_0);
       value *i0 = this_prog.new_imm(0);
@@ -2275,7 +2279,7 @@ bpf_unparser::visit_array_in(array_in* e)
         }
 
       this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1),
-                         g->second.first);
+                         g->second.map_id);
       this_prog.mk_call(this_ins, BPF_FUNC_map_lookup_elem, 2);
 
       value *r0 = this_prog.lookup_reg(BPF_REG_0);
@@ -3146,6 +3150,19 @@ bpf_unparser::visit_print_format (print_format *e)
     result = retval;
 }
 
+
+// PR23476 List of percpu stat fields (see struct stat_data in runtime/stat.h).
+std::vector<globals::stat_field> globals::stat_fields {
+  "count", "sum", // for @count(), @sum(), @avg()
+  // TODO: also "shift"
+  // TODO: "min", "max", // for @min(), @max()
+  // TODO: "avg_s", "_M2", "variance", "variance_s", // for @variance()
+  // TODO: "histogram", // PR24424 for @hist_linear(), @hist_log()
+};
+
+// XXX Use the map for this field when iterating keys or testing inclusion:
+std::string globals::stat_iter_field = "count";
+
 // } // anon namespace
 
 void
@@ -3458,7 +3475,7 @@ output_maps(BPF_Output &eo, globals &glob)
       vardecl *v = i->first;
       if (v->arity <= 0)
 	continue;
-      unsigned m = i->second.first;
+      unsigned m = i->second.map_id; // TODOXXX handle is_stat();
       assert(eo.symbols[m] == NULL);
 
       BPF_Symbol *s = eo.new_sym(v->name, so, m * bpf_map_def_sz);
