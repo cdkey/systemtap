@@ -3230,49 +3230,112 @@ translate_globals (globals &glob, systemtap_session& s)
               this_idx = glob.maps[str_map].max_entries++;
               break;
 
-            // ??? pe_stats -> TODO (3) exists as a BPF_MAP_TYPE_PERCPU_ARRAY
+            case pe_stats:
+              if (glob.scalar_stats.empty())
+                {
+                  for (globals::stat_field f : globals::stat_fields)
+                    {
+                      globals::bpf_map_def m = {
+                        BPF_MAP_TYPE_PERCPU_ARRAY, 4, 8, 0, 0
+                      };
+                      globals::map_idx map_id = glob.maps.size();
+                      glob.maps.push_back(m);
+                      glob.scalar_stats[f] = map_id;
+                    }
+                  // ??? TODO: skip/drop any stat fields unused by all aggregates
+                  // TODO PR24424: special case for 'histogram' field
+                }
+              this_map = -1; // Mark as statistical aggregate.
+
+              // Add one element to each stat field's array:
+              this_idx = -1;
+              for (globals::stat_field f : globals::stat_fields)
+                {
+                  // XXX: Not all aggregates use the same stat
+                  // fields. Some slots may therefore be unused, but
+                  // it simplifies things a lot to use the same index
+                  // for all fields of an aggregate.
+                  int map_id = glob.scalar_stats[f];
+                  int check_idx = glob.maps[map_id].max_entries++;
+                  if (this_idx == -1)
+                    this_idx = check_idx;
+                  else
+                    assert(check_idx == this_idx); // XXX: All arrays same length.
+                }
+              assert(this_idx >= 0);
+              break;
+
 	    default:
 	      throw SEMANTIC_ERROR (_("unhandled scalar type"), v->tok);
 	    }
 	  break;
 
 	case 1: // single dimension array
-	  {
-	    globals::bpf_map_def m = { BPF_MAP_TYPE_HASH, 0, 0, 0, 0 };
-
-	    switch (v->index_types[0])
-	      {
-	      case pe_long:
-		m.key_size = 8;
-		break;
-              case pe_string:
-                m.key_size = BPF_MAXSTRINGLEN;
+          {
+            unsigned key_size;
+            unsigned max_entries;
+            switch (v->index_types[0])
+              {
+              case pe_long:
+                key_size = 8;
                 break;
-	      default:
-		throw SEMANTIC_ERROR (_("unhandled index type"), v->tok);
-	      }
-	    switch (v->type)
-	      {
-	      case pe_long:
-		m.value_size = 8;
-		break;
               case pe_string:
-                m.value_size = BPF_MAXSTRINGLEN;
+                key_size = BPF_MAXSTRINGLEN;
                 break;
-	      // ??? pe_stats -> TODO (3) map is BPF_MAP_TYPE_PERCPU_{HASH,ARRAY}, value_size is unknown
-	      default:
-		throw SEMANTIC_ERROR (_("unhandled array element type"), v->tok);
-	      }
+              default:
+                throw SEMANTIC_ERROR (_("unhandled index type"), v->tok);
+              }
+            max_entries = v->maxsize > 0 ? v->maxsize : BPF_MAXMAPENTRIES;
 
-	    m.max_entries = v->maxsize > 0 ? v->maxsize : BPF_MAXMAPENTRIES;
-	    this_map = glob.maps.size();
-	    glob.maps.push_back(m);
-	    this_idx = 0;
-	  }
+            if (v->type == pe_stats)
+              {
+                glob.array_stats[v] = globals::stats_map();
+                for (globals::stat_field f : globals::stat_fields)
+                  {
+                    globals::bpf_map_def m = {
+                      BPF_MAP_TYPE_PERCPU_HASH, 0, 0, 0, 0
+                    };
+                    m.key_size = key_size;
+                    m.max_entries = max_entries;
+                    m.value_size = 8; // XXX: for stat data, sizeof(uint64_t)
+                    int map_id = glob.maps.size();
+                    glob.maps.push_back(m);
+                    glob.array_stats[v][f] = map_id;
+                    // ??? TODO: skip/drop any stat fields unused by this aggregate
+                    // TODO PR24424: special case for 'histogram' field
+                  }
+
+                this_map = -1; // Mark as statistical aggregate.
+                this_idx = -1; // Mark as array.
+              }
+            else
+              {
+                globals::bpf_map_def m = { BPF_MAP_TYPE_HASH, 0, 0, 0, 0 };
+                m.key_size = key_size;
+
+                switch (v->type)
+                  {
+                  case pe_long:
+                    m.value_size = 8;
+                    break;
+                  case pe_string:
+                    m.value_size = BPF_MAXSTRINGLEN;
+                    break;
+                  // XXX: case pe_stats is handled above
+                  default:
+                    throw SEMANTIC_ERROR (_("unhandled array element type"), v->tok);
+                  }
+
+                m.max_entries = max_entries;
+                this_map = glob.maps.size();
+                glob.maps.push_back(m);
+                this_idx = -1; // TODOXXX: was 0, check if this is used correctly
+              }
+          }
 	  break;
 
 	default:
-	  // Multi-dimensional arrays not supported for now.
+	  // ??? Multi-dimensional arrays not supported for now.
 	  throw SEMANTIC_ERROR (_("unhandled multi-dimensional array"), v->tok);
 	}
 
@@ -3475,13 +3538,43 @@ output_maps(BPF_Output &eo, globals &glob)
       vardecl *v = i->first;
       if (v->arity <= 0)
 	continue;
-      unsigned m = i->second.map_id; // TODOXXX handle is_stat();
+      if (i->second.is_stat())
+        continue;
+      unsigned m = i->second.map_id;
       assert(eo.symbols[m] == NULL);
 
       BPF_Symbol *s = eo.new_sym(v->name, so, m * bpf_map_def_sz);
       s->sym.st_info = ELF64_ST_INFO(STB_LOCAL, STT_OBJECT);
       s->sym.st_size = bpf_map_def_sz;
       eo.symbols[m] = s;
+    }
+
+  // Give internal names to stat maps.
+  for (auto i = glob.scalar_stats.begin(); i != glob.scalar_stats.end(); ++i)
+    {
+      std::string f = i->first;
+      unsigned m = i->second;
+      assert(eo.symbols[m] == NULL);
+
+      BPF_Symbol *s = eo.new_sym(std::string("stat.") + f,
+                                 so, m * bpf_map_def_sz);
+      s->sym.st_info = ELF64_ST_INFO(STB_LOCAL, STT_OBJECT);
+      eo.symbols[m] = s;
+    }
+  for (auto i = glob.array_stats.begin(); i != glob.array_stats.end(); ++i)
+    {
+      vardecl *v = i->first;
+      for (auto j = i->second.begin(); j != i->second.end(); ++i)
+        {
+          std::string f = j->first;
+          unsigned m = j->second;
+          assert(eo.symbols[m] == NULL);
+
+          BPF_Symbol *s = eo.new_sym(std::string(v->name) + std::string(".stat.") + f,
+                                     so, m * bpf_map_def_sz);
+          s->sym.st_info = ELF64_ST_INFO(STB_LOCAL, STT_OBJECT);
+          eo.symbols[m] = s;
+        }
     }
 
   // Give internal names to other maps.
