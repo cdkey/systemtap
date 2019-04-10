@@ -305,8 +305,10 @@ void disable_kprobes_optimization()
          * 3.8.12 kernel. */
         if (0 && (uname (&uts) == 0) && (strverscmp (uts.release, "3.4") >= 0))
                 return;
-        /* Try again with F24 era kernels. */
-        if ((uname (&uts) == 0) && (strverscmp (uts.release, "4.8") >= 0))
+        /* Disable kprobes optimization due to problems seen on F29 5.0 kernel.
+           PR24416; RCU hang detection with uprobes_onthefly.exp. */
+        /* RHBZ1697531 - x86 kprobe optimization causes rcu hang */
+        if ((0 && uname (&uts) == 0) && (strverscmp (uts.release, "4.8") >= 0))
                 return;
 
         if (getenv ("STAP_PR13193_OVERRIDE"))
