@@ -1,0 +1,31 @@
+// PR23476 :: array-in and delete
+
+global count
+global a
+
+probe begin {
+  println("BEGIN")
+  count = 1
+}
+
+probe kernel.function("vfs_read") {
+  a[count] <<< 2*count
+  if (count % 2 == 0) delete a[count/2]
+  if (count++ > 10) exit()
+}
+
+probe end {
+  fail = 0
+  foreach (k+ in a) {
+    val = @sum(a[k])
+    printf("%d --> %d, ", k, val)
+    if (val != 2 * k) fail = 1
+  }
+  if (2 in a) fail = 1 // deleted earlier
+  if (!(10 in a)) fail = 1 // not deleted
+  printf("\n")
+  if (fail)
+    println("END FAIL")
+  else
+    println("END PASS")
+}

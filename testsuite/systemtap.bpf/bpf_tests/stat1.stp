@@ -1,0 +1,25 @@
+// PR23476 :: the most basic stat operations thinkable
+
+global s
+
+probe begin {
+  println("BEGIN")
+}
+
+probe kernel.function("vfs_read") {
+  s <<< 1
+  s <<< 2
+  s <<< 3
+  s <<< 10
+  s <<< 10
+  exit()
+}
+
+probe end {
+  count = @count(s); sum = @sum(s); avg = @avg(s)
+  printf("@count:%d, @sum:%d, @avg:%d\n", count, sum, avg)
+  if (count == 5 && sum == 26)
+    println("END PASS")
+  else
+    println("END FAIL")
+}
