@@ -222,6 +222,94 @@ bpf_sprintf(std::vector<std::string> &strings, char *fstr,
   return reinterpret_cast<uint64_t>(strings.back().c_str());
 }
 
+// Allocates and returns a buffer of percpu data for a stat field:
+uint64_t *
+stapbpf_stat_get_percpu(bpf::globals::map_idx map, uint64_t idx,
+                        bpf_transport_context *ctx)
+{
+  uint64_t *ret = (uint64_t *)calloc(ctx->ncpus, sizeof(uint64_t));
+  int res = bpf_lookup_elem((*ctx->map_fds)[map], as_ptr(idx), ret);
+  if (res)
+    // element could not be found
+    return 0;
+  else
+    return ret;
+}
+
+// XXX Based on _stp_stat_get in runtime/stat.c.
+// There might be a clever way to avoid code duplication later,
+// but right now the code format is too different. Just reimplement.
+uint64_t
+stapbpf_stat_get(bpf::globals::agg_idx agg_id, uint64_t idx,
+                 stat_component_type sc_op,
+                 bpf_transport_context *ctx)
+{
+  if (ctx->aggregates->find(agg_id) == ctx->aggregates->end())
+    // aggregate could not be found
+    abort();
+  bpf::globals::stats_map sd = (*ctx->aggregates)[agg_id];
+
+  // XXX Based on struct stat_data in runtime/stat.h:
+  struct stapbpf_stat_data {
+    int shift;
+    int64_t count;
+    int64_t sum;
+    int64_t avg_s;
+    // TODO PR23476: Add more fields.
+  } agg;
+  // TODO: Consider caching each agg for the duration of userspace program execution.
+
+  // Retrieve the fields that we are going to aggregate.
+  //
+  // XXX: This took a while to figure out.
+  // bpf_map_lookup_elem() for percpu map returns an array.
+  uint64_t *count_data = stapbpf_stat_get_percpu(sd["count"], idx, ctx);
+  uint64_t *sum_data = stapbpf_stat_get_percpu(sd["sum"], idx, ctx);
+
+  // TODO PR23476: Simplified code for now.
+  agg.shift = 0;
+  agg.count = 0;
+  agg.sum = 0;
+  for (unsigned i = 0; i < ctx->ncpus; i++) // XXX for_each_possible_cpu(i)
+  {
+    agg.count += count_data[i];
+    agg.sum += sum_data[i];
+  }
+
+  free(count_data);
+  free(sum_data);
+
+  // XXX Simplified version of _stp_div64():
+  if (agg.count == 0)
+    agg.avg_s = 0;
+  else
+    agg.avg_s = (agg.sum << agg.shift) / agg.count;
+
+  switch (sc_op)
+    {
+    case sc_average:
+      if (agg.count == 0)
+        abort(); // TODO: Should produce 'empty aggregate' error.
+      return agg.avg_s;
+
+    case sc_count:
+      return agg.count;
+
+    case sc_sum:
+      return agg.sum;
+
+    case sc_none:
+      assert(0); // should not happen, as sc_none is only used in foreach slots
+
+    // TODO PR23476: Not yet implemented.
+    case sc_min:
+    case sc_max:
+    case sc_variance:
+    default:
+      abort();
+    }
+}
+
 uint64_t
 bpf_ktime_get_ns()
 {
@@ -610,6 +698,10 @@ bpf_interpret(size_t ninsns, const struct bpf_insn insns[],
               dr = map_get_next_key(regs[1], regs[2], regs[3],
                                     regs[4], regs[5],
                                     ctx, keys[regs[1]]);
+              break;
+            case bpf::BPF_FUNC_stapbpf_stat_get:
+              dr = stapbpf_stat_get((bpf::globals::agg_idx)regs[1], regs[2],
+                                     bpf::globals::deintern_sc_type(regs[3]), ctx);
               break;
 	    default:
 	      abort();

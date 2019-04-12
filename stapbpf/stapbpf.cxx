@@ -101,6 +101,12 @@ static int perf_event_mmap_size;
 // Table of interned strings:
 static std::vector<std::string> interned_strings;
 
+// Table of map id's for statistical aggregates:
+static std::unordered_map<bpf::globals::agg_idx, bpf::globals::stats_map> aggregates;
+
+// XXX: Required static data and methods from bpf::globals, shared with translator.
+#include "../bpf-shared-globals.h"
+
 // Sized by the number of sections, so that we can easily
 // look them up by st_shndx.
 static std::vector<int> prog_fds;
@@ -1172,7 +1178,9 @@ init_perf_transport()
       perf_fds.push_back(pmu_fd);
 
       // Create a data structure to track what's happening on each CPU:
-      bpf_transport_context *ctx = new bpf_transport_context(cpu, pmu_fd, map_attrs, &map_fds, output_f, &interned_strings);
+      bpf_transport_context *ctx
+        = new bpf_transport_context(cpu, pmu_fd, ncpus, map_attrs, &map_fds,
+                                    output_f, &interned_strings, &aggregates);
       transport_contexts.push_back(ctx);
     }
 
@@ -1270,6 +1278,7 @@ load_bpf_file(const char *module)
   unsigned license_idx = 0;
   unsigned script_name_idx = 0;
   unsigned interned_strings_idx = 0;
+  unsigned aggregates_idx = 0;
   unsigned kprobes_idx = 0;
   unsigned begin_idx = 0;
   unsigned end_idx = 0;
@@ -1308,6 +1317,8 @@ load_bpf_file(const char *module)
 	script_name_idx = i;
       else if (strcmp(shname, "stapbpf_interned_strings") == 0)
         interned_strings_idx = i;
+      else if (strcmp(shname, "stapbpf_aggregates") == 0)
+        aggregates_idx = i;
       else if (strcmp(shname, "version") == 0)
 	version_idx = i;
       else if (strcmp(shname, "maps") == 0)
@@ -1361,6 +1372,26 @@ load_bpf_file(const char *module)
           else
             interned_strings.push_back(str);
           ofs += str.size() + 1;
+        }
+    }
+
+  // PR23476: Initialize table of statistical aggregates.
+  if (aggregates_idx != 0)
+    {
+      uint64_t *aggtab = static_cast<uint64_t *>(sh_data[aggregates_idx]->d_buf);
+      unsigned long long aggtab_size = shdrs[aggregates_idx]->sh_size;
+      unsigned ofs = 0; unsigned i = 0;
+      while (ofs < aggtab_size)
+        {
+          bpf::globals::agg_idx agg_id = (bpf::globals::agg_idx)aggtab[i];
+          bpf::globals::interned_stats_map ism;
+          for (unsigned j = 0; j < bpf::globals::stat_fields.size(); j++)
+            {
+              ism.push_back(aggtab[i+1+j]);
+            }
+          aggregates[agg_id] = bpf::globals::deintern_stats_map(ism);
+          i += 1 + bpf::globals::stat_fields.size();
+          ofs = sizeof(uint64_t) * i;
         }
     }
 
@@ -1693,9 +1724,10 @@ main(int argc, char **argv)
   init_perf_transport();
 
   // Create a bpf_transport_context for userspace programs:
-  bpf_transport_context uctx(0/*cpu*/, -1/*pmu_fd*/,
+  unsigned ncpus = map_attrs[bpf::globals::perf_event_map_idx].max_entries;
+  bpf_transport_context uctx(0/*cpu*/, -1/*pmu_fd*/, ncpus,
                              map_attrs, &map_fds, output_f,
-                             &interned_strings);
+                             &interned_strings, &aggregates);
 
   if (create_group_fds() < 0)
     fatal("Error creating perf event group: %s\n", strerror(errno));

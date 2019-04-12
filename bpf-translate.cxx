@@ -214,8 +214,8 @@ struct bpf_unparser : public throwing_visitor
   virtual void visit_arrayindex (arrayindex *e);
   virtual void visit_functioncall (functioncall* e);
   virtual void visit_print_format (print_format* e);
-  // TODO visit_stat_op -> (3) possibly userspace-only :: get the correct stat value out of BPF_MAP_TYPE_PERCPU_?
-  // TODO visit_hist_op -> implement as a userspace-only helper
+  virtual void visit_stat_op (stat_op* e);
+  virtual void visit_hist_op (hist_op* e);
   // visit_atvar_op -> ?? should already be handled in earlier pass
   // visit_cast_op -> ?? should already be handled in earlier pass
   // visit_autocast_op -> ?? should already be handled in earlier pass
@@ -233,6 +233,11 @@ struct bpf_unparser : public throwing_visitor
   void emit_mov(value *d, value *s);
   void emit_jmp(block *b);
   void emit_cond(expression *e, block *t, block *f);
+  void emit_statmap_lookup(value *dest, globals::map_idx map_id, value *idx);
+  void emit_statmap_update(globals::map_idx map_id, value *idx,
+                           int idx_ofs, value *val);
+  void emit_aggregation(vardecl *var, globals::map_slot& g, value *val,
+                        value *idx = NULL, int idx_ofs = 0);
   void emit_store(expression *dest, value *src);
   value *emit_expr(expression *e);
   value *emit_bool(expression *e);
@@ -457,6 +462,145 @@ bpf_unparser::emit_bool (expression *e)
   return r;
 }
 
+/* PR23476: Helpers for loading/storing long values in a stat field map.
+   Several of these map operations are issued for each stats operation,
+   so we avoid code duplication by taking an index already on the stack.
+
+   ??? These helpers could be used in other contexts than just stats. */
+
+void
+bpf_unparser::emit_statmap_lookup(value *dest, globals::map_idx map_id, value *idx)
+{
+  this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1), map_id);
+  emit_mov(this_prog.lookup_reg(BPF_REG_2), idx); // XXX idx stored by caller
+  this_prog.mk_call(this_ins, BPF_FUNC_map_lookup_elem, 2);
+
+  // Check for null pointer:
+  value *r0 = this_prog.lookup_reg(BPF_REG_0);
+  value *i0 = this_prog.new_imm(0);
+  block *cont_block = this_prog.new_block();
+  block *join_block = this_prog.new_block();
+
+  emit_mov(dest, i0); // default to a result of 0
+  this_prog.mk_jcond(this_ins, EQ, r0, i0, join_block, cont_block);
+
+  set_block(cont_block);
+  this_prog.mk_ld(this_ins, BPF_DW, dest, r0, 0);
+  emit_jmp(join_block);
+
+  set_block(join_block);
+}
+
+void
+bpf_unparser::emit_statmap_update(globals::map_idx map_id, value *idx,
+                                  int idx_ofs, value *val)
+{
+  int val_ofs = idx_ofs - 8;
+  if ((-val_ofs) % 8 != 0) // align to double-word
+    val_ofs -= 8 - (-val_ofs) % 8;
+  this_prog.use_tmp_space(-val_ofs);
+  this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1), map_id);
+  emit_mov(this_prog.lookup_reg(BPF_REG_2), idx); // XXX idx stored by caller
+  emit_long_arg(this_prog.lookup_reg(BPF_REG_3), val_ofs, val);
+  emit_mov(this_prog.lookup_reg(BPF_REG_4), this_prog.new_imm(0)); // TODO
+  this_prog.mk_call(this_ins, BPF_FUNC_map_update_elem, 4);
+}
+
+// XXX Based on __stap_stat_add in runtime/stat-common.c.
+// There might be a clever way to avoid code duplication later,
+// but right now the code format is too different. Just reimplement.
+void
+bpf_unparser::emit_aggregation(vardecl *var, globals::map_slot& ms,
+                               value *val, value *idx, int idx_ofs)
+{
+#ifdef DEBUG_CODEGEN
+  this_ins.notes.push("agg");
+#endif
+
+  // Obtain the correct stats_map and index:
+  assert (ms.is_stat());
+  globals::stats_map sd;
+  if (var->arity == 0)
+    {
+      assert (ms.is_scalar() && idx == NULL);
+
+      sd = glob.scalar_stats;
+
+      // idx is an offset into scalar stat field maps, store on the stack
+      value *frame = this_prog.lookup_reg(BPF_REG_10);
+      idx_ofs = -4; // BPF_W
+      this_prog.mk_st(this_ins, BPF_W, frame, idx_ofs,
+                      this_prog.new_imm(ms.idx));
+      this_prog.use_tmp_space(-idx_ofs);
+
+      idx = this_prog.new_reg();
+      this_prog.mk_binary(this_ins, BPF_ADD, idx,
+                          frame, this_prog.new_imm(idx_ofs));
+    }
+  else // var->arity > 0
+    {
+      assert (!ms.is_scalar());
+      assert (var->arity > 0 && idx != NULL);
+
+      auto it = glob.array_stats.find(var);
+      assert (it != glob.array_stats.end()); // XXX: should check earlier
+      sd = it->second;
+
+      // idx is a value stored on the stack
+    }
+
+  for (auto f : globals::stat_fields)
+    assert(sd.find(f) != sd.end());
+
+  // TODO PR23476: Emit simplified code for now.
+  //
+  // ??? lock stat
+  // if (idx not in sd[stat_iter_field] || sd->count == 0) {
+  //   sd->count = 1;
+  //   sd->sum = val;
+  // } else {
+  //   if(stat_op_count) sd->count++;
+  //   if(stat_op_sum) sd->sum += val;
+  // }
+  // ??? unlock stat
+
+  block *then_block = this_prog.new_block ();
+  block *else_block = this_prog.new_block ();
+  block *join_block = this_prog.new_block ();
+
+  value *tmp = this_prog.new_reg();
+
+  emit_statmap_lookup(tmp, sd["count"], idx);
+  this_prog.mk_jcond (this_ins, EQ, tmp, this_prog.new_imm(0),
+                      then_block, else_block);
+
+  set_block (then_block);
+  emit_statmap_update(sd["count"], idx, idx_ofs, this_prog.new_imm(1));
+  emit_statmap_update(sd["sum"], idx, idx_ofs, val);
+  emit_jmp (join_block);
+
+  set_block (else_block);
+  if (1) // TODO: if (stat_op_count)
+    {
+      emit_statmap_lookup(tmp, sd["count"], idx);
+      this_prog.mk_binary(this_ins, BPF_ADD, tmp, tmp, this_prog.new_imm(1));
+      emit_statmap_update(sd["count"], idx, idx_ofs, tmp);
+    }
+  if (1) // TODO: if (stat_op_sum)
+    {
+      emit_statmap_lookup(tmp, sd["sum"], idx);
+      this_prog.mk_binary(this_ins, BPF_ADD, tmp, tmp, val);
+      emit_statmap_update(sd["sum"], idx, idx_ofs, tmp);
+    }
+  emit_jmp (join_block);
+
+  set_block(join_block);
+
+#ifdef DEBUG_CODEGEN
+  this_ins.notes.pop();
+#endif
+}
+
 void
 bpf_unparser::emit_store(expression *e, value *val)
 {
@@ -486,7 +630,12 @@ bpf_unparser::emit_store(expression *e, value *val)
               emit_str_arg(this_prog.lookup_reg(BPF_REG_3), val_ofs, val);
               this_prog.use_tmp_space(BPF_MAXSTRINGLEN);
               break;
-	    // ??? pe_stats -> TODO (3) unknown (but stats could be implemented as BPF_MAP_TYPE_PERCPU_ARRAY)
+
+            case pe_stats:
+              // Emit separate code to update stat fields:
+              emit_aggregation(var, g->second, val);
+              return;
+
 	    default:
 	      goto err;
 	    }
@@ -496,6 +645,7 @@ bpf_unparser::emit_store(expression *e, value *val)
 			  this_prog.new_imm(g->second.idx));
 	  this_prog.use_tmp_space(-key_ofs);
 
+          // XXX g->second.is_stat() handled above
 	  this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1),
 			     g->second.map_id);
 	  this_prog.mk_binary(this_ins, BPF_ADD,
@@ -556,11 +706,23 @@ bpf_unparser::emit_store(expression *e, value *val)
               emit_str_arg(this_prog.lookup_reg(BPF_REG_3), val_ofs, val);
               this_prog.use_tmp_space(BPF_MAXSTRINGLEN);
               break;
+            case pe_stats:
+              // Emit separate code to update stat fields:
+              {
+                value *idx = this_prog.new_reg();
+                value *frame = this_prog.lookup_reg(BPF_REG_10);
+                this_prog.mk_binary(this_ins, BPF_ADD, idx,
+                                    frame, this_prog.new_imm(key_ofs));
+                this_prog.use_tmp_space(-key_ofs);
+                emit_aggregation(v, g->second, val, idx, key_ofs);
+              }
+              return;
 	    default:
 	      throw SEMANTIC_ERROR(_("unhandled array type"), v->tok);
 	    }
 
           this_prog.use_tmp_space(-val_ofs);
+          // XXX g->second.is_stat() handled above
 	  this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1),
 			     g->second.map_id);
           emit_mov(this_prog.lookup_reg(BPF_REG_4), this_prog.new_imm(0));
@@ -1573,6 +1735,9 @@ bpf_unparser::visit_foreach_loop(foreach_loop* s)
     throw SEMANTIC_ERROR(_("unknown array"), arraydecl->tok);
 
   int map_id = g->second.map_id;
+  if (g->second.is_stat())
+    throw SEMANTIC_ERROR(_("unhandled foreach over stats arrays"), s->tok);
+
   value *limit = this_prog.new_reg();
   value *key = i->second;
   value *i0 = this_prog.new_imm(0);
@@ -1708,6 +1873,7 @@ bpf_unparser::visit_delete_statement (delete_statement *s)
 				  frame, this_prog.new_imm(val_ofs));
 	      break;
 	    // ??? pe_string -> (2) TODO delete ref (but leave the storage for later cleanup of the entire containing struct?)
+            // ??? pe_stats -> TODOXXX
 	    default:
 	      goto err;
 	    }
@@ -1717,6 +1883,7 @@ bpf_unparser::visit_delete_statement (delete_statement *s)
 			  this_prog.new_imm(g->second.idx));
 	  this_prog.use_tmp_space(-key_ofs);
 
+          // TODOXXX Handle map_id < 0 for pe_stats, or assert otherwise.
 	  this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1),
 			     g->second.map_id);
 	  this_prog.mk_binary(this_ins, BPF_ADD,
@@ -1765,6 +1932,7 @@ bpf_unparser::visit_delete_statement (delete_statement *s)
 	      throw SEMANTIC_ERROR(_("unhandled index type"), e->tok);
 	    }
 
+          // TODOXXX: Handle map_id < 0 for pe_stats or assert otherwise.
           this_prog.use_tmp_space(-key_ofs);
 	  this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1),
 			     g->second.map_id);
@@ -2026,10 +2194,8 @@ bpf_unparser::visit_assignment (assignment* e)
   value *r = emit_expr (e->right);
 
   if (e->op == "<<<")
-    // TODOXXX check e->type == pe_long, e->left->type == pe_stats, e->right->type == pe_long
-    throw SEMANTIC_ERROR(_("unhandled statistics aggregation"), e->tok);
-
-  if (e->op != "=")
+    ; // XXX: handled by emit_store(), which checks for statistics lvalue
+  else if (e->op != "=")
     {
       int code;
       if (e->op == "+=")
@@ -2131,6 +2297,9 @@ bpf_unparser::visit_symbol (symbol *s)
   auto g = glob.globals.find (v);
   if (g != glob.globals.end())
     {
+      if (g->second.is_stat())
+        throw SEMANTIC_ERROR (_("unhandled statistics variable"), s->tok); // TODOXXX PR23476
+
       value *frame = this_prog.lookup_reg(BPF_REG_10);
       this_prog.mk_st(this_ins, BPF_W, frame, -4,
 		      this_prog.new_imm(g->second.idx));
@@ -2193,6 +2362,9 @@ bpf_unparser::visit_arrayindex(arrayindex *e)
       auto g = glob.globals.find(v);
       if (g == glob.globals.end())
 	throw SEMANTIC_ERROR(_("unknown array variable"), v->tok);
+
+      if (g->second.is_stat())
+        throw SEMANTIC_ERROR (_("unhandled statistics variable"), v->tok); // TODOXXX PR23476
 
       value *idx = emit_expr(e->indexes[0]);
       switch (v->index_types[0])
@@ -2278,6 +2450,7 @@ bpf_unparser::visit_array_in(array_in* e)
           throw SEMANTIC_ERROR(_("unhandled index type"), e->tok);
         }
 
+      // TODOXXX: Handle map_id < 0 for pe_stats or assert otherwise.
       this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1),
                          g->second.map_id);
       this_prog.mk_call(this_ins, BPF_FUNC_map_lookup_elem, 2);
@@ -3132,6 +3305,7 @@ bpf_unparser::visit_print_format (print_format *e)
 	    case pe_long:
 	      format += "%lld";
 	      break;
+
 	    case pe_string:
 	      format += "%s";
 	      break;
@@ -3150,18 +3324,122 @@ bpf_unparser::visit_print_format (print_format *e)
     result = retval;
 }
 
+// XXX: Required static data and methods from bpf::globals, shared with stapbpf.
+#include "bpf-shared-globals.h"
 
-// PR23476 List of percpu stat fields (see struct stat_data in runtime/stat.h).
-std::vector<globals::stat_field> globals::stat_fields {
-  "count", "sum", // for @count(), @sum(), @avg()
-  // TODO: also "shift"
-  // TODO: "min", "max", // for @min(), @max()
-  // TODO: "avg_s", "_M2", "variance", "variance_s", // for @variance()
-  // TODO: "histogram", // PR24424 for @hist_linear(), @hist_log()
-};
+void
+bpf_unparser::visit_stat_op (stat_op* e)
+{
+#ifdef DEBUG_CODEGEN
+  this_ins.notes.push("stat_get");
+#endif
 
-// XXX Use the map for this field when iterating keys or testing inclusion:
-std::string globals::stat_iter_field = "count";
+  // XXX: This code is userspace-only. Unfortunately, BPF does
+  // not allow accessing percpu map elements from other cpus in
+  // kernel-space, so for now we will just issue a fake helper call
+  // and let the userspace sort this out.
+  //
+  // "I don't see a case where accessing other cpu per-cpu element
+  // wouldn't be a bug in the program."
+  // https://lore.kernel.org/patchwork/patch/634595/
+
+  switch (e->ctype)
+    {
+    case sc_average:
+    case sc_count:
+    case sc_sum:
+      break; // ok to pass to the helper
+
+    case sc_none:
+      assert (0); // should not happen, as sc_none is only used in foreach slots
+
+    // TODO PR23476: Not yet implemented.
+    case sc_min:
+    case sc_max:
+    case sc_variance:
+    default:
+      throw SEMANTIC_ERROR (_("unhandled stat op"), e->tok);
+    }
+
+  // identify the aggregate for the userspace interpreter
+  globals::agg_idx agg = 0;
+
+  if (symbol *s = dynamic_cast<symbol *>(e->stat)) // scalar stat value
+    {
+      vardecl *v = s->referent;
+      assert (v->arity == 0);
+      agg = 0; // id for scalar stat value
+
+      if (v->type != pe_stats)
+        throw SEMANTIC_ERROR (_("unexpected aggregate of non-statistic"), v->tok);
+
+      auto g = glob.globals.find (v);
+      if (g == glob.globals.end())
+        throw SEMANTIC_ERROR(_("unknown statistics variable"), v->tok);
+      if (!g->second.is_stat())
+        throw SEMANTIC_ERROR(_("not a statistics variable"), v->tok);
+
+      // Store the long on the stack and pass its address:
+      emit_long_arg(this_prog.lookup_reg(BPF_REG_2), -8,
+                    this_prog.new_imm(g->second.idx));
+      this_prog.use_tmp_space(8);
+    }
+  else if (arrayindex *a = dynamic_cast<arrayindex *>(e->stat)) // array stat value
+    {
+      if (symbol *a_sym = dynamic_cast<symbol *>(a->base))
+        {
+          vardecl *v = a_sym->referent;
+          agg = glob.aggregates[v]; // id for array stat value
+
+          if (v->arity != 1)
+	    throw SEMANTIC_ERROR(_("unhandled multi-dimensional array"), v->tok);
+
+	  auto g = glob.globals.find(v);
+	  if (g == glob.globals.end())
+	    throw SEMANTIC_ERROR(_("unknown array variable"), v->tok);
+
+          value *idx = emit_expr(a->indexes[0]);
+          switch (v->index_types[0])
+            {
+            case pe_long:
+              // Store the long on the stack and pass its address:
+              emit_long_arg(this_prog.lookup_reg(BPF_REG_2), -8, idx);
+              this_prog.use_tmp_space(8);
+              break;
+            case pe_string:
+              // Zero-pad and copy the string to the stack and pass its address:
+              emit_str_arg(this_prog.lookup_reg(BPF_REG_2), -BPF_MAXSTRINGLEN, idx);
+              this_prog.use_tmp_space(BPF_MAXSTRINGLEN);
+              break;
+            default:
+              throw SEMANTIC_ERROR(_("unhandled index type"), v->tok);
+            }
+        }
+      else
+        throw SEMANTIC_ERROR(_("unknown statistics value"), e->stat->tok);
+    }
+
+  emit_mov(this_prog.lookup_reg(BPF_REG_1), this_prog.new_imm(agg)); // agg_idx
+
+  uint64_t sc_type = globals::intern_sc_type(e->ctype);
+  emit_mov(this_prog.lookup_reg(BPF_REG_3), this_prog.new_imm(sc_type));
+
+  this_prog.mk_call (this_ins, BPF_FUNC_stapbpf_stat_get, 3);
+
+  result = this_prog.new_reg();
+  emit_mov(result, this_prog.lookup_reg(BPF_REG_0));
+
+#ifdef DEBUG_CODEGEN
+  this_ins.notes.pop();
+#endif
+}
+
+void
+bpf_unparser::visit_hist_op (hist_op *e)
+{
+  // TODO PR24424: Implement as a perf-request or as a userspace-only helper.
+  throw SEMANTIC_ERROR (_("unhandled hist op"), e->tok);
+}
 
 // } // anon namespace
 
@@ -3301,6 +3579,11 @@ translate_globals (globals &glob, systemtap_session& s)
                     int map_id = glob.maps.size();
                     glob.maps.push_back(m);
                     glob.array_stats[v][f] = map_id;
+
+                    // Assign an agg_idx to identify the aggregate from BPF code.
+                    // XXX: agg_idx 0 is reserved for scalar_stats:
+                    glob.aggregates[v] = 1 + glob.aggregates.size();
+
                     // ??? TODO: skip/drop any stat fields unused by this aggregate
                     // TODO PR24424: special case for 'histogram' field
                   }
@@ -3630,6 +3913,49 @@ output_interned_strings(BPF_Output &eo, globals& glob)
   data->d_size = interned_strings_len;
   str->free_data = true;
   str->shdr->sh_type = SHT_PROGBITS;
+}
+
+static void
+output_statsmap(void *d_buf, globals::agg_idx agg_id, const globals::stats_map &sm)
+{
+  globals::interned_stats_map ism = globals::intern_stats_map(sm);
+  uint64_t *ix = (uint64_t *)d_buf;
+  *ix = (uint64_t)agg_id;
+  for (unsigned i = 0; i < globals::stat_fields.size(); i++)
+    {
+      globals::stat_field sf = globals::stat_fields[i];
+      auto it = sm.find(sf);
+      assert (it != sm.end());
+      ix++; *ix = (uint64_t)it->second;
+    }
+}
+
+static void
+output_interned_aggregates(BPF_Output &eo, globals& glob)
+{
+  if (glob.scalar_stats.empty() && glob.aggregates.size() == 0)
+    return;
+
+  BPF_Section *agg = eo.new_scn("stapbpf_aggregates");
+  Elf_Data *data = agg->data;
+  size_t interned_aggregate_len =
+    sizeof(uint64_t) * (1 + globals::stat_fields.size());
+  data->d_buf = (void *)calloc(glob.aggregates.size() + 1, interned_aggregate_len);
+  data->d_size = interned_aggregate_len * (glob.aggregates.size() + 1);
+  output_statsmap(data->d_buf, 0, glob.scalar_stats);
+  char *ix = (char *)data->d_buf;
+  size_t ofs = interned_aggregate_len; // XXX after glob.scalar_stats
+  for (auto i = glob.aggregates.begin();
+       i != glob.aggregates.end(); i++)
+    {
+      ofs += interned_aggregate_len;
+      assert(glob.array_stats.count(i->first) != 0);
+      output_statsmap((void *)(ix+ofs), i->second, glob.array_stats[i->first]);
+    }
+  assert (ofs == data->d_size);
+  data->d_type = ELF_T_BYTE;
+  agg->free_data = true;
+  agg->shdr->sh_type = SHT_PROGBITS;
 }
 
 void
@@ -4065,6 +4391,7 @@ translate_bpf_pass (systemtap_session& s)
       output_license(eo);
       output_stapbpf_script_name(eo, escaped_literal_string(s.script_basename()));
       output_interned_strings(eo, glob);
+      output_interned_aggregates(eo, glob);
       output_symbols_sections(eo);
 
       int64_t r = elf_update(eo.elf, ELF_C_WRITE_MMAP);

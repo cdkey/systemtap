@@ -144,9 +144,11 @@ const opcode BPF_LD_MAP = BPF_LD | BPF_IMM | BPF_DW | (BPF_PSEUDO_MAP_FD << 8);
 // real BPF helpers.
 #define __STAPBPF_FUNC_MAPPER(FN) \
   FN(map_get_next_key),           \
-  FN(sprintf),
+  FN(sprintf),                    \
+  FN(stapbpf_stat_get),
 const bpf_func_id BPF_FUNC_map_get_next_key    = (bpf_func_id) -1;
 const bpf_func_id BPF_FUNC_sprintf             = (bpf_func_id) -2;
+const bpf_func_id BPF_FUNC_stapbpf_stat_get    = (bpf_func_id) -3;
 
 
 struct insn
@@ -393,6 +395,27 @@ struct globals
   typedef std::map<stat_field, map_idx> stats_map;
   stats_map scalar_stats;
   std::unordered_map<vardecl *, stats_map> array_stats;
+
+  // XXX: Used to store stats_map elements in a canonical order for serialization:
+  typedef std::vector<map_idx> interned_stats_map;
+  static interned_stats_map intern_stats_map(const stats_map &sm);
+  static stats_map deintern_stats_map(const interned_stats_map &ism);
+
+  // XXX: Used to identify stat_component_types within BPF code:
+  static uint64_t intern_sc_type(stat_component_type sc_type) {
+    return (uint64_t)sc_type;
+  }
+  static stat_component_type deintern_sc_type(uint64_t x) {
+    return (stat_component_type)x;
+  }
+
+  // To pass stats_map information to the bpf userspace helper,
+  // assign each stats_map a numerical 'agg_idx'. Index 0 is reserved
+  // for scalar_stats, other stats_maps are given consecutive indices:
+  using agg_idx = int;
+  std::unordered_map<vardecl *, agg_idx> aggregates;
+
+  // The .bo ELF file will have a section (agg_idx -> interned_stats_map).
 
   // Index into globals. This element represents the map of internal globals
   // used for sharing data between stapbpf and kernel-side bpf programs.

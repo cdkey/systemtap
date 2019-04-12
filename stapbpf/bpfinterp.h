@@ -39,11 +39,13 @@ struct bpf_transport_context {
   int pmu_fd;
 
   // References to global state:
+  unsigned ncpus;
   bpf_map_def *map_attrs;
   std::vector<int> *map_fds;
   FILE *output_f;
   std::vector<std::string> *interned_strings;
-  // XXX: Could be refactored into a single global struct.
+  std::unordered_map<bpf::globals::agg_idx, bpf::globals::stats_map> *aggregates;
+  // XXX: Could be refactored into a single global struct bpf_global_context.
 
   // Data for an in-progress printf request:
   bool in_printf;
@@ -52,14 +54,17 @@ struct bpf_transport_context {
   std::vector<void *> printf_args;
   std::vector<bpf::globals::perf_event_type> printf_arg_types; // either ..ARG_LONG or ..ARG_STR
 
-  bpf_transport_context(unsigned cpu, int pmu_fd,
+  // TODO: Takes a lot of arguments. Refactor to be less unwieldy.
+  bpf_transport_context(unsigned cpu, int pmu_fd, unsigned ncpus,
                         bpf_map_def *map_attrs,
                         std::vector<int> *map_fds,
                         FILE *output_f,
-                        std::vector<std::string> *interned_strings)
-    : cpu(cpu), pmu_fd(pmu_fd),
+                        std::vector<std::string> *interned_strings,
+                        std::unordered_map<bpf::globals::agg_idx,
+                                           bpf::globals::stats_map> *aggregates)
+    : cpu(cpu), pmu_fd(pmu_fd), ncpus(ncpus),
       map_attrs(map_attrs), map_fds(map_fds), output_f(output_f),
-      interned_strings(interned_strings),
+      interned_strings(interned_strings), aggregates(aggregates),
       in_printf(false), format_no(-1), expected_args(0) {}
 };
 
