@@ -380,6 +380,8 @@ compile_pass (systemtap_session& s)
                   "STAPCONF_KERNEL_UNWIND_STACK", NULL);
   output_autoconf(s, o, "autoconf-asm-syscall.c",
 		  "STAPCONF_ASM_SYSCALL_H", NULL);
+  output_autoconf(s, o, "autoconf-syscall_get_args_3args.c",
+		  "STAPCONF_SYSCALL_GET_ARGS_3ARGS", NULL);
   output_autoconf(s, o, "autoconf-ring_buffer-flags.c", "STAPCONF_RING_BUFFER_FLAGS", NULL);
   output_autoconf(s, o, "autoconf-ring_buffer_lost_events.c", "STAPCONF_RING_BUFFER_LOST_EVENTS", NULL);
   output_autoconf(s, o, "autoconf-ring_buffer_read_prepare.c", "STAPCONF_RING_BUFFER_READ_PREPARE", NULL);

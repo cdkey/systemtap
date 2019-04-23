@@ -185,6 +185,16 @@ _stp_syscall_get_nr(struct task_struct *task, struct pt_regs *regs)
 #define _stp_syscall_get_nr syscall_get_nr
 #endif
 
+/* The syscall_get_arguments function arguments changed due to
+ * Linux git commit 32d9258662.  Removed the unused arguments
+ * to match the expect arguments for syscall_get_arguments when needed.
+ */
+#ifdef STAPCONF_SYSCALL_GET_ARGS_3ARGS
+#define _stp_syscall_get_arguments(t,r,i,n,a) syscall_get_arguments(t,r,a)
+#else
+#define _stp_syscall_get_arguments(t,r,i,n,a) syscall_get_arguments(t,r,i,n,a)
+#endif
+
 #else  /* !STAPCONF_ASM_SYSCALL_H */
 
 /* If the system doesn't have asm/syscall.h, use our defines. */
@@ -317,9 +327,10 @@ syscall_get_return_value(struct task_struct *task, struct pt_regs *regs)
 }
 
 #endif
+
 #if defined(__i386__) || defined(__x86_64__)
 static inline void
-syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
+_stp_syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
 		      unsigned int i, unsigned int n, unsigned long *args)
 {
 	if (i + n > 6) {
@@ -427,7 +438,7 @@ syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
 
 #if defined(__powerpc__)
 static inline void
-syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
+_stp_syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
 		      unsigned int i, unsigned int n, unsigned long *args)
 {
 	if (i + n > 6) {
@@ -531,7 +542,7 @@ void ia64_syscall_get_set_arguments(struct task_struct *task,
 	}
 }
 
-static inline void syscall_get_arguments(struct task_struct *task,
+static inline void _stp_syscall_get_arguments(struct task_struct *task,
 					 struct pt_regs *regs,
 					 unsigned int i, unsigned int n,
 					 unsigned long *args)
@@ -575,7 +586,7 @@ static inline void syscall_get_arguments(struct task_struct *task,
 
 #if defined(__s390__) || defined(__s390x__)
 static inline void
-syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
+_stp_syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
 		      unsigned int i, unsigned int n, unsigned long *args)
 {
 	unsigned long mask = -1UL;
@@ -613,7 +624,7 @@ syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
 
 #if defined(__arm__)
 static inline void
-syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
+_stp_syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
 		      unsigned int i, unsigned int n, unsigned long *args)
 {
 	if (i + n > 6) {

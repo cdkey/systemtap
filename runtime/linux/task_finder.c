@@ -1504,11 +1504,11 @@ __stp_utrace_task_finder_target_syscall_entry(enum utrace_resume_action action,
 	// any arguments.
 	if (is_munmap) {
 		// We need 2 arguments for munmap()
-		syscall_get_arguments(tsk, regs, 0, 2, args);
+		_stp_syscall_get_arguments(tsk, regs, 0, 2, args);
 	}
 	else if (is_mprotect) {
 		// We need 3 arguments for mprotect()
-		syscall_get_arguments(tsk, regs, 0, 3, args);
+		_stp_syscall_get_arguments(tsk, regs, 0, 3, args);
 	}
 
 	// Remember the syscall information
