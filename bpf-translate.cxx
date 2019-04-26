@@ -3658,7 +3658,18 @@ output_probe(BPF_Output &eo, program &prog,
 	  else
 	    {
 	      if (j->is_jmp())
-		j->off = b->taken->next->first->id - (j->id + 1);
+                {
+                  // ??? Forwarders should be removed by bpf-opt.cxx thread_jumps,
+                  // but we seem to miss or reintroduce a few. Minimal fix:
+                  block *target = b->taken->next;
+                  while (target->first == NULL)
+                    {
+                      target = target->is_forwarder();
+                      assert (target != NULL);
+                    }
+
+                  j->off = target->first->id - (j->id + 1);
+                }
 	      else if (j->is_call())
 		j->off = 0;
 	      ninsns += 1;
