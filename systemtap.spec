@@ -257,8 +257,8 @@ License: GPLv2+
 URL: http://sourceware.org/systemtap/
 
 %if 0%{?rhel} >= 8 || 0%{?fedora} >= 20
-Recommends: kernel-debug-devel
-Recommends: kernel-devel
+Recommends: (kernel-debug-devel if kernel-debug)
+Recommends: (kernel-devel if kernel)
 %else
 Requires: kernel-devel-uname-r
 %endif
