@@ -2,6 +2,10 @@
 
 - Runtime/tapsets were ported to include up to kernel version PRERELEASE
 
+- The translator's pass-2 (elaboration) phase has been dramatically
+  accelerated by eschewing processing of unreferenced parts of the
+  tapset and embedded-C code.
+
 - New macors @this1, ..., @this8 have been added to the script language.
   The macros can be used to save values in entry probes and later retrieve
   them in return probes. This can be used in instances where @entry does
