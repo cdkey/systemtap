@@ -1394,7 +1394,7 @@ __stp_utrace_task_finder_target_syscall_entry(u32 action,
 	struct task_struct *tsk = current;
 	struct stap_task_finder_target *tgt = engine->data;
 	long syscall_no;
-	unsigned long args[3] = { 0L };
+	unsigned long args[8] = { 0L }; /* large enough for syscall_get_arguments() target */
 	int rc;
 	int is_mmap_or_mmap2 = 0;
 	int is_mprotect = 0;
