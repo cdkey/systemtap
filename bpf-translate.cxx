@@ -48,6 +48,9 @@ typedef Ebl_Strtab Stap_Strtab;
 #include <asm/ptrace.h>
 }
 
+// XXX: Required static data and methods from bpf::globals, shared with stapbpf.
+#include "bpf-shared-globals.h"
+
 #ifndef EM_BPF
 #define EM_BPF  0xeb9f
 #endif
@@ -3323,9 +3326,6 @@ bpf_unparser::visit_print_format (print_format *e)
   if (retval != NULL)
     result = retval;
 }
-
-// XXX: Required static data and methods from bpf::globals, shared with stapbpf.
-#include "bpf-shared-globals.h"
 
 void
 bpf_unparser::visit_stat_op (stat_op* e)
