@@ -3853,7 +3853,7 @@ output_maps(BPF_Output &eo, globals &glob)
   for (auto i = glob.array_stats.begin(); i != glob.array_stats.end(); ++i)
     {
       vardecl *v = i->first;
-      for (auto j = i->second.begin(); j != i->second.end(); ++i)
+      for (auto j = i->second.begin(); j != i->second.end(); ++j)
         {
           std::string f = j->first;
           unsigned m = j->second;
