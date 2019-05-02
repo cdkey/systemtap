@@ -31,7 +31,7 @@
 
 
 #define check_fetch_register(regs,regno,maxregno,fn) ({		            \
-  if (regs == 0 || regno < 0 || regno > maxregno) {                         \
+  if ((regs) == 0 || (regno) < 0 || (regno) > (maxregno)) {		    \
         snprintf(c->error_buffer, sizeof(c->error_buffer),		    \
 		 STAP_MSG_LOC2C_04); 					    \
     c->last_error = c->error_buffer;					    \
@@ -41,7 +41,7 @@
 })
     
 #define check_store_register(regs,regno,maxregno,value,fn) do {		    \
-  if (regs == 0 || regno < 0 || regno > maxregno) {                         \
+  if ((regs) == 0 || (regno) < 0 || (regno) > (maxregno)) {		    \
         snprintf(c->error_buffer, sizeof(c->error_buffer),		    \
 		 STAP_MSG_LOC2C_04); 					    \
     c->last_error = c->error_buffer;					    \
