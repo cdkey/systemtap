@@ -1886,7 +1886,9 @@ bpf_unparser::visit_delete_statement (delete_statement *s)
 			  this_prog.new_imm(g->second.idx));
 	  this_prog.use_tmp_space(-key_ofs);
 
-          // TODOXXX Handle map_id < 0 for pe_stats, or assert otherwise.
+          // TODO: Handle map_id < 0 for pe_stats, or assert otherwise.
+          if (g->second.map_id < 0)
+            throw SEMANTIC_ERROR (_("unsupported delete operation on statistics aggregate"), s->tok); // TODOXXX PR23476
 	  this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1),
 			     g->second.map_id);
 	  this_prog.mk_binary(this_ins, BPF_ADD,
@@ -1935,7 +1937,9 @@ bpf_unparser::visit_delete_statement (delete_statement *s)
 	      throw SEMANTIC_ERROR(_("unhandled index type"), e->tok);
 	    }
 
-          // TODOXXX: Handle map_id < 0 for pe_stats or assert otherwise.
+          // TODO: Handle map_id < 0 for pe_stats or assert otherwise.
+          if (g->second.map_id < 0)
+            throw SEMANTIC_ERROR (_("unsupported delete operation on statistics aggregate"), s->tok); // TODOXXX PR23476
           this_prog.use_tmp_space(-key_ofs);
 	  this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1),
 			     g->second.map_id);
@@ -2453,7 +2457,9 @@ bpf_unparser::visit_array_in(array_in* e)
           throw SEMANTIC_ERROR(_("unhandled index type"), e->tok);
         }
 
-      // TODOXXX: Handle map_id < 0 for pe_stats or assert otherwise.
+      // TODO: Handle map_id < 0 for pe_stats or assert otherwise.
+      if (g->second.map_id < 0)
+        throw SEMANTIC_ERROR (_("unsupported delete operation on statistics aggregate"), s->tok); // TODOXXX PR23476
       this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1),
                          g->second.map_id);
       this_prog.mk_call(this_ins, BPF_FUNC_map_lookup_elem, 2);
@@ -3612,7 +3618,7 @@ translate_globals (globals &glob, systemtap_session& s)
                 m.max_entries = max_entries;
                 this_map = glob.maps.size();
                 glob.maps.push_back(m);
-                this_idx = -1; // TODOXXX: was 0, check if this is used correctly
+                this_idx = -1; // XXX: was 0, check if this is used correctly
               }
           }
 	  break;
