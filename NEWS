@@ -6,7 +6,7 @@
   accelerated by eschewing processing of unreferenced parts of the
   tapset and embedded-C code.
 
-- New macors @this1, ..., @this8 have been added to the script language.
+- New macros @this1, ..., @this8 have been added to the script language.
   The macros can be used to save values in entry probes and later retrieve
   them in return probes. This can be used in instances where @entry does
   not work. For example:
@@ -21,7 +21,7 @@
      }
 
 - Operator @var() no longer assumes @entry() in return probes.
-  THe old behavior can be restored by the '--compatible 4.0' option.
+  The old behavior can be restored by the '--compatible 4.0' option.
 
 * What's new in version 4.0, 2018-10-13
 
