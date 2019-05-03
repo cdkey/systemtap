@@ -1738,8 +1738,19 @@ bpf_unparser::visit_foreach_loop(foreach_loop* s)
     throw SEMANTIC_ERROR(_("unknown array"), arraydecl->tok);
 
   int map_id = g->second.map_id;
+  // PR23476: Handle foreach iteration for stats arrays.
+  assert (!g->second.is_scalar());
   if (g->second.is_stat())
-    throw SEMANTIC_ERROR(_("unhandled foreach over stats arrays"), s->tok);
+    {
+      auto all_fields = glob.array_stats.find(arraydecl);
+      if (all_fields == glob.array_stats.end())
+        throw SEMANTIC_ERROR(_("unknown stats array"), arraydecl->tok);
+      auto one_field = all_fields->second.find(globals::stat_iter_field);
+      assert (one_field != all_fields->second.end());
+      map_id = one_field->second;
+      // XXX: Since foreach only handles/returns keys, it's sufficient
+      // to simply iterate one of the stat field maps.
+    }
 
   value *limit = this_prog.new_reg();
   value *key = i->second;
