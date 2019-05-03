@@ -17,11 +17,9 @@ probe timer.ms(5) {
 
 probe end {
   c0 = @count(a[0]); s0 = @sum(a[0]); a0 = @avg(a[0])
-  c5 = @count(a[5]); s0 = @sum(a[5]); a0 = @avg(a[5])
-  printf("[0] - @count:%d, @sum:%d, @avg:%d\n",
-         @count(s[0]), @sum(s[0]), @avg(s[0]))
-  printf("[5] - @count:%d, @sum:%d, @avg:%d\n",
-         @count(s[5]), @sum(s[5]), @avg(s[5]))
+  c5 = @count(a[5]); s5 = @sum(a[5]); a5 = @avg(a[5])
+  printf("[0] - @count:%d, @sum:%d, @avg:%d\n", c0,s0,a0)
+  printf("[5] - @count:%d, @sum:%d, @avg:%d\n", c5,s5,a5)
   if (c0 == 10 && s0 == 20 && a0 == 2
       && c5 == 1 && s5 == 5 && a5 == 5)
     println("END PASS")
