@@ -3946,17 +3946,23 @@ output_interned_aggregates(BPF_Output &eo, globals& glob)
   Elf_Data *data = agg->data;
   size_t interned_aggregate_len =
     sizeof(uint64_t) * (1 + globals::stat_fields.size());
-  data->d_buf = (void *)calloc(glob.aggregates.size() + 1, interned_aggregate_len);
-  data->d_size = interned_aggregate_len * (glob.aggregates.size() + 1);
-  output_statsmap(data->d_buf, 0, glob.scalar_stats);
+  unsigned n_aggregates =
+    glob.scalar_stats.empty() ? glob.aggregates.size() : glob.aggregates.size() + 1;
+  data->d_buf = (void *)calloc(n_aggregates, interned_aggregate_len);
+  data->d_size = interned_aggregate_len * n_aggregates;
+  size_t ofs = 0; // XXX after glob.scalar_stats
+  if (!glob.scalar_stats.empty())
+    {
+      output_statsmap(data->d_buf, ofs, glob.scalar_stats);
+      ofs += interned_aggregate_len;
+    }
   char *ix = (char *)data->d_buf;
-  size_t ofs = interned_aggregate_len; // XXX after glob.scalar_stats
   for (auto i = glob.aggregates.begin();
        i != glob.aggregates.end(); i++)
     {
-      ofs += interned_aggregate_len;
       assert(glob.array_stats.count(i->first) != 0);
       output_statsmap((void *)(ix+ofs), i->second, glob.array_stats[i->first]);
+      ofs += interned_aggregate_len;
     }
   assert (ofs == data->d_size);
   data->d_type = ELF_T_BYTE;
