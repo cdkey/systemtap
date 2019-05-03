@@ -23,6 +23,22 @@
 - Operator @var() no longer assumes @entry() in return probes.
   The old behavior can be restored by the '--compatible 4.0' option.
 
+- A new stapbpf transport layer has been implemented based on perf_events
+  infrastructure. This transport layer removes some limitations on strings
+  and printf() that were previously imposed by BPF's trace_printk() mechanism:
+  - It is now possible to use format-width specifiers in printf().
+  - It is now possible to use more than three format specifiers in printf().
+  - It is now possible to use multiple '%s' format specifiers in printf().
+  - Using stapbpf should no longer trigger a trace_printk()-associated
+    warning on dmesg.
+
+- In the stapbpf backend, foreach() now supports iteration of arrays
+  with string keys.
+
+- A preview version of statistical aggregate functionality for stapbpf
+  is now included. For now, in the stapbpf backend, aggregates only
+  support @count(), @sum() and @avg() operations.
+
 * What's new in version 4.0, 2018-10-13
 
 - Runtime/tapsets were ported to include up to kernel version 4.19-rc
