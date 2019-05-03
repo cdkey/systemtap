@@ -2470,7 +2470,7 @@ bpf_unparser::visit_array_in(array_in* e)
 
       // TODO: Handle map_id < 0 for pe_stats or assert otherwise.
       if (g->second.map_id < 0)
-        throw SEMANTIC_ERROR (_("unsupported delete operation on statistics aggregate"), s->tok); // TODOXXX PR23476
+        throw SEMANTIC_ERROR (_("unsupported array-in operation on statistics aggregate"), s->tok); // TODOXXX PR23476
       this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1),
                          g->second.map_id);
       this_prog.mk_call(this_ins, BPF_FUNC_map_lookup_elem, 2);
