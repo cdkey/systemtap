@@ -39,6 +39,9 @@
   is now included. For now, in the stapbpf backend, aggregates only
   support @count(), @sum() and @avg() operations.
 
+- Added support for unhandled DWARF operator DW_OP_GNU_parameter_ref in 
+  location expressions for target symbols.
+
 * What's new in version 4.0, 2018-10-13
 
 - Runtime/tapsets were ported to include up to kernel version 4.19-rc
