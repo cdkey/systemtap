@@ -145,13 +145,20 @@ and
 .B end
 probes. 
 .B try
-statements are not supported. There is limited support for string
+statements are not supported.
+
+There is limited support for string
 operations. String variables and literals are limited to
 64 characters, except for
 .B printf
-format strings, which are limited to 256 characters. Additionally,
-.B printf
-is limited to no more than 3 format specifiers and the name
+format strings, which are limited to 256 characters.
+
+A subset of the statistical aggregate functionality is available,
+with support only for the
+.IR @count() ", " @sum() ", " @avg()
+extractor functions.
+
+The name
 of the bpf-elf file produced by the front-end 
 .I stap
 tool should not be changed.
