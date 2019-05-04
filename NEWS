@@ -23,6 +23,11 @@
 - Operator @var() no longer assumes @entry() in return probes.
   The old behavior can be restored by the '--compatible 4.0' option.
 
+- New stapbpf tapset task.stp with function task_current.
+
+- New stapbpf tapset functions kernel_string, kernel_string_n,
+  execname, ktime_get_ns.
+
 - A new stapbpf transport layer has been implemented based on perf_events
   infrastructure. This transport layer removes some limitations on strings
   and printf() that were previously imposed by BPF's trace_printk() mechanism:
