@@ -2,12 +2,12 @@
 .\"     Title: function::user_uint64
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: String and data retrieving functions Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::USER_UINT6" "3stap" "October 2018" "SystemTap Tapset Reference" "String and data retrieving fun"
+.TH "FUNCTION::USER_UINT6" "3stap" "May 2019" "SystemTap Tapset Reference" "String and data retrieving fun"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

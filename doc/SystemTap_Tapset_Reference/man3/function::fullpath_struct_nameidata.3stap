@@ -2,12 +2,12 @@
 .\"     Title: function::fullpath_struct_nameidata
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: Directory-entry (dentry) Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::FULLPATH_S" "3stap" "October 2018" "SystemTap Tapset Reference" "Directory-entry (dentry) Tapse"
+.TH "FUNCTION::FULLPATH_S" "3stap" "May 2019" "SystemTap Tapset Reference" "Directory-entry (dentry) Tapse"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

@@ -2,12 +2,12 @@
 .\"     Title: probe::vm.kfree
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: Memory Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::VM\&.KFREE" "3stap" "October 2018" "SystemTap Tapset Reference" "Memory Tapset"
+.TH "PROBE::VM\&.KFREE" "3stap" "May 2019" "SystemTap Tapset Reference" "Memory Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,14 @@ vm\&.kfree
 .fi
 .SH "VALUES"
 .PP
+\fIcall_site\fR
+.RS 4
+address of the function calling this kmemory function
+.RE
+.PP
 \fIptr\fR
 .RS 4
 pointer to the kmemory allocated which is returned by kmalloc
-.RE
-.PP
-\fIname\fR
-.RS 4
-name of the probe point
 .RE
 .PP
 \fIcaller_function\fR
@@ -51,9 +51,9 @@ name of the probe point
 name of the caller function\&.
 .RE
 .PP
-\fIcall_site\fR
+\fIname\fR
 .RS 4
-address of the function calling this kmemory function
+name of the probe point
 .RE
 .SH SEE ALSO\n 
 .IR tapset::memory (3stap)

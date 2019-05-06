@@ -2,12 +2,12 @@
 .\"     Title: function::MAJOR
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: Device Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::MAJOR" "3stap" "October 2018" "SystemTap Tapset Reference" "Device Tapset"
+.TH "FUNCTION::MAJOR" "3stap" "May 2019" "SystemTap Tapset Reference" "Device Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

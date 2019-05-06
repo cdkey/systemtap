@@ -2,12 +2,12 @@
 .\"     Title: probe::vm.mmap
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: Memory Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::VM\&.MMAP" "3stap" "October 2018" "SystemTap Tapset Reference" "Memory Tapset"
+.TH "PROBE::VM\&.MMAP" "3stap" "May 2019" "SystemTap Tapset Reference" "Memory Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,9 +36,9 @@ vm\&.mmap
 .fi
 .SH "VALUES"
 .PP
-\fIaddress\fR
+\fIname\fR
 .RS 4
-the requested address
+name of the probe point
 .RE
 .PP
 \fIlength\fR
@@ -46,9 +46,9 @@ the requested address
 the length of the memory segment
 .RE
 .PP
-\fIname\fR
+\fIaddress\fR
 .RS 4
-name of the probe point
+the requested address
 .RE
 .SH "CONTEXT"
 .PP

@@ -1,13 +1,13 @@
 '\" t
-.\"     Title: probe::ipmib.FragFails
+.\"     Title: function::ktime_get_ns
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
 .\"      Date: May 2019
-.\"    Manual: SNMP Information Tapset
+.\"    Manual: Timestamp Functions
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::IPMIB\&.FRAGF" "3stap" "May 2019" "SystemTap Tapset Reference" "SNMP Information Tapset"
+.TH "FUNCTION::KTIME_GET_" "3stap" "May 2019" "SystemTap Tapset Reference" "Timestamp Functions"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -28,30 +28,17 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-probe::ipmib.FragFails \- Count datagram fragmented unsuccessfully
+function::ktime_get_ns \- Number of nanoseconds since boot
 .SH "SYNOPSIS"
 .sp
 .nf
-ipmib\&.FragFails 
+    ktime_get_ns:long()
 .fi
-.SH "VALUES"
+.SH "ARGUMENTS"
 .PP
-\fIskb\fR
-.RS 4
-pointer to the struct sk_buff being acted on
-.RE
-.PP
-\fIop\fR
-.RS 4
-Value to be added to the counter (default value of 1)
-.RE
+None
 .SH "DESCRIPTION"
 .PP
-The packet pointed to by
-\fIskb\fR
-is filtered by the function
-\fBipmib_filter_key\fR\&. If the packet passes the filter is is counted in the global
-\fIFragFails\fR
-(equivalent to SNMP\*(Aqs MIB IPSTATS_MIB_FRAGFAILS)
+This function returns the system ktime\&.
 .SH SEE ALSO\n 
-.IR tapset::ipmib (3stap)
+.IR tapset::timestamp_monotonic (3stap)

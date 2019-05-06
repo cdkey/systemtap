@@ -2,12 +2,12 @@
 .\"     Title: probe::scheduler.process_wait
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: Scheduler Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SCHEDULER\&.P" "3stap" "October 2018" "SystemTap Tapset Reference" "Scheduler Tapset"
+.TH "PROBE::SCHEDULER\&.P" "3stap" "May 2019" "SystemTap Tapset Reference" "Scheduler Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

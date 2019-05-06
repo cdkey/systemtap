@@ -2,12 +2,12 @@
 .\"     Title: probe::ioblock.request
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: IO Scheduler and block IO Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::IOBLOCK\&.REQ" "3stap" "October 2018" "SystemTap Tapset Reference" "IO Scheduler and block IO Taps"
+.TH "PROBE::IOBLOCK\&.REQ" "3stap" "May 2019" "SystemTap Tapset Reference" "IO Scheduler and block IO Taps"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,24 +36,9 @@ ioblock\&.request
 .fi
 .SH "VALUES"
 .PP
-\fIhw_segments\fR
-.RS 4
-number of segments after physical and DMA remapping hardware coalescing is performed
-.RE
-.PP
 \fIopf\fR
 .RS 4
 operations and flags
-.RE
-.PP
-\fIidx\fR
-.RS 4
-offset into the bio vector array
-.RE
-.PP
-\fIrw\fR
-.RS 4
-binary trace for read/write request
 .RE
 .PP
 \fIp_start_sect\fR
@@ -61,24 +46,9 @@ binary trace for read/write request
 points to the start sector of the partition structure of the device
 .RE
 .PP
-\fIbdev\fR
-.RS 4
-target block device
-.RE
-.PP
 \fIsize\fR
 .RS 4
 total size in bytes
-.RE
-.PP
-\fIphys_segments\fR
-.RS 4
-number of segments in this bio after physical address coalescing is performed
-.RE
-.PP
-\fIdevname\fR
-.RS 4
-block device name
 .RE
 .PP
 \fIvcnt\fR
@@ -86,9 +56,34 @@ block device name
 bio vector count which represents number of array element (page, offset, length) which make up this I/O request
 .RE
 .PP
-\fIino\fR
+\fIbdev\fR
 .RS 4
-i\-node number of the mapped file
+target block device
+.RE
+.PP
+\fIidx\fR
+.RS 4
+offset into the bio vector array
+.RE
+.PP
+\fIphys_segments\fR
+.RS 4
+number of segments in this bio after physical address coalescing is performed
+.RE
+.PP
+\fIbdev_contains\fR
+.RS 4
+points to the device object which contains the partition (when bio structure represents a partition)
+.RE
+.PP
+\fIdevname\fR
+.RS 4
+block device name
+.RE
+.PP
+\fIhw_segments\fR
+.RS 4
+number of segments after physical and DMA remapping hardware coalescing is performed
 .RE
 .PP
 \fIflags\fR
@@ -101,14 +96,19 @@ see below BIO_UPTODATE 0 ok after I/O completion BIO_RW_BLOCK 1 RW_AHEAD set, an
 name of the probe point
 .RE
 .PP
-\fIbdev_contains\fR
-.RS 4
-points to the device object which contains the partition (when bio structure represents a partition)
-.RE
-.PP
 \fIsector\fR
 .RS 4
 beginning sector for the entire bio
+.RE
+.PP
+\fIino\fR
+.RS 4
+i\-node number of the mapped file
+.RE
+.PP
+\fIrw\fR
+.RS 4
+binary trace for read/write request
 .RE
 .SH "CONTEXT"
 .PP

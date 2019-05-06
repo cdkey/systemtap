@@ -2,12 +2,12 @@
 .\"     Title: probe::staprun.remove_module
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: SystemTap Translator Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::STAPRUN\&.REM" "3stap" "October 2018" "SystemTap Tapset Reference" "SystemTap Translator Tapset"
+.TH "PROBE::STAPRUN\&.REM" "3stap" "May 2019" "SystemTap Tapset Reference" "SystemTap Translator Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

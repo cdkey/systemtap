@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::INDENT 3stap "October 2018" "SystemTap Tapset Reference"
+.TH TAPSET::INDENT 3stap "May 2019" "SystemTap Tapset Reference"
 .SH NAME
 tapset::indent \- systemtap indent tapset
  

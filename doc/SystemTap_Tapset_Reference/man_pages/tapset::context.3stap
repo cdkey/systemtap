@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::CONTEXT 3stap "October 2018" "SystemTap Tapset Reference"
+.TH TAPSET::CONTEXT 3stap "May 2019" "SystemTap Tapset Reference"
 .SH NAME
 tapset::context \- systemtap context tapset
  
@@ -49,6 +49,14 @@ Returns the execname of a target process (or group of processes)
 .IP
 See 
 .IR function::execname (3stap)
+ for details.
+.P
+.TP
+.B pexecname 
+Returns the execname of a target process's parent process
+.IP
+See 
+.IR function::pexecname (3stap)
  for details.
 .P
 .TP
@@ -129,14 +137,6 @@ Returns the session ID of the current process as seen in a pid namespace
 .IP
 See 
 .IR function::ns_sid (3stap)
- for details.
-.P
-.TP
-.B pexecname 
-Returns the execname of a target process's parent process
-.IP
-See 
-.IR function::pexecname (3stap)
  for details.
 .P
 .TP
@@ -375,6 +375,8 @@ See
 .BR
 .IR \%function::execname (3stap),
 .BR
+.IR \%function::pexecname (3stap),
+.BR
 .IR \%function::pid (3stap),
 .BR
 .IR \%function::ns_pid (3stap),
@@ -394,8 +396,6 @@ See
 .IR \%function::sid (3stap),
 .BR
 .IR \%function::ns_sid (3stap),
-.BR
-.IR \%function::pexecname (3stap),
 .BR
 .IR \%function::gid (3stap),
 .BR

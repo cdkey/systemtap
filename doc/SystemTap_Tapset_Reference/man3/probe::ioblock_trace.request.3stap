@@ -2,12 +2,12 @@
 .\"     Title: probe::ioblock_trace.request
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: IO Scheduler and block IO Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::IOBLOCK_TRACE" "3stap" "October 2018" "SystemTap Tapset Reference" "IO Scheduler and block IO Taps"
+.TH "PROBE::IOBLOCK_TRACE" "3stap" "May 2019" "SystemTap Tapset Reference" "IO Scheduler and block IO Taps"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,19 +36,14 @@ ioblock_trace\&.request
 .fi
 .SH "VALUES"
 .PP
-\fIbdev\fR
+\fIbytes_done\fR
 .RS 4
-target block device
+number of bytes transferred
 .RE
 .PP
-\fIp_start_sect\fR
+\fIbdev_contains\fR
 .RS 4
-points to the start sector of the partition structure of the device
-.RE
-.PP
-\fIsize\fR
-.RS 4
-total size in bytes
+points to the device object which contains the partition (when bio structure represents a partition)
 .RE
 .PP
 \fIdevname\fR
@@ -56,14 +51,9 @@ total size in bytes
 block device name
 .RE
 .PP
-\fIopf\fR
+\fIbdev\fR
 .RS 4
-operations and flags
-.RE
-.PP
-\fIq\fR
-.RS 4
-request queue on which this bio was queued\&.
+target block device
 .RE
 .PP
 \fIidx\fR
@@ -73,34 +63,19 @@ offset into the bio vector array
 \- number of segments in this bio after physical address coalescing is performed\&.
 .RE
 .PP
-\fIrw\fR
+\fIopf\fR
 .RS 4
-binary trace for read/write request
+operations and flags
 .RE
 .PP
-\fIbytes_done\fR
+\fIsize\fR
 .RS 4
-number of bytes transferred
+total size in bytes
 .RE
 .PP
-\fIflags\fR
+\fIp_start_sect\fR
 .RS 4
-see below BIO_UPTODATE 0 ok after I/O completion BIO_RW_BLOCK 1 RW_AHEAD set, and read/write would block BIO_EOF 2 out\-out\-bounds error BIO_SEG_VALID 3 nr_hw_seg valid BIO_CLONED 4 doesn\*(Aqt own data BIO_BOUNCED 5 bio is a bounce bio BIO_USER_MAPPED 6 contains user pages BIO_EOPNOTSUPP 7 not supported
-.RE
-.PP
-\fIname\fR
-.RS 4
-name of the probe point
-.RE
-.PP
-\fIbdev_contains\fR
-.RS 4
-points to the device object which contains the partition (when bio structure represents a partition)
-.RE
-.PP
-\fIsector\fR
-.RS 4
-beginning sector for the entire bio
+points to the start sector of the partition structure of the device
 .RE
 .PP
 \fIvcnt\fR
@@ -111,6 +86,31 @@ bio vector count which represents number of array element (page, offset, length)
 \fIino\fR
 .RS 4
 i\-node number of the mapped file
+.RE
+.PP
+\fIrw\fR
+.RS 4
+binary trace for read/write request
+.RE
+.PP
+\fIname\fR
+.RS 4
+name of the probe point
+.RE
+.PP
+\fIsector\fR
+.RS 4
+beginning sector for the entire bio
+.RE
+.PP
+\fIq\fR
+.RS 4
+request queue on which this bio was queued\&.
+.RE
+.PP
+\fIflags\fR
+.RS 4
+see below BIO_UPTODATE 0 ok after I/O completion BIO_RW_BLOCK 1 RW_AHEAD set, and read/write would block BIO_EOF 2 out\-out\-bounds error BIO_SEG_VALID 3 nr_hw_seg valid BIO_CLONED 4 doesn\*(Aqt own data BIO_BOUNCED 5 bio is a bounce bio BIO_USER_MAPPED 6 contains user pages BIO_EOPNOTSUPP 7 not supported
 .RE
 .SH "CONTEXT"
 .PP

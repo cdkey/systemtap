@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.proc.commit_done
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.PROC\&." "3stap" "October 2018" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.PROC\&." "3stap" "May 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -41,24 +41,19 @@ nfs\&.proc\&.commit_done
 V4 timestamp, which is used for lease renewal
 .RE
 .PP
+\fIstatus\fR
+.RS 4
+result of last operation
+.RE
+.PP
 \fIvalid\fR
 .RS 4
 fattr\->valid, indicates which fields are valid
 .RE
 .PP
-\fIversion\fR
+\fIcount\fR
 .RS 4
-NFS version
-.RE
-.PP
-\fIserver_ip\fR
-.RS 4
-IP address of server
-.RE
-.PP
-\fIstatus\fR
-.RS 4
-result of last operation
+number of bytes committed
 .RE
 .PP
 \fIprot\fR
@@ -66,9 +61,14 @@ result of last operation
 transfer protocol
 .RE
 .PP
-\fIcount\fR
+\fIserver_ip\fR
 .RS 4
-number of bytes committed
+IP address of server
+.RE
+.PP
+\fIversion\fR
+.RS 4
+NFS version
 .RE
 .SH "DESCRIPTION"
 .PP

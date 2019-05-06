@@ -2,12 +2,12 @@
 .\"     Title: function::target_set_report
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: Kernel Process Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::TARGET_SET" "3stap" "October 2018" "SystemTap Tapset Reference" "Kernel Process Tapset"
+.TH "FUNCTION::TARGET_SET" "3stap" "May 2019" "SystemTap Tapset Reference" "Kernel Process Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

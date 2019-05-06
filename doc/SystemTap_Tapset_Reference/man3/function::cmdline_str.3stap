@@ -2,12 +2,12 @@
 .\"     Title: function::cmdline_str
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: Context Functions
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::CMDLINE_ST" "3stap" "October 2018" "SystemTap Tapset Reference" "Context Functions"
+.TH "FUNCTION::CMDLINE_ST" "3stap" "May 2019" "SystemTap Tapset Reference" "Context Functions"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

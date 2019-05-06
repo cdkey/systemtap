@@ -2,12 +2,12 @@
 .\"     Title: function::cputime_to_usecs
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: Task Time Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::CPUTIME_TO" "3stap" "October 2018" "SystemTap Tapset Reference" "Task Time Tapset"
+.TH "FUNCTION::CPUTIME_TO" "3stap" "May 2019" "SystemTap Tapset Reference" "Task Time Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

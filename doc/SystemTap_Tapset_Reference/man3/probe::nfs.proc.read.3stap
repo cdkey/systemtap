@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.proc.read
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.PROC\&." "3stap" "October 2018" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.PROC\&." "3stap" "May 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,19 +36,19 @@ nfs\&.proc\&.read
 .fi
 .SH "VALUES"
 .PP
-\fIoffset\fR
-.RS 4
-the file offset
-.RE
-.PP
-\fIversion\fR
-.RS 4
-NFS version
-.RE
-.PP
 \fIcount\fR
 .RS 4
 read bytes in this execution
+.RE
+.PP
+\fIserver_ip\fR
+.RS 4
+IP address of server
+.RE
+.PP
+\fIoffset\fR
+.RS 4
+the file offset
 .RE
 .PP
 \fIprot\fR
@@ -56,14 +56,14 @@ read bytes in this execution
 transfer protocol
 .RE
 .PP
+\fIversion\fR
+.RS 4
+NFS version
+.RE
+.PP
 \fIflags\fR
 .RS 4
 used to set task\->tk_flags in rpc_init_task function
-.RE
-.PP
-\fIserver_ip\fR
-.RS 4
-IP address of server
 .RE
 .SH "DESCRIPTION"
 .PP

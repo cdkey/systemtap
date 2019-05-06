@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::TIMESTAMP_MONOTONIC 3stap "October 2018" "SystemTap Tapset Reference"
+.TH TAPSET::TIMESTAMP_MONOTONIC 3stap "May 2019" "SystemTap Tapset Reference"
 .SH NAME
 tapset::timestamp_monotonic \- systemtap timestamp_monotonic tapset
  
@@ -69,6 +69,14 @@ Number of seconds on the local cpu's clock
 See 
 .IR function::local_clock_s (3stap)
  for details.
+.P
+.TP
+.B ktime_get_ns 
+Number of nanoseconds since boot
+.IP
+See 
+.IR function::ktime_get_ns (3stap)
+ for details.
 
 .SH SEE ALSO
 .BR
@@ -87,6 +95,8 @@ See
 .IR \%function::local_clock_ms (3stap),
 .BR
 .IR \%function::local_clock_s (3stap),
+.BR
+.IR \%function::ktime_get_ns (3stap),
 .BR
 .IR \%stap (1),
 .IR \%stapprobes (3stap)

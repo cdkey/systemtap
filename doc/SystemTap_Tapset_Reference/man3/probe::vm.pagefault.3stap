@@ -2,12 +2,12 @@
 .\"     Title: probe::vm.pagefault
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: Memory Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::VM\&.PAGEFAUL" "3stap" "October 2018" "SystemTap Tapset Reference" "Memory Tapset"
+.TH "PROBE::VM\&.PAGEFAUL" "3stap" "May 2019" "SystemTap Tapset Reference" "Memory Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

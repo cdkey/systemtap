@@ -20,26 +20,6 @@ same convenience variables.
     </row>
     </thead>
     <tbody>
-<row><entry>
-    clone
-</entry><entry>
-    child_tid_uaddr, clone_flags, parent_tid_uaddr, stack_start
-</entry></row>
-<row><entry>
-    ni_syscall
-</entry><entry>
-    
-</entry></row>
-<row><entry>
-    rt_sigreturn
-</entry><entry>
-    
-</entry></row>
-<row><entry>
-    sigreturn
-</entry><entry>
-    
-</entry></row>
 
     </tbody>
     </tgroup>

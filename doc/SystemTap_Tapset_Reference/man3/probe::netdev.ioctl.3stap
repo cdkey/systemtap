@@ -2,12 +2,12 @@
 .\"     Title: probe::netdev.ioctl
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: Networking Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NETDEV\&.IOCT" "3stap" "October 2018" "SystemTap Tapset Reference" "Networking Tapset"
+.TH "PROBE::NETDEV\&.IOCT" "3stap" "May 2019" "SystemTap Tapset Reference" "Networking Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,14 @@ netdev\&.ioctl
 .fi
 .SH "VALUES"
 .PP
-\fIarg\fR
-.RS 4
-The IOCTL argument (usually the netdev interface)
-.RE
-.PP
 \fIcmd\fR
 .RS 4
 The IOCTL request
+.RE
+.PP
+\fIarg\fR
+.RS 4
+The IOCTL argument (usually the netdev interface)
 .RE
 .SH SEE ALSO\n 
 .IR tapset::networking (3stap)

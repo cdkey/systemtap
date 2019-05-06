@@ -2,12 +2,12 @@
 .\"     Title: probe::signal.send.return
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: Signal Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SIGNAL\&.SEND" "3stap" "October 2018" "SystemTap Tapset Reference" "Signal Tapset"
+.TH "PROBE::SIGNAL\&.SEND" "3stap" "May 2019" "SystemTap Tapset Reference" "Signal Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,14 @@ signal\&.send\&.return
 .fi
 .SH "VALUES"
 .PP
-\fIname\fR
-.RS 4
-The name of the function used to send out the signal
-.RE
-.PP
 \fIsend2queue\fR
 .RS 4
 Indicates whether the sent signal was sent to an existing sigqueue
+.RE
+.PP
+\fIname\fR
+.RS 4
+The name of the function used to send out the signal
 .RE
 .PP
 \fIretstr\fR

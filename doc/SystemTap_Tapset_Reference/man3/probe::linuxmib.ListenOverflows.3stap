@@ -2,12 +2,12 @@
 .\"     Title: probe::linuxmib.ListenOverflows
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: SNMP Information Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::LINUXMIB\&.LI" "3stap" "October 2018" "SystemTap Tapset Reference" "SNMP Information Tapset"
+.TH "PROBE::LINUXMIB\&.LI" "3stap" "May 2019" "SystemTap Tapset Reference" "SNMP Information Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,14 @@ linuxmib\&.ListenOverflows
 .fi
 .SH "VALUES"
 .PP
-\fIop\fR
-.RS 4
-Value to be added to the counter (default value of 1)
-.RE
-.PP
 \fIsk\fR
 .RS 4
 Pointer to the struct sock being acted on
+.RE
+.PP
+\fIop\fR
+.RS 4
+Value to be added to the counter (default value of 1)
 .RE
 .SH "DESCRIPTION"
 .PP

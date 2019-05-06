@@ -2,12 +2,12 @@
 .\"     Title: function::sigset_mask_str
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: Signal Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::SIGSET_MAS" "3stap" "October 2018" "SystemTap Tapset Reference" "Signal Tapset"
+.TH "FUNCTION::SIGSET_MAS" "3stap" "May 2019" "SystemTap Tapset Reference" "Signal Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

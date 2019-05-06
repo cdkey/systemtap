@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.fop.write_iter
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.FOP\&.W" "3stap" "October 2018" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.FOP\&.W" "3stap" "May 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,21 +36,6 @@ nfs\&.fop\&.write_iter
 .fi
 .SH "VALUES"
 .PP
-\fIparent_name\fR
-.RS 4
-parent dir name
-.RE
-.PP
-\fIdev\fR
-.RS 4
-device identifier
-.RE
-.PP
-\fIfile_name\fR
-.RS 4
-file name
-.RE
-.PP
 \fIino\fR
 .RS 4
 inode number
@@ -61,9 +46,24 @@ inode number
 read bytes
 .RE
 .PP
+\fIdev\fR
+.RS 4
+device identifier
+.RE
+.PP
 \fIpos\fR
 .RS 4
 offset of the file
+.RE
+.PP
+\fIfile_name\fR
+.RS 4
+file name
+.RE
+.PP
+\fIparent_name\fR
+.RS 4
+parent dir name
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfs (3stap)

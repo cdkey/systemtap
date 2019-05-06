@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.fop.open
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.FOP\&.O" "3stap" "October 2018" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.FOP\&.O" "3stap" "May 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,9 +36,9 @@ nfs\&.fop\&.open
 .fi
 .SH "VALUES"
 .PP
-\fIdev\fR
+\fIi_size\fR
 .RS 4
-device identifier
+file length in bytes
 .RE
 .PP
 \fIino\fR
@@ -46,19 +46,19 @@ device identifier
 inode number
 .RE
 .PP
-\fIfile_name\fR
+\fIdev\fR
 .RS 4
-file name
-.RE
-.PP
-\fIi_size\fR
-.RS 4
-file length in bytes
+device identifier
 .RE
 .PP
 \fIflag\fR
 .RS 4
 file flag
+.RE
+.PP
+\fIfile_name\fR
+.RS 4
+file name
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfs (3stap)

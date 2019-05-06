@@ -1,5 +1,5 @@
 ." -*- nroff -*-
-.TH TAPSET::SYSCALLS 3stap "October 2018" "Systemtap Tapset Reference"
+.TH TAPSET::SYSCALLS 3stap "May 2019" "Systemtap Tapset Reference"
 .SH NAME
 tapset::syscalls \- systemtap syscall tapset
 
@@ -12,22 +12,6 @@ same convenience variables.
 .TP
 .P
 .TP
-.P
-.TP
-.B syscall.clone
-child_tid_uaddr, clone_flags, parent_tid_uaddr, stack_start
-.P
-.TP
-.B syscall.ni_syscall
-
-.P
-.TP
-.B syscall.rt_sigreturn
-
-.P
-.TP
-.B syscall.sigreturn
-
 
 .SH SEE ALSO
 .BR

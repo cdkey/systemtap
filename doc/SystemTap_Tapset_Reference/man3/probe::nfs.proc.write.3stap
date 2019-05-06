@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.proc.write
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.PROC\&." "3stap" "October 2018" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.PROC\&." "3stap" "May 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,9 @@ nfs\&.proc\&.write
 .fi
 .SH "VALUES"
 .PP
-\fIbitmask0\fR
+\fIbitmask1\fR
 .RS 4
 V4 bitmask representing the set of attributes supported on this filesystem
-.RE
-.PP
-\fIversion\fR
-.RS 4
-NFS version
 .RE
 .PP
 \fIflags\fR
@@ -51,14 +46,19 @@ NFS version
 used to set task\->tk_flags in rpc_init_task function
 .RE
 .PP
+\fIversion\fR
+.RS 4
+NFS version
+.RE
+.PP
+\fIbitmask0\fR
+.RS 4
+V4 bitmask representing the set of attributes supported on this filesystem
+.RE
+.PP
 \fIserver_ip\fR
 .RS 4
 IP address of server
-.RE
-.PP
-\fIbitmask1\fR
-.RS 4
-V4 bitmask representing the set of attributes supported on this filesystem
 .RE
 .PP
 \fIprot\fR

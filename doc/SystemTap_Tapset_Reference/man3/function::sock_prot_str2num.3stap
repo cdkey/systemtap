@@ -2,12 +2,12 @@
 .\"     Title: function::sock_prot_str2num
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: Socket Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::SOCK_PROT_" "3stap" "October 2018" "SystemTap Tapset Reference" "Socket Tapset"
+.TH "FUNCTION::SOCK_PROT_" "3stap" "May 2019" "SystemTap Tapset Reference" "Socket Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

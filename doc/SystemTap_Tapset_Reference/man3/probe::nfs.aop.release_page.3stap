@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.aop.release_page
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.AOP\&.R" "3stap" "October 2018" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.AOP\&.R" "3stap" "May 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,9 +36,9 @@ nfs\&.aop\&.release_page
 .fi
 .SH "VALUES"
 .PP
-\fIsize\fR
+\fIdev\fR
 .RS 4
-release pages
+device identifier
 .RE
 .PP
 \fIpage_index\fR
@@ -46,9 +46,9 @@ release pages
 offset within mapping, can used a page identifier and position identifier in the page frame
 .RE
 .PP
-\fIdev\fR
+\fIino\fR
 .RS 4
-device identifier
+inode number
 .RE
 .PP
 \fI__page\fR
@@ -56,9 +56,9 @@ device identifier
 the address of page
 .RE
 .PP
-\fIino\fR
+\fIsize\fR
 .RS 4
-inode number
+release pages
 .RE
 .SH "DESCRIPTION"
 .PP

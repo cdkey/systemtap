@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::TOKENIZE 3stap "October 2018" "SystemTap Tapset Reference"
+.TH TAPSET::TOKENIZE 3stap "May 2019" "SystemTap Tapset Reference"
 .SH NAME
 tapset::tokenize \- systemtap tokenize tapset
  

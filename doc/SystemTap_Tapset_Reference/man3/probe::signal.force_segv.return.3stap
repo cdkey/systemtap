@@ -2,12 +2,12 @@
 .\"     Title: probe::signal.force_segv.return
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: Signal Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SIGNAL\&.FORC" "3stap" "October 2018" "SystemTap Tapset Reference" "Signal Tapset"
+.TH "PROBE::SIGNAL\&.FORC" "3stap" "May 2019" "SystemTap Tapset Reference" "Signal Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,14 @@ signal\&.force_segv\&.return
 .fi
 .SH "VALUES"
 .PP
-\fIname\fR
-.RS 4
-Name of the probe point
-.RE
-.PP
 \fIretstr\fR
 .RS 4
 Return value as a string
+.RE
+.PP
+\fIname\fR
+.RS 4
+Name of the probe point
 .RE
 .SH SEE ALSO\n 
 .IR tapset::signal (3stap)

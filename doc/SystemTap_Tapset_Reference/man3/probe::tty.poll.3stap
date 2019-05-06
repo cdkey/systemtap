@@ -2,12 +2,12 @@
 .\"     Title: probe::tty.poll
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: October 2018
+.\"      Date: May 2019
 .\"    Manual: TTY Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::TTY\&.POLL" "3stap" "October 2018" "SystemTap Tapset Reference" "TTY Tapset"
+.TH "PROBE::TTY\&.POLL" "3stap" "May 2019" "SystemTap Tapset Reference" "TTY Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
