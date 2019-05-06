@@ -1,6 +1,6 @@
 /* -*- linux-c -*-
  * kernel stack unwinding
- * Copyright (C) 2008-2016 Red Hat Inc.
+ * Copyright (C) 2008-2019 Red Hat Inc.
  *
  * Based on old kernel code that is
  * Copyright (C) 2002-2006 Novell, Inc.

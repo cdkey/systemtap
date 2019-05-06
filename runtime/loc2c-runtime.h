@@ -1,5 +1,5 @@
 /* target operations
- * Copyright (C) 2005-2012 Red Hat Inc.
+ * Copyright (C) 2005-2019 Red Hat Inc.
  * Copyright (C) 2005-2007 Intel Corporation.
  * Copyright (C) 2007 Quentin Barnes.
  *

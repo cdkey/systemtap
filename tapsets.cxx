@@ -1,5 +1,5 @@
 // tapset resolution
-// Copyright (C) 2005-2018 Red Hat Inc.
+// Copyright (C) 2005-2019 Red Hat Inc.
 // Copyright (C) 2005-2007 Intel Corporation.
 // Copyright (C) 2008 James.Bottomley@HansenPartnership.com
 //
