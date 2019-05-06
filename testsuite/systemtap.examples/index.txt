@@ -2,7 +2,7 @@ SYSTEMTAP EXAMPLES INDEX
 (see also keyword-index.txt)
 
 
-For systemtap version 4.0.
+For systemtap version 4.1.
 
 apps/gmalloc_watch.stp - Tracing glib2 memory allocations
 keywords: trace
@@ -766,6 +766,24 @@ keywords: io
   showing their counts by process ID, process name, and syscall types.
 
   # stap syscallbypid-nd.stp -T 1
+
+
+memory/cachestat.stp - Count Page Cache Hits and Misses
+keywords: memory
+
+  Monitors hits and misses to the page cache and reports a count every
+  5 seconds. Based on a bpftrace tool by David Valin.
+
+  # stap cachestat.stp -T 1
+
+
+memory/cachestat.stp - Count Page Cache Hits and Misses
+keywords: memory bpf
+
+  Monitors hits and misses to the page cache and reports a count every
+  5 seconds. Based on a bpftrace tool by David Valin.
+
+  # stap --bpf cachestat.stp -T 1
 
 
 memory/glibc-malloc.stp - Overview glibc malloc internal operations
@@ -1903,6 +1921,24 @@ keywords: profiling
   frequent.
 
   # stap topsys.stp -T 1
+
+
+profiling/ucalls.stp - Profile method invocations in Java, Perl, Php, Python, Ruby, and Tcl scripts
+keywords: profiling syscall
+
+  The ucalls.stp script is modeled after the BCC ucalls script
+  (https://github.com/iovisor/bcc/blob/master/tools/lib/ucalls.py) by
+  Sasha Goldshtein. The ucalls.stp script monitors the process
+  indicated by the -x or -c option.  When the scripts exits it prints
+  out information about the number of times that each method is invoked
+  for code written in Java, Perl, Php, Python, Ruby, and Tcl.  Include
+  the word "syscalls" on the command line to count syscalls invoked by
+  the process.	If you want latency information, include "latency" on
+  the command line. Note that the latency option does not work for
+  recursive functions
+
+  # stap ucalls.stp syscalls latency -c "python -c 'print(\"hello world\")' \
+  || true"
 
 
 security-band-aids/cve-2008-0600.stp - cve-2008-0600 security band-aid

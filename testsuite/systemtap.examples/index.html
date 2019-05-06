@@ -38,7 +38,7 @@
            		<li><a href="keyword-index.html">By Keyword</a></li>
          	</ul>
 
-<p><em>For systemtap version 4.0.</em></p><h2>Best Examples</h2>
+<p><em>For systemtap version 4.1.</em></p><h2>Best Examples</h2>
 <ul>
 <li><a href="#general/helloworld.stp">general/helloworld.stp - SystemTap "Hello World" Program</a></li>
 <li><a href="#general/para-callgraph.stp">general/para-callgraph.stp - Callgraph Tracing with Arguments</a></li>
@@ -59,7 +59,7 @@
 <li><a href="#virtualization/kvm_service_time.stp">virtualization/kvm_service_time.stp - Time Statistics on KVM Exit Reasons</a></li>
 </ul>
 
-<h2>All 184 Examples</h2>
+<h2>All 187 Examples</h2>
 <ul>
 <li><a name="apps/gmalloc_watch.stp"></a><a href="#apps/gmalloc_watch.stp">&para;</a> <a href="apps/gmalloc_watch.stp">apps/gmalloc_watch.stp</a> - Tracing glib2 memory allocations<br>
 keywords: <a href="keyword-index.html#TRACE">TRACE</a> <br>
@@ -266,6 +266,12 @@ keywords: <a href="keyword-index.html#IO">IO</a> <br>
 </li><li><a name="lwtools/syscallbypid-nd.stp"></a><a href="#lwtools/syscallbypid-nd.stp">&para;</a> <a href="lwtools/syscallbypid-nd.stp">lwtools/syscallbypid-nd.stp</a> - Count syscalls with process details (non-debuginfo)<br>
 keywords: <a href="keyword-index.html#IO">IO</a> <br>
 <p>This traces syscalls system-wide, and produces a summary report showing their counts by process ID, process name, and syscall types.</p><p><font size="-2"><pre># stap syscallbypid-nd.stp -T 1</pre></font></p>
+</li><li><a name="memory/cachestat.stp"></a><a href="#memory/cachestat.stp">&para;</a> <a href="memory/cachestat.stp">memory/cachestat.stp</a> - Count Page Cache Hits and Misses<br>
+keywords: <a href="keyword-index.html#MEMORY">MEMORY</a> <br>
+<p>Monitors hits and misses to the page cache and reports a count every 5 seconds. Based on a bpftrace tool by David Valin.</p><p><font size="-2"><pre># stap cachestat.stp -T 1</pre></font></p>
+</li><li><a name="memory/cachestat.stp"></a><a href="#memory/cachestat.stp">&para;</a> <a href="memory/cachestat.stp">memory/cachestat.stp</a> - Count Page Cache Hits and Misses<br>
+keywords: <a href="keyword-index.html#MEMORY">MEMORY</a> <a href="keyword-index.html#BPF">BPF</a> <br>
+<p>Monitors hits and misses to the page cache and reports a count every 5 seconds. Based on a bpftrace tool by David Valin.</p><p><font size="-2"><pre># stap --bpf cachestat.stp -T 1</pre></font></p>
 </li><li><a name="memory/glibc-malloc.stp"></a><a href="#memory/glibc-malloc.stp">&para;</a> <a href="memory/glibc-malloc.stp">memory/glibc-malloc.stp</a> - Overview glibc malloc internal operations<br>
 keywords: <a href="keyword-index.html#MEMORY">MEMORY</a> <a href="keyword-index.html#PROCESS">PROCESS</a> <br>
 <p>This script reports on internal statistics of the glibc malloc implementation, as used by a process restricted by stap -x/-c</p><p><font size="-2"><pre># stap glibc-malloc.stp -c &#39;stap --dump-functions&#39;</pre></font></p>
@@ -562,6 +568,10 @@ keywords: <a href="keyword-index.html#PROFILING">PROFILING</a> <br>
 </li><li><a name="profiling/topsys.stp"></a><a href="#profiling/topsys.stp">&para;</a> <a href="profiling/topsys.stp">profiling/topsys.stp</a> - Show Processes Doing Polling Operations<br>
 keywords: <a href="keyword-index.html#PROFILING">PROFILING</a> <br>
 <p> The topsys.stp script lists out the top twenty systemcalls for the previous 5 seconds. The output is sorted from most frequent to least frequent.</p><p><font size="-2"><pre># stap topsys.stp -T 1</pre></font></p>
+</li><li><a name="profiling/ucalls.stp"></a><a href="#profiling/ucalls.stp">&para;</a> <a href="profiling/ucalls.stp">profiling/ucalls.stp</a> - Profile method invocations in Java, Perl, Php, Python, Ruby, and Tcl scripts<br>
+keywords: <a href="keyword-index.html#PROFILING">PROFILING</a> <a href="keyword-index.html#SYSCALL">SYSCALL</a> <br>
+<p>The ucalls.stp script is modeled after the BCC ucalls script (https://github.com/iovisor/bcc/blob/master/tools/lib/ucalls.py) by Sasha Goldshtein. The ucalls.stp script monitors the process indicated by the -x or -c option.  When the scripts exits it prints out information about the number of times that each method is invoked for code written in Java, Perl, Php, Python, Ruby, and Tcl.  Include the word &quot;syscalls&quot; on the command line to count syscalls invoked by the process.  If you want latency information, include &quot;latency&quot; on the command line. Note that the latency option does not work for recursive functions</p><p><font size="-2"><pre># stap ucalls.stp syscalls latency -c &quot;python -c &#39;print(\&quot;hello world\&quot;)&#39; \
+|| true&quot;</pre></font></p>
 </li><li><a name="security-band-aids/cve-2008-0600.stp"></a><a href="#security-band-aids/cve-2008-0600.stp">&para;</a> <a href="security-band-aids/cve-2008-0600.stp">security-band-aids/cve-2008-0600.stp</a> - cve-2008-0600 security band-aid<br>
 keywords: <a href="keyword-index.html#SECURITY">SECURITY</a> <a href="keyword-index.html#GURU">GURU</a> <br>
 <p>historical emergency security band-aid, for reference/education only</p><p><i><a href="security-band-aids/cve-2008-0600.txt">sample usage in security-band-aids/cve-2008-0600.txt</i></font></p>
