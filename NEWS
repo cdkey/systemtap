@@ -23,6 +23,10 @@
 - Operator @var() no longer assumes @entry() in return probes.
   The old behavior can be restored by the '--compatible 4.0' option.
 
+- Where available (kernel 4.15+), the kernel-module runtime now uses
+  the kernel-provided ktime_get_real_fast_ns() mechanism for timekeeping
+  rather than the SystemTap runtime's own timekeeping machinery.
+
 - New stapbpf tapset task.stp with function task_current.
 
 - New stapbpf tapset functions kernel_string, kernel_string_n,
