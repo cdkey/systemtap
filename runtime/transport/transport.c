@@ -591,6 +591,8 @@ static struct dentry *_stp_get_root_dir(void)
 #else
 	__stp_root_dir = debugfs_create_dir(name, NULL);
 #endif
+	if (__stp_root_dir == ERR_PTR(-EEXIST)) /* some kernels signal duplication this way */
+	  __stp_root_dir = NULL;
 	if (!__stp_root_dir) {
 		/* Couldn't create it because it is already there, so
 		 * find it. */
