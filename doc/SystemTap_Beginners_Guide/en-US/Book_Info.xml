@@ -6,10 +6,10 @@
 <bookinfo id="SystemTap_Beginners_Guide">
 	<title>SystemTap Beginners Guide</title>
         <subtitle>Introduction to SystemTap</subtitle>
-	<edition>4.1</edition>        <!-- PRERELEASE -->
+	<edition>4.2</edition>        <!-- PRERELEASE -->
 
 	<productname>SystemTap</productname>
-	<productnumber>4.1</productnumber>        <!-- PRERELEASE -->
+	<productnumber>4.2</productnumber>        <!-- PRERELEASE -->
 
 	<pubsnumber>2</pubsnumber>
 	<abstract><para>This guide provides basic instructions on how to use SystemTap to monitor different subsystems of a Linux system in finer detail.</para></abstract>
