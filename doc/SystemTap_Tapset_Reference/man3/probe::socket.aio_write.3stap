@@ -36,14 +36,9 @@ socket\&.aio_write
 .fi
 .SH "VALUES"
 .PP
-\fIprotocol\fR
+\fIstate\fR
 .RS 4
-Protocol value
-.RE
-.PP
-\fIname\fR
-.RS 4
-Name of this probe
+Socket state value
 .RE
 .PP
 \fItype\fR
@@ -51,9 +46,9 @@ Name of this probe
 Socket type value
 .RE
 .PP
-\fIfamily\fR
+\fIname\fR
 .RS 4
-Protocol family value
+Name of this probe
 .RE
 .PP
 \fIsize\fR
@@ -61,9 +56,14 @@ Protocol family value
 Message size in bytes
 .RE
 .PP
-\fIstate\fR
+\fIfamily\fR
 .RS 4
-Socket state value
+Protocol family value
+.RE
+.PP
+\fIprotocol\fR
+.RS 4
+Protocol value
 .RE
 .PP
 \fIflags\fR

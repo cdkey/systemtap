@@ -36,6 +36,11 @@ netdev\&.hard_transmit
 .fi
 .SH "VALUES"
 .PP
+\fItruesize\fR
+.RS 4
+The size of the data to be transmitted\&.
+.RE
+.PP
 \fIlength\fR
 .RS 4
 The length of the transmit buffer\&.
@@ -44,11 +49,6 @@ The length of the transmit buffer\&.
 \fIprotocol\fR
 .RS 4
 The protocol used in the transmission
-.RE
-.PP
-\fItruesize\fR
-.RS 4
-The size of the data to be transmitted\&.
 .RE
 .PP
 \fIdev_name\fR

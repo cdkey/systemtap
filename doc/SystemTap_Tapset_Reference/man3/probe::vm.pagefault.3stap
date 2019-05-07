@@ -36,6 +36,11 @@ vm\&.pagefault
 .fi
 .SH "VALUES"
 .PP
+\fIaddress\fR
+.RS 4
+the address of the faulting memory access; i\&.e\&. the address that caused the page fault
+.RE
+.PP
 \fIname\fR
 .RS 4
 name of the probe point
@@ -44,11 +49,6 @@ name of the probe point
 \fIwrite_access\fR
 .RS 4
 indicates whether this was a write or read access; 1 indicates a write, while 0 indicates a read
-.RE
-.PP
-\fIaddress\fR
-.RS 4
-the address of the faulting memory access; i\&.e\&. the address that caused the page fault
 .RE
 .SH "CONTEXT"
 .PP

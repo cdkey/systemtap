@@ -36,19 +36,19 @@ nfs\&.proc\&.read_setup
 .fi
 .SH "VALUES"
 .PP
-\fIversion\fR
+\fIcount\fR
 .RS 4
-NFS version
-.RE
-.PP
-\fIprot\fR
-.RS 4
-transfer protocol
+read bytes in this execution
 .RE
 .PP
 \fIoffset\fR
 .RS 4
 the file offset
+.RE
+.PP
+\fIprot\fR
+.RS 4
+transfer protocol
 .RE
 .PP
 \fIserver_ip\fR
@@ -61,9 +61,9 @@ IP address of server
 read bytes in this execution
 .RE
 .PP
-\fIcount\fR
+\fIversion\fR
 .RS 4
-read bytes in this execution
+NFS version
 .RE
 .SH "DESCRIPTION"
 .PP

@@ -36,14 +36,14 @@ signal\&.wakeup
 .fi
 .SH "VALUES"
 .PP
-\fIresume\fR
-.RS 4
-Indicates whether to wake up a task in a STOPPED or TRACED state
-.RE
-.PP
 \fIsig_pid\fR
 .RS 4
 The PID of the process to wake
+.RE
+.PP
+\fIstate_mask\fR
+.RS 4
+A string representation indicating the mask of task states to wake\&. Possible values are TASK_INTERRUPTIBLE, TASK_STOPPED, TASK_TRACED, TASK_WAKEKILL, and TASK_INTERRUPTIBLE\&.
 .RE
 .PP
 \fIpid_name\fR
@@ -51,9 +51,9 @@ The PID of the process to wake
 Name of the process to wake
 .RE
 .PP
-\fIstate_mask\fR
+\fIresume\fR
 .RS 4
-A string representation indicating the mask of task states to wake\&. Possible values are TASK_INTERRUPTIBLE, TASK_STOPPED, TASK_TRACED, TASK_WAKEKILL, and TASK_INTERRUPTIBLE\&.
+Indicates whether to wake up a task in a STOPPED or TRACED state
 .RE
 .SH SEE ALSO\n 
 .IR tapset::signal (3stap)

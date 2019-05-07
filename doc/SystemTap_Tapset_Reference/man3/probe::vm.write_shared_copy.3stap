@@ -36,14 +36,14 @@ vm\&.write_shared_copy
 .fi
 .SH "VALUES"
 .PP
-\fIname\fR
-.RS 4
-Name of the probe point
-.RE
-.PP
 \fIzero\fR
 .RS 4
 boolean indicating whether it is a zero page (can do a clear instead of a copy)
+.RE
+.PP
+\fIname\fR
+.RS 4
+Name of the probe point
 .RE
 .PP
 \fIaddress\fR

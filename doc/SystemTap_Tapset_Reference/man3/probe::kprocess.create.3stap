@@ -36,14 +36,14 @@ kprocess\&.create
 .fi
 .SH "VALUES"
 .PP
-\fInew_pid\fR
-.RS 4
-The PID of the newly created process
-.RE
-.PP
 \fInew_tid\fR
 .RS 4
 The TID of the newly created task
+.RE
+.PP
+\fInew_pid\fR
+.RS 4
+The PID of the newly created process
 .RE
 .SH "CONTEXT"
 .PP

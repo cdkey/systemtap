@@ -36,9 +36,9 @@ tty\&.write
 .fi
 .SH "VALUES"
 .PP
-\fIdriver_name\fR
+\fIbuffer\fR
 .RS 4
-the driver name
+the buffer that will be written
 .RE
 .PP
 \fInr\fR
@@ -46,9 +46,9 @@ the driver name
 The amount of characters
 .RE
 .PP
-\fIbuffer\fR
+\fIdriver_name\fR
 .RS 4
-the buffer that will be written
+the driver name
 .RE
 .PP
 \fIfile_name\fR

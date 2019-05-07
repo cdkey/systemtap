@@ -36,34 +36,9 @@ udp\&.recvmsg
 .fi
 .SH "VALUES"
 .PP
-\fIsaddr\fR
-.RS 4
-A string representing the source IP address
-.RE
-.PP
-\fIdaddr\fR
-.RS 4
-A string representing the destination IP address
-.RE
-.PP
 \fIname\fR
 .RS 4
 The name of this probe
-.RE
-.PP
-\fIfamily\fR
-.RS 4
-IP address family
-.RE
-.PP
-\fIsport\fR
-.RS 4
-UDP source port
-.RE
-.PP
-\fIdport\fR
-.RS 4
-UDP destination port
 .RE
 .PP
 \fIsock\fR
@@ -74,6 +49,31 @@ Network socket used by the process
 \fIsize\fR
 .RS 4
 Number of bytes received by the process
+.RE
+.PP
+\fIdaddr\fR
+.RS 4
+A string representing the destination IP address
+.RE
+.PP
+\fIsport\fR
+.RS 4
+UDP source port
+.RE
+.PP
+\fIsaddr\fR
+.RS 4
+A string representing the source IP address
+.RE
+.PP
+\fIfamily\fR
+.RS 4
+IP address family
+.RE
+.PP
+\fIdport\fR
+.RS 4
+UDP destination port
 .RE
 .SH "CONTEXT"
 .PP

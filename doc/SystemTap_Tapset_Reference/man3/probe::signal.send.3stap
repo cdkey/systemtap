@@ -36,14 +36,44 @@ signal\&.send
 .fi
 .SH "VALUES"
 .PP
+\fIshared\fR
+.RS 4
+Indicates whether the signal is shared by the thread group
+.RE
+.PP
 \fIpid_name\fR
 .RS 4
 The name of the signal recipient
 .RE
 .PP
+\fIsi_code\fR
+.RS 4
+Indicates the signal type
+.RE
+.PP
 \fIsig_name\fR
 .RS 4
 A string representation of the signal
+.RE
+.PP
+\fIsend2queue\fR
+.RS 4
+Indicates whether the signal is sent to an existing sigqueue (deprecated in SystemTap 2\&.1)
+.RE
+.PP
+\fItask\fR
+.RS 4
+A task handle to the signal recipient
+.RE
+.PP
+\fIsig_pid\fR
+.RS 4
+The PID of the process receiving the signal
+.RE
+.PP
+\fIname\fR
+.RS 4
+The name of the function used to send out the signal
 .RE
 .PP
 \fIsig\fR
@@ -54,36 +84,6 @@ The number of the signal
 \fIsinfo\fR
 .RS 4
 The address of siginfo struct
-.RE
-.PP
-\fItask\fR
-.RS 4
-A task handle to the signal recipient
-.RE
-.PP
-\fIsend2queue\fR
-.RS 4
-Indicates whether the signal is sent to an existing sigqueue (deprecated in SystemTap 2\&.1)
-.RE
-.PP
-\fIname\fR
-.RS 4
-The name of the function used to send out the signal
-.RE
-.PP
-\fIshared\fR
-.RS 4
-Indicates whether the signal is shared by the thread group
-.RE
-.PP
-\fIsi_code\fR
-.RS 4
-Indicates the signal type
-.RE
-.PP
-\fIsig_pid\fR
-.RS 4
-The PID of the process receiving the signal
 .RE
 .SH "CONTEXT"
 .PP

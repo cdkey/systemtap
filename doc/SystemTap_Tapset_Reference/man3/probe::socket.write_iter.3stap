@@ -36,14 +36,9 @@ socket\&.write_iter
 .fi
 .SH "VALUES"
 .PP
-\fIflags\fR
+\fItype\fR
 .RS 4
-Socket flags value
-.RE
-.PP
-\fIsize\fR
-.RS 4
-Message size in bytes
+Socket type value
 .RE
 .PP
 \fIstate\fR
@@ -51,24 +46,29 @@ Message size in bytes
 Socket state value
 .RE
 .PP
-\fIfamily\fR
+\fIflags\fR
 .RS 4
-Protocol family value
-.RE
-.PP
-\fItype\fR
-.RS 4
-Socket type value
-.RE
-.PP
-\fIname\fR
-.RS 4
-Name of this probe
+Socket flags value
 .RE
 .PP
 \fIprotocol\fR
 .RS 4
 Protocol value
+.RE
+.PP
+\fIfamily\fR
+.RS 4
+Protocol family value
+.RE
+.PP
+\fIsize\fR
+.RS 4
+Message size in bytes
+.RE
+.PP
+\fIname\fR
+.RS 4
+Name of this probe
 .RE
 .SH "CONTEXT"
 .PP

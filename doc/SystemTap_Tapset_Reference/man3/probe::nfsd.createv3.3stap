@@ -36,19 +36,14 @@ nfsd\&.createv3
 .fi
 .SH "VALUES"
 .PP
+\fIfh\fR
+.RS 4
+file handle (the first part is the length of the file handle)
+.RE
+.PP
 \fIiap_mode\fR
 .RS 4
 file access mode
-.RE
-.PP
-\fItruncp\fR
-.RS 4
-trunp arguments, indicates if the file shouldbe truncate
-.RE
-.PP
-\fIfilename\fR
-.RS 4
-file name
 .RE
 .PP
 \fIverifier\fR
@@ -56,14 +51,19 @@ file name
 file attributes (atime,mtime,mode)\&. It\*(Aqs used to reset file attributes for CREATE_EXCLUSIVE
 .RE
 .PP
-\fIfh\fR
+\fItruncp\fR
 .RS 4
-file handle (the first part is the length of the file handle)
+trunp arguments, indicates if the file shouldbe truncate
 .RE
 .PP
-\fIiap_valid\fR
+\fIclient_ip\fR
 .RS 4
-Attribute flags
+the ip address of client
+.RE
+.PP
+\fIfilename\fR
+.RS 4
+file name
 .RE
 .PP
 \fIfilelen\fR
@@ -71,9 +71,9 @@ Attribute flags
 the length of file name
 .RE
 .PP
-\fIclient_ip\fR
+\fIiap_valid\fR
 .RS 4
-the ip address of client
+Attribute flags
 .RE
 .PP
 \fIcreatemode\fR

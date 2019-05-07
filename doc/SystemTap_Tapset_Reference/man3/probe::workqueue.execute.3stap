@@ -36,14 +36,14 @@ workqueue\&.execute
 .fi
 .SH "VALUES"
 .PP
-\fIwq_thread\fR
-.RS 4
-task_struct of the workqueue thread
-.RE
-.PP
 \fIwork_func\fR
 .RS 4
 pointer to handler function
+.RE
+.PP
+\fIwq_thread\fR
+.RS 4
+task_struct of the workqueue thread
 .RE
 .PP
 \fIwork\fR

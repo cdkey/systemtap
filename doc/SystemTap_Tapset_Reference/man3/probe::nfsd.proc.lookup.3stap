@@ -36,19 +36,9 @@ nfsd\&.proc\&.lookup
 .fi
 .SH "VALUES"
 .PP
-\fIfilelen\fR
+\fIversion\fR
 .RS 4
-the length of file name
-.RE
-.PP
-\fIproto\fR
-.RS 4
-transfer protocol
-.RE
-.PP
-\fIfilename\fR
-.RS 4
-file name
+nfs version
 .RE
 .PP
 \fIfh\fR
@@ -56,14 +46,19 @@ file name
 file handle of parent dir (the first part is the length of the file handle)
 .RE
 .PP
+\fIuid\fR
+.RS 4
+requester\*(Aqs user id
+.RE
+.PP
 \fIclient_ip\fR
 .RS 4
 the ip address of client
 .RE
 .PP
-\fIversion\fR
+\fIproto\fR
 .RS 4
-nfs version
+transfer protocol
 .RE
 .PP
 \fIgid\fR
@@ -71,9 +66,14 @@ nfs version
 requester\*(Aqs group id
 .RE
 .PP
-\fIuid\fR
+\fIfilename\fR
 .RS 4
-requester\*(Aqs user id
+file name
+.RE
+.PP
+\fIfilelen\fR
+.RS 4
+the length of file name
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfsd (3stap)

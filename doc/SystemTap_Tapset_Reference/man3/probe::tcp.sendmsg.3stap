@@ -36,14 +36,14 @@ tcp\&.sendmsg
 .fi
 .SH "VALUES"
 .PP
-\fIsock\fR
-.RS 4
-Network socket
-.RE
-.PP
 \fIsize\fR
 .RS 4
 Number of bytes to send
+.RE
+.PP
+\fIfamily\fR
+.RS 4
+IP address family
 .RE
 .PP
 \fIname\fR
@@ -51,9 +51,9 @@ Number of bytes to send
 Name of this probe
 .RE
 .PP
-\fIfamily\fR
+\fIsock\fR
 .RS 4
-IP address family
+Network socket
 .RE
 .SH "CONTEXT"
 .PP

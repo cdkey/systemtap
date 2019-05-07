@@ -36,14 +36,14 @@ nfsd\&.proc\&.remove
 .fi
 .SH "VALUES"
 .PP
-\fIproto\fR
+\fIversion\fR
 .RS 4
-transfer protocol
+nfs version
 .RE
 .PP
-\fIuid\fR
+\fIfh\fR
 .RS 4
-requester\*(Aqs user id
+file handle (the first part is the length of the file handle)
 .RE
 .PP
 \fIgid\fR
@@ -51,14 +51,14 @@ requester\*(Aqs user id
 requester\*(Aqs group id
 .RE
 .PP
-\fIversion\fR
+\fIuid\fR
 .RS 4
-nfs version
+requester\*(Aqs user id
 .RE
 .PP
-\fIfilelen\fR
+\fIproto\fR
 .RS 4
-length of file name
+transfer protocol
 .RE
 .PP
 \fIclient_ip\fR
@@ -66,14 +66,14 @@ length of file name
 the ip address of client
 .RE
 .PP
+\fIfilelen\fR
+.RS 4
+length of file name
+.RE
+.PP
 \fIfilename\fR
 .RS 4
 file name
-.RE
-.PP
-\fIfh\fR
-.RS 4
-file handle (the first part is the length of the file handle)
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfsd (3stap)

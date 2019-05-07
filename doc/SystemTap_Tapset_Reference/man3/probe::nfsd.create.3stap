@@ -41,6 +41,21 @@ nfsd\&.create
 Attribute flags
 .RE
 .PP
+\fIclient_ip\fR
+.RS 4
+the ip address of client
+.RE
+.PP
+\fIfilename\fR
+.RS 4
+file name
+.RE
+.PP
+\fIfilelen\fR
+.RS 4
+the length of file name
+.RE
+.PP
 \fItype\fR
 .RS 4
 file type(regular,dir,device,fifo \&.\&.\&.)
@@ -49,21 +64,6 @@ file type(regular,dir,device,fifo \&.\&.\&.)
 \fIfh\fR
 .RS 4
 file handle (the first part is the length of the file handle)
-.RE
-.PP
-\fIfilename\fR
-.RS 4
-file name
-.RE
-.PP
-\fIclient_ip\fR
-.RS 4
-the ip address of client
-.RE
-.PP
-\fIfilelen\fR
-.RS 4
-the length of file name
 .RE
 .PP
 \fIiap_mode\fR

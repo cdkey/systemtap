@@ -36,9 +36,24 @@ nfs\&.proc\&.rename_done
 .fi
 .SH "VALUES"
 .PP
-\fItimestamp\fR
+\fIold_fh\fR
 .RS 4
-V4 timestamp, which is used for lease renewal
+file handle of old parent dir
+.RE
+.PP
+\fIversion\fR
+.RS 4
+NFS version
+.RE
+.PP
+\fInew_fh\fR
+.RS 4
+file handle of new parent dir
+.RE
+.PP
+\fIserver_ip\fR
+.RS 4
+IP address of server
 .RE
 .PP
 \fIstatus\fR
@@ -51,24 +66,9 @@ result of last operation
 transfer protocol
 .RE
 .PP
-\fIserver_ip\fR
+\fItimestamp\fR
 .RS 4
-IP address of server
-.RE
-.PP
-\fIversion\fR
-.RS 4
-NFS version
-.RE
-.PP
-\fIold_fh\fR
-.RS 4
-file handle of old parent dir
-.RE
-.PP
-\fInew_fh\fR
-.RS 4
-file handle of new parent dir
+V4 timestamp, which is used for lease renewal
 .RE
 .SH "DESCRIPTION"
 .PP

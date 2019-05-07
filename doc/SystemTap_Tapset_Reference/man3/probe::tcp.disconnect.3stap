@@ -36,31 +36,6 @@ tcp\&.disconnect
 .fi
 .SH "VALUES"
 .PP
-\fIsaddr\fR
-.RS 4
-A string representing the source IP address
-.RE
-.PP
-\fIsock\fR
-.RS 4
-Network socket
-.RE
-.PP
-\fIname\fR
-.RS 4
-Name of this probe
-.RE
-.PP
-\fIsport\fR
-.RS 4
-TCP source port
-.RE
-.PP
-\fIfamily\fR
-.RS 4
-IP address family
-.RE
-.PP
 \fIflags\fR
 .RS 4
 TCP flags (e\&.g\&. FIN, etc)
@@ -74,6 +49,31 @@ A string representing the destination IP address
 \fIdport\fR
 .RS 4
 TCP destination port
+.RE
+.PP
+\fIsock\fR
+.RS 4
+Network socket
+.RE
+.PP
+\fIname\fR
+.RS 4
+Name of this probe
+.RE
+.PP
+\fIfamily\fR
+.RS 4
+IP address family
+.RE
+.PP
+\fIsport\fR
+.RS 4
+TCP source port
+.RE
+.PP
+\fIsaddr\fR
+.RS 4
+A string representing the source IP address
 .RE
 .SH "CONTEXT"
 .PP

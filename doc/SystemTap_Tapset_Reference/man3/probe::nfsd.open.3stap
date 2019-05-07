@@ -46,14 +46,14 @@ the ip address of client
 type of file (regular file or dir)
 .RE
 .PP
-\fIfh\fR
-.RS 4
-file handle (the first part is the length of the file handle)
-.RE
-.PP
 \fIaccess\fR
 .RS 4
 indicates the type of open (read/write/commit/readdir\&.\&.\&.)
+.RE
+.PP
+\fIfh\fR
+.RS 4
+file handle (the first part is the length of the file handle)
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfsd (3stap)

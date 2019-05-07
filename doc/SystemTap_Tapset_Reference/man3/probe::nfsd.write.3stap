@@ -36,11 +36,6 @@ nfsd\&.write
 .fi
 .SH "VALUES"
 .PP
-\fIvec\fR
-.RS 4
-struct kvec, includes buf address in kernel address and length of each buffer
-.RE
-.PP
 \fIoffset\fR
 .RS 4
 the offset of file
@@ -49,6 +44,11 @@ the offset of file
 \fIcount\fR
 .RS 4
 read bytes
+.RE
+.PP
+\fIvlen\fR
+.RS 4
+read blocks
 .RE
 .PP
 \fIclient_ip\fR
@@ -61,19 +61,19 @@ the ip address of client
 read bytes
 .RE
 .PP
-\fIfile\fR
+\fIvec\fR
 .RS 4
-argument file, indicates if the file has been opened\&.
-.RE
-.PP
-\fIvlen\fR
-.RS 4
-read blocks
+struct kvec, includes buf address in kernel address and length of each buffer
 .RE
 .PP
 \fIfh\fR
 .RS 4
 file handle (the first part is the length of the file handle)
+.RE
+.PP
+\fIfile\fR
+.RS 4
+argument file, indicates if the file has been opened\&.
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfsd (3stap)

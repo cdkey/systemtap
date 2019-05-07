@@ -36,6 +36,26 @@ nfs\&.proc\&.commit_setup
 .fi
 .SH "VALUES"
 .PP
+\fIbitmask0\fR
+.RS 4
+V4 bitmask representing the set of attributes supported on this filesystem
+.RE
+.PP
+\fIprot\fR
+.RS 4
+transfer protocol
+.RE
+.PP
+\fIoffset\fR
+.RS 4
+the file offset
+.RE
+.PP
+\fIcount\fR
+.RS 4
+bytes in this commit
+.RE
+.PP
 \fIbitmask1\fR
 .RS 4
 V4 bitmask representing the set of attributes supported on this filesystem
@@ -46,29 +66,9 @@ V4 bitmask representing the set of attributes supported on this filesystem
 IP address of server
 .RE
 .PP
-\fIbitmask0\fR
-.RS 4
-V4 bitmask representing the set of attributes supported on this filesystem
-.RE
-.PP
-\fIoffset\fR
-.RS 4
-the file offset
-.RE
-.PP
-\fIprot\fR
-.RS 4
-transfer protocol
-.RE
-.PP
 \fIversion\fR
 .RS 4
 NFS version
-.RE
-.PP
-\fIcount\fR
-.RS 4
-bytes in this commit
 .RE
 .PP
 \fIsize\fR

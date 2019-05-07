@@ -36,14 +36,9 @@ ioblock\&.end
 .fi
 .SH "VALUES"
 .PP
-\fIflags\fR
+\fIsize\fR
 .RS 4
-see below BIO_UPTODATE 0 ok after I/O completion BIO_RW_BLOCK 1 RW_AHEAD set, and read/write would block BIO_EOF 2 out\-out\-bounds error BIO_SEG_VALID 3 nr_hw_seg valid BIO_CLONED 4 doesn\*(Aqt own data BIO_BOUNCED 5 bio is a bounce bio BIO_USER_MAPPED 6 contains user pages BIO_EOPNOTSUPP 7 not supported
-.RE
-.PP
-\fIhw_segments\fR
-.RS 4
-number of segments after physical and DMA remapping hardware coalescing is performed
+total size in bytes
 .RE
 .PP
 \fIrw\fR
@@ -61,6 +56,16 @@ i\-node number of the mapped file
 beginning sector for the entire bio
 .RE
 .PP
+\fIflags\fR
+.RS 4
+see below BIO_UPTODATE 0 ok after I/O completion BIO_RW_BLOCK 1 RW_AHEAD set, and read/write would block BIO_EOF 2 out\-out\-bounds error BIO_SEG_VALID 3 nr_hw_seg valid BIO_CLONED 4 doesn\*(Aqt own data BIO_BOUNCED 5 bio is a bounce bio BIO_USER_MAPPED 6 contains user pages BIO_EOPNOTSUPP 7 not supported
+.RE
+.PP
+\fIhw_segments\fR
+.RS 4
+number of segments after physical and DMA remapping hardware coalescing is performed
+.RE
+.PP
 \fIerror\fR
 .RS 4
 0 on success
@@ -71,24 +76,9 @@ beginning sector for the entire bio
 name of the probe point
 .RE
 .PP
-\fIidx\fR
-.RS 4
-offset into the bio vector array
-.RE
-.PP
 \fIvcnt\fR
 .RS 4
 bio vector count which represents number of array element (page, offset, length) which makes up this I/O request
-.RE
-.PP
-\fIsize\fR
-.RS 4
-total size in bytes
-.RE
-.PP
-\fIopf\fR
-.RS 4
-operations and flags
 .RE
 .PP
 \fIbytes_done\fR
@@ -96,14 +86,24 @@ operations and flags
 number of bytes transferred
 .RE
 .PP
+\fIphys_segments\fR
+.RS 4
+number of segments in this bio after physical address coalescing is performed\&.
+.RE
+.PP
 \fIdevname\fR
 .RS 4
 block device name
 .RE
 .PP
-\fIphys_segments\fR
+\fIidx\fR
 .RS 4
-number of segments in this bio after physical address coalescing is performed\&.
+offset into the bio vector array
+.RE
+.PP
+\fIopf\fR
+.RS 4
+operations and flags
 .RE
 .SH "CONTEXT"
 .PP

@@ -36,29 +36,9 @@ nfs\&.proc\&.lookup
 .fi
 .SH "VALUES"
 .PP
-\fIname_len\fR
-.RS 4
-the length of file name
-.RE
-.PP
-\fIversion\fR
-.RS 4
-NFS version
-.RE
-.PP
-\fIbitmask0\fR
-.RS 4
-V4 bitmask representing the set of attributes supported on this filesystem
-.RE
-.PP
 \fIserver_ip\fR
 .RS 4
 IP address of server
-.RE
-.PP
-\fIprot\fR
-.RS 4
-transfer protocol
 .RE
 .PP
 \fIfilename\fR
@@ -66,9 +46,29 @@ transfer protocol
 the name of file which client opens/searches on server
 .RE
 .PP
+\fIversion\fR
+.RS 4
+NFS version
+.RE
+.PP
+\fIname_len\fR
+.RS 4
+the length of file name
+.RE
+.PP
+\fIbitmask0\fR
+.RS 4
+V4 bitmask representing the set of attributes supported on this filesystem
+.RE
+.PP
 \fIbitmask1\fR
 .RS 4
 V4 bitmask representing the set of attributes supported on this filesystem
+.RE
+.PP
+\fIprot\fR
+.RS 4
+transfer protocol
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfs_proc (3stap)

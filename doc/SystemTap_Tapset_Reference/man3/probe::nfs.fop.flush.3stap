@@ -36,24 +36,24 @@ nfs\&.fop\&.flush
 .fi
 .SH "VALUES"
 .PP
-\fIndirty\fR
-.RS 4
-number of dirty page
-.RE
-.PP
 \fIino\fR
 .RS 4
 inode number
 .RE
 .PP
-\fIdev\fR
+\fIndirty\fR
 .RS 4
-device identifier
+number of dirty page
 .RE
 .PP
 \fImode\fR
 .RS 4
 file mode
+.RE
+.PP
+\fIdev\fR
+.RS 4
+device identifier
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfs (3stap)

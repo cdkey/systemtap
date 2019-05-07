@@ -36,9 +36,9 @@ nfs\&.proc\&.read_done
 .fi
 .SH "VALUES"
 .PP
-\fItimestamp\fR
+\fIversion\fR
 .RS 4
-V4 timestamp, which is used for lease renewal
+NFS version
 .RE
 .PP
 \fIstatus\fR
@@ -46,9 +46,14 @@ V4 timestamp, which is used for lease renewal
 result of last operation
 .RE
 .PP
-\fIcount\fR
+\fIserver_ip\fR
 .RS 4
-number of bytes read
+IP address of server
+.RE
+.PP
+\fItimestamp\fR
+.RS 4
+V4 timestamp, which is used for lease renewal
 .RE
 .PP
 \fIprot\fR
@@ -56,14 +61,9 @@ number of bytes read
 transfer protocol
 .RE
 .PP
-\fIserver_ip\fR
+\fIcount\fR
 .RS 4
-IP address of server
-.RE
-.PP
-\fIversion\fR
-.RS 4
-NFS version
+number of bytes read
 .RE
 .SH "DESCRIPTION"
 .PP

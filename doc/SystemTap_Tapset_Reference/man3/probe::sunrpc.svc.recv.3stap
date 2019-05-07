@@ -36,11 +36,6 @@ sunrpc\&.svc\&.recv
 .fi
 .SH "VALUES"
 .PP
-\fIsv_name\fR
-.RS 4
-the service name
-.RE
-.PP
 \fIsv_prog\fR
 .RS 4
 the number of the program
@@ -54,6 +49,11 @@ the timeout of waiting for data
 \fIsv_nrthreads\fR
 .RS 4
 the number of concurrent threads
+.RE
+.PP
+\fIsv_name\fR
+.RS 4
+the service name
 .RE
 .SH SEE ALSO\n 
 .IR tapset::rpc (3stap)

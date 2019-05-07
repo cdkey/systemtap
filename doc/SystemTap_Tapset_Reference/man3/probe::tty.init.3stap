@@ -36,11 +36,6 @@ tty\&.init
 .fi
 .SH "VALUES"
 .PP
-\fIdriver_name\fR
-.RS 4
-the driver name
-.RE
-.PP
 \fIname\fR
 .RS 4
 the driver \&.dev_name name
@@ -49,6 +44,11 @@ the driver \&.dev_name name
 \fImodule\fR
 .RS 4
 the module name
+.RE
+.PP
+\fIdriver_name\fR
+.RS 4
+the driver name
 .RE
 .SH SEE ALSO\n 
 .IR tapset::tty (3stap)

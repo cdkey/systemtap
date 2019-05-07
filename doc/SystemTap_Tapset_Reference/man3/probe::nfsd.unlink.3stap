@@ -41,16 +41,6 @@ nfsd\&.unlink
 file name
 .RE
 .PP
-\fIfh\fR
-.RS 4
-file handle (the first part is the length of the file handle)
-.RE
-.PP
-\fItype\fR
-.RS 4
-file type (file or dir)
-.RE
-.PP
 \fIfilelen\fR
 .RS 4
 the length of file name
@@ -59,6 +49,16 @@ the length of file name
 \fIclient_ip\fR
 .RS 4
 the ip address of client
+.RE
+.PP
+\fItype\fR
+.RS 4
+file type (file or dir)
+.RE
+.PP
+\fIfh\fR
+.RS 4
+file handle (the first part is the length of the file handle)
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfsd (3stap)

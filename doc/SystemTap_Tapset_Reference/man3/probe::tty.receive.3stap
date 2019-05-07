@@ -36,9 +36,14 @@ tty\&.receive
 .fi
 .SH "VALUES"
 .PP
-\fIid\fR
+\fIname\fR
 .RS 4
-the tty id
+the name of the module file
+.RE
+.PP
+\fIindex\fR
+.RS 4
+The tty Index
 .RE
 .PP
 \fIdriver_name\fR
@@ -46,9 +51,9 @@ the tty id
 the driver name
 .RE
 .PP
-\fIname\fR
+\fIcount\fR
 .RS 4
-the name of the module file
+The amount of characters received
 .RE
 .PP
 \fIfp\fR
@@ -56,14 +61,9 @@ the name of the module file
 The flag buffer
 .RE
 .PP
-\fIcount\fR
+\fIid\fR
 .RS 4
-The amount of characters received
-.RE
-.PP
-\fIindex\fR
-.RS 4
-The tty Index
+the tty id
 .RE
 .PP
 \fIcp\fR

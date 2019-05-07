@@ -36,14 +36,14 @@ stap\&.cache_get
 .fi
 .SH "VALUES"
 .PP
-\fImodule_path\fR
-.RS 4
-the path of the \&.ko kernel module file
-.RE
-.PP
 \fIsource_path\fR
 .RS 4
 the path of the \&.c source file
+.RE
+.PP
+\fImodule_path\fR
+.RS 4
+the path of the \&.ko kernel module file
 .RE
 .SH "DESCRIPTION"
 .PP

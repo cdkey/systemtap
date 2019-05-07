@@ -36,14 +36,9 @@ sunrpc\&.clnt\&.clone_client
 .fi
 .SH "VALUES"
 .PP
-\fIprogname\fR
+\fIprot\fR
 .RS 4
-the RPC program name
-.RE
-.PP
-\fIvers\fR
-.RS 4
-the RPC program version number
+the IP protocol number
 .RE
 .PP
 \fIprog\fR
@@ -51,9 +46,14 @@ the RPC program version number
 the RPC program number
 .RE
 .PP
-\fIprot\fR
+\fIservername\fR
 .RS 4
-the IP protocol number
+the server machine name
+.RE
+.PP
+\fIvers\fR
+.RS 4
+the RPC program version number
 .RE
 .PP
 \fIport\fR
@@ -61,9 +61,9 @@ the IP protocol number
 the port number
 .RE
 .PP
-\fIservername\fR
+\fIprogname\fR
 .RS 4
-the server machine name
+the RPC program name
 .RE
 .PP
 \fIauthflavor\fR

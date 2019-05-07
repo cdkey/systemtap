@@ -36,9 +36,9 @@ socket\&.sendmsg
 .fi
 .SH "VALUES"
 .PP
-\fItype\fR
+\fIsize\fR
 .RS 4
-Socket type value
+Message size in bytes
 .RE
 .PP
 \fIname\fR
@@ -46,14 +46,19 @@ Socket type value
 Name of this probe
 .RE
 .PP
+\fIflags\fR
+.RS 4
+Socket flags value
+.RE
+.PP
 \fIprotocol\fR
 .RS 4
 Protocol value
 .RE
 .PP
-\fIflags\fR
+\fIfamily\fR
 .RS 4
-Socket flags value
+Protocol family value
 .RE
 .PP
 \fIstate\fR
@@ -61,14 +66,9 @@ Socket flags value
 Socket state value
 .RE
 .PP
-\fIsize\fR
+\fItype\fR
 .RS 4
-Message size in bytes
-.RE
-.PP
-\fIfamily\fR
-.RS 4
-Protocol family value
+Socket type value
 .RE
 .SH "CONTEXT"
 .PP

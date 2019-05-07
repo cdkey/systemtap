@@ -36,9 +36,9 @@ nfs\&.fop\&.sendfile
 .fi
 .SH "VALUES"
 .PP
-\fIattrtimeo\fR
+\fIcount\fR
 .RS 4
-how long the cached information is assumed to be valid\&. We need to revalidate the cached attrs for this inode if jiffies \- read_cache_jiffies > attrtimeo\&.
+read bytes
 .RE
 .PP
 \fIino\fR
@@ -46,14 +46,9 @@ how long the cached information is assumed to be valid\&. We need to revalidate 
 inode number
 .RE
 .PP
-\fIdev\fR
+\fIattrtimeo\fR
 .RS 4
-device identifier
-.RE
-.PP
-\fIcount\fR
-.RS 4
-read bytes
+how long the cached information is assumed to be valid\&. We need to revalidate the cached attrs for this inode if jiffies \- read_cache_jiffies > attrtimeo\&.
 .RE
 .PP
 \fIcache_valid\fR
@@ -69,6 +64,11 @@ when we started read\-caching this inode
 \fIppos\fR
 .RS 4
 current position of file
+.RE
+.PP
+\fIdev\fR
+.RS 4
+device identifier
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfs (3stap)

@@ -36,16 +36,6 @@ nfs\&.proc\&.rename
 .fi
 .SH "VALUES"
 .PP
-\fIversion\fR
-.RS 4
-NFS version (the function is used for all NFS version)
-.RE
-.PP
-\fInew_name\fR
-.RS 4
-new file name
-.RE
-.PP
 \fIprot\fR
 .RS 4
 transfer protocol
@@ -56,14 +46,9 @@ transfer protocol
 old file name
 .RE
 .PP
-\fIserver_ip\fR
+\fInew_name\fR
 .RS 4
-IP address of server
-.RE
-.PP
-\fInew_fh\fR
-.RS 4
-file handle of new parent dir
+new file name
 .RE
 .PP
 \fInew_filelen\fR
@@ -71,14 +56,29 @@ file handle of new parent dir
 length of new file name
 .RE
 .PP
+\fIold_filelen\fR
+.RS 4
+length of old file name
+.RE
+.PP
 \fIold_fh\fR
 .RS 4
 file handle of old parent dir
 .RE
 .PP
-\fIold_filelen\fR
+\fIversion\fR
 .RS 4
-length of old file name
+NFS version (the function is used for all NFS version)
+.RE
+.PP
+\fInew_fh\fR
+.RS 4
+file handle of new parent dir
+.RE
+.PP
+\fIserver_ip\fR
+.RS 4
+IP address of server
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfs_proc (3stap)

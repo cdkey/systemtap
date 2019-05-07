@@ -36,24 +36,9 @@ nfsd\&.proc\&.create
 .fi
 .SH "VALUES"
 .PP
-\fIfilename\fR
-.RS 4
-file name
-.RE
-.PP
 \fIfh\fR
 .RS 4
 file handle (the first part is the length of the file handle)
-.RE
-.PP
-\fIfilelen\fR
-.RS 4
-length of file name
-.RE
-.PP
-\fIclient_ip\fR
-.RS 4
-the ip address of client
 .RE
 .PP
 \fIversion\fR
@@ -66,14 +51,29 @@ nfs version
 requester\*(Aqs group id
 .RE
 .PP
+\fIproto\fR
+.RS 4
+transfer protocol
+.RE
+.PP
 \fIuid\fR
 .RS 4
 requester\*(Aqs user id
 .RE
 .PP
-\fIproto\fR
+\fIfilelen\fR
 .RS 4
-transfer protocol
+length of file name
+.RE
+.PP
+\fIfilename\fR
+.RS 4
+file name
+.RE
+.PP
+\fIclient_ip\fR
+.RS 4
+the ip address of client
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfsd (3stap)

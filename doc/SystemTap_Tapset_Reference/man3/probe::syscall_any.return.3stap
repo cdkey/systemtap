@@ -41,14 +41,14 @@ syscall_any\&.return
 number of the syscall
 .RE
 .PP
-\fIname\fR
-.RS 4
-name of the syscall
-.RE
-.PP
 \fIretval\fR
 .RS 4
 return value of the syscall
+.RE
+.PP
+\fIname\fR
+.RS 4
+name of the syscall
 .RE
 .SH "CONTEXT"
 .PP

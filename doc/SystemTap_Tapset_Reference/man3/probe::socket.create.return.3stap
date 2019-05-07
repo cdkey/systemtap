@@ -36,16 +36,6 @@ socket\&.create\&.return
 .fi
 .SH "VALUES"
 .PP
-\fIname\fR
-.RS 4
-Name of this probe
-.RE
-.PP
-\fItype\fR
-.RS 4
-Socket type value
-.RE
-.PP
 \fIprotocol\fR
 .RS 4
 Protocol value
@@ -56,19 +46,29 @@ Protocol value
 Was socket creation successful? (1 = yes, 0 = no)
 .RE
 .PP
-\fIerr\fR
-.RS 4
-Error code if success == 0
-.RE
-.PP
 \fIfamily\fR
 .RS 4
 Protocol family value
 .RE
 .PP
+\fIname\fR
+.RS 4
+Name of this probe
+.RE
+.PP
+\fItype\fR
+.RS 4
+Socket type value
+.RE
+.PP
 \fIrequester\fR
 .RS 4
 Requested by user process or the kernel (1 = kernel, 0 = user)
+.RE
+.PP
+\fIerr\fR
+.RS 4
+Error code if success == 0
 .RE
 .SH "CONTEXT"
 .PP

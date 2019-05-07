@@ -36,29 +36,9 @@ nfs\&.aop\&.readpages
 .fi
 .SH "VALUES"
 .PP
-\fInr_pages\fR
-.RS 4
-number of pages attempted to read in this execution
-.RE
-.PP
 \fIino\fR
 .RS 4
 inode number
-.RE
-.PP
-\fIdev\fR
-.RS 4
-device identifier
-.RE
-.PP
-\fIrpages\fR
-.RS 4
-read size (in pages)
-.RE
-.PP
-\fIsize\fR
-.RS 4
-number of pages attempted to read in this execution
 .RE
 .PP
 \fIfile\fR
@@ -66,9 +46,29 @@ number of pages attempted to read in this execution
 filp argument
 .RE
 .PP
+\fInr_pages\fR
+.RS 4
+number of pages attempted to read in this execution
+.RE
+.PP
+\fIsize\fR
+.RS 4
+number of pages attempted to read in this execution
+.RE
+.PP
 \fIrsize\fR
 .RS 4
 read size (in bytes)
+.RE
+.PP
+\fIrpages\fR
+.RS 4
+read size (in pages)
+.RE
+.PP
+\fIdev\fR
+.RS 4
+device identifier
 .RE
 .SH "DESCRIPTION"
 .PP

@@ -46,9 +46,9 @@ state of the task being woken up
 priority of the task being woken up
 .RE
 .PP
-\fItask_pid\fR
+\fIname\fR
 .RS 4
-PID of the task being woken up
+name of the probe point
 .RE
 .PP
 \fItask_cpu\fR
@@ -56,14 +56,14 @@ PID of the task being woken up
 cpu of the task being woken up
 .RE
 .PP
+\fItask_pid\fR
+.RS 4
+PID of the task being woken up
+.RE
+.PP
 \fItask_tid\fR
 .RS 4
 tid of the task being woken up
-.RE
-.PP
-\fIname\fR
-.RS 4
-name of the probe point
 .RE
 .SH SEE ALSO\n 
 .IR tapset::scheduler (3stap)

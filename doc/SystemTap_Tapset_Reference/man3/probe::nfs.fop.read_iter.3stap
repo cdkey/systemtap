@@ -36,39 +36,19 @@ nfs\&.fop\&.read_iter
 .fi
 .SH "VALUES"
 .PP
-\fIino\fR
-.RS 4
-inode number
-.RE
-.PP
-\fIattrtimeo\fR
-.RS 4
-how long the cached information is assumed to be valid\&. We need to revalidate the cached attrs for this inode if jiffies \- read_cache_jiffies > attrtimeo\&.
-.RE
-.PP
 \fIdev\fR
 .RS 4
 device identifier
 .RE
 .PP
-\fIcount\fR
+\fIcache_time\fR
 .RS 4
-read bytes
+when we started read\-caching this inode
 .RE
 .PP
 \fIcache_valid\fR
 .RS 4
 cache related bit mask flag
-.RE
-.PP
-\fIpos\fR
-.RS 4
-current position of file
-.RE
-.PP
-\fIcache_time\fR
-.RS 4
-when we started read\-caching this inode
 .RE
 .PP
 \fIfile_name\fR
@@ -79,6 +59,26 @@ file name
 \fIparent_name\fR
 .RS 4
 parent dir name
+.RE
+.PP
+\fIpos\fR
+.RS 4
+current position of file
+.RE
+.PP
+\fIattrtimeo\fR
+.RS 4
+how long the cached information is assumed to be valid\&. We need to revalidate the cached attrs for this inode if jiffies \- read_cache_jiffies > attrtimeo\&.
+.RE
+.PP
+\fIino\fR
+.RS 4
+inode number
+.RE
+.PP
+\fIcount\fR
+.RS 4
+read bytes
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfs (3stap)

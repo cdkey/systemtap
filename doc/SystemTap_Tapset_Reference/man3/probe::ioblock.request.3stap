@@ -41,34 +41,9 @@ ioblock\&.request
 operations and flags
 .RE
 .PP
-\fIp_start_sect\fR
-.RS 4
-points to the start sector of the partition structure of the device
-.RE
-.PP
-\fIsize\fR
-.RS 4
-total size in bytes
-.RE
-.PP
-\fIvcnt\fR
-.RS 4
-bio vector count which represents number of array element (page, offset, length) which make up this I/O request
-.RE
-.PP
-\fIbdev\fR
-.RS 4
-target block device
-.RE
-.PP
 \fIidx\fR
 .RS 4
 offset into the bio vector array
-.RE
-.PP
-\fIphys_segments\fR
-.RS 4
-number of segments in this bio after physical address coalescing is performed
 .RE
 .PP
 \fIbdev_contains\fR
@@ -76,9 +51,24 @@ number of segments in this bio after physical address coalescing is performed
 points to the device object which contains the partition (when bio structure represents a partition)
 .RE
 .PP
+\fIp_start_sect\fR
+.RS 4
+points to the start sector of the partition structure of the device
+.RE
+.PP
 \fIdevname\fR
 .RS 4
 block device name
+.RE
+.PP
+\fIvcnt\fR
+.RS 4
+bio vector count which represents number of array element (page, offset, length) which make up this I/O request
+.RE
+.PP
+\fIphys_segments\fR
+.RS 4
+number of segments in this bio after physical address coalescing is performed
 .RE
 .PP
 \fIhw_segments\fR
@@ -96,14 +86,24 @@ see below BIO_UPTODATE 0 ok after I/O completion BIO_RW_BLOCK 1 RW_AHEAD set, an
 name of the probe point
 .RE
 .PP
+\fIino\fR
+.RS 4
+i\-node number of the mapped file
+.RE
+.PP
 \fIsector\fR
 .RS 4
 beginning sector for the entire bio
 .RE
 .PP
-\fIino\fR
+\fIsize\fR
 .RS 4
-i\-node number of the mapped file
+total size in bytes
+.RE
+.PP
+\fIbdev\fR
+.RS 4
+target block device
 .RE
 .PP
 \fIrw\fR

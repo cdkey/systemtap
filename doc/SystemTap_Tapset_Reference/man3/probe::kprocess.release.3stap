@@ -36,9 +36,9 @@ kprocess\&.release
 .fi
 .SH "VALUES"
 .PP
-\fIreleased_tid\fR
+\fItask\fR
 .RS 4
-TID of the task being released
+A task handle to the process being released
 .RE
 .PP
 \fIreleased_pid\fR
@@ -53,9 +53,9 @@ Same as
 for compatibility (deprecated)
 .RE
 .PP
-\fItask\fR
+\fIreleased_tid\fR
 .RS 4
-A task handle to the process being released
+TID of the task being released
 .RE
 .SH "CONTEXT"
 .PP

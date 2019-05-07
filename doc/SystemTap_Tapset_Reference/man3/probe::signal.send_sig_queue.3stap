@@ -36,14 +36,9 @@ signal\&.send_sig_queue
 .fi
 .SH "VALUES"
 .PP
-\fIsig_name\fR
+\fIsigqueue_addr\fR
 .RS 4
-A string representation of the signal
-.RE
-.PP
-\fIpid_name\fR
-.RS 4
-Name of the process to which the signal is queued
+The address of the signal queue
 .RE
 .PP
 \fIsig\fR
@@ -61,9 +56,14 @@ The PID of the process to which the signal is queued
 Name of the probe point
 .RE
 .PP
-\fIsigqueue_addr\fR
+\fIsig_name\fR
 .RS 4
-The address of the signal queue
+A string representation of the signal
+.RE
+.PP
+\fIpid_name\fR
+.RS 4
+Name of the process to which the signal is queued
 .RE
 .SH SEE ALSO\n 
 .IR tapset::signal (3stap)

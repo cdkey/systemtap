@@ -36,9 +36,9 @@ netdev\&.change_mac
 .fi
 .SH "VALUES"
 .PP
-\fInew_mac\fR
+\fImac_len\fR
 .RS 4
-The new MAC address
+The MAC length
 .RE
 .PP
 \fIold_mac\fR
@@ -46,14 +46,14 @@ The new MAC address
 The current MAC address
 .RE
 .PP
-\fImac_len\fR
-.RS 4
-The MAC length
-.RE
-.PP
 \fIdev_name\fR
 .RS 4
 The device that will have the MAC changed
+.RE
+.PP
+\fInew_mac\fR
+.RS 4
+The new MAC address
 .RE
 .SH SEE ALSO\n 
 .IR tapset::networking (3stap)

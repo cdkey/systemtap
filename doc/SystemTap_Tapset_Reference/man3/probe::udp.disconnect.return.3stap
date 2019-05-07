@@ -36,24 +36,9 @@ udp\&.disconnect\&.return
 .fi
 .SH "VALUES"
 .PP
-\fIdport\fR
-.RS 4
-UDP destination port
-.RE
-.PP
 \fIsport\fR
 .RS 4
 UDP source port
-.RE
-.PP
-\fIfamily\fR
-.RS 4
-IP address family
-.RE
-.PP
-\fIret\fR
-.RS 4
-Error code (0: no error)
 .RE
 .PP
 \fIdaddr\fR
@@ -61,9 +46,24 @@ Error code (0: no error)
 A string representing the destination IP address
 .RE
 .PP
+\fIfamily\fR
+.RS 4
+IP address family
+.RE
+.PP
+\fIdport\fR
+.RS 4
+UDP destination port
+.RE
+.PP
 \fIsaddr\fR
 .RS 4
 A string representing the source IP address
+.RE
+.PP
+\fIret\fR
+.RS 4
+Error code (0: no error)
 .RE
 .PP
 \fIname\fR

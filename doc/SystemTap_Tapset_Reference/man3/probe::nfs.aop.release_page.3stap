@@ -36,14 +36,9 @@ nfs\&.aop\&.release_page
 .fi
 .SH "VALUES"
 .PP
-\fIdev\fR
+\fIsize\fR
 .RS 4
-device identifier
-.RE
-.PP
-\fIpage_index\fR
-.RS 4
-offset within mapping, can used a page identifier and position identifier in the page frame
+release pages
 .RE
 .PP
 \fIino\fR
@@ -56,9 +51,14 @@ inode number
 the address of page
 .RE
 .PP
-\fIsize\fR
+\fIdev\fR
 .RS 4
-release pages
+device identifier
+.RE
+.PP
+\fIpage_index\fR
+.RS 4
+offset within mapping, can used a page identifier and position identifier in the page frame
 .RE
 .SH "DESCRIPTION"
 .PP

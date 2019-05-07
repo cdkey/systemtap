@@ -36,9 +36,14 @@ socket\&.recvmsg
 .fi
 .SH "VALUES"
 .PP
-\fIfamily\fR
+\fIstate\fR
 .RS 4
-Protocol family value
+Socket state value
+.RE
+.PP
+\fItype\fR
+.RS 4
+Socket type value
 .RE
 .PP
 \fIsize\fR
@@ -46,9 +51,9 @@ Protocol family value
 Message size in bytes
 .RE
 .PP
-\fIstate\fR
+\fIname\fR
 .RS 4
-Socket state value
+Name of this probe
 .RE
 .PP
 \fIflags\fR
@@ -61,14 +66,9 @@ Socket flags value
 Protocol value
 .RE
 .PP
-\fIname\fR
+\fIfamily\fR
 .RS 4
-Name of this probe
-.RE
-.PP
-\fItype\fR
-.RS 4
-Socket type value
+Protocol family value
 .RE
 .SH "CONTEXT"
 .PP

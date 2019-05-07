@@ -36,29 +36,9 @@ tcp\&.recvmsg
 .fi
 .SH "VALUES"
 .PP
-\fIdport\fR
-.RS 4
-TCP destination port
-.RE
-.PP
 \fIdaddr\fR
 .RS 4
 A string representing the destination IP address
-.RE
-.PP
-\fIsport\fR
-.RS 4
-TCP source port
-.RE
-.PP
-\fIname\fR
-.RS 4
-Name of this probe
-.RE
-.PP
-\fIfamily\fR
-.RS 4
-IP address family
 .RE
 .PP
 \fIsize\fR
@@ -66,14 +46,34 @@ IP address family
 Number of bytes to be received
 .RE
 .PP
-\fIsock\fR
+\fIdport\fR
 .RS 4
-Network socket
+TCP destination port
+.RE
+.PP
+\fIsport\fR
+.RS 4
+TCP source port
 .RE
 .PP
 \fIsaddr\fR
 .RS 4
 A string representing the source IP address
+.RE
+.PP
+\fIname\fR
+.RS 4
+Name of this probe
+.RE
+.PP
+\fIsock\fR
+.RS 4
+Network socket
+.RE
+.PP
+\fIfamily\fR
+.RS 4
+IP address family
 .RE
 .SH "CONTEXT"
 .PP

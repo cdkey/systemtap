@@ -36,14 +36,14 @@ workqueue\&.create
 .fi
 .SH "VALUES"
 .PP
-\fIwq_thread\fR
-.RS 4
-task_struct of the workqueue thread
-.RE
-.PP
 \fIcpu\fR
 .RS 4
 cpu for which the worker thread is created
+.RE
+.PP
+\fIwq_thread\fR
+.RS 4
+task_struct of the workqueue thread
 .RE
 .SH SEE ALSO\n 
 .IR tapset::irq (3stap)

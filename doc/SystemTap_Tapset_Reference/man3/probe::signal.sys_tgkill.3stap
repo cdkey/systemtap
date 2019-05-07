@@ -36,14 +36,29 @@ signal\&.sys_tgkill
 .fi
 .SH "VALUES"
 .PP
-\fIsig_pid\fR
+\fIsig_name\fR
 .RS 4
-The PID of the thread receiving the kill signal
+A string representation of the signal
+.RE
+.PP
+\fIpid_name\fR
+.RS 4
+The name of the signal recipient
+.RE
+.PP
+\fIsig\fR
+.RS 4
+The specific kill signal sent to the process
 .RE
 .PP
 \fIname\fR
 .RS 4
 Name of the probe point
+.RE
+.PP
+\fIsig_pid\fR
+.RS 4
+The PID of the thread receiving the kill signal
 .RE
 .PP
 \fItgid\fR
@@ -54,21 +69,6 @@ The thread group ID of the thread receiving the kill signal
 \fItask\fR
 .RS 4
 A task handle to the signal recipient
-.RE
-.PP
-\fIsig\fR
-.RS 4
-The specific kill signal sent to the process
-.RE
-.PP
-\fIpid_name\fR
-.RS 4
-The name of the signal recipient
-.RE
-.PP
-\fIsig_name\fR
-.RS 4
-A string representation of the signal
 .RE
 .SH "DESCRIPTION"
 .PP

@@ -46,14 +46,14 @@ read bytes
 file handle (the first part is the length of the file handle)
 .RE
 .PP
+\fIoffset\fR
+.RS 4
+the offset of file
+.RE
+.PP
 \fIflag\fR
 .RS 4
 indicates whether this execution is a sync operation
-.RE
-.PP
-\fIclient_ip\fR
-.RS 4
-the ip address of client
 .RE
 .PP
 \fIcount\fR
@@ -61,9 +61,9 @@ the ip address of client
 read bytes
 .RE
 .PP
-\fIoffset\fR
+\fIclient_ip\fR
 .RS 4
-the offset of file
+the ip address of client
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfsd (3stap)

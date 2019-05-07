@@ -36,9 +36,24 @@ udp\&.recvmsg\&.return
 .fi
 .SH "VALUES"
 .PP
+\fIsport\fR
+.RS 4
+UDP source port
+.RE
+.PP
 \fIdaddr\fR
 .RS 4
 A string representing the destination IP address
+.RE
+.PP
+\fIfamily\fR
+.RS 4
+IP address family
+.RE
+.PP
+\fIdport\fR
+.RS 4
+UDP destination port
 .RE
 .PP
 \fIsaddr\fR
@@ -49,21 +64,6 @@ A string representing the source IP address
 \fIname\fR
 .RS 4
 The name of this probe
-.RE
-.PP
-\fIdport\fR
-.RS 4
-UDP destination port
-.RE
-.PP
-\fIfamily\fR
-.RS 4
-IP address family
-.RE
-.PP
-\fIsport\fR
-.RS 4
-UDP source port
 .RE
 .PP
 \fIsize\fR

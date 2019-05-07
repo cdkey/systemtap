@@ -36,9 +36,19 @@ tcp\&.receive
 .fi
 .SH "VALUES"
 .PP
-\fIdaddr\fR
+\fIurg\fR
 .RS 4
-A string representing the destination IP address
+TCP URG flag
+.RE
+.PP
+\fIprotocol\fR
+.RS 4
+Packet protocol from driver
+.RE
+.PP
+\fIack\fR
+.RS 4
+TCP ACK flag
 .RE
 .PP
 \fIfin\fR
@@ -46,19 +56,19 @@ A string representing the destination IP address
 TCP FIN flag
 .RE
 .PP
-\fIurg\fR
-.RS 4
-TCP URG flag
-.RE
-.PP
 \fIiphdr\fR
 .RS 4
 IP header address
 .RE
 .PP
-\fIfamily\fR
+\fIdport\fR
 .RS 4
-IP address family
+TCP destination port
+.RE
+.PP
+\fIdaddr\fR
+.RS 4
+A string representing the destination IP address
 .RE
 .PP
 \fIsaddr\fR
@@ -71,39 +81,29 @@ A string representing the source IP address
 TCP PSH flag
 .RE
 .PP
-\fIrst\fR
-.RS 4
-TCP RST flag
-.RE
-.PP
-\fIdport\fR
-.RS 4
-TCP destination port
-.RE
-.PP
-\fIack\fR
-.RS 4
-TCP ACK flag
-.RE
-.PP
-\fIprotocol\fR
-.RS 4
-Packet protocol from driver
-.RE
-.PP
-\fIsyn\fR
-.RS 4
-TCP SYN flag
-.RE
-.PP
 \fIsport\fR
 .RS 4
 TCP source port
 .RE
 .PP
+\fIfamily\fR
+.RS 4
+IP address family
+.RE
+.PP
+\fIrst\fR
+.RS 4
+TCP RST flag
+.RE
+.PP
 \fIname\fR
 .RS 4
 Name of the probe point
+.RE
+.PP
+\fIsyn\fR
+.RS 4
+TCP SYN flag
 .RE
 .SH SEE ALSO\n 
 .IR tapset::tcp (3stap)

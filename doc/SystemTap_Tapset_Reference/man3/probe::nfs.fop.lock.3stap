@@ -36,24 +36,9 @@ nfs\&.fop\&.lock
 .fi
 .SH "VALUES"
 .PP
-\fIfl_start\fR
+\fIfl_flag\fR
 .RS 4
-starting offset of locked region
-.RE
-.PP
-\fIino\fR
-.RS 4
-inode number
-.RE
-.PP
-\fIdev\fR
-.RS 4
-device identifier
-.RE
-.PP
-\fIi_mode\fR
-.RS 4
-file type and access rights
+lock flags
 .RE
 .PP
 \fIfl_end\fR
@@ -61,14 +46,29 @@ file type and access rights
 ending offset of locked region
 .RE
 .PP
+\fIfl_start\fR
+.RS 4
+starting offset of locked region
+.RE
+.PP
+\fIdev\fR
+.RS 4
+device identifier
+.RE
+.PP
+\fIino\fR
+.RS 4
+inode number
+.RE
+.PP
+\fIi_mode\fR
+.RS 4
+file type and access rights
+.RE
+.PP
 \fIfl_type\fR
 .RS 4
 lock type
-.RE
-.PP
-\fIfl_flag\fR
-.RS 4
-lock flags
 .RE
 .PP
 \fIcmd\fR
