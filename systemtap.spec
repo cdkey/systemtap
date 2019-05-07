@@ -1256,7 +1256,7 @@ done
 
 # PRERELEASE
 %changelog
-* Mon May 06 2019 Serguei Makarov <smakarov@redhat.com> - 4.1-1
+* Mon May 07 2019 Serguei Makarov <smakarov@redhat.com> - 4.1-1
 - Upstream release.
 
 * Sat Oct 13 2018 Frank Ch. Eigler <fche@redhat.com> - 4.0-1
