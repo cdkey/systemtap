@@ -302,6 +302,11 @@ instantiate_maps (Elf64_Shdr *shdr, Elf_Data *data)
   map_attrs = attrs;
   map_fds.assign(n, -1);
 
+  // XXX: PR24324 -- This overhead space calculation was too
+  // conservative and caused resource exhaustion errors, disabling it
+  // until we figure out how much space we need or if the
+  // RLIM_INFINITY solution below is adequate.
+#if 0
   /* First, make room for the maps in this process' RLIMIT_MEMLOCK: */
   size_t rlimit_increase = 0;
   for (i = 0; i < n; ++i)
@@ -312,6 +317,7 @@ instantiate_maps (Elf64_Shdr *shdr, Elf_Data *data)
       // TODO: Note that Certain Other Tools just give up on
       // calculating and set rlimit to the maximum possible.
     }
+#endif
 
   struct rlimit curr_rlimit;
   int rc;
@@ -323,12 +329,14 @@ instantiate_maps (Elf64_Shdr *shdr, Elf_Data *data)
 
   rlim_t rlim_orig = curr_rlimit.rlim_cur;
   rlim_t rlim_max_orig = curr_rlimit.rlim_max;
+#if 0
   curr_rlimit.rlim_cur += rlimit_increase;
   curr_rlimit.rlim_max += rlimit_increase;
   if (curr_rlimit.rlim_cur < rlim_orig) // handle overflow
     curr_rlimit.rlim_cur = rlim_orig;
   if (curr_rlimit.rlim_max < rlim_max_orig) // handle overflow
     curr_rlimit.rlim_max = rlim_max_orig;
+#endif
   // TODOXXX: PR24324 -- EXPERIMENTAL fix for aggressive resource limits.
   // Other Tools do something like this but it doesn't solve all our problems.
   curr_rlimit.rlim_cur = RLIM_INFINITY;
@@ -370,8 +378,12 @@ instantiate_maps (Elf64_Shdr *shdr, Elf_Data *data)
           // coming on/offline and adjust accordingly.
           long ncpus_ = sysconf(_SC_NPROCESSORS_CONF);
           unsigned ncpus = ncpus_ > 0 ? ncpus_ : 1;
+          if (ncpus_ < 0)
+            fprintf(stderr, "WARNING: could not get number of CPUs, falling back to 1: %s\n", strerror(errno));
+          else if (ncpus_ == 0)
+            fprintf(stderr, "WARNING: could not get number of CPUs, falling back to 1\n"); // XXX no errno
           //unsigned ncpus = get_nprocs_conf();
-          mark_active_cpus(ncpus);
+          mark_active_cpus((unsigned)ncpus);
           attrs[i].max_entries = ncpus;
         }
 
@@ -988,6 +1000,7 @@ register_tracepoints()
 	{
 	  fprintf(stderr, "Error reading probe event id %zu: %s\n",
 		  i, strerror(errno));
+          close(fd);
 	  goto fail;
 	}
       close(fd);
