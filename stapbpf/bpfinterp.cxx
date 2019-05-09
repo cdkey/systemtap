@@ -112,7 +112,8 @@ map_get_next_key(int fd_idx, int64_t key, int64_t next_key,
   // with a single map during execution of nested foreach loops.
   if (!key && is_str)
     {
-      char k[BPF_MAXSTRINGLEN], n[BPF_MAXSTRINGLEN];
+      // XXX: BPF_MAXSTRINGLEN+1 to avoid coverity warning
+      char k[BPF_MAXSTRINGLEN_PLUS], n[BPF_MAXSTRINGLEN_PLUS];
       std::set<std::string> s;
 
       int rc = bpf_get_next_key(fd, 0, as_ptr(n));
@@ -436,6 +437,7 @@ bpf_interpret(size_t ninsns, const struct bpf_insn insns[],
   uint64_t result = 0; // return value
   uint64_t stack[512 / 8];
   uint64_t regs[MAX_BPF_REG];
+  memset(regs, 0x0, sizeof(uint64_t) * MAX_BPF_REG);
   const struct bpf_insn *i = insns;
   static std::vector<uint64_t *> map_values;
   static std::vector<std::string> strings; // TODO: could clear on exit?
@@ -549,7 +551,9 @@ bpf_interpret(size_t ninsns, const struct bpf_insn insns[],
 	case BPF_ALU | BPF_OR  | BPF_X:
 	case BPF_ALU | BPF_OR  | BPF_K:  dr = (uint32_t)(dr | s1); break;
 	case BPF_ALU | BPF_LSH | BPF_X:
-	case BPF_ALU | BPF_LSH | BPF_K:  dr = (uint32_t)dr << s1; break;
+	case BPF_ALU | BPF_LSH | BPF_K:
+          // XXX: signal to coverity that we really do want a 32-bit result
+          dr = (uint64_t)((uint32_t)dr << s1); break;
 	case BPF_ALU | BPF_RSH | BPF_X:
 	case BPF_ALU | BPF_RSH | BPF_K:  dr = (uint32_t)dr >> s1; break;
 	case BPF_ALU | BPF_XOR | BPF_X:

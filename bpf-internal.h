@@ -45,7 +45,9 @@ namespace bpf {
 #define BPF_REG_SIZE 8
 
 #define BPF_MAXSTRINGLEN 64
+#define BPF_MAXSTRINGLEN_PLUS 65
 // #define BPF_MAXSTRINGLEN 128 // TODO: Longer strings require a smarter storage allocator.
+// #define BPF_MAXSTRINGLEN_PLUS 129
 #define BPF_MAXFORMATLEN 256
 #define BPF_MAXPRINTFARGS 32
 // #define BPF_MAXPRINTFARGS 3 // Maximum for trace_printk() method.
