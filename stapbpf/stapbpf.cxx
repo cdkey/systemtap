@@ -368,7 +368,8 @@ instantiate_maps (Elf64_Shdr *shdr, Elf_Data *data)
           // (while sizing the perf_event_map according to total CPUs).
           // But for full coverage, we really need to listen to CPUs
           // coming on/offline and adjust accordingly.
-          unsigned ncpus = sysconf(_SC_NPROCESSORS_CONF);
+          long ncpus_ = sysconf(_SC_NPROCESSORS_CONF);
+          unsigned ncpus = ncpus_ > 0 ? ncpus_ : 1;
           //unsigned ncpus = get_nprocs_conf();
           mark_active_cpus(ncpus);
           attrs[i].max_entries = ncpus;
