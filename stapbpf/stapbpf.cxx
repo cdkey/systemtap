@@ -1577,6 +1577,7 @@ perf_event_loop(pthread_t main_thread)
     = count_active_cpus();
   struct pollfd *pmu_fds
     = (struct pollfd *)malloc(n_active_cpus * sizeof(struct pollfd));
+  vector<unsigned> cpuids;
 
   assert(ncpus == perf_fds.size());
   unsigned i = 0;
@@ -1584,10 +1585,12 @@ perf_event_loop(pthread_t main_thread)
     {
       if (!cpu_online[cpu]) continue; // -- skip inactive CPUs.
 
-      pmu_fds[i].fd = perf_fds[i];
+      pmu_fds[i].fd = perf_fds[cpu];
       pmu_fds[i].events = POLLIN;
+      cpuids.push_back(cpu);
       i++;
     }
+  assert(n_active_cpus == cpuids.size());
 
   // Avoid multiple warnings about errors reading from an fd:
   std::set<int> already_warned;
@@ -1609,12 +1612,13 @@ perf_event_loop(pthread_t main_thread)
             fprintf(stderr, "Saw perf_event on fd %d\n", pmu_fds[i].fd);
 
           ready --;
+          unsigned cpu == cpuids[i];
           ret = bpf_perf_event_read_simple
-            (perf_headers[i],
+            (perf_headers[cpu],
              perf_event_page_count * perf_event_page_size,
              perf_event_page_size,
              &data, &len,
-             perf_event_handle, transport_contexts[i]);
+             perf_event_handle, transport_contexts[cpu]);
 
           if (ret == LIBBPF_PERF_EVENT_DONE)
             {
