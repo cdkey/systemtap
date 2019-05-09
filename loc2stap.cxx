@@ -1745,6 +1745,7 @@ location_context::handle_GNU_parameter_ref (Dwarf_Op expr)
   // it and we want to be able to restore the registers back.
   functioncall *get_ptregs = new functioncall;
   get_ptregs->tok = e->tok;
+  get_ptregs->synthetic = true;
   if (this->userspace_p)
     get_ptregs->function = std::string("__get_uregs");
   else
@@ -1870,6 +1871,7 @@ location_context::handle_GNU_parameter_ref (Dwarf_Op expr)
   // Translation done, restore the pt_regs to its original value
   functioncall *set_ptregs = new functioncall;
   set_ptregs->tok = e->tok;
+  set_ptregs->synthetic = true;
   if (this->userspace_p)
     set_ptregs->function = std::string("__set_uregs");
   else

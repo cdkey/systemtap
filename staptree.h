@@ -464,6 +464,7 @@ struct functioncall: public expression
   interned_string function;
   std::vector<expression*> args;
   std::vector<functiondecl*> referents;
+  bool synthetic;
   functioncall ();
   void print (std::ostream& o) const;
   void visit (visitor* u);

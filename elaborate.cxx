@@ -3073,7 +3073,7 @@ public:
     }
 
   // Don't allow /* guru */ functions unless caller is privileged.
-  if (!call->tok->location.file->privileged &&
+  if (!call->synthetic && !call->tok->location.file->privileged &&
       s->tagged_p ("/* guru */"))
     throw SEMANTIC_ERROR (_("function may not be used unless -g is specified"),
 			  call->tok);
