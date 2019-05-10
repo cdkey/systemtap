@@ -1612,7 +1612,7 @@ perf_event_loop(pthread_t main_thread)
             fprintf(stderr, "Saw perf_event on fd %d\n", pmu_fds[i].fd);
 
           ready --;
-          unsigned cpu == cpuids[i];
+          unsigned cpu = cpuids[i];
           ret = bpf_perf_event_read_simple
             (perf_headers[cpu],
              perf_event_page_count * perf_event_page_size,
