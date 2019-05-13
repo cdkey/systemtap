@@ -112,8 +112,10 @@ map_get_next_key(int fd_idx, int64_t key, int64_t next_key,
   // with a single map during execution of nested foreach loops.
   if (!key && is_str)
     {
-      // XXX: BPF_MAXSTRINGLEN+1 to avoid coverity warning
-      char k[BPF_MAXSTRINGLEN_PLUS], n[BPF_MAXSTRINGLEN_PLUS];
+      // XXX: BPF_MAXSTRINGLEN+1 to placate coverity,
+      // ((nonstring)) to placate gcc9 warnings. Worth reviewing.
+      char k[BPF_MAXSTRINGLEN_PLUS] __attribute__ ((nonstring)),
+        n[BPF_MAXSTRINGLEN_PLUS] __attribute__ ((nonstring));
       std::set<std::string> s;
 
       int rc = bpf_get_next_key(fd, 0, as_ptr(n));
