@@ -298,14 +298,14 @@ We first copy a SystemTap script (e.g. "script1.stp") into the script directory:
 .ESAMPLE
 We can then set any script options, for example:
 .SAMPLE
-\fB#\fR vi /etc/systemtap/conf.d/group1
+\fB#\fR vi /etc/systemtap/conf.d/group1.conf
 script1_OPT="-o /var/log/group1.out"
 .ESAMPLE
 We then install a script (e.g. "script2.stp") which needs to run after
 script1. In this case, we can do the following:
 .SAMPLE
 \fB#\fR cp script2.stp /etc/systemtap/script.d/
-\fB#\fR vi /etc/systemtap/conf.d/group1
+\fB#\fR vi /etc/systemtap/conf.d/group1.conf
 script2_OPT="-o /var/log/group2.out"
 script2_REQ="script1"
 .ESAMPLE
@@ -340,7 +340,7 @@ Scripts are deleted by simply removing them from the script directory and
 removing any configuration lines specific to them:
 .SAMPLE
 \fB#\fR rm /etc/systemtap/script.d/script2.stp
-\fB#\fR vi /etc/systemtap/conf.d/group1
+\fB#\fR vi /etc/systemtap/conf.d/group1.conf
 .ESAMPLE
 If the script is still running, we also need to stop it:
 .SAMPLE
