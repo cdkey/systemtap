@@ -180,10 +180,27 @@ __extension__ extern unsigned long long __sdt_unsp;
 #if defined __powerpc__ || defined __powerpc64__
 # define _SDT_ARGTMPL(id)	%I[id]%[id]
 #elif defined __i386__
-# define _SDT_ARGTMPL(id)	%w[id]  /* gcc.gnu.org/PR80115 */
+# define _SDT_ARGTMPL(id)	%k[id]  /* gcc.gnu.org/PR80115 sourceware.org/PR24541 */
 #else
 # define _SDT_ARGTMPL(id)	%[id]
 #endif
+
+/* NB: gdb PR24541 highlighted an unspecified corner of the sdt.h
+   operand note format.
+
+   The named register may be a longer or shorter (!) alias for the
+   storage where the value in question is found.  For example, on
+   i386, 64-bit value may be put in register pairs, and the register
+   name stored would identify just one of them.  Previously, gcc was
+   asked to emit the %w[id] (16-bit alias of some registers holding
+   operands), even when a wider 32-bit value was used.
+
+   Bottom line: the byte-width given before the @ sign governs.  If
+   there is a mismatch between that width and that of the named
+   register, then a sys/sdt.h note consumer may need to employ
+   architecture-specific heuristics to figure out where the compiler
+   has actually put the complete value.
+*/
 
 #ifdef __LP64__
 # define _SDT_ASM_ADDR	.8byte
