@@ -24,6 +24,9 @@ function determine_apply_diff() {
 SRCDIR=`dirname $0`/..; SRCDIR=`realpath $SRCDIR`
 DIR=`mktemp -d stapXXX -p /tmp/`; cd $DIR
 
+echo "Working in $DIR"
+trap 'rm -rf $DIR' 0 1 2 3 5 15
+
 # We need to differenciate between upstream sources and the later used distro sources
 # hence the specific checkout to systemtap-git
 
@@ -62,7 +65,7 @@ cd systemtap
 git diff systemtap.spec ../systemtap-git/systemtap.spec > ../spec-diff || true
 
 if [ -s ../spec-diff ]; then
-    CHANGELOG_PRESENT=`grep \%changelog ../spec-diff`
+    CHANGELOG_PRESENT=`grep \%changelog ../spec-diff || true`
     # the space in front of %changelog is because its a diff context line
     if [ "$CHANGELOG_PRESENT" == " %changelog" ]; then
 	# We don't need to know the difference in spec changelogs
