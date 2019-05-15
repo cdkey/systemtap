@@ -112,17 +112,19 @@ map_get_next_key(int fd_idx, int64_t key, int64_t next_key,
   // with a single map during execution of nested foreach loops.
   if (!key && is_str)
     {
-      // XXX: BPF_MAXSTRINGLEN+1 to placate coverity,
-      // ((nonstring)) to placate gcc9 warnings. Worth reviewing.
-      char k[BPF_MAXSTRINGLEN_PLUS] __attribute__ ((nonstring)),
-        n[BPF_MAXSTRINGLEN_PLUS] __attribute__ ((nonstring));
+      // XXX: copy with memcpy() and add a safety NUL. This avoids
+      // labyrinth of contradictory compiler warnings on different
+      // platforms. Worth reviewing.
+      char k[BPF_MAXSTRINGLEN_PLUS],
+        n[BPF_MAXSTRINGLEN_PLUS];
+      k[BPF_MAXSTRINGLEN] = n[BPF_MAXSTRINGLEN] = '\0';
       std::set<std::string> s;
 
       int rc = bpf_get_next_key(fd, 0, as_ptr(n));
       while (!rc)
         {
-          strncpy(k, n, BPF_MAXSTRINGLEN);
-          s.insert(std::string(k));
+          memcpy(k, n, BPF_MAXSTRINGLEN);
+          s.insert(std::string(k, BPF_MAXSTRINGLEN));
           rc = bpf_get_next_key(fd, as_ptr(k), as_ptr(n));
         }
 
