@@ -2,7 +2,7 @@ title: Count Page Cache Hits and Misses
 name: cachestat.stp
 version: 1.0
 author: David Valin and Serhei Makarov
-keywords: memory
+keywords: memory bpf
 subsystem: memory
 status: experimental
 exit: user-controlled
@@ -11,3 +11,5 @@ scope: system-wide
 description: Monitors hits and misses to the page cache and reports a count every 5 seconds. Based on a bpftrace tool by David Valin.
 test_check: stap -p4 cachestat.stp
 test_installcheck: stap cachestat.stp -T 1
+test_check_bpf: stap --bpf -p4 cachestat.stp
+test_installcheck_bpf: stap --bpf cachestat.stp -T 1
