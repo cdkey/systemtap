@@ -130,6 +130,33 @@ foreach file $meta_files {
          }
     }
 
+    # Now run the same thing but with BPF
+    if {[bpf_p]} {
+        set test_check_bpf [extract_tag "$meta_data" "test_check_bpf"]
+        set test_installcheck_bpf [extract_tag "$meta_data" "test_installcheck_bpf"]
+
+        set build_bpf_p 1
+        if { $test_check_bpf != "" } {
+            if { $supported_p == 1 } {
+                set command $test_check_bpf
+                set res [run_command "$test" "build_bpf" $command]
+                if { $res != 0 } { set build_bpf_p 0 }
+            } else {
+                untested "$test build_bpf"
+                continue
+            }
+        }
+        if {[info procs installtest_p] != "" && [installtest_p]
+            && $test_installcheck_bpf != "" } then {
+            if { $supported_p == 1 && $build_bpf_p == 1 } {
+                set command $test_installcheck
+                run_command "$test" "run_bpf" $command
+            } else {
+                untested "$test run_bpf"
+            }
+        }
+    }
+
     # NB: Don't try to clean up; too dangerous & can error-out
     # set output_type [extract_tag "$meta_data" "output"]
     # if {$output_type == "file"} {
