@@ -6323,6 +6323,9 @@ struct sdt_uprobe_var_expanding_visitor: public var_expanding_visitor
   expression* try_parse_arg_offset_register (target_symbol *e,
                                              const string& asmarg,
                                              long precision);
+  expression* try_parse_arg_register_pair (target_symbol *e,
+                                           const string& asmarg,
+                                           long precision);
   expression* try_parse_arg_effective_addr (target_symbol *e,
                                             const string& asmarg,
                                             long precision);
@@ -6940,6 +6943,27 @@ sdt_uprobe_var_expanding_visitor::try_parse_arg_offset_register (target_symbol *
 }
 
 expression*
+sdt_uprobe_var_expanding_visitor::try_parse_arg_register_pair (target_symbol *e,
+                                                               const string& asmarg,
+                                                               long precision)
+{
+  // BZ1613157: for powerpc, accept "R,R", as an alias of "(Ra,Rb)"
+  if (sess.architecture.substr(0,7) != "powerpc")
+    return NULL;
+    
+  // test for BASE_REGISTER,INDEX_REGISTER
+  string regexp = "^(" + regnames + "),(" + regnames + ")$";
+  vector<string> matches;
+  if (!regexp_match(asmarg, regexp, matches))
+    {
+      // delegate to parenthetic syntax
+      return try_parse_arg_effective_addr (e, string("(")+asmarg+string(")"), precision);
+    }
+
+  return NULL;
+}
+
+expression*
 sdt_uprobe_var_expanding_visitor::try_parse_arg_effective_addr (target_symbol *e,
                                                                 const string& asmarg,
                                                                 long precision)
@@ -7013,6 +7037,7 @@ sdt_uprobe_var_expanding_visitor::try_parse_arg_effective_addr (target_symbol *e
 
   return argexpr;
 }
+
 
 expression*
 sdt_uprobe_var_expanding_visitor::try_parse_arg_varname (target_symbol *e,
@@ -7139,7 +7164,7 @@ sdt_uprobe_var_expanding_visitor::visit_target_symbol_arg (target_symbol *e)
       //                    indirect offset   offset                       VAR+off
       // x86    $N      %rR (%rR)    N(%rR)   O(%bR,%iR,S)     var var+off var+off(%rip)
       // x86_64 $N      %rR (%rR)    N(%rR)   O(%bR,%iR,S)     var var+off var+off(%rip)
-      // power  iN      R   (R)      N(R)
+      // power  iN      R   (R)      N(R)     R,R
       // ia64   N       rR  [r16]
       // s390   N       %rR 0(rR)    N(r15)
       // arm    #N      rR  [rR]     [rR, #N]
@@ -7163,6 +7188,8 @@ sdt_uprobe_var_expanding_visitor::visit_target_symbol_arg (target_symbol *e)
           if ((argexpr = try_parse_arg_register(e, asmarg, precision)) != NULL)
             goto matched;
           if ((argexpr = try_parse_arg_offset_register(e, asmarg, precision)) != NULL)
+            goto matched;
+          if ((argexpr = try_parse_arg_register_pair(e, asmarg, precision)) != NULL)
             goto matched;
           if ((argexpr = try_parse_arg_effective_addr(e, asmarg, precision)) != NULL)
             goto matched;
