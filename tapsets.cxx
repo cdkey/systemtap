@@ -5421,6 +5421,8 @@ dwarf_derived_probe::dwarf_derived_probe(interned_string funcname,
                                                      module, section, dwfl_addr,
                                                      addr, q, scope_die);
 
+	  entry_handler->synthetic = true;
+
           saved_longs = entry_handler->saved_longs = v.saved_longs;
           saved_strings = entry_handler->saved_strings = v.saved_strings;
 
@@ -10135,6 +10137,8 @@ kprobe_derived_probe::kprobe_derived_probe (systemtap_session& sess,
 				    false /* has_return */,
 				    has_statement, has_maxactive, has_path,
 				    has_library, maxactive_val, path, library);
+
+      entry_handler->synthetic = true;
       results.push_back (entry_handler);
 
       base->body = old_body;

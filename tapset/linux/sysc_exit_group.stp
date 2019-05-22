@@ -26,6 +26,17 @@ probe syscall.exit_group.return = never
 	@SYSC_RETVALSTR(0)
 }
 
+probe nd_syscall.exit_group.return = never
+{
+	@_SYSCALL_EXIT_GROUP_NAME
+	@SYSC_RETVALSTR(0)
+}
+
+probe dw_syscall.exit_group.return = never
+{
+	@_SYSCALL_EXIT_GROUP_NAME
+	@SYSC_RETVALSTR(0)
+}
 
 # dw_exit_group _____________________________________________________
 

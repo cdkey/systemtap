@@ -2886,6 +2886,12 @@ systemtap_session::is_user_file (const string &name)
 bool
 systemtap_session::is_primary_probe (derived_probe *dp)
 {
+
+  // If the probe is synthetically generated, then it's not primary.
+  
+  if (dp->synthetic)
+    return false;
+
   // We check if this probe is from the primary user file by going back to its
   // original probe and checking if that probe was found in the primary user
   // file.

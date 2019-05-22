@@ -1,0 +1,6 @@
+#! /bin/sh
+
+# Checks for correctness of stap -L when used with return probes.
+# Relates with synthetic probe flagging in the kprobe_derived_probe constructor (tapsets.cxx). 
+
+! stap -L 'syscall.*.return' | grep -v retstr

@@ -1,0 +1,5 @@
+#! /bin/sh
+  
+# Triggers synthetic probe flagging in the dwarf_derived_probe constructor (tapsets.cxx).
+
+stap -e 'probe process.function("main").return { println(@entry($argv)) }' -p2 -c stap
