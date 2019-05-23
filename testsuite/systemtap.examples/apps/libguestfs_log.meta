@@ -2,7 +2,7 @@ title: Trace libguestfs startup
 name: libguestfs_log.stp
 application: libguestfs
 requires: libguestfs
-keywords: application trace
+keywords: application trace bpf
 exit: user-controlled
 output: trace
 scope: system-wide
@@ -10,3 +10,5 @@ description: The libguestfs_log.stp script prints a log of when various libguest
 test_support: stap -L 'process("/usr/lib*/libguestfs.so.0*").mark("*")'
 test_check: stap -p4 libguestfs_log.stp
 test_installcheck: stap libguestfs_log.stp -T 1
+test_check_bpf: stap --bpf -p4 libguestfs_log.stp
+test_installcheck_bpf: stap --bpf libguestfs_log.stp -T 1
