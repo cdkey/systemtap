@@ -17,6 +17,7 @@
  *
  */
 
+#include <sys/time.h>
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -323,6 +324,13 @@ bpf_ktime_get_ns()
   return (t.tv_sec * 1000000000) + t.tv_nsec;
 }
 
+uint64_t
+bpf_gettimeofday_ns()
+{
+  struct timeval t;
+  gettimeofday (&t, NULL);
+  return (((t.tv_sec * 1000000) + t.tv_usec) * 1000);
+}
 
 enum bpf_perf_event_ret
 bpf_handle_transport_msg(void *buf, size_t size,
@@ -710,6 +718,9 @@ bpf_interpret(size_t ninsns, const struct bpf_insn insns[],
             case bpf::BPF_FUNC_stapbpf_stat_get:
               dr = stapbpf_stat_get((bpf::globals::agg_idx)regs[1], regs[2],
                                      bpf::globals::deintern_sc_type(regs[3]), ctx);
+              break;
+            case bpf::BPF_FUNC_gettimeofday_ns:
+              dr = bpf_gettimeofday_ns();
               break;
 	    default:
 	      abort();

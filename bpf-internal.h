@@ -147,10 +147,12 @@ const opcode BPF_LD_MAP = BPF_LD | BPF_IMM | BPF_DW | (BPF_PSEUDO_MAP_FD << 8);
 #define __STAPBPF_FUNC_MAPPER(FN) \
   FN(map_get_next_key),           \
   FN(sprintf),                    \
-  FN(stapbpf_stat_get),
+  FN(stapbpf_stat_get),           \
+  FN(gettimeofday_ns),
 const bpf_func_id BPF_FUNC_map_get_next_key    = (bpf_func_id) -1;
 const bpf_func_id BPF_FUNC_sprintf             = (bpf_func_id) -2;
 const bpf_func_id BPF_FUNC_stapbpf_stat_get    = (bpf_func_id) -3;
+const bpf_func_id BPF_FUNC_gettimeofday_ns     = (bpf_func_id) -4;
 
 
 struct insn

@@ -1,0 +1,71 @@
+// timestamp tapset -- gettimeofday variants
+// Copyright (C) 2005-2009 Red Hat Inc.
+// Copyright (C) 2006 Intel Corporation.
+// Copyright (C) 2019 Red Hat Inc.
+//
+// This file is part of systemtap, and is free software.  You can
+// redistribute it and/or modify it under the terms of the GNU General
+// Public License (GPL); either version 2, or (at your option) any
+// later version.
+
+global __gtod_offset = 0 /* offset of (gettimeofday_ns() - ktime_get_ns()) */
+
+/**
+ * Description: This function returns the system's gettimeof day
+ * It is only callable from systemtap's user-space stap bpf interpreter
+ * which has a function backing up this particular call number.
+ * It's only purpose to provide a time information to compute the offset
+ * so the built-in ktime_get_ns() can be converted for gettimeofday_*().
+ */
+function __gtod_get_ns:long ()
+%{ /* bpf */ /* pure */ /* unprivileged */
+   0x85, 0, 0, 0, -4;	/* call BPF_FUNC_gtod_get_ns */
+   0xbf, $$, 0, 0, 0	/* movx $$, r0 */
+%}
+
+probe init
+{
+  /* compute an offset so ktime_get_ns() can be converted into gettimeofday_*() */
+  __gtod_offset = __gtod_get_ns() - ktime_get_ns();
+}
+
+/**
+ * sfunction gettimeofday_ns - Number of nanoseconds since UNIX epoch
+ *
+ * Description: This function returns the number of nanoseconds
+ * since the UNIX epoch.
+ */
+function gettimeofday_ns:long ()
+{ /* pure */ /* unprivileged */
+  return (ktime_get_ns() + __gtod_offset)
+}
+
+/**
+ * sfunction gettimeofday_us - Number of microseconds since UNIX epoch
+ *
+ * Description: This function returns the number of microseconds
+ * since the UNIX epoch.
+ */
+function gettimeofday_us:long () {
+  return gettimeofday_ns() / 1000;
+}
+
+/**
+ * sfunction gettimeofday_ms - Number of milliseconds since UNIX epoch
+ *
+ * Description: This function returns the number of milliseconds
+ * since the UNIX epoch.
+ */
+function gettimeofday_ms:long () {
+  return gettimeofday_ns() / 1000000;
+}
+
+/**
+ * sfunction gettimeofday_s - Number of seconds since UNIX epoch
+ *
+ * Description: This function returns the number of seconds since
+ * the UNIX epoch.
+ */
+function gettimeofday_s:long () {
+  return gettimeofday_ns() / 1000000000;
+}
