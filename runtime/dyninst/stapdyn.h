@@ -17,6 +17,40 @@ extern "C" {
 #include <stdint.h>
 #include <asm/ptrace.h>
 
+#if defined(__aarch64__)
+
+/* <asm/ptrace.h> defines user_pt_regs not pt_regs so clone this from kernel's
+ *  arch/arm64/include/asm/ptrace.h */
+/*
+ * This struct defines the way the registers are stored on the stack during an
+ * exception. Note that sizeof(struct pt_regs) has to be a multiple of 16 (for
+ * stack alignment). struct user_pt_regs must form a prefix of struct pt_regs.
+ */
+
+struct pt_regs {
+        union {
+                struct user_pt_regs user_regs;
+                struct {
+                        unsigned long long regs[31];
+                        unsigned long long sp;
+                        unsigned long long pc;
+                        unsigned long long pstate;
+                };
+        };
+        unsigned long long orig_x0;
+#ifdef __AARCH64EB__
+        unsigned int unused2;
+        signed int syscallno;
+#else
+        signed int syscallno;
+        unsigned int unused2;
+#endif
+
+        unsigned long long orig_addr_limit;
+        unsigned long long unused;     // maintain 16 byte alignment
+        unsigned long long stackframe[2];
+};
+#endif
 
 /* These are declarations of all interfaces that stapdyn may call in the
  * module, either directly or via dyninst in the mutatee.  To maintain

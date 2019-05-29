@@ -53,6 +53,15 @@ get_dwarf_registers(BPatch_process *app,
       "r20", "r21", "r22", "r23",
       "r24", "r25", "r26", "r27",
       "r28", "r29", "r30", "r31",
+#elif defined(__aarch64__)
+      "r0",  "r1",  "r2",  "r3",
+      "r4",  "r5",  "r6",  "r7",
+      "r8",  "r9",  "r10", "r11",
+      "r12", "r13", "r14", "r15",
+      "r16", "r17", "r18", "r19",
+      "r20", "r21", "r22", "r23",
+      "r24", "r25", "r26", "r27",
+      "r28", "r29", "r30",
 #endif
       NULL };
 
@@ -88,10 +97,11 @@ get_dwarf_registers(BPatch_process *app,
         registers.push_back(new BPatch_constExpr((unsigned long)0));
     }
 
-#if defined(__powerpc__) || defined(__powerpc64__)
+#if (defined(__powerpc__) || defined(__powerpc64__)) || defined(__aarch64__)
   // In EmitterPOWER::emitCall(), Dyninst enforces a limit that "only 8
   // arguments can (currently) be passed on the POWER architecture."
   // We start with the probe index and nregs, leaving just 6 more...
+  // Do the same for aarch64 which has similar restrictions
   while (registers.size() > 6)
     {
       delete registers.back();

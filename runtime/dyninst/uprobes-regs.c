@@ -61,12 +61,17 @@ int enter_dyninst_uprobe_regs(uint64_t index, unsigned long nregs, ...)
 
 #if defined(__powerpc__) || defined(__powerpc64__)
 #define MAX_REG 32
-#else
-#error "Unknown architecture!"
-#endif
 	for (unsigned long r = 0; r < MAX_REG && r < nregs - 1; ++r)
 		pt_regs_store_register((&regs), r,
 				va_arg(varegs, unsigned long));
+#elif defined(__aarch64__)
+#define MAX_REG 32
+	for (unsigned long r = 0; r < MAX_REG && r < nregs - 1; ++r)
+	        regs.regs[r] = va_arg(varegs, unsigned long);
+
+#else
+#error "Unknown architecture!"
+#endif	
 #undef MAX_REG
 
 #endif

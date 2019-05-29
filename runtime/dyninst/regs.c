@@ -71,6 +71,22 @@ static void _stp_print_regs(struct pt_regs * regs)
 	_stp_printf("\n");
 }
 
+#elif defined (__aarch64__)
+static void _stp_print_regs(struct pt_regs * regs)
+{
+	int i;
+
+	_stp_printf("pc : [<%016llx>] pstate: %08llx\n",
+	       regs->pc, regs->pstate);
+	_stp_printf("sp : %016llx\n", regs->sp);
+	for (i = 29; i >= 0; i--) {
+		_stp_printf("x%-2d: %016llx ", i, regs->regs[i]);
+		if (i % 2 == 0)
+			_stp_printf("\n");
+	}
+	_stp_printf("\n");
+}
+
 #endif
 
 #endif /* _DYNINST_REGS_C_ */
