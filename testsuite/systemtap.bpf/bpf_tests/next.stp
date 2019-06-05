@@ -1,0 +1,25 @@
+global value
+global status
+
+probe begin {
+  println("BEGIN")
+  value = 2
+  status = 2
+}
+
+probe kernel.function("vfs_read") {
+  status = 0
+  if (value == 2) next
+  status = 1
+}
+
+probe kernel.function("vfs_read") {
+  if (status != 2) exit()
+}
+
+probe end {
+  if (status)
+    println("END FAIL")
+  else
+    println("END PASS")
+}

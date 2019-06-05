@@ -190,7 +190,7 @@ struct bpf_unparser : public throwing_visitor
   virtual void visit_foreach_loop (foreach_loop* s);
   virtual void visit_return_statement (return_statement* s);
   virtual void visit_delete_statement (delete_statement* s);
-  // TODO visit_next_statement -> UNHANDLED
+  virtual void visit_next_statement (next_statement* s);
   virtual void visit_break_statement (break_statement* s);
   virtual void visit_continue_statement (continue_statement* s);
   virtual void visit_literal_string (literal_string *e);
@@ -1858,6 +1858,14 @@ bpf_unparser::visit_return_statement (return_statement* s)
   if (s->value)
     emit_mov (func_return_val.back (), emit_expr (s->value));
   emit_jmp (func_return.back ());
+}
+
+void
+bpf_unparser::visit_next_statement (next_statement* s)
+{
+  if (!func_return.empty ())
+    throw SEMANTIC_ERROR(_("bpf unhandled next statement in function"), s->tok);
+  emit_jmp(exit_block);
 }
 
 void
