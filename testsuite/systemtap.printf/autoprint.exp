@@ -1,0 +1,14 @@
+set test "autoprint.exp"
+set script_1 {probe process.function("main") { a=$argv; b=$argc; exit() } global a, b}
+set script_2 {stap -e "probe begin { exit() }"}
+
+set ok 0
+
+spawn stap -e $script_1 -c $script_2 
+expect {
+    "a=0x" { incr ok ; exp_continue }
+    -re "b=\[0-9\](?!x)" {incr ok ; exp_continue}
+}
+
+if { $ok == 2 } { pass "$test" } { fail "$test" }
+

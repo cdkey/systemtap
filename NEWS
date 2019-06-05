@@ -1,5 +1,9 @@
 * What's new in version 4.2, PRERELEASE
 
+- The automatic printing implementation now differentiates between 
+  pointer and integer types, which are printed as hex or decimal 
+  respectively. 
+  
 - The sys/sdt.h file changes the way i386 registers operands are
   sometimes named, due to an ambiguity.  A comment block explains.
 

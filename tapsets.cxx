@@ -515,21 +515,6 @@ static bool null_die(Dwarf_Die *die)
   return (!die || !memcmp(die, &null, sizeof(null)));
 }
 
-struct exp_type_dwarf : public exp_type_details
-{
-  // NB: We don't own this dwflpp, so don't use it after build_no_more!
-  // A shared_ptr might help, but expressions are currently so leaky
-  // that we'd probably never clear all references... :/
-  dwflpp* dw;
-  Dwarf_Die die;
-  bool userspace_p;
-  bool is_pointer;
-  exp_type_dwarf(dwflpp* dw, Dwarf_Die* die, bool userspace_p, bool addressof);
-  uintptr_t id () const { return reinterpret_cast<uintptr_t>(die.addr); }
-  bool expandable() const { return true; }
-  functioncall *expand(autocast_op* e, bool lvalue);
-};
-
 
 enum
 function_spec_type

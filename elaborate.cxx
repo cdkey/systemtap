@@ -2128,8 +2128,25 @@ void add_global_var_display (systemtap_session& s)
 	  format += " " + stats[i] + "=" + stats_format;
       else if (l->type == pe_string)
 	format += "=\\\"%#s\\\"";
-      else
-	format += "=%#x";
+      else 
+        {
+
+	  // If l->type is pe_long, we need to differentiate between pointers and non-pointers.
+
+	  string specifier = "=%d";
+
+	  if (l->type_details != NULL && l->type_details->id() != 0)
+	    {
+	      exp_type_dwarf* type = (exp_type_dwarf*) l->type_details.get();
+	  
+	      if (type->is_pointer || dwarf_tag(&type->die) == DW_TAG_pointer_type)
+                specifier = "=%#x";
+	    }
+
+          format += specifier;
+
+        }
+
       format += "\\n";
 
       // Output the actual printf
@@ -5833,15 +5850,6 @@ static int initial_typeres_pass(systemtap_session& s)
   // checking for complete type resolutions or autocast expanding
   initial_typeresolution_info ti(s);
 
-  // Globals never have detailed types.
-  // If we null them now, then all remaining vardecls can be detailed.
-  for (unsigned j=0; j<s.globals.size(); j++)
-    {
-      vardecl* gd = s.globals[j];
-      if (!gd->type_details)
-        gd->type_details = ti.null_type;
-    }
-
   ti.assert_resolvability = false;
   while (1)
     {
@@ -5910,15 +5918,6 @@ semantic_pass_types (systemtap_session& s)
   // next pass: type inference
   unsigned iterations = 0;
   typeresolution_info ti (s);
-
-  // Globals never have detailed types.
-  // If we null them now, then all remaining vardecls can be detailed.
-  for (unsigned j=0; j<s.globals.size(); j++)
-    {
-      vardecl* gd = s.globals[j];
-      if (!gd->type_details)
-        gd->type_details = ti.null_type;
-    }
 
   ti.assert_resolvability = false;
   while (1)
@@ -6269,6 +6268,7 @@ typeresolution_info::visit_assignment (assignment *e)
     }
   else if (e->op == "=") // overloaded = for string & numeric operands
     {
+
       // logic similar to ternary_expression
       exp_type sub_type = t;
 
@@ -6485,6 +6485,7 @@ void resolve_2types (Referrer* referrer, Referent* referent,
 void
 typeresolution_info::visit_symbol (symbol* e)
 {
+
   if (e->referent == 0) // should have been linked or rejected before now
     throw SEMANTIC_ERROR (_F("internal error: unresolved symbol '%s'",
                              e->name.to_string().c_str()), e->tok);
@@ -6493,19 +6494,24 @@ typeresolution_info::visit_symbol (symbol* e)
 
   if (e->type == e->referent->type)
     {
+
       // If both have type details, then they either must agree;
       // otherwise force them both to null.
-      if (e->type_details && e->referent->type_details &&
-          *e->type_details != *e->referent->type_details)
-        {
-          resolved_details(null_type, e->type_details);
-          resolved_details(null_type, e->referent->type_details);
-        }
-      else if (e->type_details && !e->referent->type_details)
-        resolved_details(e->type_details, e->referent->type_details);
-      else if (!e->type_details && e->referent->type_details)
-        resolved_details(e->referent->type_details, e->type_details);
+       if (e->type_details && e->referent->type_details &&
+           *e->type_details != *e->referent->type_details) 
+         {
+           this->session.print_warning(_("Potential type mismatch in reassignment"), e->tok);
+
+           resolved_details(null_type, e->type_details);
+           resolved_details(null_type, e->referent->type_details);
+         }
+       else if (e->type_details && !e->referent->type_details)
+         resolved_details(e->type_details, e->referent->type_details);	
+       else if (!e->type_details && e->referent->type_details)
+         resolved_details(e->referent->type_details, e->type_details);
+
     }
+
 }
 
 void
