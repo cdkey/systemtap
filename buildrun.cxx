@@ -898,6 +898,9 @@ make_bpf_run_command (systemtap_session& s, const string& remotedir,
   if (s.suppress_warnings)
     cmd.push_back("-w");
 
+  if (s.target_pid)
+    cmd.insert(cmd.end(), { "-x", lex_cast(s.target_pid) });
+
   if (!s.output_file.empty())
     {
       cmd.push_back("-o");

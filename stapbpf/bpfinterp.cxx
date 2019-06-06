@@ -332,6 +332,12 @@ bpf_gettimeofday_ns()
   return (((t.tv_sec * 1000000) + t.tv_usec) * 1000);
 }
 
+uint64_t
+bpf_get_target()
+{
+  return target_pid;
+}
+
 enum bpf_perf_event_ret
 bpf_handle_transport_msg(void *buf, size_t size,
                          bpf_transport_context *ctx)
@@ -721,6 +727,9 @@ bpf_interpret(size_t ninsns, const struct bpf_insn insns[],
               break;
             case bpf::BPF_FUNC_gettimeofday_ns:
               dr = bpf_gettimeofday_ns();
+              break;
+	    case bpf::BPF_FUNC_get_target:
+              dr = bpf_get_target();
               break;
 	    default:
 	      abort();

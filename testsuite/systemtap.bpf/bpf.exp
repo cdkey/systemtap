@@ -41,7 +41,7 @@ proc stapbpf_run { TEST_NAME OUTPUT_STR args } {
     set invalid_prog 7
     set comp_err 8
     
-    set cmd [concat stap -v --runtime=bpf $args]
+    set cmd [concat stap -v --runtime=bpf -x 12345 $args]
     # don't the following: ... $test_file_name could be some transient or leftover file
     # if [file readable $test_file_name] { lappend cmd $test_file_name }
 
@@ -112,6 +112,7 @@ proc get_output_str { test } {
         sprintf.stp { set res [string repeat "0123456789" 2] }
         string1.stp { set res {begin\[str0str1str2str3\]probe\[str0str1str2str3\]end\[str0str1str2str3\]} }
         string*.stp { set res {probe0\[str0str1str2str3\]probe1\[str0str1str2str3\]end\[str0str1str2str3\]} }
+        target.stp { set res {[12345]} }
         default { set res "" }
     }
     return $res

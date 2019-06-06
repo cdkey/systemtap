@@ -75,4 +75,6 @@ uint64_t bpf_interpret(size_t ninsns,
                        const struct bpf_insn insns[],
                        bpf_transport_context *ctx);
 
+extern int target_pid;
+
 #endif /* STAPRUNBPF_H */

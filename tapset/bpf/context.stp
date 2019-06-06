@@ -148,3 +148,42 @@ function cpu:long ()
 // XXX: cmdline_args:string(n:long, m:long, delim:string) -- requires string concatenation & loops.
 // TODO: cmdline_arg:string(n:long)
 // XXX: cmdline_string:string() -- requires string concatenation & loops.
+
+global _stp_target
+
+/**
+ * Description: This function copies the system's target PID set with
+ * either -x or -c in stabpf.  This function only works with thein user-space
+ * bpf interpreter, so it runs during initialization to copy target PID value
+ * into a systemtap global which can be read from other more constrained
+ * contexts.
+ */
+function _stp_get_target:long ()
+%{ /* bpf */ /* pure */ /* unprivileged */
+   0x85, 0, 0, 0, -5;	/* call BPF_FUNC_get_target */
+   0xbf, $$, 0, 0, 0	/* movx $$, r0 */
+%}
+
+probe init
+{
+  _stp_target = _stp_get_target()
+}
+
+/**
+ * sfunction target - Return the process ID of the target process
+ *
+ * Description: This function returns the process ID of the target
+ * process.  This is useful in conjunction with the -x PID or
+ * -c CMD command-line options to stap. An example of its use is
+ * to create scripts that filter on a specific process.
+ *
+ * -x <pid>
+ * target() returns the pid specified by -x
+ *
+ * -c <command>
+ * target() returns the pid for the executed command specified by -c
+ */
+function target:long ()
+{
+	return _stp_target
+}

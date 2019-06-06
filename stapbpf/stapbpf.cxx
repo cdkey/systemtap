@@ -69,6 +69,7 @@ static int group_fd = -1;		// ??? Need one per cpu.
 extern "C" { 
 int log_level = 0;
 };
+int target_pid = 0;
 static int warnings = 1;
 static int exit_phase = 0;
 static int interrupt_message = 0;
@@ -1652,6 +1653,7 @@ usage(const char *argv0)
 	 "  -v, --verbose    Increase verbosity\n"
 	 "  -V, --version    Show version\n"
 	 "  -w               Suppress warnings\n"
+	 "  -x pid           Sets the '_stp_target' variable to pid.\n"
 	 "  -o FILE          Send output to FILE\n",
 	 argv0);
 }
@@ -1692,7 +1694,7 @@ main(int argc, char **argv)
 
   int rc;
 
-  while ((rc = getopt_long(argc, argv, "hvVwo:", long_opts, NULL)) >= 0)
+  while ((rc = getopt_long(argc, argv, "hvVwx:o:", long_opts, NULL)) >= 0)
     switch (rc)
       {
       case 'v':
@@ -1701,6 +1703,10 @@ main(int argc, char **argv)
       case 'w':
         warnings = 0;
         break;
+
+      case 'x':
+	target_pid = atoi(optarg);
+	break;
 
       case 'o':
 	output_f = fopen(optarg, "w");
