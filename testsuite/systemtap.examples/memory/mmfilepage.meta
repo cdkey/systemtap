@@ -2,7 +2,7 @@ title: Track Virtual Memory System Actions on File Backed Pages
 name: mmfilepage.stp
 version: 1.0
 author: Red Hat
-keywords: memory
+keywords: memory bpf
 subsystem: memory
 status: experimental
 exit: user-controlled
@@ -12,3 +12,5 @@ description: The mmfilepage.stp script uses the virtual memory tracepoints avail
 test_support: (stap -l 'kernel.trace("mm_page_alloc")' || stap -l 'kernel.trace("mm_page_allocation")') && (stap -l 'kernel.trace("mm_page_free")' || stap -l 'kernel.trace("mm_page_free_direct")')
 test_check: stap -p4 mmfilepage.stp
 test_installcheck: stap mmfilepage.stp -T 1
+test_check_bpf: stap --bpf -p4 mmfilepage.stp
+test_installcheck_bpf: stap --bpf mmfilepage.stp -T 1
