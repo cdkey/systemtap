@@ -235,9 +235,11 @@ stapbpf_stat_get_percpu(bpf::globals::map_idx map, uint64_t idx,
 {
   uint64_t *ret = (uint64_t *)calloc(ctx->ncpus, sizeof(uint64_t));
   int res = bpf_lookup_elem((*ctx->map_fds)[map], as_ptr(idx), ret);
-  if (res)
-    // element could not be found
-    return 0;
+  if (res) {
+      // element could not be found
+      free(ret);
+      return 0;
+    }
   else
     return ret;
 }
@@ -276,14 +278,20 @@ stapbpf_stat_get(bpf::globals::agg_idx agg_id, uint64_t idx,
   agg.shift = 0;
   agg.count = 0;
   agg.sum = 0;
-  for (unsigned i = 0; i < ctx->ncpus; i++) // XXX for_each_possible_cpu(i)
-  {
-    agg.count += count_data[i];
-    agg.sum += sum_data[i];
+
+  // XXX for_each_possible_cpu(i)
+  if (count_data) {
+    for (unsigned i = 0; i < ctx->ncpus; i++)
+	agg.count += count_data[i];
+    free(count_data);
   }
 
-  free(count_data);
-  free(sum_data);
+  // XXX for_each_possible_cpu(i)
+  if (sum_data) {
+    for (unsigned i = 0; i < ctx->ncpus; i++)
+	agg.sum += sum_data[i];
+    free(sum_data);
+  }
 
   // XXX Simplified version of _stp_div64():
   if (agg.count == 0)
