@@ -14,8 +14,8 @@ if {![installtest_p] || ![hrtimer_p]} {
 # Runs stap on a script with the given arguments
 proc run_stap {subtest args script} {
 
-   # We always need the DEBUG and -g flags
-   set args "$args -D DEBUG_STP_ON_THE_FLY -g"
+   # We always need the DEBUG and -g flags, and -u to avoid probe elision
+   set args "$args -D DEBUG_STP_ON_THE_FLY -g -u"
 
    # If this is a stress-test, also start a background echo
    set echo_pid 0

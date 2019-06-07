@@ -1,4 +1,4 @@
-#! stap -p2
+#! stap -u -p2
 
 probe foo.a = kernel.function("sys_read") /* some */ ! /* sufficient */ ,
               kernel.function("no_such_function")

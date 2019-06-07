@@ -1,5 +1,25 @@
 * What's new in version 4.2, PRERELEASE
 
+- The compiler optimizes out probes with empty handlers. Previously,
+  warnings were issued but, the probe was not internally removed. For 
+  example, this script now outputs a warning and an error as the only
+  probe handler is empty:
+
+      probe begin {} 
+
+  Additionally, probe handlers that evaluate to empty are also removed.
+  For example, in this script, the begin probe is elided as $foo does
+  not exist, however, an error won't be outputted because atleast one 
+  probe with a non-empty handler exists (probe begin):
+
+      probe begin {
+          print("Protected from elision")
+      }
+
+      probe end {
+          if (@defined($foo)) { print("Evaluates to empty handler") }
+      }
+
 - The automatic printing implementation now differentiates between 
   pointer and integer types, which are printed as hex or decimal 
   respectively. 

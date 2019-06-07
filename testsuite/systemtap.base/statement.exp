@@ -53,7 +53,7 @@ proc expect_semerror { function linenos semerror_expected } {
    set func_script "process(\"%s\").statement(\"%s@%s.c%s\")"
    set script [format $func_script "./$test" $function "$test" $linenos]
 
-   spawn stap -p2 -e "probe $script {}"
+   spawn stap -u -p2 -e "probe $script {}"
    set found_err 0
    expect {
       -timeout 30

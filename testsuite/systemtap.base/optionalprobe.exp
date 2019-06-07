@@ -1,5 +1,5 @@
 set test "optionalprobe"
-spawn stap -p2 -w $srcdir/$subdir/$test.stp
+spawn stap -u -p2 -w $srcdir/$subdir/$test.stp
 expect {
     -timeout 120
     -re "# probes\r\n" { exp_continue }

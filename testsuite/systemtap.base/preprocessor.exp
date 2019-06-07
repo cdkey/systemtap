@@ -25,7 +25,7 @@ foreach runtime [get_runtime_list] {
 	set runtime_arg ""
     }
 
-    spawn stap -w -p2 ${runtime_arg} -e "probe never {}
+    spawn stap -u -w -p2 ${runtime_arg} -e "probe never {}
     %( kernel_v == \"$kv\"          %? %: ERROR %)
     %( kernel_v == \"$kr\"          %? %: ERROR %)
     %( kernel_v == \"$krx\"         %? ERROR %: %)

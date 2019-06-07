@@ -3,5 +3,6 @@
 probe begin
 {
     // Test that unused autocasts are optimized out
-    foo->has->no->type
+    foo->has->no->type 	    
+    print("avoid probe elision but, not all optimizations")
 }

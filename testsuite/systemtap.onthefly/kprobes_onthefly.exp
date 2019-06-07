@@ -30,8 +30,8 @@ proc run_stap {subtest args script} {
    set echo_loop "while \[ true \]; do /bin/echo 1>/dev/null; done"
    set echo_pid [exec sh -c $echo_loop &]
 
-   # We always need the DEBUG flag
-   set args "$args -DDEBUG_STP_ON_THE_FLY"
+   # We always need the DEBUG flag, and -u to avoid probe elision
+   set args "$args -DDEBUG_STP_ON_THE_FLY -u"
 
    # The script we use uses @entry(), which uses maps underneath. Since we will
    # be stressing the system, we need to ensure we will have enough space for

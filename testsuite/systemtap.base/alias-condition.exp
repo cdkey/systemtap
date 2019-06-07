@@ -5,8 +5,8 @@ set test "alias-condition"
 foreach runtime [get_runtime_list] {
     if {$runtime != ""} {
 	stap_run $test no_load $all_pass_string \
-	    --runtime=$runtime $srcdir/$subdir/$test.stp 
+	    -u --runtime=$runtime $srcdir/$subdir/$test.stp 
     } else {
-	stap_run $test no_load $all_pass_string $srcdir/$subdir/$test.stp 
+	stap_run $test no_load $all_pass_string $srcdir/$subdir/$test.stp -u
     }
 }

@@ -1,4 +1,4 @@
-#! stap -p4
+#! stap -u -p4
 
 # PR 14997
 # last seen on 3.7.0-6.fc19.i686.PAE, 3.6.8-2.fc17.x86_64

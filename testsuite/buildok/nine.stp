@@ -1,4 +1,4 @@
-#! stap -wp2
+#! stap -u -wp2
 
 function f () { }
 function g (arg) { }

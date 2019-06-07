@@ -38,11 +38,11 @@ foreach runtime [get_runtime_list] {
     if {$runtime != ""} {
 	# Suppress warnings (-w) because dyninst can't place some probes, and the WARNINGs
 	# make tcl catch return non-zero.  This way we'll still get individual results.
-	verbose -log "Running: stap -w --runtime=$runtime $script $pthread -c ./$test"
+	verbose -log "Running: stap -u -w --runtime=$runtime $script $pthread -c ./$test"
 	set rc [catch {exec stap -w --runtime=$runtime $script $pthread -c ./$test } res3]
 	lappend test_name "($runtime)"
     } else {
-	verbose -log "Running: stap $script $pthread -c ./$test"
+	verbose -log "Running: stap -u $script $pthread -c ./$test"
 	set rc [catch {exec stap $script $pthread -c ./$test } res3]
     }
     verbose -log "$res3"

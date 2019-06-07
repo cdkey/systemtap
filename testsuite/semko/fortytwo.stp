@@ -1,4 +1,4 @@
-#! stap -p2
+#! stap -u -p2
 
 probe kernel.function("vfs_read") if (foo(2)) { }  # must not call functions
 

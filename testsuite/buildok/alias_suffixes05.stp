@@ -1,4 +1,4 @@
-#! stap -p4
+#! stap -u -p4
 
 # the begin probe alias should be ignored
 

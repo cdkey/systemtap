@@ -1,4 +1,4 @@
-#! stap -p2
+#! stap -u -p2
 
 function trace (n) { return 0 }
 

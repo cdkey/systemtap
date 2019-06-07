@@ -1,0 +1,8 @@
+#! stap -u -p2
+
+probe begin 
+{
+    if (@defined($foo)) { print("should not print") }	
+}
+
+probe end {}

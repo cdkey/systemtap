@@ -1,4 +1,4 @@
-#! stap -p2
+#! stap -u -p2
 
 // should fail since all these functions are blacklisted
 probe kernel.function("do_IRQ") {} 

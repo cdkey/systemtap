@@ -8,7 +8,8 @@ function pure() %{  /* pure */
 %}
 
 
-probe begin
+probe begin 
 {
-	pure ()
+    pure ()
+    print("prevent elision of probe but, elide function")
 }

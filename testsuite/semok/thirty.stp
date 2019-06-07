@@ -1,4 +1,4 @@
-#! stap -p2
+#! stap -u -p2
 
 probe foo.a.one = foo.b, foo.c {} // not recursive
 probe foo.a.two = foo.c, foo.b {} // not recursive

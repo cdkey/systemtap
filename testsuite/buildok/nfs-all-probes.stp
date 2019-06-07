@@ -2,4 +2,7 @@
 
 // Tests if all probes in nfs.stp and nfs_proc.stp are resolvable.
 
-probe nfs.*.*, nfs.*.*.* {}
+probe nfs.*.*, nfs.*.*.* 
+{
+    print("avoid probe elision but, not all optimizations")
+}

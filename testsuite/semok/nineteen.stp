@@ -1,4 +1,4 @@
-#! stap -p2
+#! stap -u -p2
 
 probe foo.a = bar.a { "alias a" }
 probe foo.b = bar.b { "alias b" }

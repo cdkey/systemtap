@@ -1,4 +1,4 @@
-#! stap -p2
+#! stap -u -p2
 
 # Test detection of indefinite recursion when suffixes are involved.
 

@@ -1,4 +1,4 @@
-#! stap -p4
+#! stap -u -p4
 
 # additional layer of indirection for alias suffixes
 

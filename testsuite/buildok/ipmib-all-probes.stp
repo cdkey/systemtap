@@ -1,4 +1,4 @@
-#! stap -p4
+#! stap -u -p4
 
 // Tests if all probes in the ipmib tapset are resolvable.
 

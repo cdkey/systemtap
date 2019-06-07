@@ -2,4 +2,7 @@
 
 // Tests if all probes in nfsd.stp are resolvable.
 
-probe nfsd.*, nfsd.*.*, nfsd.*.*.* {}
+probe nfsd.*, nfsd.*.*, nfsd.*.*.* 
+{
+    print("avoid probe elision but, not all optimizations")
+}

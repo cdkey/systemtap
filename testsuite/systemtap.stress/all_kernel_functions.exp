@@ -1,5 +1,5 @@
 proc probe_ok {probepoint} {
-    set cmd {exec stap -p2 -e}
+    set cmd {exec stap -u -p2 -e}
     lappend cmd "probe $probepoint {}"
     return [expr ![catch $cmd]]
 }

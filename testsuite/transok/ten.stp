@@ -3,6 +3,7 @@
 probe kernel.function("dentry_open")
 {
    $dentry # is a void pointer
+   print("avoid probe elision")
 }
 
 

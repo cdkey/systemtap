@@ -1666,7 +1666,6 @@ semantic_pass_conditions (systemtap_session & sess)
       dp->probes_with_affected_conditions.insert(targets.begin(),
                                                  targets.end());
       sess.probes.push_back (dp);
-      dp->join_group (sess);
 
       // no need to manually do symresolution since body is empty
     }
@@ -1940,8 +1939,10 @@ semantic_pass_symbols (systemtap_session& s)
               assert_no_interrupts();
               derived_probe* dp = dps[j];
               s.probes.push_back (dp);
-              dp->join_group (s);
 
+              // We don't perform the group join for the probe yet, as
+              // some may be elided after optimization.
+	   
 	      if (s.verbose > 2)
 		{
 		  clog << _("symbol resolution for derived-probe ");
@@ -3910,17 +3911,14 @@ void semantic_pass_opt4 (systemtap_session& s, bool& relaxed_p)
                              p->locals.end());
 
       duv.replace (p->body, true);
-      if (p->body == 0)
+
+      if (p->body == 0) 
         {
-          if (! s.timing && // PR10070
-              !(p->base->tok->location.file->synthetic)) // don't warn for synthetic probes
-            s.print_warning (_("side-effect-free probe"), p->tok);
-
           p->body = new null_statement(p->tok);
-
-          // XXX: possible duplicate warnings; see below
+          s.empty_probes.insert(p);
         }
     }
+
   for (map<string,functiondecl*>::iterator it = s.functions.begin(); it != s.functions.end(); it++)
     {
       assert_no_interrupts();
@@ -5643,14 +5641,14 @@ semantic_pass_optimize1 (systemtap_session& s)
 
   int rc = 0;
 
-  // Save the old value of suppress_warnings, as we will be changing
-  // it below.
-  save_and_restore<bool> suppress_warnings(& s.suppress_warnings);
-
   bool relaxed_p = false;
   unsigned iterations = 0;
   while (! relaxed_p)
     {
+      // Save the old value of suppress_warnings, as we will be changing
+      // it below.
+      save_and_restore<bool> suppress_warnings(& s.suppress_warnings);
+
       assert_no_interrupts();
 
       relaxed_p = true; // until proven otherwise
@@ -5687,6 +5685,31 @@ semantic_pass_optimize1 (systemtap_session& s)
       iterations ++;
     }
 
+  // We will now remove probes that have empty handlers and join the remaining probes
+  // with their groups. Do not elide probes when the unoptimziation flag is set. 
+  
+  vector<derived_probe*> non_empty_probes;
+
+  for (unsigned i = 0; i < s.probes.size(); i++)
+    {
+      derived_probe* p = s.probes[i];
+
+      if (s.unoptimized || s.dump_mode)
+        p->join_group(s);
+      else if (s.empty_probes.find(p) == s.empty_probes.end())
+        {
+          non_empty_probes.push_back(p);
+          p->join_group(s);
+        }
+      else if (!s.timing && // PR10070
+               !(p->base->tok->location.file->synthetic)) // don't warn for synthetic probes   
+        s.print_warning(_F("Probe '%s' has been elided", 
+                           ((string) p->locations[0]->components[0]->functor).c_str()), p->tok);
+    }
+  
+  if (!s.unoptimized && !s.dump_mode)
+    s.probes = non_empty_probes;
+      
   return rc;
 }
 

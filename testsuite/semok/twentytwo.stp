@@ -1,4 +1,4 @@
-#! stap -p2
+#! stap -u -p2
 
 probe foo.a = kernel.function("no_such_function")?, never { }
 probe foo.* { }

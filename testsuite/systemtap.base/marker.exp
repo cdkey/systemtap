@@ -52,7 +52,7 @@ if {$kernel_markers_found == 0} {
     # Try compiling a script that probes all kernel markers using a
     # wildcard.
     set script [format $kernel_script "*"]
-    stap_compile $TEST_NAME 1 $script
+    stap_compile $TEST_NAME 1 $script -u
 }
 
 set TEST_NAME "K_MARKER02"

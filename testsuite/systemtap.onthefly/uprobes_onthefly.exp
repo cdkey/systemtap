@@ -19,8 +19,8 @@ proc run_stap {subtest args script} {
    # Now start the application
    set pid [exec ./$test.x &]
 
-   # We always need the DEBUG flags
-   set args "$args -DDEBUG_STP_ON_THE_FLY"
+   # We always need the DEBUG flags, and -u to avoid probe elision
+   set args "$args -DDEBUG_STP_ON_THE_FLY -u"
 
    # The script we use uses @entry(), which uses maps underneath. Since we will
    # be stressing the system, we need to ensure we will have enough space for

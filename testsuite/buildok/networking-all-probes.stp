@@ -1,4 +1,4 @@
-#! stap -wp4
+#! stap -u -wp4
 
 // Tests if all probes in networking.stp are resolvable.
 

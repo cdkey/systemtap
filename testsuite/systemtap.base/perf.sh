@@ -11,7 +11,7 @@ STAP=$1
 
 declare -A perfresult
 for i in "first" "second"; do
-perfresult[$i]=$($STAP -g -c "/bin/cat $0 >/dev/null" -e '
+perfresult[$i]=$($STAP -u -g -c "/bin/cat $0 >/dev/null" -e '
 global insn
 
 %( @1 == "first" %?

@@ -369,6 +369,7 @@ public:
   std::vector<vardecl*> unused_globals;
   std::vector<derived_probe*> unused_probes; // see also *_probes groups below
   std::vector<functiondecl*> unused_functions;
+  std::set<derived_probe*> empty_probes;
 
   // resolved/compiled regular expressions for the run
   std::map<std::string, stapdfa*> dfas;

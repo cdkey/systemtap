@@ -60,6 +60,7 @@ foreach dir $dirlist {
 			g { append extra_args " -g"; continue }
 			t { append extra_args " -t"; continue }
 			w { append extra_args " -w"; continue }
+			v { append extra_args " -v"; continue }
 			W { append extra_args " -W"; continue }
 			u { append extra_args " -u"; continue }
 			- {

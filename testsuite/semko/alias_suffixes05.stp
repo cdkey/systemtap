@@ -1,4 +1,4 @@
-#! stap -p2
+#! stap -u -p2
 
 # fails with a wildcard mismatch error
 

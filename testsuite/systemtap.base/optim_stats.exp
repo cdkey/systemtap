@@ -61,9 +61,9 @@ if {![installtest_p]} {
 for {set i 1} {$i <= 2} {incr i} {
     foreach runtime [get_runtime_list] {
 	if {$runtime != ""} {
-	    spawn stap --runtime=$runtime -g --suppress-time-limits $srcdir/$subdir/$test$i.stp
+	    spawn stap -u --runtime=$runtime -g --suppress-time-limits $srcdir/$subdir/$test$i.stp
 	} else {
-	    spawn stap -g --suppress-time-limits $srcdir/$subdir/$test$i.stp
+	    spawn stap -u -g --suppress-time-limits $srcdir/$subdir/$test$i.stp
 	}
 	expect {
 	    -timeout 300

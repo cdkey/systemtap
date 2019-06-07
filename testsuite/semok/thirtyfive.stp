@@ -1,4 +1,4 @@
-#! stap -p2
+#! stap -u -p2
 
 // PR11208
 probe kernel.function("do_filp""_""open") {}

@@ -258,7 +258,7 @@ proc is_probed {probepoint stap_result} {
 }
 
 proc probe_ok {probepoint} {
-    set cmd {exec stap -p2 -e }
+    set cmd {exec stap -u -p2 -e }
     lappend cmd "probe $probepoint {}"
     exec echo $cmd > cmdfile
     return ![catch $cmd]

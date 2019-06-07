@@ -1,6 +1,6 @@
 #! /bin/sh
 
-stap $@ -t -p4 -DKRETACTIVE=8888 -e '
+stap $@ -u -t -p4 -DKRETACTIVE=8888 -e '
 probe kprobe.function("do_sys_open").return {}
 probe kprobe.function("do_sys_open").return.maxactive(100) {}
 probe kernel.function("do_sys_open").return {}

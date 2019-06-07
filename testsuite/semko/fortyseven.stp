@@ -1,4 +1,4 @@
-#! stap -p2
+#! stap -u -p2
 
 # PR5049
 

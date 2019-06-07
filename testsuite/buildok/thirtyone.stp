@@ -1,4 +1,4 @@
-#! stap -wp4
+#! stap -u -wp4
 
 probe kprobe.function("vfs_stat")!, kprobe.function("vfs_statx") ? {}
 probe kprobe.function("do_sys_open") {}
