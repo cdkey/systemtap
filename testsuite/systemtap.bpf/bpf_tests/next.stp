@@ -1,5 +1,7 @@
-global value
-global status
+// for pr24659
+
+global value//=2
+global status//=2
 
 probe begin {
   println("BEGIN")
@@ -14,10 +16,16 @@ probe kernel.function("vfs_read") {
 }
 
 probe kernel.function("vfs_read") {
+  printf("vfs_read\n")
+  printf("value %d\n", value)
+  printf("status %d\n", status)
   if (status != 2) exit()
 }
 
 probe end {
+  printf("end\n")
+  printf("value %d\n", value)
+  printf("status %d\n", status)
   if (status)
     println("END FAIL")
   else
