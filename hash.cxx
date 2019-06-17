@@ -155,6 +155,9 @@ get_base_hash (systemtap_session& s)
   h.add_path("Kernel Build Tree version.h ", s.kernel_build_tree + "/include/linux/version.h");
   h.add_path("Kernel Build Tree utsrelease.h ", s.kernel_build_tree + "/include/linux/utsrelease.h");
 
+  // Also hash guru mode flag, since behaviour can diverge.
+  h.add("Guru mode ", s.guru_mode);
+
   // Hash runtime path (that gets added in as "-R path").
   h.add_path("Runtime ", s.runtime_path);
   h.add_path("Runtime transport ", s.runtime_path + "/transport");
