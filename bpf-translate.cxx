@@ -1994,6 +1994,50 @@ translate_escapes (const interned_string &str)
             case 'r': result += '\r'; break;
             case 't': result += '\t'; break;
             case 'v': result += '\v'; break;
+
+            // Translate octal and hex escapes:
+            case '0' ... '7':
+              {
+                char c = 0;
+                // An octal escape sequence is at most 3 characters.
+                for (unsigned k = 0; k < 3; ++k)
+                  {
+                    c = c * 8 + (*j - '0');
+                    ++j;
+                    if (j == str.end() || *j < '0' || *j > '7')
+                      {
+                        --j; // avoid swallowing extra char
+                        break;
+                      }
+                  }
+                if (c != 0) // XXX skip '\0' as it can break a transport tag
+                  result += c;
+              }
+              break;
+            case 'x':
+              {
+                char c = 0; ++j;
+                // A hex escape sequence is arbitrarily long.
+                // XXX: Behaviour is 'undefined' when overflowing char.
+                for (; j != str.end(); ++j)
+                  {
+                    if (*j >= '0' && *j <= '7')
+                      c = c * 16 + (*j - '0');
+                    else if (*j >= 'a' && *j <= 'f')
+                      c = c * 16 + (*j - 'a');
+                    else if (*j >= 'A' && *j <= 'F')
+                      c = c * 16 + (*j - 'A');
+                    else
+                      {
+                        --j; // avoid swallowing extra char
+                        break;
+                      }
+                  }
+                if (c != 0) // XXX skip '\0' as it can break a transport tag
+                  result += c;
+              }
+              break;
+
             default:  result += *j; break;
             }
         }
