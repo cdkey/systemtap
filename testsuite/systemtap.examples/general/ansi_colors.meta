@@ -2,7 +2,7 @@ title: Color Table for ansi_set_color()
 name: ansi_colors.stp
 version: 1.0
 author: Eugene Teo
-keywords: format
+keywords: format bpf
 subsystem: none
 status: production
 exit: fixed
@@ -11,3 +11,5 @@ scope: system-wide
 description: The script prints a table showing the available color combinations for the ansi_set_color() function in the ansi.stp tapset.
 test_check: stap -p4 ansi_colors.stp
 test_installcheck: stap ansi_colors.stp
+test_check_bpf: stap --bpf -p4 ansi_colors.stp
+test_installcheck_bpf: stap --bpf ansi_colors.stp
