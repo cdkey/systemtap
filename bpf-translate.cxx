@@ -4362,7 +4362,7 @@ translate_bpf_pass (systemtap_session& s)
               if (!begin_v.empty())
                 t = begin_v[0]->tok;
 
-              program p;
+              program p(target_user_bpfinterp);
               translate_init_and_probe_v(p, glob, init, begin_v);
               p.generate();
               output_probe(eo, p, "stap_begin", 0);
@@ -4370,7 +4370,7 @@ translate_bpf_pass (systemtap_session& s)
           else if (!begin_v.empty())
             {
               t = begin_v[0]->tok;
-              program p;
+              program p(target_user_bpfinterp);
               translate_probe_v(p, glob, begin_v);
               p.generate();
               output_probe(eo, p, "stap_begin", 0);
@@ -4379,7 +4379,7 @@ translate_bpf_pass (systemtap_session& s)
           if (!end_v.empty())
             {
               t = end_v[0]->tok;
-              program p;
+              program p(target_user_bpfinterp);
               translate_probe_v(p, glob, end_v);
               p.generate();
               output_probe(eo, p, "stap_end", 0);
@@ -4394,7 +4394,7 @@ translate_bpf_pass (systemtap_session& s)
           for (auto i = kprobe_v.begin(); i != kprobe_v.end(); ++i)
             {
               t = i->first->tok;
-              program p;
+              program p(target_kernel_bpf);
               translate_probe(p, glob, i->first);
               p.generate();
               output_probe(eo, p, i->second, SHF_ALLOC);
@@ -4409,7 +4409,7 @@ translate_bpf_pass (systemtap_session& s)
           for (auto i = perf_v.begin(); i != perf_v.end(); ++i)
             {
               t = i->first->tok;
-              program p;
+              program p(target_kernel_bpf);
               translate_probe(p, glob, i->first);
               p.generate();
               output_probe(eo, p, i->second, SHF_ALLOC);
@@ -4425,7 +4425,8 @@ translate_bpf_pass (systemtap_session& s)
           for (auto i = timer_v.begin(); i != timer_v.end(); ++i)
             {
               t = i->first->tok;
-              program p;
+              // TODO PR23477: Also support userspace timer probes.
+              program p(target_kernel_bpf);
               translate_probe(p, glob, i->first);
               p.generate();
               output_probe(eo, p, i->second, SHF_ALLOC);
@@ -4440,7 +4441,7 @@ translate_bpf_pass (systemtap_session& s)
           for (auto i = trace_v.begin(); i != trace_v.end(); ++i)
             {
               t = i->first->tok;
-              program p;
+              program p(target_kernel_bpf);
               translate_probe(p, glob, i->first);
               p.generate();
               output_probe(eo, p, i->second, SHF_ALLOC);
@@ -4455,7 +4456,7 @@ translate_bpf_pass (systemtap_session& s)
           for (auto i = uprobe_v.begin(); i != uprobe_v.end(); ++i)
             {
               t = i->first->tok;
-              program p;
+              program p(target_kernel_bpf);
               translate_probe(p, glob, i->first);
               p.generate();
               output_probe(eo, p, i->second, SHF_ALLOC);

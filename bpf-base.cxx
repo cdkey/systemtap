@@ -591,8 +591,8 @@ insn_after_inserter::insert(insn *p)
   i = p;
 }
 
-program::program()
-  : hardreg_vals(MAX_BPF_REG), max_tmp_space(0)
+program::program(enum bpf_target target)
+  : target(target), hardreg_vals(MAX_BPF_REG), max_tmp_space(0)
 {
   for (unsigned i = 0; i < MAX_BPF_REG; ++i)
     hardreg_vals[i] = value::mk_hardreg(i);

@@ -38,8 +38,18 @@ struct vardecl;
 
 namespace bpf {
 
+// PR24528: Used to distinguish between different implementations of
+// the BPF virtual machine. Different implementations have different
+// capabilities, e.g. target_user_bpfinterp supports arbitrary loops
+// whereas target_kernel_bpf restricts loops.
+enum bpf_target {
+  target_kernel_bpf,     // in-kernel JIT interpreter, restricted
+  target_user_bpfinterp, // userspace interpreter, relaxed
+};
+
 // Constants for BPF code generation.
 // TODO: BPF_MAX{STRING,FORMAT}LEN,BPF_MAXMAPENTRIES,BPF_MAXSPRINTFLEN should be user-configurable.
+// TODO: MAX_BPF_STACK and BPF_REG_SIZE should vary depending on bpf_target.
 
 #define MAX_BPF_STACK 512
 #define BPF_REG_SIZE 8
@@ -282,6 +292,8 @@ struct insn_append_inserter : public insn_after_inserter
 
 struct program
 {
+  enum bpf_target target;
+
   std::vector<block *> blocks;	// All blocks in the program
   block *new_block();
 
@@ -324,7 +336,7 @@ struct program
 		block *t, block *f);
   void load_map(insn_inserter &ins, value *dest, int src);
 
-  program();
+  program(enum bpf_target target);
   ~program();
 
   void generate();
