@@ -121,8 +121,11 @@ make_any_make_cmd(systemtap_session& s, const string& dir, const string& target)
     };
 
   // relevant to PR10280: suppress symbol versioning to restrict to exact kernel version
-  if (s.guru_mode)
-    make_cmd.push_back("CONFIG_MODVERSIONS=");
+  // 'Fix' disabled since it can break guru-mode depending on kernel config
+  // and this is a more obnoxious behaviour than breakage when a compiled
+  // guru_mode module is run on a different kernel.
+  //if (s.guru_mode)
+  //  make_cmd.push_back("CONFIG_MODVERSIONS=");
   // XXX: Consider adding an explicit option to control this behaviour?
 
   // Add architecture, except for old powerpc (RHBZ669082)
