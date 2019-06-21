@@ -46,6 +46,9 @@ enum bpf_target {
   target_kernel_bpf,     // in-kernel JIT interpreter, restricted
   target_user_bpfinterp, // userspace interpreter, relaxed
 };
+// TODO: target_kernel_bpf may later be split into two targets,
+// one for older kernel versions (most restricted)
+// and one for newer kernel versions (with loop support & other features)
 
 // Constants for BPF code generation.
 // TODO: BPF_MAX{STRING,FORMAT}LEN,BPF_MAXMAPENTRIES,BPF_MAXSPRINTFLEN should be user-configurable.

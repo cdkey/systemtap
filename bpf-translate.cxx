@@ -1368,6 +1368,9 @@ bpf_unparser::visit_embeddedcode (embeddedcode *s)
   std::vector<asm_stmt> statements;
   asm_stmt stmt;
 
+  // TODO PR24528: May want to implement a /* userspace */ or
+  // /* relaxed */ annotation for userspace-only tapset functions.
+
   // track adjusted source location for each stmt
   adjusted_loc = s->tok->location;
   adjust_pos = 0;
@@ -1678,6 +1681,11 @@ bpf_unparser::visit_if_statement (if_statement* s)
 void
 bpf_unparser::visit_for_loop (for_loop* s)
 {
+  // PR24528: Userspace-only feature.
+  if (this_prog.target == target_kernel_bpf)
+    throw SEMANTIC_ERROR(_("unsupported loop in bpf kernel probe"), s->tok);
+  // TODO: Future versions of BPF will include limited looping capability.
+
   block *body_block = this_prog.new_block ();
   block *iter_block = this_prog.new_block ();
   block *test_block = this_prog.new_block ();
@@ -1713,6 +1721,11 @@ bpf_unparser::visit_for_loop (for_loop* s)
 void
 bpf_unparser::visit_foreach_loop(foreach_loop* s)
 {
+  // PR24528: Userspace-only feature.
+  if (this_prog.target == target_kernel_bpf)
+    throw SEMANTIC_ERROR(_("unsupported loop in bpf kernel probe"), s->tok);
+  // TODO: Future versions of BPF will include limited looping capability.
+
   if (s->indexes.size() != 1)
    throw SEMANTIC_ERROR(_("unhandled multi-dimensional array"), s->tok);
 
@@ -1831,7 +1844,6 @@ bpf_unparser::visit_foreach_loop(foreach_loop* s)
   emit_jmp(body_block);
   set_block(join_block);
 }
-
 
 void
 bpf_unparser::visit_break_statement (break_statement* s)
@@ -3261,6 +3273,10 @@ bpf_unparser::emit_print_format (const std::string& format,
 
   if (!print_to_stream)
     {
+      // PR24528: Userspace-only feature.
+      if (this_prog.target == target_kernel_bpf)
+        throw SEMANTIC_ERROR(_("unsupported sprintf in bpf kernel probe"), tok);
+
       // TODO: sprintf() has an additional constraint on arguments due
       // to passing them in a very small number of registers.
       if (actual.size() > BPF_MAXSPRINTFARGS)
@@ -3403,7 +3419,7 @@ bpf_unparser::visit_stat_op (stat_op* e)
   this_ins.notes.push("stat_get");
 #endif
 
-  // XXX: This code is userspace-only. Unfortunately, BPF does
+  // XXX PR24528: This code is userspace-only. Unfortunately, BPF does
   // not allow accessing percpu map elements from other cpus in
   // kernel-space, so for now we will just issue a fake helper call
   // and let the userspace sort this out.
@@ -3411,6 +3427,8 @@ bpf_unparser::visit_stat_op (stat_op* e)
   // "I don't see a case where accessing other cpu per-cpu element
   // wouldn't be a bug in the program."
   // https://lore.kernel.org/patchwork/patch/634595/
+  if (this_prog.target == target_kernel_bpf)
+    throw SEMANTIC_ERROR(_("unsupported extraction function in bpf kernel probe"), e->tok);
 
   switch (e->ctype)
     {
