@@ -309,7 +309,7 @@ int stp_tracepoint_coming(struct tp_module *tp_mod)
 		}
 	}
 	mutex_unlock(&stp_tracepoint_mutex);
-	return 0;
+	return NOTIFY_OK; /* may be more appropriate than NOTIFY_DONE=0; https://lkml.org/lkml/2019/6/24/880 */
 }
 
 static
