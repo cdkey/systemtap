@@ -88,6 +88,11 @@ static uint32_t kernel_version;
 static bpf_map_def *map_attrs;
 static std::vector<int> map_fds;
 
+// PR24543: Some perf constructs must be anchored to a single CPU.
+// Normally we use cpu0, but it could (in very rare cases) be disabled.
+// Initialized in mark_active_cpus() along with cpu_online.
+static int default_cpu = 0;
+
 // Sized by the number of CPUs:
 static std::vector<int> perf_fds;
 static std::vector<bool> cpu_online; // -- is CPU active?
@@ -233,6 +238,8 @@ fatal_elf()
 // XXX: based on get_online_cpus()/read_cpu_range()
 // in bcc src/cc/common.cc
 //
+// PR24543: Also sets default_cpu.
+//
 // This is the only way I know of so far, so I have to imitate it for
 // now. Parsing a /sys/devices diagnostic file seems a bit brittle to
 // me, though.
@@ -241,6 +248,7 @@ mark_active_cpus(unsigned ncpus)
 {
   std::ifstream cpu_ranges(CPUS_ONLINE);
   std::string cpu_range;
+  int alternate_cpu = -1; // if cpu0 is offline
 
   cpu_online.clear();
   for (unsigned i = 0; i < ncpus; i++)
@@ -259,11 +267,21 @@ mark_active_cpus(unsigned ncpus)
           start = std::stoi(cpu_range.substr(0, rangepos));
           end = std::stoi(cpu_range.substr(rangepos+1));
         }
+      bool found_alternate = false;
       for (int i = start; i <= end; i++)
         {
+          if (!found_alternate)
+            {
+              alternate_cpu = i;
+              found_alternate = true;
+            }
           cpu_online[i] = true;
         }
     }
+
+  // PR24543: Make sure default_cpu is active.
+  if (!cpu_online[default_cpu] && found_alternate)
+    default_cpu = alternate_cpu;
 }
 
 static int
@@ -287,7 +305,7 @@ create_group_fds()
   peattr.type = PERF_TYPE_SOFTWARE;
   peattr.config = PERF_COUNT_SW_DUMMY;
 
-  return group_fd = perf_event_open(&peattr, -1, 0, -1, 0);
+  return group_fd = perf_event_open(&peattr, -1, default_cpu, -1, 0);
 }
 
 static void
@@ -784,7 +802,7 @@ register_uprobes()
 	uprobe_data &u = uprobes[i];
         peattr.config = u.event_id;
 
-        fd = perf_event_open(&peattr, u.pid, 0, -1, 0);
+        fd = perf_event_open(&peattr, u.pid, default_cpu, -1, 0);
         if (fd < 0)
 	  {
 	    fprintf(stderr, "Error opening probe id %zu: %s\n",
@@ -903,7 +921,7 @@ register_kprobes()
 	kprobe_data &k = kprobes[i];
         peattr.config = k.event_id;
 
-        fd = perf_event_open(&peattr, -1, 0, group_fd, 0);
+        fd = perf_event_open(&peattr, -1, default_cpu, group_fd, 0);
         if (fd < 0)
 	  {
 	    fprintf(stderr, "Error opening probe id %zu: %s\n",
@@ -1026,7 +1044,7 @@ register_tracepoints()
 	trace_data &t = tracepoint_probes[i];
         peattr.config = t.event_id;
 
-        int fd = perf_event_open(&peattr, -1, 0, group_fd, 0);
+        int fd = perf_event_open(&peattr, -1, default_cpu, group_fd, 0);
         if (fd < 0)
 	  {
 	    fprintf(stderr, "Error opening probe id %zu: %s\n",
@@ -1072,7 +1090,7 @@ register_timers()
       timer_data &t = timers[i];
       peattr.sample_period = t.period;
 
-      int fd = perf_event_open(&peattr, -1, 0, group_fd, 0);
+      int fd = perf_event_open(&peattr, -1, default_cpu, group_fd, 0);
       if (fd < 0)
         {
           int err = errno;
@@ -1123,7 +1141,7 @@ register_perf()
 
       // group_fd is not used since this event might have an
       // incompatible type/config.
-      int fd = perf_event_open(&peattr, -1, 0, -1, 0);
+      int fd = perf_event_open(&peattr, -1, default_cpu, -1, 0);
       if (fd < 0)
         {
           int err = errno;
@@ -1743,13 +1761,13 @@ main(int argc, char **argv)
   if (kmsg == NULL)
     fprintf(stderr, "WARNING: could not open /dev/kmsg for diagnostics: %s\n", strerror(errno));
 
-  load_bpf_file(argv[optind]);
+  load_bpf_file(argv[optind]); // <- XXX initializes cpus online, PR24543 initializes default_cpu
   init_internal_globals();
   init_perf_transport();
 
   // Create a bpf_transport_context for userspace programs:
   unsigned ncpus = map_attrs[bpf::globals::perf_event_map_idx].max_entries;
-  bpf_transport_context uctx(0/*cpu*/, -1/*pmu_fd*/, ncpus,
+  bpf_transport_context uctx(default_cpu, -1/*pmu_fd*/, ncpus,
                              map_attrs, &map_fds, output_f,
                              &interned_strings, &aggregates);
 
