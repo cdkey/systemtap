@@ -248,7 +248,10 @@ mark_active_cpus(unsigned ncpus)
 {
   std::ifstream cpu_ranges(CPUS_ONLINE);
   std::string cpu_range;
-  int alternate_cpu = -1; // if cpu0 is offline
+
+  // XXX if cpu0 is offline
+  int alternate_cpu = -1;
+  bool found_alternate = false;
 
   cpu_online.clear();
   for (unsigned i = 0; i < ncpus; i++)
@@ -267,7 +270,6 @@ mark_active_cpus(unsigned ncpus)
           start = std::stoi(cpu_range.substr(0, rangepos));
           end = std::stoi(cpu_range.substr(rangepos+1));
         }
-      bool found_alternate = false;
       for (int i = start; i <= end; i++)
         {
           if (!found_alternate)
