@@ -26,6 +26,18 @@ function print_backtrace () %{
 %}
 
 /**
+ *  sfunction print_backtrace_fileline - Print kernel stack back trace
+ *
+ *  Description: This function is equivalent to print_backtrace(), but output
+ *  for each symbol is longer including file names and line numbers.
+ *  The function does not return a value.
+ */
+function print_backtrace_fileline () %{
+	/* pragma:unwind */ /* pragma:symbols */ /* pargma:lines */
+	_stp_stack_kernel_print(CONTEXT, _STP_SYM_FULLER);
+%}
+
+/**
  * sfunction sprint_backtrace - Return stack back trace as string
  *
  * Returns a simple (kernel) backtrace. One line per address.

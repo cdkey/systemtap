@@ -899,137 +899,147 @@ static int _stp_snprint_addr(char *str, size_t len, unsigned long address,
                                            (int) (flags & _STP_SYM_FILENAME));
   }
 
-  if (name && (flags & _STP_SYM_SYMBOL)) {
-    if ((flags & _STP_SYM_MODULE) && modname && *modname) {
-      if (flags & _STP_SYM_OFFSET) {
-	if (flags & _STP_SYM_SIZE) {
-	  /* symbol, module, offset and size. */
-	  if (flags & _STP_SYM_HEX_SYMBOL)
-	    return _stp_snprintf(str, len, "%s%p : %s+%#lx/%#lx [%s]%s%s",
-				 prestr, (int64_t) address,
-				 name, offset, size, modname,
-				 exstr, poststr);
-	  else
-	    return _stp_snprintf(str, len, "%s%s+%#lx/%#lx [%s]%s%s",
-				 prestr, name, offset, size,
-				 modname, exstr, poststr);
-	} else {
-	  /* symbol, module, offset. */
-	  if (flags & _STP_SYM_HEX_SYMBOL)
-	    return _stp_snprintf(str, len, "%s%p : %s+%#lx [%s]%s%s",
-				 prestr, (int64_t) address,
-				 name, offset, modname,
-				 exstr, poststr);
-	  else
-	    return _stp_snprintf(str, len, "%s%s+%#lx [%s]%s%s",
-				 prestr, name, offset,
-				 modname, exstr, poststr);
-	}
-      } else {
-	/* symbol plus module */
-	if (flags & _STP_SYM_HEX_SYMBOL)
-	  return _stp_snprintf(str, len, "%s%p : %s [%s]%s%s", prestr,
-			       (int64_t) address, name, modname,
-			       exstr, poststr);
-	else
-	  return _stp_snprintf(str, len, "%s%s [%s]%s%s", prestr, name,
-			       modname, exstr, poststr);
+  switch (flags & ~_STP_SYM_INEXACT) {
+    case _STP_SYM_SYMBOL:
+      if (name) {
+        /* symbol name only */
+        return _stp_snprintf(str, len, "%s%s%s%s", prestr, name, exstr, poststr);
       }
-    } else if (flags & _STP_SYM_OFFSET) {
-      if (flags & _STP_SYM_SIZE) {
-	/* symbol name, offset + size, no module name */
-	if (flags & _STP_SYM_HEX_SYMBOL)
-	  return _stp_snprintf(str, len, "%s%p : %s+%#lx/%#lx%s%s", prestr,
-			       (int64_t) address, name, offset,
-			       size, exstr, poststr);
-	else
-	  return _stp_snprintf(str, len, "%s%s+%#lx/%#lx%s%s", prestr, name,
-			       offset, size, exstr, poststr);
-      } else {
-	/* symbol name, offset, no module name */
-	if (flags & _STP_SYM_HEX_SYMBOL)
-	  return _stp_snprintf(str, len, "%s%p : %s+%#lx%s%s", prestr,
-			       (int64_t) address, name, offset,
-			       exstr, poststr);
-	else
-	  return _stp_snprintf(str, len, "%s%s+%#lx%s%s", prestr, name,
-			       offset, exstr, poststr);
+      break;
+
+    case _STP_SYM_FILENAME:
+      if (filename) {
+        /* filename */
+        return _stp_snprintf(str, len, "%s%s%s%s", prestr, filename, exstr, poststr);
       }
-    } else {
-      /* symbol name only */
-      if (flags & _STP_SYM_HEX_SYMBOL)
-	return _stp_snprintf(str, len, "%s%p : %s%s%s", prestr,
-			     (int64_t) address, name, exstr, poststr);
-      else
-	return _stp_snprintf(str, len, "%s%s%s%s", prestr, name,
+      break;
+
+    case _STP_SYM_LINENUMBER:
+      if (linenumber) {
+        /* linenumber */
+        return _stp_snprintf(str, len, "%s%#lu%s%s", prestr, linenumber, exstr, poststr);
+      }
+      break;
+
+    case _STP_SYM_FILENAME | _STP_SYM_LINENUMBER:
+      if (filename && linenumber) {
+        /* filename, linenumber */
+        return _stp_snprintf(str, len, "%s%s:%#lu%s%s", prestr, filename, linenumber,
 			     exstr, poststr);
-    }
-  } else {
-    /* no symbol name */
-    if (modname && *modname && (flags & _STP_SYM_MODULE)) {
-      if (flags & _STP_SYM_OFFSET) {
-        if (flags & _STP_SYM_SIZE) {
-          /* hex address, module name, offset + size */
-          return _stp_snprintf(str, len, "%s%p [%s+%#lx/%#lx]%s%s", prestr,
-			       (int64_t) address, modname, offset,
-			       size, exstr, poststr);
-        } else {
-          /* hex address, module name, offset */
-	  return _stp_snprintf(str, len, "%s%p [%s+%#lx]%s%s", prestr,
-			       (int64_t) address, modname, offset,
-			       exstr, poststr);
-        }
-      } else {
-	/* hex address, module name */
-        return _stp_snprintf(str, len, "%s%p [%s]%s%s", prestr,
-			     (int64_t) address, modname, exstr, poststr);
+      } else if (filename) {
+        /* filename, linenumber=?? */
+        return _stp_snprintf(str, len, "%s%s%s%s", prestr, filename, exstr, poststr);
+      } else if (linenumber) {
+        /* filename=??, linenumber */
+        return _stp_snprintf(str, len, "%s??:%#lu%s%s", prestr, linenumber, exstr,
+			     poststr);
       }
-#ifdef STAPCONF_MODULE_TEXT_ADDRESS
-    } if ((flags & _STP_SYM_MODULE) && ! task) {
-      /* No symbol, nor module name, but user really wants one, do one
-	 last try. */
-      struct module *ko;
-      preempt_disable();
-      ko = __module_text_address (address);
-      if (ko && ko->name)
-	{
-	  /* hex address, module name */
-	  int ret = _stp_snprintf(str, len, "%s%p [%s]%s%s", prestr,
-				  (int64_t) address, ko->name, exstr, poststr);
-	  preempt_enable_no_resched();
-	  return ret;
-        }
-      preempt_enable_no_resched();
-      /* no names, hex only */
-      return _stp_snprintf(str, len, "%s%p%s%s", prestr,
-			   (int64_t) address, exstr, poststr);
-#endif
-    } else if ((flags & _STP_SYM_LINENUMBER) && linenumber) {
-        if (flags & _STP_SYM_FILENAME) {
-          if (filename) {
-            /* filename, linenumber */
-            return _stp_snprintf(str, len, "%s%s:%#lu%s%s", prestr,
-                 filename,  linenumber, exstr, poststr);
-          } else {
-            /* filename=??, linenumber */
-            return _stp_snprintf(str, len, "%s??:%#lu%s%s", prestr,
-                 linenumber, exstr, poststr);
-          }
-        } else {
-          /* linenumber */
-          return _stp_snprintf(str, len, "%s%#lu%s%s", prestr,
-               linenumber, exstr, poststr);
-        }
-    } else if ((flags & _STP_SYM_FILENAME) && filename) {
-      /* filename */
-      return _stp_snprintf(str, len, "%s%s%s%s", prestr,
-           filename, exstr, poststr);
-    }else {
-      /* no names, hex only */
-      return _stp_snprintf(str, len, "%s%p%s%s", prestr,
-			   (int64_t) address, exstr, poststr);
-    }
+      break;
+
+    case _STP_SYM_BRIEF:
+      if (name) {
+	/* symbol name and offset */
+        return _stp_snprintf(str, len, "%s%s+%#lx%s%s", prestr, name, offset, exstr,
+			     poststr);
+      }
+      break;
+
+    case _STP_SYM_SIMPLE:
+      if (name && modname) {
+        /* symbol, module, offset. */
+        return _stp_snprintf(str, len, "%s%s+%#lx [%s]%s%s", prestr, name, offset,
+                             modname, exstr, poststr);
+      } else if (name) {
+        /* symbol name, offset, no module name */
+        return _stp_snprintf(str, len, "%s%s+%#lx%s%s", prestr, name, offset, exstr,
+			     poststr);
+      } else if (modname) {
+        /* hex address, module name, offset */
+        return _stp_snprintf(str, len, "%s%p [%s+%#lx]%s%s", prestr, (int64_t) address,
+			     modname, offset, exstr, poststr);
+      }
+      break;
+
+    case _STP_SYM_DATA:
+      if (name && modname) {
+        /* symbol, module, offset and size. */
+        return _stp_snprintf(str, len, "%s%s+%#lx/%#lx [%s]%s%s", prestr, name, offset,
+		             size, modname, exstr, poststr);
+      } else if (name) {
+        /* symbol name, offset + size, no module name */
+        return _stp_snprintf(str, len, "%s%s+%#lx/%#lx%s%s", prestr, name, offset, size,
+		             exstr, poststr);
+      } else if (modname) {
+        /* hex address, module name, offset + size */
+        return _stp_snprintf(str, len, "%s%p [%s+%#lx/%#lx]%s%s", prestr,
+		             (int64_t) address, modname, offset, size, exstr, poststr);
+      }
+      break;
+
+    case _STP_SYM_FULL:
+      if (name && modname) {
+        /* symbol, module, offset and size. */
+        return _stp_snprintf(str, len, "%s%p : %s+%#lx/%#lx [%s]%s%s", prestr,
+			     (int64_t) address, name, offset, size, modname, exstr,
+			     poststr);
+      } else if (name) {
+        /* symbol name, offset + size, no module name */
+        return _stp_snprintf(str, len, "%s%p : %s+%#lx/%#lx%s%s", prestr, (int64_t) address,
+			     name, offset, size, exstr, poststr);
+      } else if (modname) {
+        /* hex address, module name, offset + size */
+        return _stp_snprintf(str, len, "%s%p [%s+%#lx/%#lx]%s%s", prestr, (int64_t) address,
+		             modname, offset, size, exstr, poststr);
+      }
+      break;
+
+    case _STP_SYM_FULLER:
+      if (name && modname && filename) {
+        if (linenumber)
+          return _stp_snprintf(str, len, "%s%p : %s+%#lx/%#lx at %s:%#lu [%s]%s%s",
+                               prestr, (int64_t) address, name, offset, size, filename,
+                               linenumber, modname, exstr, poststr);
+	else
+          return _stp_snprintf(str, len, "%s%p : %s+%#lx/%#lx at %s [%s]%s%s",
+                               prestr, (int64_t) address, name, offset, size, filename,
+			       modname, exstr, poststr);
+      } else if (name && filename) {
+        if (linenumber)
+          return _stp_snprintf(str, len, "%s%p : %s+%#lx/%#lx at %s:%#lu%s%s",
+                               prestr, (int64_t) address, name, offset, size, filename,
+                               linenumber, exstr, poststr);
+	else
+          return _stp_snprintf(str, len, "%s%p : %s+%#lx/%#lx at %s%s%s",
+                               prestr, (int64_t) address, name, offset, size, filename,
+                               exstr, poststr);
+      } else if (modname && filename) {
+        if (linenumber)
+          return _stp_snprintf(str, len, "%s%p [%s+%#lx/%#lx] at %s:%#lu%s%s", prestr,
+                               (int64_t) address, modname, offset, size, filename,
+			       linenumber, exstr, poststr);
+	else
+          return _stp_snprintf(str, len, "%s%p [%s+%#lx/%#lx] at %s%s%s", prestr,
+                               (int64_t) address, modname, offset, size, filename,
+			       exstr, poststr);
+      } else if (name && modname) {
+        /* symbol, module, offset and size. */
+        return _stp_snprintf(str, len, "%s%p : %s+%#lx/%#lx [%s]%s%s", prestr,
+			     (int64_t) address, name, offset, size, modname,
+                             exstr, poststr);
+      } else if (name) {
+        /* symbol name, offset + size, no module name */
+        return _stp_snprintf(str, len, "%s%p : %s+%#lx/%#lx%s%s", prestr,
+                             (int64_t) address, name, offset, size, exstr, poststr);
+      } else if (modname) {
+        /* hex address, module name, offset + size */
+        return _stp_snprintf(str, len, "%s%p [%s+%#lx/%#lx]%s%s", prestr,
+                             (int64_t) address, modname, offset, size, exstr, poststr);
+      }
+      break;
   }
+
+  /* no names, hex only */
+  return _stp_snprintf(str, len, "%s%p%s%s", prestr, (int64_t) address, exstr, poststr);
 }
 
 static void _stp_print_addr(unsigned long address, int flags,

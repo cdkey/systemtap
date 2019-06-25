@@ -49,6 +49,12 @@
 			 | _STP_SYM_MODULE | _STP_SYM_OFFSET \
 			 | _STP_SYM_SIZE | _STP_SYM_PRE_SPACE \
 			 | _STP_SYM_NEWLINE)
+/* More fuller symbol format, includes file names and line numbers. */
+#define _STP_SYM_FULLER (_STP_SYM_SYMBOL | _STP_SYM_HEX_SYMBOL \
+			 | _STP_SYM_MODULE | _STP_SYM_OFFSET \
+			 | _STP_SYM_SIZE | _STP_SYM_FILENAME \
+			 | _STP_SYM_LINENUMBER |_STP_SYM_PRE_SPACE \
+			 | _STP_SYM_NEWLINE)
 /* Simple symbol format, as used in backtraces for strings. */
 #define _STP_SYM_SIMPLE (_STP_SYM_SYMBOL | _STP_SYM_MODULE | _STP_SYM_MODULE_BASENAME \
 			 | _STP_SYM_OFFSET | _STP_SYM_NEWLINE)
