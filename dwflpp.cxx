@@ -3959,11 +3959,9 @@ dwflpp::translate_pointer(location_context &ctx, Dwarf_Die *typedie,
   location *loc = ctx.locations.back ();
   if (loc->type != loc_implicit_pointer)
     {
-      Dwarf_Attribute size_attr;
       Dwarf_Word byte_size;
-      if (dwarf_attr_integrate (typedie, DW_AT_byte_size, &size_attr) == NULL
-	  || dwarf_formudata (&size_attr, &byte_size) != 0)
-	throw SEMANTIC_ERROR (_F("cannot get byte_size attribute for type %s: %s",
+      if (dwarf_aggregate_size (typedie, &byte_size) != 0)
+	throw SEMANTIC_ERROR (_F("cannot get size for type %s: %s",
 				 dwarf_diename (typedie) ?: "<anonymous>",
 				 dwarf_errmsg (-1)), ctx.e->tok);
 
