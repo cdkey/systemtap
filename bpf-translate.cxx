@@ -1368,8 +1368,11 @@ bpf_unparser::visit_embeddedcode (embeddedcode *s)
   std::vector<asm_stmt> statements;
   asm_stmt stmt;
 
-  // TODO PR24528: May want to implement a /* userspace */ or
-  // /* relaxed */ annotation for userspace-only tapset functions.
+  // PR24528: The /* userspace */ annotation is used to mark
+  // userspace-only BPF embeddedcode tapset functions.
+  if (s->tagged_p("/* userspace */") &&
+      this_prog.target == target_kernel_bpf)
+    throw SEMANTIC_ERROR(_("embeddedcode marked /* userspace */ in kernel bpf probe"), s->tok);
 
   // track adjusted source location for each stmt
   adjusted_loc = s->tok->location;

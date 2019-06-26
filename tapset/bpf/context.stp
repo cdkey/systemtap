@@ -153,13 +153,13 @@ global _stp_target
 
 /**
  * Description: This function copies the system's target PID set with
- * either -x or -c in stabpf.  This function only works with thein user-space
+ * either -x or -c in stabpf.  This function only works with the user-space
  * bpf interpreter, so it runs during initialization to copy target PID value
  * into a systemtap global which can be read from other more constrained
  * contexts.
  */
 function _stp_get_target:long ()
-%{ /* bpf */ /* pure */ /* unprivileged */
+%{ /* bpf */ /* pure */ /* unprivileged */ /* userspace */
    0x85, 0, 0, 0, -5;	/* call BPF_FUNC_get_target */
    0xbf, $$, 0, 0, 0	/* movx $$, r0 */
 %}

@@ -11,14 +11,14 @@
 global __gtod_offset = 0 /* offset of (gettimeofday_ns() - ktime_get_ns()) */
 
 /**
- * Description: This function returns the system's gettimeof day
- * It is only callable from systemtap's user-space stap bpf interpreter
+ * Description: This function returns the result of system's gettimeofday_ns().
+ * It is only callable from systemtap's user-space bpf interpreter
  * which has a function backing up this particular call number.
- * It's only purpose to provide a time information to compute the offset
+ * Its only purpose is to provide information to compute __gtod_offset
  * so the built-in ktime_get_ns() can be converted for gettimeofday_*().
  */
 function __gtod_get_ns:long ()
-%{ /* bpf */ /* pure */ /* unprivileged */
+%{ /* bpf */ /* pure */ /* unprivileged */ /* userspace */
    0x85, 0, 0, 0, -4;	/* call BPF_FUNC_gtod_get_ns */
    0xbf, $$, 0, 0, 0	/* movx $$, r0 */
 %}
