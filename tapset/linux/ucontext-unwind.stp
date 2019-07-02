@@ -34,13 +34,15 @@ function print_ubacktrace () %{ /* pragma:unwind */ /* pragma:symbols */
  */
 function print_ubacktrace (pc:long, sp:long) %{ /* pragma:unwind */ /* pragma:symbols */
 /* myproc-unprivileged */ /* pragma:uprobes */ /* pragma:vma */
+    unsigned long saved_pc, saved_sp;
+
     if (_stp_get_uregs(CONTEXT) == NULL) {
         _stp_stack_user_print(CONTEXT, _STP_SYM_FULLER); /* expecting a failure message */
         STAP_RETURN();
     }
 
-    unsigned saved_pc = REG_IP(CONTEXT->uregs);
-    unsigned saved_sp = REG_SP(CONTEXT->uregs);
+    saved_pc = REG_IP(CONTEXT->uregs);
+    saved_sp = REG_SP(CONTEXT->uregs);
     REG_IP(CONTEXT->uregs) = STAP_ARG_pc;
     REG_SP(CONTEXT->uregs) = STAP_ARG_sp;
 
@@ -120,13 +122,15 @@ function print_ubacktrace_fileline () %{ /* pragma:unwind */ /* pragma:symbols *
  */
 function print_ubacktrace_fileline (pc:long, sp:long) %{ /* pragma:unwind */ /* pragma:symbols */
 /* myproc-unprivileged */ /* pragma:uprobes */ /* pragma:vma */ /* pragma:lines */
+    unsigned long saved_pc, saved_sp;
+
     if (_stp_get_uregs(CONTEXT) == NULL) {
         _stp_stack_user_print(CONTEXT, _STP_SYM_FULLER); /* expecting a failure message */
         STAP_RETURN();
     }
 
-    unsigned saved_pc = REG_IP(CONTEXT->uregs);
-    unsigned saved_sp = REG_SP(CONTEXT->uregs);
+    saved_pc = REG_IP(CONTEXT->uregs);
+    saved_sp = REG_SP(CONTEXT->uregs);
     REG_IP(CONTEXT->uregs) = STAP_ARG_pc;
     REG_SP(CONTEXT->uregs) = STAP_ARG_sp;
 
