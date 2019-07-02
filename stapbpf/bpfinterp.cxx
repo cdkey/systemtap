@@ -29,6 +29,12 @@
 #include "libbpf.h"
 #include "../bpf-internal.h"
 
+#define stapbpf_abort(reason) \
+  ({ fprintf(stderr, _("bpfinterp.cxx:%d: %s\n"), \
+             __LINE__, (reason));                \
+    abort(); })
+#define stapbpf_just_abort() stapbpf_abort("bpf userspace interpreter error")
+
 inline uintptr_t
 as_int(void *ptr)
 {
@@ -253,8 +259,7 @@ stapbpf_stat_get(bpf::globals::agg_idx agg_id, uint64_t idx,
                  bpf_transport_context *ctx)
 {
   if (ctx->aggregates->find(agg_id) == ctx->aggregates->end())
-    // aggregate could not be found
-    abort();
+    stapbpf_abort("aggregate could not be found");
   bpf::globals::stats_map sd = (*ctx->aggregates)[agg_id];
 
   // XXX Based on struct stat_data in runtime/stat.h:
@@ -303,7 +308,7 @@ stapbpf_stat_get(bpf::globals::agg_idx agg_id, uint64_t idx,
     {
     case sc_average:
       if (agg.count == 0)
-        abort(); // TODO: Should produce 'empty aggregate' error.
+        stapbpf_abort("empty aggregate"); // TODO: Should produce proper error.
       return agg.avg_s;
 
     case sc_count:
@@ -313,14 +318,15 @@ stapbpf_stat_get(bpf::globals::agg_idx agg_id, uint64_t idx,
       return agg.sum;
 
     case sc_none:
-      assert(0); // should not happen, as sc_none is only used in foreach slots
+      // should not happen, as sc_none is only used in foreach slots
+      stapbpf_abort("unexpected sc_none");
 
     // TODO PR23476: Not yet implemented.
     case sc_min:
     case sc_max:
     case sc_variance:
     default:
-      abort();
+      stapbpf_abort("unsupported aggregate");
     }
 }
 
@@ -373,25 +379,25 @@ bpf_handle_transport_msg(void *buf, size_t size,
       // Signal an exit from the program:
       if (bpf_update_elem((*ctx->map_fds)[bpf::globals::internal_map_idx],
                           &exit_key, &exit_val, BPF_ANY) != 0)
-        abort(); // could not set exit status
+        stapbpf_abort("could not set exit status");
       return LIBBPF_PERF_EVENT_DONE;
 
     case bpf::globals::STP_PRINTF_START:
       if (ctx->in_printf)
-        abort(); // printf already started
+        stapbpf_abort("printf already started");
       if (msg_size != sizeof(BPF_TRANSPORT_ARG))
-        abort(); // wrong argument size
+        stapbpf_abort("wrong argument size");
       ctx->in_printf = true; ctx->format_no = -1;
       ctx->expected_args = *(BPF_TRANSPORT_ARG*)msg_content;
       break;
 
     case bpf::globals::STP_PRINTF_END:
       if (!ctx->in_printf)
-        abort(); // printf not started
+        stapbpf_abort("printf not started");
       if (ctx->format_no < 0 || ctx->format_no >= (int)ctx->interned_strings->size())
-        abort(); // printf format is missing
+        stapbpf_abort("printf format is missing");
       if (ctx->printf_args.size() != ctx->expected_args)
-        abort(); // wrong number of args
+        stapbpf_abort("wrong number of printf args");
 
       // TODO: Check this code on 32-bit systems after fixing PR24358.
       //
@@ -431,11 +437,11 @@ bpf_handle_transport_msg(void *buf, size_t size,
 
     case bpf::globals::STP_PRINTF_FORMAT:
       if (!ctx->in_printf)
-        abort(); // printf not started
+        stapbpf_abort("printf not started");
       if (ctx->format_no != -1)
-        abort(); // printf already has format
+        stapbpf_abort("printf already has format");
       if (msg_size != sizeof(BPF_TRANSPORT_ARG))
-        abort(); // wrong argument size
+        stapbpf_abort("wrong argument size");
       ctx->format_no = *(BPF_TRANSPORT_ARG*)msg_content;
       break;
 
@@ -443,7 +449,7 @@ bpf_handle_transport_msg(void *buf, size_t size,
     case bpf::globals::STP_PRINTF_ARG_LONG:
     case bpf::globals::STP_PRINTF_ARG_STR:
       if (!ctx->in_printf)
-        abort(); // printf not started
+        stapbpf_abort("printf not started");
       arg = malloc(msg_size);
       memcpy(arg, msg_content, msg_size);
       ctx->printf_args.push_back(arg);
@@ -451,7 +457,7 @@ bpf_handle_transport_msg(void *buf, size_t size,
       break;
 
     default:
-      abort();
+      stapbpf_abort("unknown transport message");
     } 
   return LIBBPF_PERF_EVENT_CONT;
 }
@@ -626,7 +632,7 @@ bpf_interpret(size_t ninsns, const struct bpf_insn insns[],
 	      dr = si;
 	      break;
 	    default:
-	      abort();
+	      stapbpf_just_abort();
 	    }
 	  regs[i->dst_reg] = dr;
 	  i += 2;
@@ -740,7 +746,7 @@ bpf_interpret(size_t ninsns, const struct bpf_insn insns[],
               dr = bpf_get_target();
               break;
 	    default:
-	      abort();
+	      stapbpf_abort("unknown helper function");
 	    }
 	  regs[0] = dr;
 	  regs[1] = 0xea7bee75;
@@ -755,7 +761,7 @@ bpf_interpret(size_t ninsns, const struct bpf_insn insns[],
           goto cleanup;
 
 	default:
-	  abort();
+	  stapbpf_abort("unknown bpf opcode");
 	}
 
       regs[i->dst_reg] = dr;
