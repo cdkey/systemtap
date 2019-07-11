@@ -1,5 +1,16 @@
 * What's new in version 4.2, PRERELEASE
 
+- New backtracing functions print_[u]backtrace_fileline() have been added
+  to the tapset. These functions behave similarly to print_[u]backtrace(),
+  the only difference being that file names and line numbers are added
+  to the backtrace.
+
+- Now it is possible to issue a backtrace using user specified pc, sp,
+  and fp which can be used to generate backtraces of different contexts.
+  This was introduced to get backtraces of user code from within the go
+  runtime but it can also be used to do things like generating backtraces
+  of user code from within signal handlers.
+
 - The compiler optimizes out probes with empty handlers. Previously,
   warnings were issued but, the probe was not internally removed. For 
   example, this script now outputs a warning and an error as the only

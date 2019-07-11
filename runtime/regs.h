@@ -44,9 +44,9 @@
 
 #elif defined (__aarch64__)
 
-#define REG_IP(regs) regs->pc
-#define REG_SP(regs) regs->sp
-#define REG_LINK(regs) regs->regs[30]
+#define REG_IP(regs_arg) (regs_arg)->pc
+#define REG_SP(regs_arg) (regs_arg)->sp
+#define REG_LINK(regs_arg) (regs_arg)->regs[30]
 
 #elif defined (__arm__)
 

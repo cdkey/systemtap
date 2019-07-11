@@ -26,15 +26,15 @@ function print_ubacktrace () %{ /* pragma:unwind */ /* pragma:symbols */
  * sfunction print_ubacktrace - Print stack back trace for current user-space task.
  *
  * Equivalent to print_ubacktrace(), but it performs the backtrace
- * using the pc and sp provided.
+ * using the pc, sp, and fp provided.
  *
  * Note: To get (full) backtraces for user space applications and shared
  * shared libraries not mentioned in the current script run stap with
  * -d /path/to/exe-or-so and/or add --ldd to load all needed unwind data.
  */
-function print_ubacktrace (pc:long, sp:long) %{ /* pragma:unwind */ /* pragma:symbols */
+function print_ubacktrace (pc:long, sp:long, fp:long) %{ /* pragma:unwind */ /* pragma:symbols */
 /* myproc-unprivileged */ /* pragma:uprobes */ /* pragma:vma */
-    unsigned long saved_pc, saved_sp;
+    unsigned long saved_pc, saved_sp, saved_fp;
 
     if (_stp_get_uregs(CONTEXT) == NULL) {
         _stp_stack_user_print(CONTEXT, _STP_SYM_FULLER); /* expecting a failure message */
@@ -43,15 +43,27 @@ function print_ubacktrace (pc:long, sp:long) %{ /* pragma:unwind */ /* pragma:sy
 
     saved_pc = REG_IP(CONTEXT->uregs);
     saved_sp = REG_SP(CONTEXT->uregs);
-    REG_IP(CONTEXT->uregs) = STAP_ARG_pc;
+    SET_REG_IP(CONTEXT->uregs, STAP_ARG_pc);
     REG_SP(CONTEXT->uregs) = STAP_ARG_sp;
+#if defined REG_FP
+    saved_fp = REG_FP(CONTEXT->uregs);
+    REG_FP(CONTEXT->uregs) = STAP_ARG_fp;
+#elif defined REG_LINK
+    saved_fp = REG_LINK(CONTEXT->uregs);
+    REG_LINK(CONTEXT->uregs) = STAP_ARG_fp;
+#endif
 
     CONTEXT->uwcache_user.state = uwcache_uninitialized;
     _stp_stack_user_print(CONTEXT, _STP_SYM_FULL);
     CONTEXT->uwcache_user.state = uwcache_uninitialized;
 
-    REG_IP(CONTEXT->uregs) = saved_pc;
+    SET_REG_IP(CONTEXT->uregs, saved_pc);
     REG_SP(CONTEXT->uregs) = saved_sp;
+#if defined REG_FP
+    REG_FP(CONTEXT->uregs) = saved_fp;
+#elif defined REG_LINK
+    REG_LINK(CONTEXT->uregs) = saved_fp;
+#endif
 %}
 
 /**
@@ -114,15 +126,15 @@ function print_ubacktrace_fileline () %{ /* pragma:unwind */ /* pragma:symbols *
  * sfunction print_ubacktrace - Print stack back trace for current user-space task.
  *
  * Equivalent to print_ubacktrace_fileline(), but it performs the backtrace
- * using the pc and sp passed in.
+ * using the pc, sp, and fp passed in.
  *
  * Note: To get (full) backtraces for user space applications and shared
  * shared libraries not mentioned in the current script run stap with
  * -d /path/to/exe-or-so and/or add --ldd to load all needed unwind data.
  */
-function print_ubacktrace_fileline (pc:long, sp:long) %{ /* pragma:unwind */ /* pragma:symbols */
+function print_ubacktrace_fileline (pc:long, sp:long, fp:long) %{ /* pragma:unwind */ /* pragma:symbols */
 /* myproc-unprivileged */ /* pragma:uprobes */ /* pragma:vma */ /* pragma:lines */
-    unsigned long saved_pc, saved_sp;
+    unsigned long saved_pc, saved_sp, saved_fp;
 
     if (_stp_get_uregs(CONTEXT) == NULL) {
         _stp_stack_user_print(CONTEXT, _STP_SYM_FULLER); /* expecting a failure message */
@@ -131,15 +143,27 @@ function print_ubacktrace_fileline (pc:long, sp:long) %{ /* pragma:unwind */ /* 
 
     saved_pc = REG_IP(CONTEXT->uregs);
     saved_sp = REG_SP(CONTEXT->uregs);
-    REG_IP(CONTEXT->uregs) = STAP_ARG_pc;
+    SET_REG_IP(CONTEXT->uregs, STAP_ARG_pc);
     REG_SP(CONTEXT->uregs) = STAP_ARG_sp;
+#if defined REG_FP
+    saved_fp = REG_FP(CONTEXT->uregs);
+    REG_FP(CONTEXT->uregs) = STAP_ARG_fp;
+#elif defined REG_LINK
+    saved_fp = REG_LINK(CONTEXT->uregs);
+    REG_LINK(CONTEXT->uregs) = STAP_ARG_fp;
+#endif
 
     CONTEXT->uwcache_user.state = uwcache_uninitialized;
     _stp_stack_user_print(CONTEXT, _STP_SYM_FULLER);
     CONTEXT->uwcache_user.state = uwcache_uninitialized;
 
-    REG_IP(CONTEXT->uregs) = saved_pc;
+    SET_REG_IP(CONTEXT->uregs, saved_pc);
     REG_SP(CONTEXT->uregs) = saved_sp;
+#if defined REG_FP
+    REG_FP(CONTEXT->uregs) = saved_fp;
+#elif defined REG_LINK
+    REG_LINK(CONTEXT->uregs) = saved_fp;
+#endif
 %}
 
 /**
