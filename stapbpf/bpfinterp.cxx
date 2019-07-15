@@ -107,9 +107,16 @@ map_get_next_key(int fd_idx, int64_t key, int64_t next_key,
   // XXX: May want to pass the actual key type. For now just guess:
   bool is_str = ctx->map_attrs[fd_idx].key_size == BPF_MAXSTRINGLEN;
 
-  // Final iteration, therefore keys.back() is no longer needed:
+  // Final iteration...
   if (limit == 0)
-    goto empty;
+    {
+      if (!key)
+        // PR24811: if key is not set, there's nothing to pop from keys.
+        return -1;
+
+      // ... therefore keys.back() is no longer needed:
+      goto empty;
+    }
 
   if (!sort_direction)
     return bpf_get_next_key(fd, as_ptr(key), as_ptr(next_key));
