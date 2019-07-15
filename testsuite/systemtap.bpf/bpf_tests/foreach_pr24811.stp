@@ -1,0 +1,42 @@
+global a[10], b[10]
+
+// used so the foreach limit expression is NOT a constant, else it's optimized
+global lim = 1
+
+probe begin {
+  printf("BEGIN\n")
+
+  a[2] = -2
+  a[1] = -1
+  a[0] = 0
+  a[-1] = 1
+  a[-2] = 2
+
+  b[1] = 1
+  b[0] = 0
+  b[-1] = -1
+
+  lim = 0
+  exit()
+}
+
+probe end {
+  flag = 1
+
+  foreach (k1- in a) { // push sorted data for a
+    printf("got %d, should be negative %d\n", k1, a[k1])
+    flag = flag && k1 == (0-a[k1]) // check data for a
+    foreach (k2- in b) { // push sorted data for b
+      printf("got %d, should be exactly %d\n", k2, b[k2])
+      flag = flag && k2 == b[k2] // check data for b
+      foreach (k3- in a limit lim) { // bug -- don't push, pop sorted data for b
+        flag = 0 // should not be invoked
+      } // bug -- after popping, will read sorted data for a on next iteration
+    } // pop sorted data for b, but with bug pops a
+  } // pop sorted data for a, but with bug pops <nada> -- segfault?
+
+  if (flag)
+    printf("END PASS\n")
+  else
+    printf("END FAIL\n")
+}
