@@ -1,0 +1,24 @@
+global flag
+
+probe begin {
+	printf("BEGIN\n")
+}
+
+probe kernel.trace("sched:sched_switch") {
+        // look for the process with pid 0 and name that begins with "swap"
+        if ($next->comm[0] == 115 && $next->comm[1] == 119
+            && $next->comm[2] == 97 && $next->comm[3] == 112
+	    && $next->pid == 0)
+	        flag = 1
+}
+
+probe timer.s(5) {
+	exit()
+}
+
+probe end {
+	if (flag)
+		printf("END PASS\n")
+	else
+		printf("END FAIL\n")
+}
