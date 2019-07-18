@@ -47,7 +47,8 @@ struct timer_derived_probe: public derived_probe
 struct timer_derived_probe_group: public generic_dpg<timer_derived_probe>
 {
   void emit_interval (translator_output* o);
-  friend bool sort_for_bpf(hrtimer_derived_probe_group *hr,
+  friend bool sort_for_bpf(systemtap_session& s,
+			   hrtimer_derived_probe_group *hr,
                            timer_derived_probe_group *t,
                            sort_for_bpf_probe_arg_vector &v);
 public:
@@ -226,7 +227,8 @@ struct hrtimer_derived_probe: public derived_probe
 
 struct hrtimer_derived_probe_group: public generic_dpg<hrtimer_derived_probe>
 {
-  friend bool sort_for_bpf(hrtimer_derived_probe_group *hr,
+  friend bool sort_for_bpf(systemtap_session& s,
+			   hrtimer_derived_probe_group *hr,
                            timer_derived_probe_group *t,
                            sort_for_bpf_probe_arg_vector &v);
 public:
@@ -766,7 +768,8 @@ register_tapset_timers(systemtap_session& s)
 }
 
 bool
-sort_for_bpf(hrtimer_derived_probe_group *hr, timer_derived_probe_group *t,
+sort_for_bpf(systemtap_session& s __attribute__ ((unused)),
+	     hrtimer_derived_probe_group *hr, timer_derived_probe_group *t,
              sort_for_bpf_probe_arg_vector &v)
 {
   if (hr)

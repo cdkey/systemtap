@@ -12556,6 +12556,24 @@ fi
 ac_config_files="$ac_config_files includes/sys/sdt-config.h po/Makefile.in"
 
 
+ac_fn_c_check_decl "$LINENO" "BPF_PROG_TYPE_RAW_TRACEPOINT" "ac_cv_have_decl_BPF_PROG_TYPE_RAW_TRACEPOINT" "#include <linux/bpf.h>
+"
+if test "x$ac_cv_have_decl_BPF_PROG_TYPE_RAW_TRACEPOINT" = xyes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_BPF_PROG_TYPE_RAW_TRACEPOINT $ac_have_decl
+_ACEOF
+if test $ac_have_decl = 1; then :
+
+$as_echo "#define HAVE_BPF_PROG_TYPE_RAW_TRACEPOINT 1" >>confdefs.h
+
+fi
+
+
 if test $build_elfutils = yes -a $enable_translator = yes; then
   here=`pwd`
   case "$with_elfutils" in

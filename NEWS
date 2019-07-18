@@ -1,5 +1,11 @@
 * What's new in version 4.2, PRERELEASE
 
+- The eBPF backend now uses bpf raw tracepoints for kernel.trace("*")
+  probes.  These have target variable arguments that match the
+  arguments available for the traditional linux kernel modules
+  tracepoints.  Support for the older bpf tracepoint arguments can be
+  forced with a --compatible=4.1 option on the command line.
+
 - New backtracing functions print_[u]backtrace_fileline() have been added
   to the tapset. These functions behave similarly to print_[u]backtrace(),
   the only difference being that file names and line numbers are added

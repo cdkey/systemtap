@@ -57,7 +57,8 @@ struct perf_derived_probe: public derived_probe
 
 struct perf_derived_probe_group: public generic_dpg<perf_derived_probe>
 {
-  friend bool sort_for_bpf(perf_derived_probe_group *pg,
+  friend bool sort_for_bpf(systemtap_session& s
+			   ,perf_derived_probe_group *pg,
                            sort_for_bpf_probe_arg_vector &v);
 
   void emit_module_decls (systemtap_session& s);
@@ -406,7 +407,8 @@ register_tapset_perf(systemtap_session& s)
 }
 
 bool
-sort_for_bpf(perf_derived_probe_group *pg, sort_for_bpf_probe_arg_vector &v)
+sort_for_bpf(systemtap_session& s __attribute__ ((unused)),
+	     perf_derived_probe_group *pg, sort_for_bpf_probe_arg_vector &v)
 {
   if (!pg)
     return false;

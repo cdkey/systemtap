@@ -263,6 +263,7 @@ public:
 
   enum { kernel_runtime, dyninst_runtime, bpf_runtime } runtime_mode;
   bool runtime_usermode_p() const { return runtime_mode == dyninst_runtime; }
+  bool use_bpf_raw_tracepoint;
 
   // NB: It is very important for all of the above (and below) fields
   // to be cleared in the systemtap_session ctor (session.cxx).

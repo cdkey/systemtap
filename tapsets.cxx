@@ -635,7 +635,8 @@ private:
 
 struct generic_kprobe_derived_probe_group: public derived_probe_group
 {
-  friend bool sort_for_bpf(generic_kprobe_derived_probe_group *ge,
+  friend bool sort_for_bpf(systemtap_session& s,
+			   generic_kprobe_derived_probe_group *ge,
 			   sort_for_bpf_probe_arg_vector &v);
 
 private:
@@ -6173,7 +6174,8 @@ generic_kprobe_derived_probe::args_for_bpf() const
 }
 
 bool
-sort_for_bpf(generic_kprobe_derived_probe_group *ge,
+sort_for_bpf(systemtap_session& s __attribute__ ((unused)),
+	     generic_kprobe_derived_probe_group *ge,
 	     sort_for_bpf_probe_arg_vector &v)
 {
   if (!ge || ge->probes_by_module.empty())
@@ -9131,7 +9133,8 @@ public:
   bool otf_safe_context (systemtap_session& s)
     { return otf_supported(s); }
 
-  friend bool sort_for_bpf(uprobe_derived_probe_group *upg,
+  friend bool sort_for_bpf(systemtap_session& s,
+			   uprobe_derived_probe_group *upg,
                            sort_for_bpf_probe_arg_vector &v);
 };
 
@@ -9944,7 +9947,8 @@ uprobe_derived_probe_group::emit_module_exit (systemtap_session& s)
 }
 
 bool
-sort_for_bpf(uprobe_derived_probe_group *upg, sort_for_bpf_probe_arg_vector &v)
+sort_for_bpf(systemtap_session& s  __attribute__ ((unused)),
+	     uprobe_derived_probe_group *upg, sort_for_bpf_probe_arg_vector &v)
 {
   if (!upg)
     return false;
@@ -10742,7 +10746,8 @@ struct tracepoint_derived_probe: public derived_probe
 
 struct tracepoint_derived_probe_group: public generic_dpg<tracepoint_derived_probe>
 {
-  friend bool sort_for_bpf(tracepoint_derived_probe_group *t,
+  friend bool sort_for_bpf(systemtap_session& s,
+			   tracepoint_derived_probe_group *t,
                            sort_for_bpf_probe_arg_vector &v);
 
   void emit_module_decls (systemtap_session& s);
@@ -11261,11 +11266,35 @@ void
 tracepoint_derived_probe::build_args_for_bpf(dwflpp&, Dwarf_Die& struct_die)
 {
   Dwarf_Die member;
+  int data_start = 0;
+  bool struct_found = false, more_members = true;
 
-  if (dwarf_child(&struct_die, &member) == 0)
-    // Intentionally skip the first member, which represents 8 bytes of
-    // padding found at the beginning of BPF tracepoint contexts.
-    while (dwarf_siblingof(&member, &member) == 0)
+  if (dwarf_child(&struct_die, &member) != 0) return;
+
+  // find the member struct inside the struct that actually has the information about the bpf arguments
+  while (!struct_found && more_members)
+  {
+	  Dwarf_Die type;
+	  Dwarf_Attribute attr;
+          Dwarf_Word off;
+
+          dwarf_attr_die(&member, DW_AT_type, &type);
+	  if ((dwarf_tag(&type) == DW_TAG_structure_type)) {
+		  if (dwarf_attr(&member, DW_AT_data_member_location, &attr) == NULL
+		      || dwarf_formudata(&attr, &off) != 0)
+			  throw (SEMANTIC_ERROR
+				 (_F("cannot get offset attribute for variable '%s' of tracepoint '%s'",
+				     dwarf_diename(&member), tracepoint_name.c_str())));
+		  data_start = off;
+		  member = type;
+		  struct_found = true;
+	  } else {
+		  more_members = (dwarf_siblingof(&member, &member) == 0);
+	  }
+  }
+
+  if (dwarf_child(&member, &member) == 0)
+    do
       if (dwarf_tag(&member) == DW_TAG_member)
         {
           Dwarf_Die type;
@@ -11282,10 +11311,11 @@ tracepoint_derived_probe::build_args_for_bpf(dwflpp&, Dwarf_Die& struct_die)
           dwarf_attr_die(&member, DW_AT_type, &type);
           arg.is_signed = is_signed_type(&type);
           arg.size = get_byte_size(&type, tracepoint_name.c_str());
-          arg.offset = off;
+          arg.offset = off + data_start;
 
           args.push_back(arg);
         }
+    while (dwarf_siblingof(&member, &member) == 0);
 }
 
 void
@@ -12309,84 +12339,116 @@ tracepoint_builder::get_tracequery_modules(systemtap_session& s,
       osrc << "#ifdef CONFIG_TRACEPOINTS" << endl;
       osrc << "#include <linux/tracepoint.h>" << endl;
 
-      if (s.runtime_mode != systemtap_session::bpf_runtime)
-        {
-          // the kernel has changed this naming a few times, previously TPPROTO,
-          // TP_PROTO, TPARGS, TP_ARGS, etc.  so let's just dupe the latest.
-          osrc << "#ifndef PARAMS" << endl;
-          osrc << "#define PARAMS(args...) args" << endl;
-          osrc << "#endif" << endl;
+      // BPF raw tracepoint macros for creating the multiple fields
+      // of the data struct that describes the raw tracepoint.
+      // These macros counts up to 12. Any more, it will return 13th argument.
+      // These macros will likely have issues with raw tracepoints with more than 12 arguments.
+      osrc << "#define __COUNT_ARGS(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _n, X...) _n" << endl;
+      osrc << "#define COUNT_ARGS(X...) __COUNT_ARGS(, ##X, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)" << endl;
+      osrc << "#define __CONCAT(a, b) a ## b" << endl;
+      osrc << "#define CONCATENATE(a, b) __CONCAT(a, b)" << endl;
+      osrc << "#define __FIELD_ENTRY(x) x __attribute__ ((aligned (8)))" << endl;
+      osrc << "#define __FIELD1(a,...) __FIELD_ENTRY(a);" << endl;
+      osrc << "#define __FIELD2(a,...) __FIELD_ENTRY(a); __FIELD1(__VA_ARGS__)" << endl;
+      osrc << "#define __FIELD3(a,...) __FIELD_ENTRY(a); __FIELD2(__VA_ARGS__)" << endl;
+      osrc << "#define __FIELD4(a,...) __FIELD_ENTRY(a); __FIELD3(__VA_ARGS__)" << endl;
+      osrc << "#define __FIELD5(a,...) __FIELD_ENTRY(a); __FIELD4(__VA_ARGS__)" << endl;
+      osrc << "#define __FIELD6(a,...) __FIELD_ENTRY(a); __FIELD5(__VA_ARGS__)" << endl;
+      osrc << "#define __FIELD7(a,...) __FIELD_ENTRY(a); __FIELD6(__VA_ARGS__)" << endl;
+      osrc << "#define __FIELD8(a,...) __FIELD_ENTRY(a); __FIELD7(__VA_ARGS__)" << endl;
+      osrc << "#define __FIELD9(a,...) __FIELD_ENTRY(a); __FIELD8(__VA_ARGS__)" << endl;
+      osrc << "#define __FIELD10(a,...) __FIELD_ENTRY(a); __FIELD9(__VA_ARGS__)" << endl;
+      osrc << "#define __FIELD11(a,...) __FIELD_ENTRY(a); __FIELD10(__VA_ARGS__)" << endl;
+      osrc << "#define __FIELD12(a,...) __FIELD_ENTRY(a); __FIELD11(__VA_ARGS__)" << endl;
+      osrc << "#define FIELDS(...) CONCATENATE(__FIELD, COUNT_ARGS(__VA_ARGS__))(__VA_ARGS__)" << endl;
 
-          // override DECLARE_TRACE to synthesize probe functions for us
-          osrc << "#undef DECLARE_TRACE" << endl;
-          osrc << "#define DECLARE_TRACE(name, proto, args) \\" << endl;
-          osrc << "  void stapprobe_##name(proto) {}" << endl;
+      // The following PARAMS and DECLARE_TRACE_* macros are used
+      // by both linux kernel module and bpf raw tracepoints.
 
-          // 2.6.35 added the NOARGS variant, but it's the same for us
-          osrc << "#undef DECLARE_TRACE_NOARGS" << endl;
-          osrc << "#define DECLARE_TRACE_NOARGS(name) \\" << endl;
-          osrc << "  DECLARE_TRACE(name, void, )" << endl;
+      // The kernel has changed this naming a few times, previously TPPROTO,
+      // TP_PROTO, TPARGS, TP_ARGS, etc.  so let's just dupe the latest.
+      osrc << "#ifndef PARAMS" << endl;
+      osrc << "#define PARAMS(args...) args" << endl;
+      osrc << "#endif" << endl;
 
-          // 2.6.38 added the CONDITION variant, which can also just redirect
-          osrc << "#undef DECLARE_TRACE_CONDITION" << endl;
-          osrc << "#define DECLARE_TRACE_CONDITION(name, proto, args, cond) \\" << endl;
-          osrc << "  DECLARE_TRACE(name, PARAMS(proto), PARAMS(args))" << endl;
+      // 2.6.35 added the NOARGS variant, but it's the same for us
+      osrc << "#undef DECLARE_TRACE_NOARGS" << endl;
+      osrc << "#define DECLARE_TRACE_NOARGS(name) \\" << endl;
+      osrc << "  DECLARE_TRACE(name, void, )" << endl;
 
-          // older tracepoints used DEFINE_TRACE, so redirect that too
-          osrc << "#undef DEFINE_TRACE" << endl;
-          osrc << "#define DEFINE_TRACE(name, proto, args) \\" << endl;
-          osrc << "  DECLARE_TRACE(name, PARAMS(proto), PARAMS(args))" << endl;
-        }
-      else
-        {
-          // Similar to above, but instantiates structs instead of functions.
-          // The members will become tracepoint args.
-          osrc << "#undef __field" << endl;
-          osrc << "#define __field(type, item) type item;" << endl;
+      // 2.6.38 added the CONDITION variant, which can also just redirect
+      osrc << "#undef DECLARE_TRACE_CONDITION" << endl;
+      osrc << "#define DECLARE_TRACE_CONDITION(name, proto, args, cond) \\" << endl;
+      osrc << "  DECLARE_TRACE(name, PARAMS(proto), PARAMS(args))" << endl;
 
-          osrc << "#undef __field_desc" << endl;
-          osrc << "#define __field_desc(type, container, item) type item;" << endl;
+      // older tracepoints used DEFINE_TRACE, so redirect that too
+      osrc << "#undef DEFINE_TRACE" << endl;
+      osrc << "#define DEFINE_TRACE(name, proto, args) \\" << endl;
+      osrc << "  DECLARE_TRACE(name, PARAMS(proto), PARAMS(args))" << endl;
 
-          osrc << "#undef __array" << endl;
-          osrc << "#define __array(type, item, size) type item[size];" << endl;
+      // Macros to help build the struct describing the older cooked bpf tracepoints
+      osrc << "#undef __field" << endl;
+      osrc << "#define __field(type, item) type item;" << endl;
 
-          osrc << "#undef __array_desc" << endl;
-          osrc << "#define __array_desc(type, container, item, size) type item[size];" << endl;
+      osrc << "#undef __field_desc" << endl;
+      osrc << "#define __field_desc(type, container, item) type item;" << endl;
 
-          osrc << "#undef __dynamic_array" << endl;
-          osrc << "#define __dynamic_array(type, item, len) u32 item;" << endl;
+      osrc << "#undef __array" << endl;
+      osrc << "#define __array(type, item, size) type item[size];" << endl;
 
-          osrc << "#undef __string" << endl;
-          osrc << "#define __string(item, src) __dynamic_array(char, item, -1)" << endl;
+      osrc << "#undef __array_desc" << endl;
+      osrc << "#define __array_desc(type, container, item, size) type item[size];" << endl;
 
-          osrc << "#undef __bitmask" << endl;
-          osrc << "#define __bitmask(item, nr_bits) __dynamic_array(char, item, -1)" << endl;
+      osrc << "#undef __dynamic_array" << endl;
+      osrc << "#define __dynamic_array(type, item, len) u32 item;" << endl;
 
-          osrc << "#undef TP_STRUCT__entry" << endl;
-          osrc << "#define TP_STRUCT__entry(args...) args" << endl;
+      osrc << "#undef __string" << endl;
+      osrc << "#define __string(item, src) __dynamic_array(char, item, -1)" << endl;
 
-          osrc << "#undef DECLARE_EVENT_CLASS" << endl;
-          osrc << "#define DECLARE_EVENT_CLASS(name, proto, args, tstruct, assign, print) \\" << endl;
-          osrc << "  struct stapprobe_template_##name { unsigned long long pad; tstruct };" << endl;
+      osrc << "#undef __bitmask" << endl;
+      osrc << "#define __bitmask(item, nr_bits) __dynamic_array(char, item, -1)" << endl;
 
-          // typedef helps us access template's debuginfo when given name's debuginfo
-          osrc << "#undef DEFINE_EVENT" << endl;
-          osrc << "#define DEFINE_EVENT(template, name, proto, args) \\" << endl;
-          osrc << "  typedef struct stapprobe_template_##template stapprobe_##name; \\" << endl;
-          osrc << "  stapprobe_##name stapprobe_inst_##name;" << endl;
+      osrc << "#undef TP_STRUCT__entry" << endl;
+      osrc << "#define TP_STRUCT__entry(args...) args" << endl;
 
-          osrc << "#undef TRACE_EVENT" << endl;
-          osrc << "#define TRACE_EVENT(name, proto, args, tstruct, assign, print) \\" << endl;
-          osrc << "  struct stapprobe_##name { unsigned long long pad; tstruct } stapprobe_##name;" << endl;
+      if (s.runtime_mode != systemtap_session::bpf_runtime) {
+	  // override DECLARE_TRACE to synthesize probe functions for us
+	  osrc << "#undef DECLARE_TRACE" << endl;
+	  osrc << "#define DECLARE_TRACE(name, proto, args) \\" << endl;
+	  osrc << "  void stapprobe_##name(proto) {}" << endl;
+      } else {
+	  if (s.use_bpf_raw_tracepoint) {
+	      // override DECLARE_TRACE to synthesize struct for the bpf raw tracepoint
+	      osrc << "#undef DECLARE_TRACE" << endl;
+	      osrc << "#define DECLARE_TRACE(name, proto, args) \\" << endl;
+	      osrc << "  struct stapprobe_##name { struct { FIELDS(proto) } data; } stapprobe_##name;" << endl;
+	  } else {
+              // Macros to create structure for older cooked bpf tracepoints
+	      // Similar to above, but instantiates structs instead of functions.
+	      // The members will become tracepoint args.
+	      osrc << "#undef DECLARE_EVENT_CLASS" << endl;
+	      osrc << "#define DECLARE_EVENT_CLASS(name, proto, args, tstruct, assign, print) \\" << endl;
+	      osrc << "  struct stapprobe_template_##name { unsigned long long pad; struct { tstruct } data; };" << endl;
 
-          osrc << "#undef TRACE_EVENT_FN" << endl;
-          osrc << "#define TRACE_EVENT_FN(name, proto, args, tstruct, assign, print, reg, unreg) \\" << endl;
-          osrc << "  struct stapprobe_##name { unsigned long long pad; tstruct } stapprobe_##name;" << endl;
+	      // typedef helps us access template's debuginfo when given name's debuginfo
+	      osrc << "#undef DEFINE_EVENT" << endl;
+	      osrc << "#define DEFINE_EVENT(template, name, proto, args) \\" << endl;
+	      osrc << "  typedef struct stapprobe_template_##template stapprobe_##name; \\" << endl;
+	      osrc << "  stapprobe_##name stapprobe_inst_##name;" << endl;
 
-          osrc << "#undef TRACE_EVENT_CONDITION" << endl;
-          osrc << "#define TRACE_EVENT_CONDITION(name, proto, args, cond, tstruct, assign, print) \\" << endl;
-          osrc << " struct stapprobe_##name { unsigned long long pad; tstruct } stapprobe_##name;" << endl;
-        }
+	      osrc << "#undef TRACE_EVENT" << endl;
+	      osrc << "#define TRACE_EVENT(name, proto, args, tstruct, assign, print) \\" << endl;
+	      osrc << "  struct stapprobe_##name { unsigned long long pad; struct { tstruct } data; } stapprobe_##name;" << endl;
+
+	      osrc << "#undef TRACE_EVENT_FN" << endl;
+	      osrc << "#define TRACE_EVENT_FN(name, proto, args, tstruct, assign, print, reg, unreg) \\" << endl;
+	      osrc << "  struct stapprobe_##name { unsigned long long pad; struct { tstruct } data; } stapprobe_##name;" << endl;
+
+	      osrc << "#undef TRACE_EVENT_CONDITION" << endl;
+	      osrc << "#define TRACE_EVENT_CONDITION(name, proto, args, cond, tstruct, assign, print) \\" << endl;
+	      osrc << " struct stapprobe_##name { unsigned long long pad; struct { tstruct } data; } stapprobe_##name;" << endl;
+	  }
+      }
 
       // add the specified decls/#includes
       for (unsigned z=0; z<short_decls.size(); z++)
@@ -12608,6 +12670,14 @@ tracepoint_builder::build(systemtap_session& s,
                           literal_map_t const& parameters,
                           vector<derived_probe*>& finished_results)
 {
+  if (s.runtime_mode == systemtap_session::bpf_runtime &&
+       strverscmp(s.compatible.c_str(), "4.2") >= 0) {
+         s.use_bpf_raw_tracepoint = (s.kernel_functions.count("bpf_raw_tracepoint_release") > 0);
+	 if (!s.use_bpf_raw_tracepoint)
+	  throw SEMANTIC_ERROR (_("SYSTEM: new BPF TRACEPOINT behavior not supported "
+                                  "by target kernel (or use --compatible=4.1 option)"));
+  }
+
   if (!init_dw(s))
     return;
 
@@ -12635,9 +12705,11 @@ tracepoint_builder::build(systemtap_session& s,
 }
 
 bool
-sort_for_bpf(tracepoint_derived_probe_group *t,
+sort_for_bpf(systemtap_session& s,
+	     tracepoint_derived_probe_group *t,
              sort_for_bpf_probe_arg_vector &v)
 {
+  string tracepoint_flavor = (s.runtime_mode == systemtap_session::bpf_runtime && s.use_bpf_raw_tracepoint) ? "raw_trace/" : "trace/";
   if (!t)
     return false;
 
@@ -12645,7 +12717,7 @@ sort_for_bpf(tracepoint_derived_probe_group *t,
     {
       tracepoint_derived_probe *p = *i;
       v.push_back(std::pair<derived_probe *, std::string>
-                  (p, "trace/" + p->tracepoint_system + "/" + p->tracepoint_name));
+		  (p, tracepoint_flavor + p->tracepoint_system + "/" + p->tracepoint_name));
     }
 
   return true;

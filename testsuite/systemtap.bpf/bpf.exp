@@ -23,7 +23,7 @@ if { "$::tcl_platform(machine)" == "s390x" } {
 # the test passes if "END PASS" is read and fails if "END FAIL" is read. Otherwise
 # the test passes when "${OUTPUT_STR}END" is read and fails if END is read without
 # OUTPUT_STR preceeding it.
-proc stapbpf_run { TEST_NAME OUTPUT_STR args } { 
+proc stapbpf_run { TEST_NAME OUTPUT_STR options args } {
     global rc
     set rc -1
     set begin_str "BEGIN"
@@ -41,7 +41,7 @@ proc stapbpf_run { TEST_NAME OUTPUT_STR args } {
     set invalid_prog 7
     set comp_err 8
     
-    set cmd [concat stap -v --runtime=bpf -x 12345 $args]
+    set cmd [concat stap -v --runtime=bpf -x 12345 $options $args]
     # don't the following: ... $test_file_name could be some transient or leftover file
     # if [file readable $test_file_name] { lappend cmd $test_file_name }
 
@@ -49,7 +49,8 @@ proc stapbpf_run { TEST_NAME OUTPUT_STR args } {
     eval spawn $cmd
     set mypid [exp_pid -i $spawn_id]
     expect {
-        -timeout 30 
+	 # increased timeout due to slow uncached query for bpf tracepoints
+        -timeout 300
         -re {^WARNING: cannot find module [^\r]*DWARF[^\r]*\r\n} {exp_continue}
         -re {^WARNING: No unwind data for /.+\r\n} {exp_continue}
         -re {^Pass\ ([1234]):[^\r]*\ in\ ([0-9]+)usr/([0-9]+)sys/([0-9]+)real\ ms\.\r\n}
@@ -145,9 +146,17 @@ foreach file $stap_files {
         }
     }
 
+    # Add compatible option for some tests that require them
+    switch $test {
+        cast_op_tracepoint.stp { set options "--compatible=4.1" }
+        reg_alloc3.stp { set options "--compatible=4.1" }
+        tracepoint1.stp { set options "--compatible=4.1" }
+        default { set options "" }
+    }
+
     set output_str [get_output_str $test]
     verbose -log "Running $file"
-    set rc [stapbpf_run $test $output_str $file]
+    set rc [stapbpf_run $test $output_str $options $file]
     if {$rc != 0} {
         if { "$::tcl_platform(machine)" == "s390x" } {
             # The s390x part seems broken at the moment:

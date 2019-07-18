@@ -204,6 +204,7 @@ static std::vector<kprobe_data> kprobes;
 static std::vector<timer_data> timers;
 static std::vector<perf_data> perf_probes;
 static std::vector<trace_data> tracepoint_probes;
+static std::vector<trace_data> raw_tracepoint_probes;
 static std::vector<uprobe_data> uprobes;
 
 // TODO: Move fatal() to bpfinterp.h and replace abort() calls in the interpreter.
@@ -437,6 +438,10 @@ prog_load(Elf_Data *data, const char *name)
     prog_type = BPF_PROG_TYPE_PERF_EVENT;
   else if (strncmp(name, "trace", 5) == 0)
     prog_type = BPF_PROG_TYPE_TRACEPOINT;
+#ifdef HAVE_BPF_PROG_TYPE_RAW_TRACEPOINT
+  else if (strncmp(name, "raw_trace", 9) == 0)
+    prog_type = BPF_PROG_TYPE_RAW_TRACEPOINT;
+#endif
   else if (strncmp(name, "perf", 4) == 0)
     {
       if (name[5] == '2' && name[6] == '/')
@@ -660,6 +665,23 @@ collect_tracepoint(const char *name, unsigned name_idx, unsigned fd_idx)
     fatal("probe %u section %u not loaded\n", name_idx, fd_idx);
 
   tracepoint_probes.push_back(trace_data(tp_system, tp_name, fd));
+}
+
+static void
+collect_raw_tracepoint(const char *name, unsigned name_idx, unsigned fd_idx)
+{
+  char tp_system[512];
+  char tp_name[512];
+
+  int res = sscanf(name, "raw_trace/%[^/]/%s", tp_system, tp_name);
+  if (res != 2 || strlen(name) > 512)
+    fatal("unable to parse name of probe %u section %u\n", name_idx, fd_idx);
+
+  int fd = -1;
+  if (fd_idx >= prog_fds.size() || (fd = prog_fds[fd_idx]) < 0)
+    fatal("probe %u section %u not loaded\n", name_idx, fd_idx);
+
+  raw_tracepoint_probes.push_back(trace_data(tp_system, tp_name, fd));
 }
 
 static void
@@ -983,6 +1005,13 @@ unregister_tracepoints(const size_t nprobes)
 }
 
 static void
+unregister_raw_tracepoints(const size_t nprobes)
+{
+  for (size_t i = 0; i < nprobes; ++i)
+    close(raw_tracepoint_probes[i].event_fd);
+}
+
+static void
 register_tracepoints()
 {
   size_t nprobes = tracepoint_probes.size();
@@ -1068,6 +1097,47 @@ register_tracepoints()
  fail:
   unregister_tracepoints(nprobes);
   exit(1);
+}
+
+static void
+register_raw_tracepoints()
+{
+  size_t nprobes = raw_tracepoint_probes.size();
+  if (nprobes == 0)
+    return;
+
+#ifndef HAVE_BPF_PROG_TYPE_RAW_TRACEPOINT
+  fprintf(stderr, "BPF raw tracepoints unsupported\n");
+  exit(1);
+#else
+  {
+    union bpf_attr peattr;
+
+    memset(&peattr, 0, sizeof(peattr));
+
+    for (size_t i = 0; i < nprobes; ++i)
+      {
+	trace_data &t = raw_tracepoint_probes[i];
+        peattr.raw_tracepoint.name = ((__u64)(unsigned long) (t.name.c_str()));
+	peattr.raw_tracepoint.prog_fd = t.prog_fd;
+
+        int fd = syscall(__NR_bpf, BPF_RAW_TRACEPOINT_OPEN, &peattr, sizeof(peattr));
+        if (fd < 0)
+	  {
+	    fprintf(stderr, "Error opening probe raw tracepoint  %s: %s\n",
+		    t.name.c_str(), strerror(errno));
+	    goto fail;
+	  }
+        t.event_fd = fd;
+
+      }
+  }
+  return;
+
+ fail:
+  unregister_raw_tracepoints(nprobes);
+  exit(1);
+#endif
 }
 
 static void
@@ -1514,6 +1584,8 @@ load_bpf_file(const char *module)
       collect_uprobe(sh_name[i], i, i);
     if (strncmp(sh_name[i], "trace", 5) == 0)
       collect_tracepoint(sh_name[i], i, i);
+    if (strncmp(sh_name[i], "raw_trace", 9) == 0)
+      collect_raw_tracepoint(sh_name[i], i, i);
     if (strncmp(sh_name[i], "perf", 4) == 0)
       collect_perf(sh_name[i], i, i);
     if (strncmp(sh_name[i], "timer", 5) == 0)
@@ -1780,6 +1852,7 @@ main(int argc, char **argv)
   register_uprobes();
   register_timers();
   register_tracepoints();
+  register_raw_tracepoints();
   register_perf();
 
   // Run the begin probes.
@@ -1812,6 +1885,7 @@ main(int argc, char **argv)
   unregister_timers(timers.size());
   unregister_perf(perf_probes.size());
   unregister_tracepoints(tracepoint_probes.size());
+  unregister_raw_tracepoints(raw_tracepoint_probes.size());
 
   // We are now running exit probes, so ^C should exit immediately:
   exit_phase = 1;

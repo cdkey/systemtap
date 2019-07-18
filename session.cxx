@@ -186,6 +186,7 @@ systemtap_session::systemtap_session ():
   no_global_var_display = false;
   pass_1a_complete = false;
   timeout = 0;
+  use_bpf_raw_tracepoint = false;
 
   // PR12443: put compiled-in / -I paths in front, to be preferred during 
   // tapset duplicate-file elimination

@@ -4375,7 +4375,7 @@ translate_bpf_pass (systemtap_session& s)
       if (s.be_derived_probes || !glob.empty())
         {
           std::vector<derived_probe *> begin_v, end_v;
-          sort_for_bpf(s.be_derived_probes, begin_v, end_v);
+          sort_for_bpf(s, s.be_derived_probes, begin_v, end_v);
           init_block init(glob);
 
           if (!init.empty())
@@ -4410,7 +4410,7 @@ translate_bpf_pass (systemtap_session& s)
       if (s.generic_kprobe_derived_probes)
         {
           sort_for_bpf_probe_arg_vector kprobe_v;
-          sort_for_bpf(s.generic_kprobe_derived_probes, kprobe_v);
+          sort_for_bpf(s, s.generic_kprobe_derived_probes, kprobe_v);
 
           for (auto i = kprobe_v.begin(); i != kprobe_v.end(); ++i)
             {
@@ -4425,7 +4425,7 @@ translate_bpf_pass (systemtap_session& s)
       if (s.perf_derived_probes)
         {
           sort_for_bpf_probe_arg_vector perf_v;
-          sort_for_bpf(s.perf_derived_probes, perf_v);
+          sort_for_bpf(s, s.perf_derived_probes, perf_v);
 
           for (auto i = perf_v.begin(); i != perf_v.end(); ++i)
             {
@@ -4440,7 +4440,7 @@ translate_bpf_pass (systemtap_session& s)
       if (s.hrtimer_derived_probes || s.timer_derived_probes)
         {
           sort_for_bpf_probe_arg_vector timer_v;
-          sort_for_bpf(s.hrtimer_derived_probes,
+          sort_for_bpf(s, s.hrtimer_derived_probes,
                        s.timer_derived_probes, timer_v);
 
           for (auto i = timer_v.begin(); i != timer_v.end(); ++i)
@@ -4457,7 +4457,7 @@ translate_bpf_pass (systemtap_session& s)
       if (s.tracepoint_derived_probes)
         {
           sort_for_bpf_probe_arg_vector trace_v;
-          sort_for_bpf(s.tracepoint_derived_probes, trace_v);
+          sort_for_bpf(s, s.tracepoint_derived_probes, trace_v);
 
           for (auto i = trace_v.begin(); i != trace_v.end(); ++i)
             {
@@ -4472,7 +4472,7 @@ translate_bpf_pass (systemtap_session& s)
       if (s.uprobe_derived_probes)
         {
           sort_for_bpf_probe_arg_vector uprobe_v;
-          sort_for_bpf(s.uprobe_derived_probes, uprobe_v);
+          sort_for_bpf(s, s.uprobe_derived_probes, uprobe_v);
 
           for (auto i = uprobe_v.begin(); i != uprobe_v.end(); ++i)
             {

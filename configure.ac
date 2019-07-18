@@ -840,6 +840,12 @@ AS_IF([test "x$with_bpf" != "xno"], [
 AM_CONDITIONAL(HAVE_BPF_DECLS, [test "x$ac_cv_have_decl_BPF_PROG_TYPE_PERF_EVENT" == "xyes"])
 AC_CONFIG_FILES([includes/sys/sdt-config.h po/Makefile.in])
 
+dnl determine whether BPF raw tracepoints are available
+AC_CHECK_DECLS([BPF_PROG_TYPE_RAW_TRACEPOINT],
+               [AC_DEFINE([HAVE_BPF_PROG_TYPE_RAW_TRACEPOINT], [1], [Define to 1 if you have the necessary declarations in bpf.h])],
+               [],
+               [#include <linux/bpf.h>])
+
 if test $build_elfutils = yes -a $enable_translator = yes; then
   here=`pwd`
   case "$with_elfutils" in
