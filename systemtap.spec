@@ -38,6 +38,7 @@
 %{!?with_python2_probes: %global with_python2_probes (0%{?fedora} <= 28 && 0%{?rhel} <= 7)}
 %{!?with_python3_probes: %global with_python3_probes (0%{?fedora} >= 23 || 0%{?rhel} > 7)}
 %{!?with_httpd: %global with_httpd 0}
+%{!?with_specific_python: %global with_specific_python 0%{?fedora} >= 31}
 
 # Virt is supported on these arches, even on el7, but it's not in core EL7
 %if 0%{?rhel} <= 7
@@ -202,6 +203,9 @@ BuildRequires: python-setuptools
 %if %{with_python3_probes}
 BuildRequires: python3-devel
 BuildRequires: python3-setuptools
+%endif
+%if %{with_specific_python}
+BuildRequires: /usr/bin/pathfix.py
 %endif
 
 %if %{with_httpd}
@@ -764,6 +768,11 @@ done
    install -p -m 755 initscript/99stap/check $RPM_BUILD_ROOT%{dracutstap}
    install -p -m 755 initscript/99stap/start-staprun.sh $RPM_BUILD_ROOT%{dracutstap}
    touch $RPM_BUILD_ROOT%{dracutstap}/params.conf
+%endif
+
+%if %{with_specific_python}
+# Some files got ambiguous python shebangs, we fix them after everything else is done
+pathfix.py -pni "%{__python3} %{py3_shbang_opts}" %{buildroot}%{python3_sitearch} %{buildroot}%{_bindir}/*
 %endif
 
 %pre runtime
