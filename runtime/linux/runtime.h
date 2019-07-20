@@ -195,6 +195,8 @@ static void *kallsyms_uprobe_get_swbp_addr;
 /* task_work functions lack the necessary SYMBOL_EXPORT's */
 #if !defined(STAPCONF_TASK_WORK_ADD_EXPORTED)
 static void *kallsyms_task_work_add;
+#endif
+#if !defined(STAPCONF_TASK_WORK_CANCEL_EXPORTED)
 static void *kallsyms_task_work_cancel;
 #endif
 

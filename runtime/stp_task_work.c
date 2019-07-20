@@ -7,6 +7,8 @@
 // First typedef from the original decls, then #define as typecasted calls.
 typedef typeof(&task_work_add) task_work_add_fn;
 #define task_work_add (* (task_work_add_fn)kallsyms_task_work_add)
+#endif
+#if !defined(STAPCONF_TASK_WORK_CANCEL_EXPORTED)
 typedef typeof(&task_work_cancel) task_work_cancel_fn;
 #define task_work_cancel (* (task_work_cancel_fn)kallsyms_task_work_cancel)
 #endif
@@ -30,6 +32,8 @@ stp_task_work_init(void)
 		_stp_error("Can't resolve task_work_add!");
 		return -ENOENT;
         }
+#endif
+#if !defined(STAPCONF_TASK_WORK_CANCEL_EXPORTED)
         kallsyms_task_work_cancel = (void *)kallsyms_lookup_name("task_work_cancel");
         if (kallsyms_task_work_cancel == NULL) {
 		_stp_error("Can't resolve task_work_cancel!");
