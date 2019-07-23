@@ -41,7 +41,7 @@ function kernel_string:string (addr:long, err_msg:string)
 
   /* if (rc < 0) return err_msg;
      return buf; */
-  0xa5, rc, 0, _err, -; /* jlt $rc, 0, _err */
+  0xa5, $rc, 0, _err, -; /* jlt $rc, 0, _err */
   0xbf, $$, $buf, -, -; /* mov $$, $buf */
   0x05, -, -, _done, -; /* ja _done; */
 
