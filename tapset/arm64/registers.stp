@@ -58,7 +58,10 @@ function uarch_bytes:long() {
 function _stp_get_register_by_offset:long (offset:long) %{ /* pure */
 	long value;
 	struct pt_regs *regs;
-	regs = (CONTEXT->user_mode_p ? CONTEXT->uregs : CONTEXT->kregs);
+	if (CONTEXT->sregs)
+	  regs = CONTEXT->sregs;
+	else
+	  regs = (CONTEXT->user_mode_p ? CONTEXT->uregs : CONTEXT->kregs);
 	if (!regs) {
 		CONTEXT->last_error = "No registers available in this context";
 		return;
