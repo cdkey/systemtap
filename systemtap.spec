@@ -427,6 +427,7 @@ URL: http://sourceware.org/systemtap/
 Requires: systemtap-runtime = %{version}-%{release}
 Requires: byteman > 2.0
 Requires: iproute
+Requires: java-devel
 
 %description runtime-java
 This package includes support files needed to run systemtap scripts
