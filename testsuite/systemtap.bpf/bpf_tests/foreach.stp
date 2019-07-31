@@ -1,5 +1,8 @@
 global a[10], b[10], c[10]
 
+// PR24811: Be sure to test non-constant iteration limit -- set to 0 in begin.
+global lim = 1
+
 probe never {
 	c[0] = 0
 }
@@ -8,13 +11,14 @@ probe begin {
 	printf("BEGIN\n")
 
 	a[-1] = -1
-	a[0] = 0 
+	a[0] = 0
 	a[1] = 1
 
 	b[10] = 10
-	b[11] = 11 
-	b[12] = 12 
+	b[11] = 11
+	b[12] = 12
 
+	lim = 0
 	exit()
 }
 
@@ -24,7 +28,7 @@ probe end {
 	foreach (k- in a limit -10)
 	  flag = 0
 
-	foreach (k- in a limit 0)
+	foreach (k- in a limit lim)
 	  flag = 0
 
 	foreach (k in c)
@@ -38,12 +42,12 @@ probe end {
 	  foreach (k2 in a)
 	    flag = 0
 
-	foreach (k1 in a limit 0)
+	foreach (k1 in a limit lim)
 	  foreach (k2 in a)
 	    flag = 0
 
 	foreach (k1 in a)
-	  foreach (k2 in a limit 0)
+	  foreach (k2 in a limit lim)
 	    flag = 0
 
 	x = 0
@@ -52,37 +56,37 @@ probe end {
 	flag = flag && x == 0
 
 	x = -1
-	foreach (k+ in a) 
+	foreach (k+ in a)
 		flag = flag && x++ == k && k == a[k]
-        flag = flag && x == 2
+	flag = flag && x == 2
 
 	x = 1
 	foreach (k- in a)
 		flag = flag && x-- == k && k == a[k]
         flag = flag && x == -2
 
-        x = -1
+	x = -1
 	y = 12
 	foreach (k1+ in a) {
 	  foreach (k2- in b)
-	    flag = flag && x == k1 && k1 == a[k1] 
+	    flag = flag && x == k1 && k1 == a[k1]
 	           && y-- == k2 && k2 == b[k2]
 
 	  x++
 	  y = 12
 	}
 
-        x = -1
+	x = -1
 	y = 1
-        foreach (k1+ in a) {
+	foreach (k1+ in a) {
 	  foreach (k2- in a)
 	    flag = flag && x == k1 && k1 == a[k1]
 	           && y-- == k2 && k2 == a[k2]
 	  x++
 	  y = 1
-        }
- 
-        if (flag)
+	}
+
+	if (flag)
 		printf("END PASS\n")
 	else
 		printf("END FAIL\n")
