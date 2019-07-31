@@ -1797,7 +1797,7 @@ bpf_unparser::visit_foreach_loop(foreach_loop* s)
   this_prog.mk_jcond (this_ins, NE, this_prog.lookup_reg(BPF_REG_0), i0,
                       join_block, load_block);
 
-  this_prog.use_tmp_space(16);
+  this_prog.use_tmp_space(2*keysize);
 
   emit_jmp(load_block);
 

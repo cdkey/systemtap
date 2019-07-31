@@ -1,0 +1,119 @@
+global a[10], b[10]
+
+probe begin {
+	printf("BEGIN\n")
+
+	a["p"] = -1
+	a["q"] = 0
+	a["r"] = 1
+
+	b[-1] = "p"
+	b[0] = "q"
+	b[1] = "r"
+
+	exit()
+}
+
+global flag = 1
+global _flag = 1
+
+// XXX Split into separate probes due to stack size constraint.
+global end_probes = 0 // TODO: Remove this workaround for PR24812.
+
+probe end(1) {
+        printf("first end probe\n")
+
+        /* TODO: Requires PR23858.
+	foreach (ks- in a limit -10)
+	  flag = 0
+
+	foreach (ks- in a limit 0)
+	  flag = 0
+
+        found = 0
+        foreach (ks+ in a limit 1) {
+          found++
+          if (a[ks] != -1)
+            flag = 0
+        }
+
+        foreach (k in b+ limit 1) {
+          found++
+          if (k != -1)
+            flag = 0
+        }
+        if (found != 2)
+          flag = 0
+
+	foreach (ks1 in a limit 0)
+	  foreach (ks2 in a)
+	    flag = 0
+
+	foreach (ks1 in a)
+	  foreach (ks2 in a limit 0)
+	    flag = 0
+        */
+
+	x = 0
+	foreach (ks in a)
+	  x += a[ks]
+	flag = flag && x == 0
+
+        if (end_probes == 0)
+          end_probes++
+          // { end_probes++; next; } // TODO: Investigate using next here.
+        else if (flag)
+		printf("END PASS\n")
+	else
+		printf("END FAIL\n")
+}
+
+probe end(2) {
+        printf("second end probe\n")
+
+        /* TODO: Requires PR23858.
+	x = -1
+	foreach (ks+ in a)
+          flag = flag && x++ == a[ks]
+        flag = flag && x == 2
+
+	x = 1
+	foreach (ks- in a)
+        {
+	  flag = flag && x-- == a[ks]
+        }
+        flag = flag && x == -2
+
+        x = -1
+	y = 2
+	foreach (ks1+ in a) {
+	  foreach (k2 in b-)
+          {
+           printf("got %s %d / %d %s\n", ks1, a[ks1], k2, b[k2])
+            flag = flag && x == a[ks1]
+                   && y-- == k2
+          }
+	  x++
+	  y = 2
+	}
+        */
+
+        x = -1
+	y = 1
+        foreach (ks1+ in a) {
+	  foreach (ks2- in a)
+            // TODO: Requires PR23858.
+            _flag = _flag && x == a[ks1]
+                   && y-- == a[ks2]
+	  x++
+	  y = 1
+        }
+
+        if (end_probes == 0)
+          end_probes++
+          // { end_probes++; next; } // TODO: Investigate using next here.
+        else if (flag)
+		printf("END PASS\n")
+	else
+		printf("END FAIL\n")
+}
