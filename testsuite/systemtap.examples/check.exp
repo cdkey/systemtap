@@ -157,6 +157,33 @@ foreach file $meta_files {
         }
     }
 
+    # Now run the same thing but with Dyninst
+    if {[dyninst_p]} {
+        set test_check_dyninst [extract_tag "$meta_data" "test_check_dyninst"]
+        set test_installcheck_dyninst [extract_tag "$meta_data" "test_installcheck_dyninst"]
+
+        set build_dyninst_p 1
+        if { $test_check_dyninst != "" } {
+            if { $supported_p == 1 } {
+                set command $test_check_dyninst
+                set res [run_command "$test" "build_dyninst" $command]
+                if { $res != 0 } { set build_dyninst_p 0 }
+            } else {
+                untested "$test build_dyninst"
+                continue
+            }
+        }
+        if {[info procs installtest_p] != "" && [installtest_p]
+            && $test_installcheck_dyninst != "" } then {
+            if { $supported_p == 1 && $build_dyninst_p == 1 } {
+                set command $test_installcheck
+                run_command "$test" "run_dyninst" $command
+            } else {
+                untested "$test run_dyninst"
+            }
+        }
+    }
+
     # NB: Don't try to clean up; too dangerous & can error-out
     # set output_type [extract_tag "$meta_data" "output"]
     # if {$output_type == "file"} {
