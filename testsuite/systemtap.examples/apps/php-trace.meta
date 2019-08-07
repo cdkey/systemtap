@@ -1,6 +1,6 @@
 title: Tracing of PHP code execution
 name: php-trace.stp
-keywords: trace
+keywords: trace dyninst
 author: anonymous
 status: experimental
 exit: user-controlled
@@ -9,3 +9,5 @@ description: Trace of executing PHP code using the enabled markers.
 test_support: stap -l 'process("php").mark("*")'
 test_check: stap -p4 php-trace.stp
 test_installcheck: stap php-trace.stp -c 'php -f hello.php'
+test_check_dyninst: stap --dyninst -p4 php-trace.stp
+test_installcheck_dyninst: stap --dyninst php-trace.stp -c 'php -f hello.php'
