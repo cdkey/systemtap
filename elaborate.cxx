@@ -6610,7 +6610,7 @@ typeresolution_info::visit_target_symbol (target_symbol* e)
 
   if (e->saved_conversion_error)
     session.print_error (* (e->saved_conversion_error));
-  else
+  else 
     session.print_error (SEMANTIC_ERROR(_("unresolved target-symbol expression"), e->tok));
 }
 

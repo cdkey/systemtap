@@ -41,7 +41,6 @@ struct procfs_derived_probe: public derived_probe
   int64_t umask; 
   string variable_name;
 
-
   procfs_derived_probe (systemtap_session &, probe* p, probe_point* l, string ps, bool w, int64_t m, int64_t umask); 
   void join_group (systemtap_session& s);
 
@@ -62,6 +61,10 @@ struct procfs_probe_set
 
 struct procfs_derived_probe_group: public generic_dpg<procfs_derived_probe>
 {
+  friend bool sort_for_bpf(systemtap_session& s,
+                           procfs_derived_probe_group *pr,
+                           sort_for_bpf_probe_arg_vector &v);
+
 private:
   map<string, procfs_probe_set*> probes_by_path;
   typedef map<string, procfs_probe_set*>::iterator p_b_p_iterator;
@@ -72,7 +75,7 @@ public:
   procfs_derived_probe_group () :
     has_read_probes(false), has_write_probes(false) {} 
 
-  void enroll (procfs_derived_probe* probe);
+  void enroll (procfs_derived_probe* probe, systemtap_session& s);
   void emit_kernel_module_init (systemtap_session& s);
   void emit_kernel_module_exit (systemtap_session& s);
   void emit_module_decls (systemtap_session& s);
@@ -80,6 +83,37 @@ public:
   void emit_module_exit (systemtap_session& s);
 };
 
+bool
+sort_for_bpf(systemtap_session& s __attribute__ ((unused)),
+             procfs_derived_probe_group *pr,
+             sort_for_bpf_probe_arg_vector &v)
+{
+  if (!pr)
+    return false;
+
+  for (auto i = pr->probes_by_path.begin(); i != pr->probes_by_path.end(); ++i)
+    {
+      procfs_derived_probe *read_probe = i->second->read_probe;
+
+      if (read_probe) 
+        {
+          stringstream s;
+          s << "procfsprobe/" << read_probe->umask << "/r/" << read_probe->maxsize_val << "/" << i->first; 
+          v.push_back(std::pair<procfs_derived_probe *, std::string> (read_probe, s.str()));
+        }
+
+      vector<procfs_derived_probe*> write_probes = i->second->write_probes;
+
+      for (auto j = write_probes.begin(); j != write_probes.end(); j++)
+        {
+          stringstream s;
+          s << "procfsprobe/" << (*j)->umask << "/w/" << (*j)->maxsize_val << "/" << i->first; 
+          v.push_back(std::pair<procfs_derived_probe *, std::string> (*j, s.str()));
+        }
+    }
+
+  return true;
+}
 
 struct procfs_var_expanding_visitor: public var_expanding_visitor
 {
@@ -121,7 +155,7 @@ procfs_derived_probe::join_group (systemtap_session& s)
       ec->code = string("#include \"procfs-probes.h\"");
       s.embeds.push_back(ec);
     }
-  s.procfs_derived_probes->enroll (this);
+  s.procfs_derived_probes->enroll (this, s);
   this->group = s.procfs_derived_probes;
 }
 
@@ -136,7 +170,7 @@ procfs_derived_probe::use_internal_buffer(const std::string& var)
 
 
 void
-procfs_derived_probe_group::enroll (procfs_derived_probe* p)
+procfs_derived_probe_group::enroll (procfs_derived_probe* p, systemtap_session& s)
 {
   procfs_probe_set *pset;
 
@@ -148,6 +182,12 @@ procfs_derived_probe_group::enroll (procfs_derived_probe* p)
   else
     {
       pset = probes_by_path[p->path];
+
+      // You can't have read and write probes for the same path in the bpf runtime.
+      if (s.runtime_mode == systemtap_session::bpf_runtime && 
+          ((p->write && pset->read_probe) || (! p->write && pset->write_probes.size() > 0)))
+        throw SEMANTIC_ERROR(_("both read and write procfs probes cannot exist for the same procfs path \"") 
+                               + p->path + "\" in the bpf runtime.");
 
       // You can only specify 1 read probe.
       if (! p->write && pset->read_probe != NULL)
@@ -491,14 +531,40 @@ procfs_var_expanding_visitor::visit_target_symbol (target_symbol* e)
       bool lvalue = is_active_lvalue(e);
       if (write_probe && lvalue)
         throw SEMANTIC_ERROR(_("procfs $value variable is read-only in a procfs write probe"), e->tok);
-  else if (! write_probe && ! lvalue)
-    throw SEMANTIC_ERROR(_("procfs $value variable cannot be read in a procfs read probe"), e->tok);
+      else if (! write_probe && ! lvalue)
+        throw SEMANTIC_ERROR(_("procfs $value variable cannot be read in a procfs read probe"), e->tok);
 
       if (e->addressof)
         throw SEMANTIC_ERROR(_("cannot take address of procfs variable"), e->tok);
 
       // Remember that we've seen a target variable.
       target_symbol_seen = true;
+    
+      // If we're in the bpf runtime, we simply replace the target variable with helper 
+      // functions in the tapset library which will act as an interfacing mechanism.
+      if (sess.runtime_mode == systemtap_session::bpf_runtime) 
+        {
+          functioncall* n = new functioncall;
+          n->tok = e->tok;
+
+          if (!lvalue)
+            n->function = "_get_procfs_value";
+          else 
+            {
+              if (*op == "=")
+                n->function = "_set_procfs_value";
+              else if (*op == ".=")
+                n->function = "_append_procfs_value";
+              else
+                throw SEMANTIC_ERROR (_("Only the following assign operators are"
+                                        " implemented on procfs read target variables:"
+                                        " '=', '.='"), e->tok);
+              provide_lvalue_call (n);
+            }
+
+          provide (n);
+          return;
+        }
 
       // Synthesize a function.
       functiondecl *fdecl = new functiondecl;
@@ -673,6 +739,8 @@ procfs_builder::build(systemtap_session & sess,
       else if (component == "." || component == "..")
         throw SEMANTIC_ERROR (_("procfs path cannot be relative (and contain '.' or '..')"), location->components.front()->tok);
     }
+
+  
 
   if (!(has_read ^ has_write))
     throw SEMANTIC_ERROR (_("need read/write component"), location->components.front()->tok);

@@ -46,6 +46,10 @@ struct bpf_transport_context {
   std::vector<std::string> *interned_strings;
   std::unordered_map<bpf::globals::agg_idx, bpf::globals::stats_map> *aggregates;
   // XXX: Could be refactored into a single global struct bpf_global_context.
+  
+  // Data for procfs probes. Multiple threads will be accessing this variable.
+  // However, the procfs_lock should prevent any concurrency issues.
+  std::string procfs_msg;
 
   // Data for an in-progress printf request:
   bool in_printf;

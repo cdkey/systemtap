@@ -17,6 +17,8 @@
 #include <sstream>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 extern "C" {
 #include <libelf.h>
@@ -731,8 +733,8 @@ bpf_unparser::emit_store(expression *e, value *val)
           emit_mov(this_prog.lookup_reg(BPF_REG_4), this_prog.new_imm(0));
 	  this_prog.mk_call(this_ins, BPF_FUNC_map_update_elem, 4);
 	  return;
-	}
-    }
+        } 
+    } 
  err:
   throw SEMANTIC_ERROR (_("unknown lvalue"), e->tok);
 }
@@ -2368,16 +2370,10 @@ bpf_unparser::emit_context_var(bpf_context_vardecl *v)
 }
 
 void
-bpf_unparser::visit_symbol (symbol *s)
+bpf_unparser::visit_symbol(symbol *s)
 {
   vardecl *v = s->referent;
   assert (v->arity < 1);
-
-  if (bpf_context_vardecl *c = dynamic_cast<bpf_context_vardecl*>(v))
-    {
-      result = emit_context_var(c);
-      return;
-    }
 
   auto g = glob.globals.find (v);
   if (g != glob.globals.end())
@@ -4108,6 +4104,7 @@ translate_probe(program &prog, globals &glob, derived_probe *dp)
   u.add_prologue();
 
   dp->body->visit (&u);
+
   if (u.in_block())
     u.emit_jmp(u.get_ret0_block());
 }
@@ -4419,6 +4416,21 @@ translate_bpf_pass (systemtap_session& s)
               translate_probe(p, glob, i->first);
               p.generate();
               output_probe(eo, p, i->second, SHF_ALLOC);
+            }
+        }
+
+      if (s.procfs_derived_probes)
+        {  
+          sort_for_bpf_probe_arg_vector procfs_v;
+          sort_for_bpf(s, s.procfs_derived_probes, procfs_v);
+
+          for (auto i = procfs_v.begin(); i != procfs_v.end(); ++i) 
+            {
+              t = i->first->tok;
+              program p(target_user_bpfinterp);
+              translate_probe(p, glob, i->first); 
+              p.generate();
+              output_probe(eo, p, i->second, 0);
             }
         }
 

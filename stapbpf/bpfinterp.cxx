@@ -28,6 +28,7 @@
 #include "bpfinterp.h"
 #include "libbpf.h"
 #include "../bpf-internal.h"
+#include "../util.h"
 
 #define stapbpf_abort(reason) \
   ({ fprintf(stderr, _("bpfinterp.cxx:%d: %s\n"), \
@@ -359,6 +360,32 @@ bpf_get_target()
   return target_pid;
 }
 
+uint64_t
+bpf_set_procfs_value(char* msg, bpf_transport_context* ctx)
+{
+  assert(msg != nullptr);
+
+  ctx->procfs_msg = std::string(msg);
+
+  return 0;
+}
+
+uint64_t
+bpf_append_procfs_value(char* msg, bpf_transport_context* ctx)
+{
+  assert(msg != nullptr);
+
+  ctx->procfs_msg.append(std::string(msg)); 
+
+  return 0;
+}
+
+uint64_t
+bpf_get_procfs_value(bpf_transport_context* ctx)
+{
+  return (uint64_t) (ctx->procfs_msg.data());
+}
+
 enum bpf_perf_event_ret
 bpf_handle_transport_msg(void *buf, size_t size,
                          bpf_transport_context *ctx)
@@ -479,7 +506,11 @@ bpf_interpret(size_t ninsns, const struct bpf_insn insns[],
   memset(regs, 0x0, sizeof(uint64_t) * MAX_BPF_REG);
   const struct bpf_insn *i = insns;
   static std::vector<uint64_t *> map_values;
-  static std::vector<std::string> strings; // TODO: could clear on exit?
+
+  // Multiple threads accessing strings can cause concurrency issues for
+  // procfs_probes. However, the procfs_lock should prevent this and thus,
+  // clearing it on exit is unecessary for now.
+  static std::vector<std::string> strings;
 
   bpf_map_def *map_attrs = ctx->map_attrs;
   std::vector<int> &map_fds = *ctx->map_fds;
@@ -752,6 +783,15 @@ bpf_interpret(size_t ninsns, const struct bpf_insn insns[],
 	    case bpf::BPF_FUNC_get_target:
               dr = bpf_get_target();
               break;
+            case bpf::BPF_FUNC_set_procfs_value:
+              dr = bpf_set_procfs_value(as_str(regs[1]), ctx);
+              break;
+            case bpf::BPF_FUNC_append_procfs_value:
+              dr = bpf_append_procfs_value(as_str(regs[1]), ctx);
+              break;
+            case bpf::BPF_FUNC_get_procfs_value:
+              dr = bpf_get_procfs_value(ctx);
+              break;
 	    default:
 	      stapbpf_abort("unknown helper function");
 	    }
@@ -780,5 +820,6 @@ bpf_interpret(size_t ninsns, const struct bpf_insn insns[],
   for (uint64_t *ptr : map_values)
     free(ptr);
   map_values.clear(); // XXX: avoid double free
+
   return result;
 }

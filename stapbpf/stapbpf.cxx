@@ -29,17 +29,20 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <mutex>
 #include <unistd.h>
 #include <limits.h>
 #include <inttypes.h>
 #include <getopt.h>
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/mman.h>
 #include <sys/utsname.h>
 #include <sys/resource.h>
 #include "bpfinterp.h"
+#include "../util.h"
 
 extern "C" {
 #include <linux/bpf.h>
@@ -80,9 +83,16 @@ static const char *module_name;
 static const char *module_basename;
 static const char *script_name; // name of original systemtap script
 static const char *module_license;
+
+static const char *user;  // username
+static std::string prefix; // used to create procfs-like probe directory
+
 static Elf *module_elf;
 
 static uint32_t kernel_version;
+
+// Locks for accessing procfs-like probe messages
+std::mutex procfs_lock;
 
 // Sized by the contents of the "maps" section.
 static bpf_map_def *map_attrs;
@@ -131,6 +141,27 @@ static Elf_Data *prog_end;
 #define CPUS_POSSIBLE CPUFS "possible"
 
 static void unregister_kprobes(const size_t nprobes);
+
+struct procfsprobe_data
+{
+  std::string path;
+  uint64_t umask;
+  char type; // either 'r' (read) or 'w' (write)
+  uint64_t maxsize_val;
+  Elf_Data* read_prog;
+  std::vector<Elf_Data*> write_prog;
+  
+  // ctor for read probes
+  procfsprobe_data(string path, uint64_t umask, char type, uint64_t maxsize_val, Elf_Data* prog) 
+    : path(path), umask(umask), type(type), maxsize_val(maxsize_val), read_prog(prog)
+  { assert (type == 'r'); }
+
+  // ctor for write probes
+  procfsprobe_data(string path, uint64_t umask, char type, uint64_t maxsize_val, std::vector<Elf_Data*> prog)
+    : path(path), umask(umask), type(type), maxsize_val(maxsize_val), write_prog(prog)
+  { assert (type == 'w'); }
+};
+
 
 struct kprobe_data
 {
@@ -200,6 +231,7 @@ struct trace_data
   { }
 };
 
+static std::vector<procfsprobe_data> procfsprobes;
 static std::vector<kprobe_data> kprobes;
 static std::vector<timer_data> timers;
 static std::vector<perf_data> perf_probes;
@@ -234,7 +266,6 @@ fatal_elf()
 {
   fatal("%s\n", elf_errmsg(-1));
 }
-
 
 // XXX: based on get_online_cpus()/read_cpu_range()
 // in bcc src/cc/common.cc
@@ -585,6 +616,39 @@ maybe_collect_kprobe(const char *name, unsigned name_idx,
     fatal("probe %u offset non-zero\n", name_idx);
 
   kprobes.push_back(kprobe_data(type, arg, fd));
+}
+
+static void
+collect_procfsprobe(const char *name, Elf_Data* prog) 
+{
+  uint64_t umask; 
+  uint64_t maxsize_val;
+  char type;
+  char fifoname[PATH_MAX];
+
+  int res = sscanf(name, "procfsprobe/%lu/%c/%lu/%s", &umask, &type, &maxsize_val, fifoname);
+
+  if (res != 4)
+    fatal("unable to parse name of probe: %s", name);
+
+  std::string path(fifoname); 
+
+  if (type == 'r')
+    procfsprobes.push_back(procfsprobe_data(path, umask, type, maxsize_val, prog));
+  else 
+    {
+      // Check if a write probe with the same path already exists 
+      for (unsigned i = 0; i < procfsprobes.size(); i++)
+        if (procfsprobes[i].path == string(path) && procfsprobes[i].type == 'w') 
+          {
+            procfsprobes[i].write_prog.push_back(prog);
+            return;
+          }
+
+      std::vector<Elf_Data*> progs;
+      progs.push_back(prog);
+      procfsprobes.push_back(procfsprobe_data(path, umask, type, maxsize_val, progs));
+    }
 }
 
 static void
@@ -1342,6 +1406,19 @@ load_bpf_file(const char *module)
   if (ehdr == NULL)
     fatal_elf();
 
+  /* Get username and set directory prefix: */
+  user = getlogin(); 
+
+  if (!user)
+    fatal("an error occured while retrieving username. %s.\n", strerror(errno));
+
+  // TODO: fix script_name so we can directly use it here 
+
+  std::string module_name = std::string(module_basename);
+  module_name = module_name.substr(0, module_name.size() - 3);
+
+  prefix = "/var/tmp/systemtap-" + std::string(user) + "/" + module_name + "/";
+
   // Byte order should match the host, since we're loading locally.
   {
     const char *end_str;
@@ -1387,6 +1464,8 @@ load_bpf_file(const char *module)
   unsigned kprobes_idx = 0;
   unsigned begin_idx = 0;
   unsigned end_idx = 0;
+
+  std::vector<unsigned> procfsprobes_idx;
 
   // First pass to identify special sections, and make sure
   // all data is readable.
@@ -1434,6 +1513,11 @@ load_bpf_file(const char *module)
 	begin_idx = i;
       else if (strcmp(shname, "stap_end") == 0)
 	end_idx = i;
+      else if (strncmp(shname, "procfs", strlen("procfs")) == 0) {
+        // procfs probes have a "procfs" prefix in their names, we don't
+        // use normal strcmp as the full shname includes args
+        procfsprobes_idx.push_back(i);
+      }
     }
 
   // Two special sections are not optional.
@@ -1445,6 +1529,7 @@ load_bpf_file(const char *module)
     script_name = static_cast<char *>(sh_data[script_name_idx]->d_buf);
   else
     script_name = "<unknown>";
+
   if (version_idx != 0)
     {
       unsigned long long size = shdrs[version_idx]->sh_size;
@@ -1535,7 +1620,7 @@ load_bpf_file(const char *module)
 	prog_fds[i] = prog_load(sh_data[i], sh_name[i]);
     }
 
-  // Remember begin and end probes.
+  // Remember begin, end and procfs-like probes.
   if (begin_idx)
     {
       Elf64_Shdr *shdr = shdrs[begin_idx];
@@ -1548,6 +1633,15 @@ load_bpf_file(const char *module)
       if (shdr->sh_flags & SHF_EXECINSTR)
 	prog_end = sh_data[end_idx];
     }
+
+  for (unsigned i = 0; i < procfsprobes_idx.size(); ++i)
+   {
+     unsigned actual_idx = procfsprobes_idx[i];
+
+     Elf64_Shdr *shdr = shdrs[actual_idx];
+     if (shdr->sh_flags & SHF_EXECINSTR)   
+       collect_procfsprobe(sh_name[actual_idx], sh_data[actual_idx]);
+   }
 
   // Record all kprobes.
   if (kprobes_idx != 0)
@@ -1737,6 +1831,178 @@ perf_event_loop(pthread_t main_thread)
   return;
 }
 
+
+static void
+procfs_read_event_loop (procfsprobe_data* data, bpf_transport_context* uctx)
+{
+  std::string path_s = prefix + data->path;
+  const char* path = path_s.c_str();
+
+  Elf_Data* prog = data->read_prog;  
+
+  while (true) 
+    {
+      int fd = open(path, O_WRONLY);
+
+      if (fd == -1)
+        {
+          if (errno == ENOENT)
+            fatal("an error occured while opening procfs fifo (%s). %s.\n", path, strerror(errno));
+          
+          fprintf(stderr, "WARNING: an error occurred while opening procfs fifo (%s). %s.\n", 
+                  path, strerror(errno));
+          continue;
+        }
+ 
+      procfs_lock.lock();
+
+      // Run the probe and collect the message.
+      bpf_interpret(prog->d_size / sizeof(bpf_insn), static_cast<bpf_insn *>(prog->d_buf), uctx);
+
+      // Make a copy of the message.
+      std::string msg = uctx->procfs_msg;
+
+      procfs_lock.unlock();
+
+      if (data->maxsize_val && (msg.size() > data->maxsize_val - 1))
+          fprintf(stderr, "WARNING: procfs message size (%ld) exceeds specified maximum size (%ld).\n", 
+                  msg.size() + 1, data->maxsize_val);
+
+      if (write(fd, msg.c_str(), msg.size() + 1) == -1)
+        {
+          fprintf(stderr, "WARNING: an error occurred while writing to procfs fifo (%s). %s.\n", 
+                  path, strerror(errno));
+          (void) close(fd);
+          continue;
+        }
+
+      (void) close(fd);
+
+      // We're not sure at this point whether the read end of the pipe has closed. We 
+      // perform a small open hack to spin until read end of the pipe has closed.     
+
+      do {
+
+        fd = open(path, O_WRONLY | O_NONBLOCK);
+
+        if (fd != -1) close(fd);
+
+      } while (fd != -1);
+    }
+}
+
+
+static void
+procfs_write_event_loop (procfsprobe_data* data, bpf_transport_context* uctx)
+{
+  std::string path_s = prefix + data->path;
+  const char* path = path_s.c_str();
+
+  std::vector<Elf_Data*> prog = data->write_prog;
+
+  while (true) 
+    {
+      int fd = open(path, O_RDONLY);
+
+      if (fd == -1)
+        {
+          if (errno == ENOENT)
+            fatal("an error occured while opening procfs fifo (%s). %s.\n", path, strerror(errno));
+          
+          fprintf(stderr, "WARNING: an error occurred while opening procfs fifo (%s). %s.\n", 
+                  path, strerror(errno));
+          continue;
+        }
+ 
+      std::string msg;
+
+      unsigned read_size = 1024;
+      int bytes_read;
+
+      do {
+
+        char buffer_feed[read_size];
+        bytes_read = read(fd, buffer_feed, read_size);
+
+        if (bytes_read == -1)
+          fprintf(stderr, "WARNING: an error occurred while reading from procfs fifo (%s). %s.\n", 
+                    path, strerror(errno));
+
+        if (bytes_read > 0)
+          msg.append(std::string(buffer_feed));
+
+      } while (bytes_read > 0);
+
+      (void) close(fd);
+
+      procfs_lock.lock();
+
+      uctx->procfs_msg = msg;
+
+      // Now that we have the message, run the probes serially.
+      for (unsigned i = 0; i < prog.size(); ++i) 
+        bpf_interpret(prog[i]->d_size / sizeof(bpf_insn), static_cast<bpf_insn *>(prog[i]->d_buf), uctx);   
+    
+      procfs_lock.unlock();
+    } 
+}
+
+
+static void
+procfs_cleanup()
+{
+  // Delete files and directories created for procfs-like probes.
+  for (size_t k = 0; k < procfsprobes.size(); ++k)
+    {
+      std::string file_s = prefix + procfsprobes[k].path;
+      const char* file = file_s.c_str();
+      if (remove_file_or_dir(file))
+        fprintf(stderr, "WARNING: an error occurred while deleting a file (%s). %s.\n", file, strerror(errno));
+    }
+
+  const char* dir = prefix.c_str();
+  if (procfsprobes.size() > 0 && remove_file_or_dir(dir))
+    fprintf(stderr, "WARNING: an error ocurred while deleting a directory (%s). %s.\n", dir, strerror(errno));
+}
+
+
+static void
+procfs_spawn(bpf_transport_context* uctx)
+{
+  // Enable cleanup routine.
+  if (atexit(procfs_cleanup))
+    fatal("an error occurred while setting up procfs cleaner. %s.\n", strerror(errno));
+
+  // Create directory for procfs-like probes.
+  if (procfsprobes.size() > 0 && create_dir(prefix.c_str()))
+    fatal("an error occurred while making procfs directory. %s.\n", strerror(errno)); 
+  
+  // Create all of the fifos used for procfs-like probes and spawn threads.
+  for (size_t k =0; k < procfsprobes.size(); ++k)
+    {
+      procfsprobe_data* data = &procfsprobes[k];
+
+      std::string path = prefix + data->path;
+
+      uint64_t cmask = umask(data->umask);
+
+      mode_t mode = (data->type == 'r') ? 0444 : 0222;
+
+      if ((mkfifo(path.c_str(), mode) == -1))
+        fatal("an error occured while making procfs fifos. %s.\n", strerror(errno));
+
+      // TODO: Could set the owner/group of the fifo to the effective user.
+
+      umask(cmask);
+
+      if (data->type == 'r')
+        std::thread(procfs_read_event_loop, data, uctx).detach();    
+      else      
+        std::thread(procfs_write_event_loop, data, uctx).detach(); 
+    }
+}
+
+
 static void
 usage(const char *argv0)
 {
@@ -1868,6 +2134,9 @@ main(int argc, char **argv)
   // PR22330: Listen for perf_events:
   std::thread(perf_event_loop, pthread_self()).detach();
 
+  // Spawn all procfs threads.
+  procfs_spawn(&uctx);
+
   // Now that the begin probe has run and the perf_event listener is active, enable the kprobes.
   ioctl(group_fd, PERF_EVENT_IOC_ENABLE, 0);
 
@@ -1886,6 +2155,9 @@ main(int argc, char **argv)
   unregister_perf(perf_probes.size());
   unregister_tracepoints(tracepoint_probes.size());
   unregister_raw_tracepoints(raw_tracepoint_probes.size());
+
+  // Clean procfs-like probe files.
+  procfs_cleanup();
 
   // We are now running exit probes, so ^C should exit immediately:
   exit_phase = 1;

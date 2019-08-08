@@ -1,0 +1,118 @@
+# Test cases for procfs probes with bpf runtime
+
+set test "PROCFS_BPF"
+
+if {![installtest_p]} { untested $test; return }
+
+proc proc_read_value {test path} {
+    set value "<unknown>"
+    if [catch {open $path RDONLY} channel] {
+	      fail "$test $channel"
+    } else {
+	      set value [read -nonewline $channel]
+	      close $channel
+	      pass "$test read $value"
+    }
+    return $value
+}
+
+proc proc_write_value {test path value} {
+    if [catch {open $path WRONLY} channel] {
+        fail "$test $channel"
+    } else {
+        puts $channel $value
+	      close $channel
+	      pass "$test wrote $value"
+    }
+}
+
+proc proc_read_write {} {
+    global test
+
+    set path_read "/var/tmp/systemtap-$user/$test.bo/command"
+    set path_write "/var/tmp/systemtap-$user/$test.bo/other"
+
+    # read the initial value, which should be '100'
+    set value [proc_read_value $test $path_read]
+    if { $value == "100" } {
+        pass "$test received correct initial value"
+    } else {
+        fail "$test received incorrect initial value: $value"
+    }
+
+    # write a new value of '200'
+    proc_write_value $test $path_write "200"
+
+    # make sure it got set to '200'
+    set value [proc_read_value $test $path_read]
+    if { $value == "200" } {
+        pass "$test received correct value: 200"
+    } else {
+        fail "$test received incorrect value: $value"
+    }
+
+    # read it again to make sure nothing changed
+    set value [proc_read_value "$test again" $path_read]
+    if { $value == "200" } {
+      pass "$test received correct value: 200 again"
+    } else {
+        fail "$test received incorrect value: $value again"
+    }
+
+    # write a new value of 'hello'
+    proc_write_value $test $path_write "hello"
+
+    # make sure it got set to 'hello'
+    set value [proc_read_value $test $path_read]
+    if { $value == "hello" } {
+        pass "$test received correct value: hello"
+    } else {
+        fail "$test received incorrect value: $value"
+    }
+
+    # write a new value of 'goodbye'
+    proc_write_value $test $path_write "goodbye"
+
+    # make sure it got set to 'goodbye'
+    set value [proc_read_value $test $path_read]
+    if { $value == "goodbye" } {
+        pass "$test received correct value: goodbye"
+    } else {
+        fail "$test received incorrect value: $value"
+    }
+
+    return 0;
+}
+
+# The script starts with a value of "100".  If the user writes into
+# /proc/systemtap/MODNAME/command, that value is returned by the next
+# read.
+
+set systemtap_script {
+    global saved_value
+
+    probe procfs.read {
+        $value = saved_value
+    }
+
+    probe procfs("other").write {
+        saved_value = $value
+    }
+
+    probe begin {
+        saved_value = "100\n"
+        printf("systemtap starting probe\n")
+    }
+
+    probe end {
+        printf("systemtap ending probe\n")
+        printf("final value = %s", saved_value)
+    }
+}
+
+
+# test procfs probes
+set output_string "\\mfinal value = goodbye\\M\r\n"
+stap_run $test proc_read_write $output_string --bpf -e $systemtap_script -m $test
+
+exec /bin/rm -f ${test}.bo

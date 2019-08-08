@@ -1091,8 +1091,17 @@ procfs.write
 procfs.umask(UMASK).write
 .ESAMPLE
 
+Note that there are a few differences when procfs probes are used in the stapbpf runtime. 
+.RI FIFO
+special files are used instead of proc filesystem files.
+These files are created in 
+/var/tmp/systemtap-USER/MODNAME.
+.RI (USER 
+is the name of the user). 
+Additionally, users cannot create both read and write probes on the same file.
+
 .I PATH
-is the file name (relative to /proc/systemtap/MODNAME) to be created.
+is the file name (relative to /proc/systemtap/MODNAME or /var/tmp/systemtap-USER/MODNAME) to be created.
 If no
 .I PATH
 is specified (as in the last two variants above),
@@ -1102,7 +1111,7 @@ for input probes and should not be used as a
 .I PATH
 for procfs probes; see the input probe section below.
 .PP
-When a user reads /proc/systemtap/MODNAME/PATH, the corresponding
+When a user reads /proc/systemtap/MODNAME/PATH (normal runtime) or /var/tmp/systemtap-USER/MODNAME (stapbpf runtime), the corresponding
 procfs
 .I read
 probe is triggered.  The string data to be read should be assigned to
@@ -1114,7 +1123,7 @@ like this:
 procfs("PATH").read { $value = "100\\n" }
 .ESAMPLE
 .PP
-When a user writes into /proc/systemtap/MODNAME/PATH, the
+When a user writes into /proc/systemtap/MODNAME/PATH (normal runtime) or /var/tmp/systemtap-USER/MODNAME (stapbpf runtime), the
 corresponding procfs
 .I write
 probe is triggered.  The data the user wrote is available in the

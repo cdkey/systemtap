@@ -1,0 +1,51 @@
+// target tapset
+// Copyright (C) 2019 Red Hat Inc.
+//
+// This file is part of systemtap, and is free software.  You can
+// redistribute it and/or modify it under the terms of the GNU General
+// Public License (GPL); either version 2, or (at your option) any
+// later version.
+
+// TODO: get 'call' instruction to handle the functions below
+
+/**
+ * function _set_procfs_value - Used to set the message 
+ * from a procfs-like probe.
+ *
+ * Description: This function always returns 0.
+ */
+
+function _set_procfs_value:long (msg:string)
+%{/* bpf */
+   0xbf, 1, $msg, -, -;   /* mov r1, $msg */
+   0x85, 0, 0, 0, -6;     /* call BPF_FUNC_SET_PROCFS_VALUE */
+   0xbf, $$, 0, -, -;     /* return r0 */
+%}
+
+/**
+ * function _append_procfs_value - Used to append to 
+ * the message for a procfs-like probe.
+ *
+ * Description: This function always returns 0.
+ */
+
+function _append_procfs_value:long (append:string)
+%{/* bpf */
+   0xbf, 1, $append, -, -;    /* mov r1, $msg */
+   0x85, 0, 0, 0, -7;         /* call BPF_FUNC_APPEND_PROCFS_VALUE */
+   0xbf, $$, 0, -, -;         /* return r0 */
+%}
+
+/**
+ * function _get_procfs_value - Used to get the message 
+ * for a procfs-like probe.
+ *
+ * Description: This function returns a pointer to the 
+ * message.
+ */
+
+function _get_procfs_value:string ()
+%{/* bpf */
+   0x85, 0, 0, 0, -8;   /* call BPF_FUNC_GET_PROCFS_VALUE */
+   0xbf, $$, 0, -, -;   /* return r0 */ 
+%}
