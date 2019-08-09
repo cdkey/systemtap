@@ -1406,7 +1406,7 @@ load_bpf_file(const char *module)
   if (ehdr == NULL)
     fatal_elf();
 
-  /* Get username and set directory prefix: */
+  // Get username and set directory prefix
   user = getlogin(); 
 
   if (!user)
@@ -1415,7 +1415,7 @@ load_bpf_file(const char *module)
   // TODO: fix script_name so we can directly use it here 
 
   std::string module_name = std::string(module_basename);
-  module_name = module_name.substr(0, module_name.size() - 3);
+  module_name = module_name.substr(0, module_name.size() - 3); // remove ".bo"
 
   prefix = "/var/tmp/systemtap-" + std::string(user) + "/" + module_name + "/";
 
@@ -1868,7 +1868,7 @@ procfs_read_event_loop (procfsprobe_data* data, bpf_transport_context* uctx)
           fprintf(stderr, "WARNING: procfs message size (%ld) exceeds specified maximum size (%ld).\n", 
                   msg.size() + 1, data->maxsize_val);
 
-      if (write(fd, msg.c_str(), msg.size() + 1) == -1)
+      if (write(fd, msg.data(), msg.size()) == -1)
         {
           fprintf(stderr, "WARNING: an error occurred while writing to procfs fifo (%s). %s.\n", 
                   path, strerror(errno));

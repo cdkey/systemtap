@@ -1105,13 +1105,28 @@ passes_0_4 (systemtap_session &s)
 
   // PASS 3: TRANSLATION
   // (BPF does translation and compilation at once in pass 4.)
-  if (s.runtime_mode != systemtap_session::bpf_runtime)
-    {
-      s.verbose = s.perpass_verbose[2];
-      times (& tms_before);
-      gettimeofday (&tv_before, NULL);
-      PROBE1(stap, pass3__start, &s);
+  s.verbose = s.perpass_verbose[2];
+  times (& tms_before);
+  gettimeofday (&tv_before, NULL);
+  PROBE1(stap, pass3__start, &s);
 
+  if (s.runtime_mode == systemtap_session::bpf_runtime)
+    {
+      times (& tms_after);
+      gettimeofday (&tv_after, NULL);
+      PROBE1(stap, pass3__end, &s);
+
+      if (s.verbose)
+	clog << _("Pass 3: pass skipped for stapbpf runtime ")
+	     << TIMESPRINT
+	     << endl;
+
+      assert_no_interrupts();
+      if (s.last_pass == 3)
+	return rc;
+    }
+  else
+    {
       rc = translate_pass (s);
 
       if (! rc && s.last_pass == 3)
