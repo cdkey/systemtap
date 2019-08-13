@@ -622,8 +622,8 @@ maybe_collect_kprobe(const char *name, unsigned name_idx,
 static void
 collect_procfsprobe(const char *name, Elf_Data* prog) 
 {
-  uint64_t umask; 
-  uint64_t maxsize_val;
+  unsigned long umask; 
+  unsigned long maxsize_val;
   char type;
   char fifoname[PATH_MAX];
 
@@ -1867,8 +1867,8 @@ procfs_read_event_loop (procfsprobe_data* data, bpf_transport_context* uctx)
       procfs_lock.unlock();
 
       if (data->maxsize_val && (msg.size() > data->maxsize_val - 1))
-          fprintf(stderr, "WARNING: procfs message size (%ld) exceeds specified maximum size (%ld).\n", 
-                  msg.size() + 1, data->maxsize_val);
+          fprintf(stderr, "WARNING: procfs message size (%lu) exceeds specified maximum size (%lu).\n", 
+                  (unsigned long) msg.size() + 1, (unsigned long) data->maxsize_val);
 
       if (write(fd, msg.data(), msg.size()) == -1)
         {
