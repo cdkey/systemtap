@@ -1,0 +1,19 @@
+    global saved_value
+
+    probe procfs.read {
+        $value = saved_value
+    }
+
+    probe procfs("other").write {
+        saved_value = $value
+    }
+
+    probe begin {
+        saved_value = "100\n"
+        printf("systemtap starting probe\n")
+    }
+
+    probe end {
+        printf("systemtap ending probe\n")
+        printf("final value = %s", saved_value)
+    }

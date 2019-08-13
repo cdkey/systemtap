@@ -1,7 +1,7 @@
 * What's new in version 4.2, PRERELEASE
 
 - The stapbpf backend now supports procfs probes. The implementation 
-  uses FIFO special files in /var/tmp/systemtap-USER/MODNAME instead 
+  uses FIFO special files in /var/tmp/systemtap-$EFFUSER/MODNAME instead 
   of the proc filesystem files.
 
 - The eBPF backend now uses bpf raw tracepoints for kernel.trace("*")

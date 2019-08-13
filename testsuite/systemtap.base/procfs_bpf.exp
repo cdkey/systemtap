@@ -28,16 +28,18 @@ proc proc_write_value {test path value} {
 
 proc proc_read_write {} {
     global test
-
-    set path_read "/var/tmp/systemtap-$user/$test.bo/command"
-    set path_write "/var/tmp/systemtap-$user/$test.bo/other"
+    
+    # effective userid
+    set user [exec id -un]
+    set path_read "/var/tmp/systemtap-$user/$test/command"
+    set path_write "/var/tmp/systemtap-$user/$test/other"
 
     # read the initial value, which should be '100'
     set value [proc_read_value $test $path_read]
     if { $value == "100" } {
-        pass "$test received correct initial value"
+        pass "$test initial value"
     } else {
-        fail "$test received incorrect initial value: $value"
+        fail "$test initial value: $value"
     }
 
     # write a new value of '200'
@@ -46,17 +48,17 @@ proc proc_read_write {} {
     # make sure it got set to '200'
     set value [proc_read_value $test $path_read]
     if { $value == "200" } {
-        pass "$test received correct value: 200"
+        pass "$test value: 200"
     } else {
-        fail "$test received incorrect value: $value"
+        fail "$test value: $value"
     }
 
     # read it again to make sure nothing changed
     set value [proc_read_value "$test again" $path_read]
     if { $value == "200" } {
-      pass "$test received correct value: 200 again"
+      pass "$test value: 200 again"
     } else {
-        fail "$test received incorrect value: $value again"
+        fail "$test value: $value again"
     }
 
     # write a new value of 'hello'
@@ -65,9 +67,9 @@ proc proc_read_write {} {
     # make sure it got set to 'hello'
     set value [proc_read_value $test $path_read]
     if { $value == "hello" } {
-        pass "$test received correct value: hello"
+        pass "$test value: hello"
     } else {
-        fail "$test received incorrect value: $value"
+        fail "$test value: $value"
     }
 
     # write a new value of 'goodbye'
@@ -76,9 +78,9 @@ proc proc_read_write {} {
     # make sure it got set to 'goodbye'
     set value [proc_read_value $test $path_read]
     if { $value == "goodbye" } {
-        pass "$test received correct value: goodbye"
+        pass "$test value: goodbye"
     } else {
-        fail "$test received incorrect value: $value"
+        fail "$test value: $value"
     }
 
     return 0;
@@ -89,30 +91,11 @@ proc proc_read_write {} {
 # read.
 
 set systemtap_script {
-    global saved_value
-
-    probe procfs.read {
-        $value = saved_value
-    }
-
-    probe procfs("other").write {
-        saved_value = $value
-    }
-
-    probe begin {
-        saved_value = "100\n"
-        printf("systemtap starting probe\n")
-    }
-
-    probe end {
-        printf("systemtap ending probe\n")
-        printf("final value = %s", saved_value)
-    }
 }
 
 
 # test procfs probes
 set output_string "\\mfinal value = goodbye\\M\r\n"
-stap_run $test proc_read_write $output_string --bpf -e $systemtap_script -m $test
+stap_run $test proc_read_write $output_string --bpf $srcdir/$subdir/procfs_bpf.stp -m $test
 
 exec /bin/rm -f ${test}.bo

@@ -41,6 +41,7 @@
 #include <sys/mman.h>
 #include <sys/utsname.h>
 #include <sys/resource.h>
+#include <pwd.h>
 #include "bpfinterp.h"
 #include "../util.h"
 
@@ -1407,8 +1408,9 @@ load_bpf_file(const char *module)
     fatal_elf();
 
   // Get username and set directory prefix
-  user = getlogin(); 
-
+  struct passwd *p = getpwuid(geteuid()); // effective uid
+  if (p)
+    user = p->pw_name;
   if (!user)
     fatal("an error occured while retrieving username. %s.\n", strerror(errno));
 
@@ -1963,6 +1965,9 @@ procfs_cleanup()
   const char* dir = prefix.c_str();
   if (procfsprobes.size() > 0 && remove_file_or_dir(dir))
     fprintf(stderr, "WARNING: an error ocurred while deleting a directory (%s). %s.\n", dir, strerror(errno));
+
+  if (log_level)
+    fprintf(stderr, "removed fifo directory %s\n", dir);
 }
 
 
@@ -1987,13 +1992,15 @@ procfs_spawn(bpf_transport_context* uctx)
       uint64_t cmask = umask(data->umask);
 
       mode_t mode = (data->type == 'r') ? 0444 : 0222;
+      mode &= ~cmask; // NB: not umask(2)
 
       if ((mkfifo(path.c_str(), mode) == -1))
         fatal("an error occured while making procfs fifos. %s.\n", strerror(errno));
 
-      // TODO: Could set the owner/group of the fifo to the effective user.
-
-      umask(cmask);
+      if (log_level)
+        fprintf(stderr, "created %c fifo %s\n", data->type, path.c_str());
+      
+      // TODO: Could set the owner/group of the fifo to the effective user.  or real?
 
       if (data->type == 'r')
         std::thread(procfs_read_event_loop, data, uctx).detach();    
