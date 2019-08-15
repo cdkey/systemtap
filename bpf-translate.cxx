@@ -1975,7 +1975,7 @@ bpf_unparser::visit_delete_statement (delete_statement *s)
 
           // TODO: Handle map_id < 0 for pe_stats or assert otherwise.
           if (g->second.map_id < 0)
-            throw SEMANTIC_ERROR (_("unsupported delete operation on statistics aggregate"), s->tok); // TODOXXX PR23476
+            throw SEMANTIC_ERROR (_("unsupported delete operation on statistics aggregate"), a->tok); // TODOXXX PR23476
           this_prog.use_tmp_space(-key_ofs);
 	  this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1),
 			     g->second.map_id);
