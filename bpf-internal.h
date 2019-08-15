@@ -75,6 +75,21 @@ enum bpf_target {
 #define BPF_TRANSPORT_ARG uint64_t
 // XXX: BPF_TRANSPORT_ARG is for small numerical arguments, not pe_long values.
 
+// Constants for array sorting.
+//
+// XXX Helpers take at most 5 arguments from BPF code.  Hence we
+// combine a couple arguments into one sort_flags for the
+// map_get_next_key pseudo-helper:
+#define SORT_FLAGS(sort_column, sort_direction) \
+  (((sort_column) << 4) | ((sort_direction) + 1))
+#define GET_SORT_COLUMN(sort_flags) \
+  (((sort_flags) & ~0xf) >> 4)
+#define GET_SORT_DIRECTION(sort_flags) \
+  ((int64_t)((sort_flags) & 0xf) - 1)
+// int sort_direction; // -1: decreasing, 0: none, 1: increasing
+// unsigned sort_column; // 0: value, 1..N: index
+// TODO PR24528: also encode s->sort_aggr
+
 // Will print out bpf assembly before and after optimization:
 //#define DEBUG_CODEGEN
 

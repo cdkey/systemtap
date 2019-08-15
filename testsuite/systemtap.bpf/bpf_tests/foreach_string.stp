@@ -1,5 +1,9 @@
 global a[10], b[10]
 
+// PR24811: Be sure to test non-constant iteration limit -- set to 0/1 in begin.
+global lim0 = 1
+global lim1 = 0
+
 probe begin {
 	printf("BEGIN\n")
 
@@ -11,11 +15,12 @@ probe begin {
 	b[0] = "q"
 	b[1] = "r"
 
+        lim0 = 0
+        lim1 = 1
 	exit()
 }
 
 global flag = 1
-global _flag = 1
 
 // XXX Split into separate probes due to stack size constraint.
 global end_probes = 0 // TODO: Remove this workaround for PR24812.
@@ -23,21 +28,20 @@ global end_probes = 0 // TODO: Remove this workaround for PR24812.
 probe end(1) {
         printf("first end probe\n")
 
-        /* TODO: Requires PR23858.
 	foreach (ks- in a limit -10)
 	  flag = 0
 
-	foreach (ks- in a limit 0)
+	foreach (ks- in a limit lim0)
 	  flag = 0
 
         found = 0
-        foreach (ks+ in a limit 1) {
+        foreach (ks+ in a limit lim1) {
           found++
           if (a[ks] != -1)
             flag = 0
         }
 
-        foreach (k in b+ limit 1) {
+        foreach (k in b+ limit lim1) {
           found++
           if (k != -1)
             flag = 0
@@ -45,14 +49,13 @@ probe end(1) {
         if (found != 2)
           flag = 0
 
-	foreach (ks1 in a limit 0)
+	foreach (ks1 in a limit lim0)
 	  foreach (ks2 in a)
 	    flag = 0
 
 	foreach (ks1 in a)
-	  foreach (ks2 in a limit 0)
+	  foreach (ks2 in a limit lim0)
 	    flag = 0
-        */
 
 	x = 0
 	foreach (ks in a)
@@ -71,40 +74,47 @@ probe end(1) {
 probe end(2) {
         printf("second end probe\n")
 
-        /* TODO: Requires PR23858.
 	x = -1
-	foreach (ks+ in a)
+	foreach (ks+ in a) {
           flag = flag && x++ == a[ks]
+        }
         flag = flag && x == 2
 
 	x = 1
-	foreach (ks- in a)
-        {
+	foreach (ks- in a) {
 	  flag = flag && x-- == a[ks]
         }
         flag = flag && x == -2
 
         x = -1
-	y = 2
+	y = 1
 	foreach (ks1+ in a) {
-	  foreach (k2 in b-)
-          {
-           printf("got %s %d / %d %s\n", ks1, a[ks1], k2, b[k2])
+	  foreach (k2 in b-) {
             flag = flag && x == a[ks1]
                    && y-- == k2
           }
 	  x++
-	  y = 2
-	}
-        */
+	  y = 1
+        }
 
         x = -1
 	y = 1
         foreach (ks1+ in a) {
-	  foreach (ks2- in a)
-            // TODO: Requires PR23858.
-            _flag = _flag && x == a[ks1]
+          foreach (ks2- in a) {
+            flag = flag && x == a[ks1]
                    && y-- == a[ks2]
+          }
+	  x++
+	  y = 1
+        }
+
+        // Also test outer loop with no sorting, inner loop with sorting.
+        x = -1
+	y = 1
+        foreach (ks1 in a) {
+          foreach (ks2- in a) {
+            flag = flag && y-- == a[ks2]
+          }
 	  x++
 	  y = 1
         }

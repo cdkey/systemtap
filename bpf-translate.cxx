@@ -1746,10 +1746,9 @@ bpf_unparser::visit_foreach_loop(foreach_loop* s)
 
   // PR23875: foreach should handle string keys
   auto type = arraydecl->index_types[0];
-  if (arraydecl->index_types[0] != pe_long
-      && arraydecl->index_types[0] != pe_string)
+  if (type != pe_long && type != pe_string)
     throw SEMANTIC_ERROR(_("unhandled foreach index type"), s->tok);
-  int keysize = type == pe_long ? 8 : BPF_MAXSTRINGLEN;
+  int keysize = 8; // XXX: If a string key, foreach will handle a pointer to it.
 
   auto g = glob.globals.find(arraydecl);
   if (g == glob.globals.end())
@@ -1768,6 +1767,15 @@ bpf_unparser::visit_foreach_loop(foreach_loop* s)
       map_id = one_field->second;
       // XXX: Since foreach only handles/returns keys, it's sufficient
       // to simply iterate one of the stat field maps.
+
+      // If sorting on aggregate is required (s->sort_aggr),
+      // map_get_next_key will need to perform aggregation
+      // calculations that might require access to more than one map.
+      //
+      // TODO PR24528: need to pass sort_aggr to the interpreter.
+      // TODO PR24528: use existing foreach_sort_stat.exp testcase to check this.
+      if (s->sort_column == 0)
+        throw SEMANTIC_ERROR(_("unsupported sorted iteration on stat aggregate"), arraydecl->tok);
     }
 
   value *limit = this_prog.new_reg();
@@ -1785,15 +1793,20 @@ bpf_unparser::visit_foreach_loop(foreach_loop* s)
   if (s->limit)
     this_prog.mk_mov(this_ins, limit, emit_expr(s->limit));
   else
+    // XXX may want 'limit = this_prog.new_imm(-1);'
     this_prog.mk_mov(this_ins, limit, this_prog.new_imm(-1));
+
+  // XXX: s->sort_column may be uninitialized if s->sort_direction == 0
+  unsigned sort_column = s->sort_column;
+  //unsigned sort_column = s->sort_direction == 0 ? 0 : s->sort_column;
 
   // Get the first key.
   this_prog.load_map (this_ins, this_prog.lookup_reg(BPF_REG_1), map_id);
   this_prog.mk_mov (this_ins, this_prog.lookup_reg(BPF_REG_2), i0);
   this_prog.mk_binary (this_ins, BPF_ADD, this_prog.lookup_reg(BPF_REG_3), 
-                       frame, newkey_ofs); 
+                       frame, newkey_ofs);
   this_prog.mk_mov (this_ins, this_prog.lookup_reg(BPF_REG_4),
-                    this_prog.new_imm(s->sort_direction));
+                    this_prog.new_imm(SORT_FLAGS(sort_column,s->sort_direction)));
   this_prog.mk_mov (this_ins, this_prog.lookup_reg(BPF_REG_5), limit);
   this_prog.mk_call (this_ins, BPF_FUNC_map_get_next_key, 5);
   this_prog.mk_jcond (this_ins, NE, this_prog.lookup_reg(BPF_REG_0), i0,
@@ -1819,16 +1832,13 @@ bpf_unparser::visit_foreach_loop(foreach_loop* s)
   set_block(iter_block);
 
   this_prog.load_map (this_ins, this_prog.lookup_reg(BPF_REG_1), map_id);
-  if (type == pe_string)
-    emit_string_copy(frame, -keysize, key, true /* zero pad */);
-  else
-    this_prog.mk_st (this_ins, BPF_DW, frame, -keysize, key);
+  this_prog.mk_st (this_ins, BPF_DW, frame, -keysize, key);
   this_prog.mk_binary (this_ins, BPF_ADD, this_prog.lookup_reg(BPF_REG_2),
                        frame, key_ofs);
   this_prog.mk_binary (this_ins, BPF_ADD, this_prog.lookup_reg(BPF_REG_3),
                        frame, newkey_ofs);
   this_prog.mk_mov (this_ins, this_prog.lookup_reg(BPF_REG_4),
-                    this_prog.new_imm(s->sort_direction));
+                    this_prog.new_imm(SORT_FLAGS(sort_column,s->sort_direction)));
   this_prog.mk_mov (this_ins, this_prog.lookup_reg(BPF_REG_5), limit);
   this_prog.mk_call (this_ins, BPF_FUNC_map_get_next_key, 5);
   this_prog.mk_jcond (this_ins, NE, this_prog.lookup_reg(BPF_REG_0), i0,
@@ -1836,12 +1846,8 @@ bpf_unparser::visit_foreach_loop(foreach_loop* s)
 
   // Load next key, decrement limit if applicable
   set_block(load_block);
-  if (type == pe_string)
-    // Return the address of the key:
-    this_prog.mk_binary (this_ins, BPF_ADD, key, frame, newkey_ofs);
-  else
-    // Return the key itself:
-    this_prog.mk_ld (this_ins, BPF_DW, key, frame, -keysize-keysize);
+  // XXX Return the key. If a string, key is already a string address.
+  this_prog.mk_ld (this_ins, BPF_DW, key, frame, -keysize-keysize);
 
   if (s->limit)
       this_prog.mk_binary (this_ins, BPF_ADD, limit, limit, this_prog.new_imm(-1));

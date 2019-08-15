@@ -23,8 +23,9 @@
 #include <cstdlib>
 #include <cerrno>
 #include <vector>
-#include <inttypes.h>
 #include <map>
+#include <type_traits>
+#include <inttypes.h>
 #include "bpfinterp.h"
 #include "libbpf.h"
 #include "../bpf-internal.h"
@@ -84,144 +85,298 @@ remove_tag(const char *fstr)
   return std::string(fstr, end - fstr);
 }
 
-// Used with map_get_next_key for int keys. Uses signed type so that
-// negative values are properly sorted.
-typedef std::vector<std::set<int64_t>> map_int_keys;
-
-// Used with map_get_next_key for string keys.
-typedef std::vector<std::set<std::string>> map_str_keys;
-
+// Used with map_get_next_key to store and sort key -> <don'tcare> or
+// value -> key mappings. The latter are used to sort by value and
+// return key. The int maps use signed type so that negative values
+// are properly sorted.
 struct map_keys {
-  map_int_keys int_keys;
-  map_str_keys str_keys;
+  std::vector<std::map<int64_t, int64_t>> int_keyvals;
+  std::vector<std::map<std::string, std::string>> str_keyvals;
+  std::vector<std::map<std::string, int64_t>> intstr_keyvals;
+  std::vector<std::map<int64_t, std::string>> strint_keyvals;
 };
 
+void
+convert_int_key(uint64_t *kp, int64_t &key)
+{
+  key = (int64_t)*kp;
+}
+
+void
+convert_str_key(uint64_t *kp, std::string &key)
+{
+  key = std::string((char *)kp, BPF_MAXSTRINGLEN_PLUS);
+}
+
+void
+convert_int_kp(const int64_t &key, uint64_t *kp)
+{
+  *kp = (uint64_t)key;
+}
+
+void
+convert_str_kp(const std::string &key, uint64_t *kp,
+               std::vector<std::string> &strings)
+{
+  std::string str(key);
+  strings.push_back(str);
+  *kp = reinterpret_cast<uint64_t>(strings.back().c_str());
+}
+
+template<typename K>
+void
+convert_key(uint64_t *kp, K &key)
+{
+  if (std::is_same<K, int64_t>::value)
+    convert_int_key(kp, (int64_t&)key);
+  else if (std::is_same<K, std::string>::value)
+    convert_str_key(kp, (std::string&)key);
+  else
+    stapbpf_abort("bpf_map_get_next_key BUG: unknown map key/value type");
+}
+
+template<typename K>
+void
+convert_kp(const K &key, uint64_t *kp, std::vector<std::string> &strings)
+{
+  if (std::is_same<K, int64_t>::value)
+    convert_int_kp((int64_t&)key, kp);
+  else if (std::is_same<K, std::string>::value)
+    convert_str_kp((std::string&)key, kp, strings);
+  else
+    stapbpf_abort("bpf_map_get_next_key BUG: unknown map key/value type");
+}
+
+template<typename K>
+int
+compute_key_size()
+{
+  if (std::is_same<K, int64_t>::value)
+    return sizeof(int64_t);
+  else if (std::is_same<K, std::string>::value)
+    return BPF_MAXSTRINGLEN;
+  else
+    stapbpf_abort("bpf_map_get_next_key BUG: unknown map key/value type");
+  return 0;
+}
+
+template<typename K, typename V>
+int map_sort(std::vector<std::map<V,K>> &keyvals,
+             bool use_key, int map_fd)
+{
+  // Handle both uint64_t and string types.
+  //
+  // XXX: Copy strings with memcpy() and add a safety NUL. This avoids
+  // labyrinth of contradictory compiler warnings on different
+  // platforms. Worth reviewing.
+  char _k[BPF_MAXSTRINGLEN_PLUS], _n[BPF_MAXSTRINGLEN_PLUS];
+  _k[BPF_MAXSTRINGLEN] = _n[BPF_MAXSTRINGLEN] = '\0';
+  uint64_t *kp = (uint64_t *)_k, *np = (uint64_t *)_n;
+  std::map<V,K> s;
+
+  int key_size = compute_key_size<K>();
+  //int value_size = compute_key_size<V>();
+
+  int rc = bpf_get_next_key(map_fd, 0, as_ptr(np));
+  while (!rc)
+    {
+      K key; V value;
+      convert_key(np, key);
+      if (use_key)
+        convert_key(np, value);
+      else
+        {
+          char _v[BPF_MAXSTRINGLEN_PLUS];
+          _v[BPF_MAXSTRINGLEN] = '\0';
+          uint64_t *vp = (uint64_t *)_v;
+          int res = bpf_lookup_elem(map_fd, as_ptr(np), as_ptr(vp));
+          if (res) // element could not be found
+            stapbpf_abort("bpf_map_get_next_key BUG: could not find key " \
+                          "returned by bpf_get_next_key");
+          convert_key(vp, value);
+        }
+      s.insert(std::make_pair(value, key));
+      memcpy(kp, np, key_size);
+      rc = bpf_get_next_key(map_fd, as_ptr(kp), as_ptr(np));
+    }
+
+  if (s.empty())
+    return -1;
+  keyvals.push_back(s);
+  return 0;
+}
+
+template<typename K, typename V>
+int map_next(std::vector<std::map<V,K>> &keyvals,
+             int64_t next_key, int sort_direction,
+             std::vector<std::string> &strings)
+{
+  std::map<V,K> &s = keyvals.back();
+  K skey; V sval;
+
+  if (sort_direction > 0)
+    {
+      auto it = s.begin();
+      if (it == s.end())
+        return -1;
+      skey = it->second;
+      sval = it->first;
+      convert_kp(skey, (uint64_t *)next_key, strings);
+    }
+  else // sort_direction < 0
+    {
+      auto it = s.rbegin();
+      if (it == s.rend())
+        return -1;
+      skey = it->second;
+      sval = it->first;
+      convert_kp(skey, (uint64_t *)next_key, strings);
+    }
+
+  s.erase(sval);
+  return 0;
+}
+
 // Wrapper for bpf_get_next_key that includes logic for accessing
-// keys in ascending or descending order.
+// keys in ascending or descending order, or
+// (PR23858) in ascending or descending order by value.
 int
 map_get_next_key(int fd_idx, int64_t key, int64_t next_key,
-                 int sort_direction, int64_t limit,
-                 bpf_transport_context *ctx, map_keys &keys)
+                 uint64_t sort_flags, int64_t limit,
+                 bpf_transport_context *ctx, map_keys &keys,
+                 std::vector<std::string> &strings)
 {
   int fd = (*ctx->map_fds)[fd_idx];
+  unsigned sort_column = GET_SORT_COLUMN(sort_flags);
+  int sort_direction = GET_SORT_DIRECTION(sort_flags);
+  // TODO PR24528: also handle s->sort_aggr for stat aggregates.
+  //fprintf(stderr, "DEBUG called map_get_next_key fd=%d sort_column=%u sort_direction=%d key=%lx next_key=%lx limit=%ld\n", fd, sort_column, sort_direction, key, next_key, limit);
 
-  // XXX: May want to pass the actual key type. For now just guess:
-  bool is_str = ctx->map_attrs[fd_idx].key_size == BPF_MAXSTRINGLEN;
+  // XXX: s->sort_column may be uninitialized if s->sort_direction == 0
+  if (sort_direction == 0)
+    sort_column = 0;
 
-  // Final iteration...
+  bool use_value = (sort_column == 0);
+  bool use_key = (sort_column == 1);
+
+  // XXX: May want to pass the actual key/value type. For now guess from size:
+  bool key_str = (ctx->map_attrs[fd_idx].key_size == BPF_MAXSTRINGLEN);
+  bool is_str = false;
+  if (use_value)
+    is_str = (ctx->map_attrs[fd_idx].value_size == BPF_MAXSTRINGLEN);
+  else if (use_key)
+    is_str = key_str;
+  else
+    stapbpf_abort("unknown sort column");
+
+  //std::cerr << "DEBUG limit==" << limit << ", keys.str_keyvals.size()==" << keys.str_keyvals.size() << std::endl;
+  // Final iteration, therefore keys.back() is no longer needed:
   if (limit == 0)
     {
       if (!key)
-        // PR24811: if key is not set, there's nothing to pop from keys.
+        // PR24811: If key is not set, there's nothing to pop.
         return -1;
 
-      // ... therefore keys.back() is no longer needed:
-      goto empty;
+      if (key_str && is_str)
+        keys.str_keyvals.pop_back();
+      else if (!key_str && !is_str)
+        keys.int_keyvals.pop_back();
+      else if (!key_str && is_str)
+        keys.intstr_keyvals.pop_back();
+      else if (key_str && !is_str)
+        keys.strint_keyvals.pop_back();
+      //std::cerr << "DEBUG after pop keys.str_keyvals.size()==" << keys.str_keyvals.size() << std::endl;
+      return -1;
     }
 
-  if (!sort_direction)
-    return bpf_get_next_key(fd, as_ptr(key), as_ptr(next_key));
+  if (sort_direction == 0)
+    {
+      if (!key_str)
+        return bpf_get_next_key(fd, as_ptr(key), as_ptr(next_key));
 
-  // Beginning of iteration; populate a new set of keys for
+      // XXX Handle string values being passed as pointers.
+      char _n[BPF_MAXSTRINGLEN_PLUS];
+      uint64_t *kp = key == 0x0 ? (uint64_t *)0x0 : *(uint64_t **)key;
+      uint64_t *np = (uint64_t *)_n;
+      int rc = bpf_get_next_key(fd, as_ptr(kp), as_ptr(np));
+      if (!rc)
+        {
+          std::string next_key2(_n, BPF_MAXSTRINGLEN);
+          convert_kp(next_key2, (uint64_t *)next_key, strings);
+        }
+      return rc;
+    }
+
+  // Beginning of iteration; populate a new set of keys/values for
   // the map specified by fd. Multiple sets can be associated
   // with a single map during execution of nested foreach loops.
-  if (!key && is_str)
+  int rc = 0;
+  if (!key && key_str && is_str)
     {
-      // XXX: copy with memcpy() and add a safety NUL. This avoids
-      // labyrinth of contradictory compiler warnings on different
-      // platforms. Worth reviewing.
-      char k[BPF_MAXSTRINGLEN_PLUS],
-        n[BPF_MAXSTRINGLEN_PLUS];
-      k[BPF_MAXSTRINGLEN] = n[BPF_MAXSTRINGLEN] = '\0';
-      std::set<std::string> s;
-
-      int rc = bpf_get_next_key(fd, 0, as_ptr(n));
-      while (!rc)
-        {
-          memcpy(k, n, BPF_MAXSTRINGLEN);
-          s.insert(std::string(k, BPF_MAXSTRINGLEN));
-          rc = bpf_get_next_key(fd, as_ptr(k), as_ptr(n));
-        }
-
-      if (s.empty())
-        return -1;
-
-      keys.str_keys.push_back(s);
+      rc = map_sort<std::string, std::string>(keys.str_keyvals, use_key, fd);
+      //std::cerr << "DEBUG after push keys.str_keyvals.size()==" << keys.str_keyvals.size() << " " << keys.str_keyvals.back().size() << std::endl;
+      //for (auto kv : keys.str_keyvals.back()) std::cerr << "DEBUG " << kv.first << " --> " << kv.second << std::endl;
     }
-  else if (!key) // && !is_str
+  else if (!key && !key_str && !is_str)
     {
-      uint64_t k, n;
-      std::set<int64_t> s;
-
-      int rc = bpf_get_next_key(fd, 0, as_ptr(&n));
-      while (!rc)
-        {
-          s.insert(n);
-          k = n;
-          rc = bpf_get_next_key(fd, as_ptr(&k), as_ptr(&n));
-        }
-
-      if (s.empty())
-        return -1;
-
-      keys.int_keys.push_back(s);
+      rc = map_sort<int64_t, int64_t>(keys.int_keyvals, use_key, fd);
     }
-
-  if (is_str)
+  else if (!key && !key_str && is_str)
     {
-      std::set<std::string> &s = keys.str_keys.back();
-      char *nstr = reinterpret_cast<char *>(next_key);
-      std::string skey;
-
-      if (sort_direction > 0)
-        {
-          auto it = s.begin();
-          if (it == s.end())
-            goto empty;
-          skey = *it;
-          strncpy(nstr, skey.c_str(), BPF_MAXSTRINGLEN);
-        }
-      else
-        {
-          auto it = s.rbegin();
-          if (it == s.rend())
-            goto empty;
-          skey = *it;
-          strncpy(nstr, skey.c_str(), BPF_MAXSTRINGLEN);
-        }
-
-      s.erase(skey);
+      rc = map_sort<int64_t, std::string>(keys.intstr_keyvals, use_key, fd);
     }
-  else // if (!is_str)
+  else if (!key && key_str && !is_str)
     {
-      std::set<int64_t> &s = keys.int_keys.back();
-      uint64_t *nptr = reinterpret_cast<uint64_t *>(next_key);
+      rc = map_sort<std::string, int64_t>(keys.strint_keyvals, use_key, fd);
+    }
+  else if (!key)
+    stapbpf_abort("BUG: bpf_map_get_next_key unidentified key/val types");
+  if (rc < 0) // map is empty
+    return -1;
 
-      if (sort_direction > 0)
+  if (key_str && is_str)
+    {
+      rc = map_next<std::string, std::string>(keys.str_keyvals, next_key,
+                                              sort_direction, strings);
+      //std::cerr << "DEBUG after next keys.str_keyvals.size()==" << keys.str_keyvals.size() << " " << keys.str_keyvals.back().size() << std::endl;
+      if (rc < 0) // map is empty
         {
-          auto it = s.begin();
-          if (it == s.end())
-            goto empty;
-          *nptr = *it;
+          keys.str_keyvals.pop_back();
+          //std::cerr << "DEBUG NOLIMIT after pop keys.str_keyvals.size()==" << keys.str_keyvals.size() << std::endl;
+          return -1;
         }
-      else
+    }
+  else if (!key_str && !is_str)
+    {
+      rc = map_next<int64_t, int64_t>(keys.int_keyvals, next_key,
+                                      sort_direction, strings);
+      if (rc < 0) // map is empty
         {
-          auto it = s.rbegin();
-          if (it == s.rend())
-            goto empty;
-          *nptr = *it;
+          keys.int_keyvals.pop_back();
+          return -1;
         }
-
-      s.erase(*nptr);
+    }
+  else if (!key_str && is_str)
+    {
+      rc = map_next<int64_t, std::string>(keys.intstr_keyvals, next_key,
+                                          sort_direction, strings);
+      if (rc < 0) // map is empty
+        {
+          keys.intstr_keyvals.pop_back();
+          return -1;
+        }
+    }
+  else // key_str && !is_str
+    {
+      rc = map_next<std::string, int64_t>(keys.strint_keyvals, next_key,
+                                          sort_direction, strings);
+      if (rc < 0) // map is empty
+        {
+          keys.strint_keyvals.pop_back();
+          return -1;
+        }
     }
   return 0;
-
-empty:
-  if (is_str)
-    keys.str_keys.pop_back();
-  else // if (!is_str)
-    keys.int_keys.pop_back();
-  return -1;
 }
 
 // TODO: Adapt to MAXPRINTFARGS == 32.
@@ -771,7 +926,7 @@ bpf_interpret(size_t ninsns, const struct bpf_insn insns[],
             case bpf::BPF_FUNC_map_get_next_key:
               dr = map_get_next_key(regs[1], regs[2], regs[3],
                                     regs[4], regs[5],
-                                    ctx, keys[regs[1]]);
+                                    ctx, keys[regs[1]], strings);
               break;
             case bpf::BPF_FUNC_stapbpf_stat_get:
               dr = stapbpf_stat_get((bpf::globals::agg_idx)regs[1], regs[2],

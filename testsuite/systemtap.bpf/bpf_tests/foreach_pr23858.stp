@@ -1,0 +1,92 @@
+// PR23858: same as foreach.stp but sort by value
+
+global a[10], b[10], c[10]
+
+probe never {
+	c[0] = 0
+}
+
+probe begin {
+	printf("BEGIN\n")
+
+	// flip the order, will yield correct order iff iterating by value
+	a[-1] = 1
+	a[0] = 0 
+	a[1] = -1
+
+	b[10] = 12
+	b[11] = 11 
+	b[12] = 10 
+
+	exit()
+}
+
+probe end {
+	flag = 1
+
+	foreach (k in a- limit -10)
+	  flag = 0
+
+	foreach (k in a- limit 0)
+	  flag = 0
+
+	foreach (k in c-)
+	  flag = 0
+
+	foreach (k1 in a-)
+	  foreach (k2 in c-)
+	    flag = 0
+
+	foreach (k1 in c-)
+	  foreach (k2 in a-)
+	    flag = 0
+
+	foreach (k1 in a- limit 0)
+	  foreach (k2 in a-)
+	    flag = 0
+
+	foreach (k1 in a-)
+	  foreach (k2 in a- limit 0)
+	    flag = 0
+
+	x = 0
+	foreach (k in a-)
+	   x += k
+	flag = flag && x == 0
+
+	x = -1
+	foreach (k in a-) // descending val -> ascending key
+		flag = flag && x++ == k && (0-k) == a[k]
+        flag = flag && x == 2
+
+	x = 1
+	foreach (k in a+) // ascending val -> descending key
+		flag = flag && x-- == k && (0-k) == a[k]
+        flag = flag && x == -2
+
+        x = -1
+	y = 12
+	foreach (k1 in a-) { // descending val -> ascending key
+	  foreach (k2 in b+) // ascending val -> descending key
+	    flag = flag && x == k1 && (0-k1) == a[k1] 
+	           && y-- == k2 && (22-k2) == b[k2]
+
+	  x++
+	  y = 12
+	}
+
+        x = -1
+	y = 1
+        foreach (k1 in a-) { // descending val -> ascending key
+	  foreach (k2 in a+) // ascending val -> descending key
+	    flag = flag && x == k1 && (0-k1) == a[k1]
+	           && y-- == k2 && (0-k2) == a[k2]
+	  x++
+	  y = 1
+        }
+
+        if (flag)
+		printf("END PASS\n")
+	else
+		printf("END FAIL\n")
+}
