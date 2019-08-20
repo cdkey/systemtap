@@ -675,31 +675,34 @@ bpf_unparser::emit_store(expression *e, value *val)
       if (symbol *a_sym = dynamic_cast<symbol *>(a->base))
 	{
 	  vardecl *v = a_sym->referent;
-	  int key_ofs, val_ofs;
-
-	  if (v->arity != 1)
-	    throw SEMANTIC_ERROR(_("unhandled multi-dimensional array"), v->tok);
+	  int key_ofs = 0, val_ofs;
 
 	  auto g = glob.globals.find(v);
 	  if (g == glob.globals.end())
 	    throw SEMANTIC_ERROR(_("unknown array variable"), v->tok);
 
-	  value *idx = emit_expr(a->indexes[0]);
-	  switch (v->index_types[0])
-	    {
-	    case pe_long:
-              // Store the long on the stack and pass its address:
-	      key_ofs = -8;
-              emit_long_arg(this_prog.lookup_reg(BPF_REG_2), key_ofs, idx);
-	      break;
-            case pe_string:
-              // Zero-pad and copy the string to the stack and pass its address:
-              key_ofs = -BPF_MAXSTRINGLEN;
-              emit_str_arg(this_prog.lookup_reg(BPF_REG_2), key_ofs, idx);
-              break;
-	    default:
-	      throw SEMANTIC_ERROR(_("unhandled index type"), e->tok);
-	    }
+	  unsigned element = v->arity;
+
+	  // iterate over the elements
+	  do {
+	    --element;
+	    value *idx = emit_expr(a->indexes[element]);
+	    switch (v->index_types[element])
+	      {
+	      case pe_long:
+                // Store the long on the stack and pass its address:
+                key_ofs -= 8;
+                emit_long_arg(this_prog.lookup_reg(BPF_REG_2), key_ofs, idx);
+                break;
+              case pe_string:
+                // Zero-pad and copy the string to the stack and pass its address:
+                key_ofs -= BPF_MAXSTRINGLEN;
+                emit_str_arg(this_prog.lookup_reg(BPF_REG_2), key_ofs, idx);
+                break;
+	      default:
+	        throw SEMANTIC_ERROR(_("unhandled index type"), e->tok);
+	     }
+	  } while (element);
 	  switch (v->type)
 	    {
 	    case pe_long:
@@ -1999,36 +2002,39 @@ bpf_unparser::visit_delete_statement (delete_statement *s)
       if (symbol *a_sym = dynamic_cast<symbol *>(a->base))
 	{
 	  vardecl *v = a_sym->referent;
-	  int key_ofs;
-
-	  if (v->arity != 1)
-	    throw SEMANTIC_ERROR(_("unhandled multi-dimensional array"), v->tok);
+	  int key_ofs = 0;
 
 	  auto g = glob.globals.find(v);
 	  if (g == glob.globals.end())
 	    throw SEMANTIC_ERROR(_("unknown array variable"), v->tok);
 
-	  value *idx = emit_expr(a->indexes[0]);
-	  switch (v->index_types[0])
-	    {
-	    case pe_long:
-	      // Store the long on the stack and pass its address:
-	      key_ofs = -8;
-	      emit_long_arg(this_prog.lookup_reg(BPF_REG_2), key_ofs, idx);
-	      break;
-            case pe_string:
-              // Zero-pad and copy the string to the stack and pass its address:
-              key_ofs = -BPF_MAXSTRINGLEN;
-              emit_str_arg(this_prog.lookup_reg(BPF_REG_2), key_ofs, idx);
-              break;
-	    default:
-	      throw SEMANTIC_ERROR(_("unhandled index type"), e->tok);
-	    }
+	  unsigned element = v->arity;
+
+	  // iterate over the elements
+	  do {
+	    --element;
+	    value *idx = emit_expr(a->indexes[element]);
+	    switch (v->index_types[element])
+	      {
+	      case pe_long:
+	        // Store the long on the stack and pass its address:
+	        key_ofs -= 8;
+	        emit_long_arg(this_prog.lookup_reg(BPF_REG_2), key_ofs, idx);
+	        break;
+              case pe_string:
+                // Zero-pad and copy the string to the stack and pass its address:
+                key_ofs -= BPF_MAXSTRINGLEN;
+                emit_str_arg(this_prog.lookup_reg(BPF_REG_2), key_ofs, idx);
+                break;
+	      default:
+	        throw SEMANTIC_ERROR(_("unhandled index type"), e->tok);
+	      }
+	  } while (element);
+          this_prog.use_tmp_space(-key_ofs);
 
           // TODO: Handle map_id < 0 for pe_stats or assert otherwise.
           if (g->second.map_id < 0)
             throw SEMANTIC_ERROR (_("unsupported delete operation on statistics aggregate"), a->tok); // TODOXXX PR23476
-          this_prog.use_tmp_space(-key_ofs);
 	  this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1),
 			     g->second.map_id);
 	  this_prog.mk_call(this_ins, BPF_FUNC_map_delete_elem, 2);
@@ -2532,9 +2538,6 @@ bpf_unparser::visit_arrayindex(arrayindex *e)
     {
       vardecl *v = sym->referent;
 
-      if (v->arity != 1)
-	throw SEMANTIC_ERROR(_("unhandled multi-dimensional array"), v->tok);
-
       auto g = glob.globals.find(v);
       if (g == glob.globals.end())
 	throw SEMANTIC_ERROR(_("unknown array variable"), v->tok);
@@ -2542,22 +2545,30 @@ bpf_unparser::visit_arrayindex(arrayindex *e)
       if (g->second.is_stat())
         throw SEMANTIC_ERROR (_("unhandled statistics variable"), v->tok); // TODOXXX PR23476
 
-      value *idx = emit_expr(e->indexes[0]);
-      switch (v->index_types[0])
-	{
-	case pe_long:
-	  // Store the long on the stack and pass its address:
-	  emit_long_arg(this_prog.lookup_reg(BPF_REG_2), -8, idx);
-	  this_prog.use_tmp_space(8);
-	  break;
-        case pe_string:
-          // Zero-pad and copy the string to the stack and pass its address:
-          emit_str_arg(this_prog.lookup_reg(BPF_REG_2), -BPF_MAXSTRINGLEN, idx);
-          this_prog.use_tmp_space(BPF_MAXSTRINGLEN);
-          break;
-	default:
-	  throw SEMANTIC_ERROR(_("unhandled index type"), e->tok);
+      unsigned element = v->arity;
+      int key_ofs = 0;
+
+      // iterate over the elements
+      do {
+	--element;
+	value *idx = emit_expr(e->indexes[element]);
+	switch (v->index_types[element])
+	  {
+	  case pe_long:
+	    // Store the long on the stack and pass its address:
+	    key_ofs -= 8;
+	    emit_long_arg(this_prog.lookup_reg(BPF_REG_2), key_ofs, idx);
+	    break;
+          case pe_string:
+            // Zero-pad and copy the string to the stack and pass its address:
+	    key_ofs -= BPF_MAXSTRINGLEN;
+            emit_str_arg(this_prog.lookup_reg(BPF_REG_2), key_ofs, idx);
+            break;
+	  default:
+	    throw SEMANTIC_ERROR(_("unhandled index type"), e->tok);
 	}
+      } while (element);
+      this_prog.use_tmp_space(-key_ofs);
 
       this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1),
 			 g->second.map_id);
@@ -2600,31 +2611,36 @@ bpf_unparser::visit_array_in(array_in* e)
     {
       vardecl *v = s->referent;
 
-      if (v->arity != 1)
-        throw SEMANTIC_ERROR(_("unhandled multi-dimensional array"), v->tok);
-
       auto g = glob.globals.find (v);
 
       if (g == glob.globals.end())
         throw SEMANTIC_ERROR(_("unknown variable"), v->tok);
 
-      value *idx = emit_expr(a->indexes[0]);
+      unsigned element = v->arity;
+      int key_ofs = 0;
 
-      switch(v->index_types[0])
-        {
-        case pe_long:
-          // Store the long on the stack and pass its address:
-          emit_long_arg(this_prog.lookup_reg(BPF_REG_2), -8, idx);
-          this_prog.use_tmp_space(8);
-          break;
-        case pe_string:
-          // Zero-pad and copy the string to the stack and pass its address:
-          emit_str_arg(this_prog.lookup_reg(BPF_REG_2), -BPF_MAXSTRINGLEN, idx);
-          this_prog.use_tmp_space(BPF_MAXSTRINGLEN);
-          break;
-        default:
-          throw SEMANTIC_ERROR(_("unhandled index type"), e->tok);
-        }
+      // iterate over the elements
+      do {
+	--element;
+	value *idx = emit_expr(a->indexes[element]);
+
+	switch(v->index_types[element])
+          {
+	  case pe_long:
+            // Store the long on the stack and pass its address:
+	    key_ofs -= 8;
+            emit_long_arg(this_prog.lookup_reg(BPF_REG_2), key_ofs, idx);
+            break;
+          case pe_string:
+            // Zero-pad and copy the string to the stack and pass its address:
+	    key_ofs -= BPF_MAXSTRINGLEN;
+            emit_str_arg(this_prog.lookup_reg(BPF_REG_2), key_ofs, idx);
+            break;
+          default:
+            throw SEMANTIC_ERROR(_("unhandled index type"), e->tok);
+          }
+      } while (element);
+      this_prog.use_tmp_space(-key_ofs);
 
       // TODO: Handle map_id < 0 for pe_stats or assert otherwise.
       if (g->second.map_id < 0)
@@ -3577,29 +3593,34 @@ bpf_unparser::visit_stat_op (stat_op* e)
           vardecl *v = a_sym->referent;
           agg = glob.aggregates[v]; // id for array stat value
 
-          if (v->arity != 1)
-	    throw SEMANTIC_ERROR(_("unhandled multi-dimensional array"), v->tok);
-
 	  auto g = glob.globals.find(v);
 	  if (g == glob.globals.end())
 	    throw SEMANTIC_ERROR(_("unknown array variable"), v->tok);
 
-          value *idx = emit_expr(a->indexes[0]);
-          switch (v->index_types[0])
-            {
-            case pe_long:
-              // Store the long on the stack and pass its address:
-              emit_long_arg(this_prog.lookup_reg(BPF_REG_2), -8, idx);
-              this_prog.use_tmp_space(8);
-              break;
-            case pe_string:
-              // Zero-pad and copy the string to the stack and pass its address:
-              emit_str_arg(this_prog.lookup_reg(BPF_REG_2), -BPF_MAXSTRINGLEN, idx);
-              this_prog.use_tmp_space(BPF_MAXSTRINGLEN);
-              break;
-            default:
-              throw SEMANTIC_ERROR(_("unhandled index type"), v->tok);
-            }
+	  unsigned element = v->arity;
+	  unsigned key_ofs = 0;
+
+	  // iterate over the elements
+	  do {
+	    --element;
+	    value *idx = emit_expr(a->indexes[element]);
+            switch (v->index_types[element])
+              {
+              case pe_long:
+                // Store the long on the stack and pass its address:
+		key_ofs -= 8;
+                emit_long_arg(this_prog.lookup_reg(BPF_REG_2), key_ofs, idx);
+                break;
+              case pe_string:
+                // Zero-pad and copy the string to the stack and pass its address:
+                key_ofs -= BPF_MAXSTRINGLEN;
+                emit_str_arg(this_prog.lookup_reg(BPF_REG_2), key_ofs, idx);
+                break;
+              default:
+                throw SEMANTIC_ERROR(_("unhandled index type"), v->tok);
+              }
+	  } while (element);
+	  this_prog.use_tmp_space(-key_ofs);
         }
       else
         throw SEMANTIC_ERROR(_("unknown statistics value"), e->stat->tok);
@@ -3734,21 +3755,25 @@ translate_globals (globals &glob, systemtap_session& s)
 	    }
 	  break;
 
-	case 1: // single dimension array
+	default: // arrays (one or more dimension)
           {
-            unsigned key_size;
+            unsigned key_size = 0;
             unsigned max_entries;
-            switch (v->index_types[0])
-              {
-              case pe_long:
-                key_size = 8;
-                break;
-              case pe_string:
-                key_size = BPF_MAXSTRINGLEN;
-                break;
-              default:
-                throw SEMANTIC_ERROR (_("unhandled index type"), v->tok);
-              }
+	    unsigned element = v->arity;
+	    do {
+	      --element;
+	      switch (v->index_types[element])
+                {
+		case pe_long:
+		  key_size += 8;
+		  break;
+                case pe_string:
+                  key_size += BPF_MAXSTRINGLEN;
+                  break;
+                default:
+                  throw SEMANTIC_ERROR (_("unhandled index type"), v->tok);
+                }
+	    } while (element);
             max_entries = v->maxsize > 0 ? v->maxsize : BPF_MAXMAPENTRIES;
 
             if (v->type == pe_stats)
@@ -3802,10 +3827,6 @@ translate_globals (globals &glob, systemtap_session& s)
               }
           }
 	  break;
-
-	default:
-	  // ??? Multi-dimensional arrays not supported for now.
-	  throw SEMANTIC_ERROR (_("unhandled multi-dimensional array"), v->tok);
 	}
 
       assert(this_map != globals::internal_map_idx);
