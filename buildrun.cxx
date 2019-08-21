@@ -485,6 +485,8 @@ compile_pass (systemtap_session& s)
   output_autoconf(s, o, "autoconf-bio-bi_opf.c", "STAPCONF_BIO_BI_OPF", NULL);
   output_autoconf(s, o, "autoconf-linux-sched_headers.c",
 		  "STAPCONF_LINUX_SCHED_HEADERS", NULL);
+  output_autoconf(s, o, "autoconf-stack-trace-save-regs.c",
+		  "STAPCONF_STACK_TRACE_SAVE_REGS", NULL);
 
   // used by runtime/linux/netfilter.c
   output_exportconf(s, o, "nf_register_hook", "STAPCONF_NF_REGISTER_HOOK");

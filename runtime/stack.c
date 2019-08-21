@@ -39,6 +39,7 @@
 #include "linux/uprobes-inc.h"
 
 #include <linux/stacktrace.h>
+
 #if defined(STAPCONF_KERNEL_STACKTRACE) || defined(STAPCONF_KERNEL_STACKTRACE_NO_BP)
 #include <asm/stacktrace.h>
 #endif
@@ -46,6 +47,20 @@
 #if defined(STAPCONF_KERNEL_UNWIND_STACK)
 #include <asm/unwind.h>
 #endif
+
+#if defined(STAPCONF_STACK_TRACE_SAVE_REGS) /* linux 5.2+ apprx. */
+static __typeof__(stack_trace_save_regs) (*stack_trace_save_regs_fn); /* not exported */
+
+static int
+_stp_init_stack(void)
+{
+	stack_trace_save_regs_fn = (void*) kallsyms_lookup_name("stack_trace_save_regs");
+	dbug_unwind(1, "stack_trace_saves_regs_fn=%lx for _stp_stack_print_fallback().\n",
+		    (unsigned long) save_trace_save_regs_fn);
+	return 0;
+}
+
+#else /* ! STAPCONF_STACK_TRACE_SAVE_REGS */
 
 static void (*(save_stack_trace_regs_fn))(struct pt_regs *regs,
 				  struct stack_trace *trace);
@@ -59,6 +74,10 @@ _stp_init_stack(void)
 		    (unsigned long) save_stack_trace_regs_fn);
 	return 0;
 }
+
+#endif /* STAPCONF_STACK_TRACE_SAVE_REGS */
+
+
 
 static void _stp_stack_print_fallback(unsigned long, struct pt_regs*, int, int, int);
 
@@ -168,9 +187,19 @@ static void _stp_stack_print_fallback(unsigned long sp, struct pt_regs *regs,
 				      int sym_flags,
 				      int levels, int skip) {
 	unsigned long entries[MAXBACKTRACE];
-	struct stack_trace trace;
-	int i;
+        unsigned i;
+        unsigned num_entries;
+        
+#if defined(STAPCONF_STACK_TRACE_SAVE_REGS) /* linux 5.2+ apprx. */
+	if (!stack_trace_save_regs_fn) {
+		dbug_unwind(1, "no fallback kernel stacktrace (giving up)\n");
+		_stp_print_addr(0, sym_flags | _STP_SYM_INEXACT, NULL);
+		return;
+	}
 
+        num_entries = (*stack_trace_save_regs_fn)(regs, &entries[0], MAXBACKTRACE, skip);
+#else
+	struct stack_trace trace;
 	/* If don't have save_stack_trace_regs unwinder, just give up. */
 	if (!save_stack_trace_regs_fn) {
 		dbug_unwind(1, "no fallback kernel stacktrace (giving up)\n");
@@ -189,9 +218,11 @@ static void _stp_stack_print_fallback(unsigned long sp, struct pt_regs *regs,
 	dbug_unwind(1, "trace.nr_entries: %d\n", trace.nr_entries);
 	dbug_unwind(1, "trace.max_entries: %d\n", trace.max_entries);
 	dbug_unwind(1, "trace.skip %d\n", trace.skip);
+        num_entries = trace.nr_entries;
+#endif
 
 	/* save_stack_trace_reg() adds a ULONG_MAX after last valid entry. Ignore it. */
-	for (i=0; i<MAXBACKTRACE && i<trace.nr_entries && entries[i]!=ULONG_MAX; ++i) {
+	for (i=0; i<MAXBACKTRACE && i<num_entries && entries[i]!=ULONG_MAX; ++i) {
 		/* When we have frame pointers, the unwind addresses can be
 		   (mostly) trusted, otherwise it is all guesswork.  */
 #ifdef CONFIG_FRAME_POINTER
