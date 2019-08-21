@@ -157,10 +157,15 @@ static int _stp_vma_mmap_cb(struct stap_task_finder_target *tgt,
 	dbug_task_vma(1,
 		  "mmap_cb: tsk %d:%d path %s, addr 0x%08lx, length 0x%08lx, offset 0x%lx, flags 0x%lx\n",
 		  tsk->pid, tsk->tgid, path, addr, length, offset, vm_flags);
-	// We are only interested in the first load of the whole module that
-	// is executable. We register whether or not we know the module,
+        
+	// We used to be only interested in the first load of the whole module that
+	// is executable.  But with modern enough gcc/ld.so, executables are mapped
+        // in more small pieces (r--p,r-xp,rw-p, instead of r-xp, rw-p).  To establish
+        // the virtual base address, we initially look for an offset=0 mapping.
+        //
+        // We register whether or not we know the module,
 	// so we can later lookup the name given an address for this task.
-	if (path != NULL && offset == 0 && (vm_flags & VM_EXEC)
+	if (path != NULL && offset == 0
 	    && stap_find_vma_map_info(tsk, addr, NULL, NULL, NULL, NULL) != 0) {
 		for (i = 0; i < _stp_num_modules; i++) {
 			// PR20433: papering over possibility of NULL pointers
