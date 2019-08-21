@@ -56,7 +56,7 @@ _stp_init_stack(void)
 {
 	stack_trace_save_regs_fn = (void*) kallsyms_lookup_name("stack_trace_save_regs");
 	dbug_unwind(1, "stack_trace_saves_regs_fn=%lx for _stp_stack_print_fallback().\n",
-		    (unsigned long) save_trace_save_regs_fn);
+		    (unsigned long) stack_trace_save_regs_fn);
 	return 0;
 }
 
