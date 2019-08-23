@@ -3549,7 +3549,7 @@ build_internal_globals(globals& glob)
                       (&glob.internal_exit,
                        globals::map_slot(0, globals::EXIT)));
   glob.maps.push_back
-    ({ BPF_MAP_TYPE_HASH, 4, 8, globals::NUM_INTERNALS, 0 });
+    ({ BPF_MAP_TYPE_HASH, 4, /* NB: value_size */ 8, globals::NUM_INTERNALS, 0 });
 
   // PR22330: Use a PERF_EVENT_ARRAY map for message transport:
   glob.maps.push_back

@@ -1303,7 +1303,7 @@ init_internal_globals()
   using namespace bpf;
 
   int key = globals::EXIT;
-  long val = 0;
+  int64_t val = 0;
 
   if (bpf_update_elem(map_fds[globals::internal_map_idx],
                      (void*)&key, (void*)&val, BPF_ANY) != 0)
@@ -1693,7 +1693,7 @@ static int
 get_exit_status()
 {
   int key = bpf::globals::EXIT;
-  long val = 0;
+  int64_t val = 0;
 
   if (bpf_lookup_elem
        (map_fds[bpf::globals::internal_map_idx], &key, &val) != 0)
@@ -2041,7 +2041,7 @@ sigint(int s)
 
   // set exit flag
   int key = bpf::globals::EXIT;
-  long val = 1;
+  int64_t val = 1;
 
   if (bpf_update_elem
        (map_fds[bpf::globals::internal_map_idx], &key, &val, 0) != 0)
