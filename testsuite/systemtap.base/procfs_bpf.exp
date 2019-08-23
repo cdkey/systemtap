@@ -6,23 +6,19 @@ if {![installtest_p]} { untested $test; return }
 
 proc proc_read_value {test path} {
     set value "<unknown>"
-    if [catch {open $path RDONLY} channel] {
-	      fail "$test $channel"
+    if [catch {exec timeout 1 cat $path} value] {
+	      fail "$test read $path $value"
     } else {
-	      set value [read -nonewline $channel]
-	      close $channel
-	      pass "$test read $value"
+	      pass "$test read $path $value"
     }
     return $value
 }
 
 proc proc_write_value {test path value} {
-    if [catch {open $path WRONLY} channel] {
-        fail "$test $channel"
+    if [catch {exec timeout 1 sh -c "echo $value > $path"} msg] {
+        fail "$test write $path $msg"
     } else {
-        puts $channel $value
-	      close $channel
-	      pass "$test wrote $value"
+        pass "$test write $path $value"
     }
 }
 
