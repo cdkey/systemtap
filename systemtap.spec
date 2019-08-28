@@ -14,7 +14,7 @@
 %{!?elfutils_version: %global elfutils_version 0.142}
 %{!?pie_supported: %global pie_supported 1}
 %{!?with_boost: %global with_boost 0}
-%ifarch %{ix86} x86_64 ppc ppc64
+%ifarch %{ix86} x86_64 ppc ppc64 ppc64le aarch64
 %{!?with_dyninst: %global with_dyninst 0%{?fedora} >= 18 || 0%{?rhel} >= 7}
 %else
 %{!?with_dyninst: %global with_dyninst 0}
@@ -131,7 +131,7 @@ BuildRequires: gettext-devel
 BuildRequires: pkgconfig(nss)
 BuildRequires: pkgconfig(avahi-client)
 %if %{with_dyninst}
-BuildRequires: dyninst-devel >= 8.0
+BuildRequires: dyninst-devel >= 10.1
 BuildRequires: pkgconfig(libselinux)
 %endif
 %if %{with_sqlite}
