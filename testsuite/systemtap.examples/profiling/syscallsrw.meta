@@ -1,0 +1,13 @@
+title: Provide a tally of read and write syscalls run on the system 
+name: syscallsrw.stp
+version: 1.0
+author: Sagar Patel
+keywords: prometheus syscall bpf
+subsystem: process
+status: experimental
+exit: user-controlled
+output: proc
+scope: system-wide
+description: The syscall_read_write.stp script tallies the read and write syscalls. This is a demo script for stapbpf prometheus-exporter scripts.
+test_check_bpf: stap --bpf -p4 syscallsrw.stp
+test_installcheck_bpf: stap --bpf syscallsrw.stp -T 1

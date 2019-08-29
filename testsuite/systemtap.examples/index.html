@@ -38,7 +38,7 @@
            		<li><a href="keyword-index.html">By Keyword</a></li>
          	</ul>
 
-<p><em>For systemtap version 4.1.</em></p><h2>Best Examples</h2>
+<p><em>For systemtap version 4.2.</em></p><h2>Best Examples</h2>
 <ul>
 <li><a href="#general/helloworld.stp">general/helloworld.stp - SystemTap "Hello World" Program</a></li>
 <li><a href="#general/para-callgraph.stp">general/para-callgraph.stp - Callgraph Tracing with Arguments</a></li>
@@ -65,10 +65,10 @@
 keywords: <a href="keyword-index.html#TRACE">TRACE</a> <br>
 <p>The gmalloc_watch.stp script from Colin Walters&#39; blog (https://blog.verbum.org/2011/03/19/analyzing-memory-use-with-systemtap/) traces the allocation of glib2 memory using the markers in glib2.</p><p><font size="-2"><pre># stap gmalloc_watch.stp -T 1</pre></font></p>
 </li><li><a name="apps/libguestfs_log.stp"></a><a href="#apps/libguestfs_log.stp">&para;</a> <a href="apps/libguestfs_log.stp">apps/libguestfs_log.stp</a> - Trace libguestfs startup<br>
-keywords: <a href="keyword-index.html#APPLICATION">APPLICATION</a> <a href="keyword-index.html#TRACE">TRACE</a> <br>
+keywords: <a href="keyword-index.html#APPLICATION">APPLICATION</a> <a href="keyword-index.html#TRACE">TRACE</a> <a href="keyword-index.html#BPF">BPF</a> <br>
 <p>The libguestfs_log.stp script prints a log of when various libgueststartup steps are encountered.   The first column is microseconds since the script started.  The second column is the time elapsed in microseconds between the previous and current events and the third column is the event name.</p><p><font size="-2"><pre># stap libguestfs_log.stp -T 1</pre></font></p>
 </li><li><a name="apps/php-trace.stp"></a><a href="#apps/php-trace.stp">&para;</a> <a href="apps/php-trace.stp">apps/php-trace.stp</a> - Tracing of PHP code execution<br>
-keywords: <a href="keyword-index.html#TRACE">TRACE</a> <br>
+keywords: <a href="keyword-index.html#TRACE">TRACE</a> <a href="keyword-index.html#DYNINST">DYNINST</a> <br>
 <p>Trace of executing PHP code using the enabled markers.</p><p><font size="-2"><pre># stap php-trace.stp -c &#39;php -f hello.php&#39;</pre></font></p>
 </li><li><a name="apps/stap_time.stp"></a><a href="#apps/stap_time.stp">&para;</a> <a href="apps/stap_time.stp">apps/stap_time.stp</a> - Provide elapsed times for Passes of SystemTap script compilation<br>
 keywords: <a href="keyword-index.html#APPLICATION">APPLICATION</a> <a href="keyword-index.html#TRACE">TRACE</a> <br>
@@ -80,10 +80,10 @@ keywords: <a href="keyword-index.html#IO">IO</a> <a href="keyword-index.html#STA
 keywords: <a href="keyword-index.html#PROMETHEUS">PROMETHEUS</a> <br>
 <p>The also_ran.stp script tallies each time a executable is started or a shared library is loaded for execution.  This information can be useful to determine what software is actually being used on the system.  The script makes the information available via procfs in Prometheus readable format.</p><p><font size="-2"><pre># stap also_ran.stp -T 1</pre></font></p>
 </li><li><a name="general/ansi_colors.stp"></a><a href="#general/ansi_colors.stp">&para;</a> <a href="general/ansi_colors.stp">general/ansi_colors.stp</a> - Color Table for ansi_set_color()<br>
-keywords: <a href="keyword-index.html#FORMAT">FORMAT</a> <br>
+keywords: <a href="keyword-index.html#FORMAT">FORMAT</a> <a href="keyword-index.html#BPF">BPF</a> <br>
 <p>The script prints a table showing the available color combinations for the ansi_set_color() function in the ansi.stp tapset.</p><p><font size="-2"><pre># stap ansi_colors.stp</pre></font></p>
 </li><li><a name="general/ansi_colors2.stp"></a><a href="#general/ansi_colors2.stp">&para;</a> <a href="general/ansi_colors2.stp">general/ansi_colors2.stp</a> - Show Attribues in Table for ansi_set_color()<br>
-keywords: <a href="keyword-index.html#FORMAT">FORMAT</a> <br>
+keywords: <a href="keyword-index.html#FORMAT">FORMAT</a> <a href="keyword-index.html#BPF">BPF</a> <br>
 <p>The script prints a table showing the available attributes (bold, underline, and inverse) with color combinations for the ans_set_color() function in the ansi.stp tapset.</p><p><font size="-2"><pre># stap ansi_colors2.stp</pre></font></p>
 </li><li><a name="general/badname.stp"></a><a href="#general/badname.stp">&para;</a> <a href="general/badname.stp">general/badname.stp</a> - Bad Filename Filter<br>
 keywords: <a href="keyword-index.html#FILESYSTEM">FILESYSTEM</a> <a href="keyword-index.html#GURU">GURU</a> <br>
@@ -104,7 +104,7 @@ keywords: <a href="keyword-index.html#FUNCTION">FUNCTION</a> <a href="keyword-in
 keywords: <a href="keyword-index.html#MONITORING">MONITORING</a> <br>
 <p>The script tracks the disk and CPU utilization.  It prints a stream of data which, when piped directly into gnuplot, draws historical curves for each.</p><p><font size="-2"><pre># stap graphs.stp -T 1</pre></font></p>
 </li><li><a name="general/helloworld.stp"></a><a href="#general/helloworld.stp">&para;</a> <a href="general/helloworld.stp">general/helloworld.stp</a> - SystemTap "Hello World" Program<br>
-keywords: <a href="keyword-index.html#_BEST">_BEST</a> <a href="keyword-index.html#SIMPLE">SIMPLE</a> <br>
+keywords: <a href="keyword-index.html#_BEST">_BEST</a> <a href="keyword-index.html#SIMPLE">SIMPLE</a> <a href="keyword-index.html#BPF">BPF</a> <br>
 <p>A basic &quot;Hello World&quot; program implemented in SystemTap script. It prints out &quot;hello world&quot; message and then immediately exits.</p><p><font size="-2"><pre># stap helloworld.stp</pre></font></p>
 </li><li><a name="general/key.stp"></a><a href="#general/key.stp">&para;</a> <a href="general/key.stp">general/key.stp</a> - make keyboard noises<br>
 keywords: <a href="keyword-index.html#SIMPLE">SIMPLE</a> <br>
@@ -267,11 +267,8 @@ keywords: <a href="keyword-index.html#IO">IO</a> <br>
 keywords: <a href="keyword-index.html#IO">IO</a> <br>
 <p>This traces syscalls system-wide, and produces a summary report showing their counts by process ID, process name, and syscall types.</p><p><font size="-2"><pre># stap syscallbypid-nd.stp -T 1</pre></font></p>
 </li><li><a name="memory/cachestat.stp"></a><a href="#memory/cachestat.stp">&para;</a> <a href="memory/cachestat.stp">memory/cachestat.stp</a> - Count Page Cache Hits and Misses<br>
-keywords: <a href="keyword-index.html#MEMORY">MEMORY</a> <br>
-<p>Monitors hits and misses to the page cache and reports a count every 5 seconds. Based on a bpftrace tool by David Valin.</p><p><font size="-2"><pre># stap cachestat.stp -T 1</pre></font></p>
-</li><li><a name="memory/cachestat.stp"></a><a href="#memory/cachestat.stp">&para;</a> <a href="memory/cachestat.stp">memory/cachestat.stp</a> - Count Page Cache Hits and Misses<br>
 keywords: <a href="keyword-index.html#MEMORY">MEMORY</a> <a href="keyword-index.html#BPF">BPF</a> <br>
-<p>Monitors hits and misses to the page cache and reports a count every 5 seconds. Based on a bpftrace tool by David Valin.</p><p><font size="-2"><pre># stap --bpf cachestat.stp -T 1</pre></font></p>
+<p>Monitors hits and misses to the page cache and reports a count every 5 seconds. Based on a bpftrace tool by David Valin.</p><p><font size="-2"><pre># stap cachestat.stp -T 1</pre></font></p>
 </li><li><a name="memory/glibc-malloc.stp"></a><a href="#memory/glibc-malloc.stp">&para;</a> <a href="memory/glibc-malloc.stp">memory/glibc-malloc.stp</a> - Overview glibc malloc internal operations<br>
 keywords: <a href="keyword-index.html#MEMORY">MEMORY</a> <a href="keyword-index.html#PROCESS">PROCESS</a> <br>
 <p>This script reports on internal statistics of the glibc malloc implementation, as used by a process restricted by stap -x/-c</p><p><font size="-2"><pre># stap glibc-malloc.stp -c &#39;stap --dump-functions&#39;</pre></font></p>
@@ -304,13 +301,13 @@ keywords: <a href="keyword-index.html#MEMORY">MEMORY</a> <a href="keyword-index.
 keywords: <a href="keyword-index.html#MEMORY">MEMORY</a> <br>
 <p>The mmanonpage.stp script uses the virtual memory tracepoints available in some kernels to track the number of faults, user space frees, page ins, copy on writes and unmaps for anonymous pages. When the script is terminated the counts are printed for each process that allocated pages while the script was running. This script displays the anonymous page statistics for each process that ran while the script is active.  It&#39;s useful in debugging leaks in the anonymous regions of a process.</p><p><font size="-2"><pre># stap mmanonpage.stp -T 1</pre></font></p>
 </li><li><a name="memory/mmfilepage.stp"></a><a href="#memory/mmfilepage.stp">&para;</a> <a href="memory/mmfilepage.stp">memory/mmfilepage.stp</a> - Track Virtual Memory System Actions on File Backed Pages<br>
-keywords: <a href="keyword-index.html#MEMORY">MEMORY</a> <br>
+keywords: <a href="keyword-index.html#MEMORY">MEMORY</a> <a href="keyword-index.html#BPF">BPF</a> <br>
 <p>The mmfilepage.stp script uses the virtual memory tracepoints available in some kernels to track the number of faults, copy on writes mapping, and unmapping operations for file backed pages. When the script is terminated the counts are printed for each process that allocated pages while the script was running. The mmfilepage.stp script is useful in debugging leaks in the mapped file regions of a process.</p><p><font size="-2"><pre># stap mmfilepage.stp -T 1</pre></font></p>
 </li><li><a name="memory/mmreclaim.stp"></a><a href="#memory/mmreclaim.stp">&para;</a> <a href="memory/mmreclaim.stp">memory/mmreclaim.stp</a> - Track Virtual Memory System Page Reclamation<br>
 keywords: <a href="keyword-index.html#MEMORY">MEMORY</a> <br>
 <p>The mmreclaim.stp script uses the virtual memory tracepoints available in some kernels to track page reclaim activity that occurred while the script was running. It&#39;s useful in debugging performance problems that occur due to page reclamation.</p><p><font size="-2"><pre># stap mmreclaim.stp -T 1</pre></font></p>
 </li><li><a name="memory/mmwriteback.stp"></a><a href="#memory/mmwriteback.stp">&para;</a> <a href="memory/mmwriteback.stp">memory/mmwriteback.stp</a> - Track Virtual Memory System Writing to Disk<br>
-keywords: <a href="keyword-index.html#MEMORY">MEMORY</a> <br>
+keywords: <a href="keyword-index.html#MEMORY">MEMORY</a> <a href="keyword-index.html#BPF">BPF</a> <br>
 <p>The mmwriteback.stp script uses the virtual memory tracepoints available in some kernels to report all of the file writebacks that occur form kupdate, pdflush and kjournald while the script is running.  It&#39;s useful in determining where writes are coming from on a supposedly idle system that is experiencing unexpected IO.</p><p><font size="-2"><pre># stap mmwriteback.stp -T 1</pre></font></p>
 </li><li><a name="memory/numa_faults.stp"></a><a href="#memory/numa_faults.stp">&para;</a> <a href="memory/numa_faults.stp">memory/numa_faults.stp</a> - Summarize Process Misses across NUMA Nodes<br>
 keywords: <a href="keyword-index.html#MEMORY">MEMORY</a> <a href="keyword-index.html#NUMA">NUMA</a> <br>
@@ -367,7 +364,7 @@ keywords: <a href="keyword-index.html#NFS">NFS</a> <a href="keyword-index.html#S
 keywords: <a href="keyword-index.html#NETWORK">NETWORK</a> <a href="keyword-index.html#TRAFFIC">TRAFFIC</a> <br>
 <p>The packet_contents.stp script displays the length of each network packet and its contents in both hexadecimal and ASCII. Systemtap strings are MAXSTRINGLEN in length by default which may not be enough for larger packets. In order to print larger packets, this limit can be increased by passing in the &quot;-DMAXSTRINGLEN=65536&quot; command line option.</p><p><i><a href="network/packet_contents.txt">sample usage in network/packet_contents.txt</i></font></p>
 </li><li><a name="network/sk_stream_wait_memory.stp"></a><a href="#network/sk_stream_wait_memory.stp">&para;</a> <a href="network/sk_stream_wait_memory.stp">network/sk_stream_wait_memory.stp</a> - Track Start and Stop of Processes Due to Network Buffer Space<br>
-keywords: <a href="keyword-index.html#NETWORK">NETWORK</a> <a href="keyword-index.html#TCP">TCP</a> <a href="keyword-index.html#PROCESS">PROCESS</a> <br>
+keywords: <a href="keyword-index.html#NETWORK">NETWORK</a> <a href="keyword-index.html#TCP">TCP</a> <a href="keyword-index.html#PROCESS">PROCESS</a> <a href="keyword-index.html#BPF">BPF</a> <br>
 <p>The sk_stream-wait_memory.stp prints a time stamp, executable, and pid each time a process blocks due to the send buffer being full. A similar entry is printed each time a process continues because there is room in the buffer.</p><p><font size="-2"><pre># stap sk_stream_wait_memory.stp -T 1</pre></font></p>
 </li><li><a name="network/socket-trace.stp"></a><a href="#network/socket-trace.stp">&para;</a> <a href="network/socket-trace.stp">network/socket-trace.stp</a> - Trace Functions Called in Network Socket Code<br>
 keywords: <a href="keyword-index.html#NETWORK">NETWORK</a> <a href="keyword-index.html#SOCKET">SOCKET</a> <br>
@@ -559,6 +556,9 @@ keywords: <a href="keyword-index.html#PROMETHEUS">PROMETHEUS</a> <a href="keywor
 </li><li><a name="profiling/syscallsbypid.stp"></a><a href="#profiling/syscallsbypid.stp">&para;</a> <a href="profiling/syscallsbypid.stp">profiling/syscallsbypid.stp</a> - Provide a per-process syscall tally on the system<br>
 keywords: <a href="keyword-index.html#PROMETHEUS">PROMETHEUS</a> <a href="keyword-index.html#PROCESS">PROCESS</a> <a href="keyword-index.html#SYSCALL">SYSCALL</a> <a href="keyword-index.html#TRACEPOINT">TRACEPOINT</a> <br>
 <p>The syscallsbypid.stp script tallies each syscall for each running process.  This information can be useful to determine the activity of various processes on the system.  The script makes the information available via procfs in Prometheus readable format.  When a process exits its data will be eliminated from the prometheus output.  To avoid exceeding the storage limitations of SystemTap older entries maybe overwritten by newer entries.  This can lead to some active process syscall counts disappearing and/or later reappearing with a lower value.  Also note that the script does not properly name syscalls for 32-bit applications running on 64-bit machines.</p><p><font size="-2"><pre># stap syscallsbypid.stp -T 1</pre></font></p>
+</li><li><a name="profiling/syscallsrw.stp"></a><a href="#profiling/syscallsrw.stp">&para;</a> <a href="profiling/syscallsrw.stp">profiling/syscallsrw.stp</a> - Provide a tally of read and write syscalls run on the system <br>
+keywords: <a href="keyword-index.html#PROMETHEUS">PROMETHEUS</a> <a href="keyword-index.html#SYSCALL">SYSCALL</a> <a href="keyword-index.html#BPF">BPF</a> <br>
+<p>The syscall_read_write.stp script tallies the read and write syscalls. This is a demo script for stapbpf prometheus-exporter scripts.</p></p>
 </li><li><a name="profiling/thread-times.stp"></a><a href="#profiling/thread-times.stp">&para;</a> <a href="profiling/thread-times.stp">profiling/thread-times.stp</a> - Profile Kernel Functions<br>
 keywords: <a href="keyword-index.html#_BEST">_BEST</a> <a href="keyword-index.html#PROFILING">PROFILING</a> <br>
 <p>The thread-times.stp script sets up time-based sampling.  Every five seconds it prints out a sorted list with the top twenty threads occupying the CPUs, broken down as a percentage of user and kernel time.</p><p><i><a href="profiling/thread-times.txt">sample usage in profiling/thread-times.txt</i></font></p>

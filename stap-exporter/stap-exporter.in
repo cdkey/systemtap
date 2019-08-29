@@ -31,9 +31,9 @@ from time import time
 
 script_dir = "%sysconfdir%/stap-exporter"
 proc_basename = "__stap_exporter_" + str(os.getpid()) # permit concurrent exporters
-proc_path = "/proc/systemtap"
 sessmgr = None
-
+proc_path_lkm = "/proc/systemtap"
+proc_path_bpf = "/var/tmp/systemtap-root"
 
 class Session:
     """Represent a single systemtap script found $script_dir, whether or not
@@ -91,9 +91,21 @@ class Session:
         if self.keepalive is not None:
             self.killafter = time() + self.keepalive
 
-        path = proc_path + "/" + self.proc_subdirname + "/__prometheus"
-        with open(path) as metrics:
-            return bytes(metrics.read(), 'utf-8')
+        path_lkm = proc_path_lkm + "/" + self.proc_subdirname + "/__prometheus"
+        path_bpf = proc_path_bpf + "/" + self.proc_subdirname + "/__prometheus"
+
+        try:
+            with open(path_lkm) as metrics:
+                return bytes(metrics.read(), 'utf-8')
+        except FileNotFoundError:
+            pass
+
+        try:
+            with open(path_bpf) as metrics:
+                return bytes(metrics.read(), 'utf-8')
+        except FileNotFoundError:
+            raise Exception("[Error] Unable to find procfs files under search paths. "
+                             "Try again once the script has created the procfs files.")
 
 class SessionMgr:
     """Represent the set of possible systemtap scripts that can be exported.  Searches the $script_dir
@@ -179,6 +191,8 @@ if __name__ == "__main__":
     httpd.timeout = 5 # parametrize?
     
     print("listening on port %d" % port)
+    print("procfs files will be searched under: %s and %s" % (proc_path_lkm, proc_path_bpf)) 
+
     try:
         while True:
             sessmgr.poll()

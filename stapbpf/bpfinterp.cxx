@@ -398,6 +398,48 @@ bpf_sprintf(std::vector<std::string> &strings, char *fstr,
 }
 
 uint64_t
+bpf_text_str(std::vector<std::string> &strings, char* input, bool quoted)
+{
+  std::string str(input);
+  std::stringstream stream;
+
+  for (std::string::iterator it = str.begin(); it != str.end(); ++it)
+    {
+      unsigned char c = *it;
+      unsigned int i = c;
+
+      if (std::isprint(c) && i < 128 && c != '\\' && c != '"')
+        stream << c;
+      else 
+        {
+          stream << '\\';
+          switch (c) {
+            case '\0': stream << '0'; break; // Not handled by translate_escapes
+            case '\a': stream << 'a'; break; // Not handled by translate_escapes
+            case '\b': stream << 'b'; break; // Not handled by translate_escapes
+            case '\f': stream << 'f'; break;
+            case '\n': stream << 'n'; break;
+            case '\r': stream << 'r'; break;
+            case '\t': stream << 't'; break;
+            case '\v': stream << 'v'; break;
+            case '"': stream << '"'; break;
+            case '\\': stream << '\\'; break;
+            default: 
+              stream << "x" << std::setfill('0') << std::setw(2) << std::hex << i;
+              break;
+          }
+        }
+    } 
+
+  if (quoted)
+    strings.push_back("\"" + stream.str() + "\"");
+  else  
+    strings.push_back(stream.str());
+
+  return reinterpret_cast<uint64_t>(strings.back().c_str());
+}
+
+uint64_t
 bpf_str_concat(std::vector<std::string> &strings, char* left, char* right)
 {
   std::string concat;
@@ -937,6 +979,12 @@ bpf_interpret(size_t ninsns, const struct bpf_insn insns[],
               dr = bpf_sprintf(strings, as_str(regs[1]),
                                regs[3], regs[4], regs[5]);
               break;
+            case bpf::BPF_FUNC_text_str:
+              dr = bpf_text_str(strings, as_str(regs[1]), false);
+              break;
+            case bpf::BPF_FUNC_string_quoted:
+              dr = bpf_text_str(strings, as_str(regs[1]), true);
+              break;
             case bpf::BPF_FUNC_str_concat:
               dr = bpf_str_concat(strings, as_str(regs[1]), 
                                   as_str(regs[2]));
@@ -953,7 +1001,7 @@ bpf_interpret(size_t ninsns, const struct bpf_insn insns[],
             case bpf::BPF_FUNC_gettimeofday_ns:
               dr = bpf_gettimeofday_ns();
               break;
-	    case bpf::BPF_FUNC_get_target:
+            case bpf::BPF_FUNC_get_target:
               dr = bpf_get_target();
               break;
             case bpf::BPF_FUNC_set_procfs_value:

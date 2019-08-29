@@ -1,0 +1,4 @@
+#! /bin/sh
+
+# link to this generic shell script to invoke a non-guru stap example
+exec stap --bpf -v --example $@ `basename $0 | sed -e s,autostart-,,`

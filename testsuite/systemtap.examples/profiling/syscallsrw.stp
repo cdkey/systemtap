@@ -1,0 +1,18 @@
+#! /usr/bin/stap --bpf
+
+global arr
+
+probe kernel.function("ksys_read") !, kernel.function("vfs_read") {
+    arr[0]++;
+}
+
+probe kernel.function("ksys_write") !, kernel.function("vfs_write") {
+    arr[1]++;
+}
+
+probe prometheus {
+
+    $value .= ("count{syscall=\"ksys_read\"} " . sprint(arr[0]) . "\n")
+    $value .= ("count{syscall=\"ksys_write\"} " . sprint(arr[1]) . "\n")
+
+}

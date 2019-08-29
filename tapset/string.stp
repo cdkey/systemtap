@@ -100,12 +100,20 @@ function strpos:long(s1:string,s2:string)
  * printable are replaced by the corresponding escape sequence in the
  * returned string.
  */
-function text_str:string(input:string) 
-%{ /* pure */ /* unprivileged */ /* unmodified-fnargs */
-	if (_stp_text_str(STAP_RETVALUE, STAP_ARG_input, 0, 0, 0, 0, 0) < 0) {
-		STAP_RETVALUE[0] = '\0';
-	}
-%}
+function text_str:string(input:string)
+%( runtime != "bpf" %? 
+  %{ /* pure */ /* unprivileged */ /* unmodified-fnargs */
+	  if (_stp_text_str(STAP_RETVALUE, STAP_ARG_input, 0, 0, 0, 0, 0) < 0) {
+		  STAP_RETVALUE[0] = '\0';
+	  }
+  %}
+%:
+  %{  /* bpf */
+      0xbf, 1, $input, -, -;  /* mov r1, $input */
+      0x85, 0, 0, 0, -10;     /* call BPF_FUNC_TEXT_STR */
+      0xbf, $$, 0, -, -;      /* return r0 */
+  %}
+%)
 
 /**
  * sfunction text_strn - Escape any non-printable chars in a string
@@ -203,9 +211,17 @@ function isdigit:long(str:string)
  * string. Note that the string will be surrounded by double quotes.
  */
 function string_quoted:string (str:string)
-%{ /* pure */ /* unmodified-fnargs */
-  /* This can't fail, since the input string is already in stap context space. */
-  (void) _stp_text_str(STAP_RETVALUE,
-                       (char *)(uintptr_t)STAP_ARG_str,
-                       MAXSTRINGLEN, MAXSTRINGLEN, 1, 0, 0);
-%}
+%( runtime != "bpf" %? 
+  %{ /* pure */ /* unmodified-fnargs */
+    /* This can't fail, since the input string is already in stap context space. */
+    (void) _stp_text_str(STAP_RETVALUE,
+                         (char *)(uintptr_t)STAP_ARG_str,
+                         MAXSTRINGLEN, MAXSTRINGLEN, 1, 0, 0);
+  %}
+%:
+  %{  /* bpf */
+      0xbf, 1, $str, -, -;  /* mov r1, $input */
+      0x85, 0, 0, 0, -11;     /* call BPF_FUNC_STRING_QUOTED */
+      0xbf, $$, 0, -, -;      /* return r0 */
+  %}
+%)

@@ -1,1 +1,7 @@
-probe prometheus = procfs("__prometheus").read.maxsize(0x10000) { }
+probe prometheus =
+%( runtime != "bpf" %?
+  procfs("__prometheus").read.maxsize(0x10000)
+%:
+  procfs("__prometheus").read
+%)
+{ }

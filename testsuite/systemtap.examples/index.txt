@@ -2,7 +2,7 @@ SYSTEMTAP EXAMPLES INDEX
 (see also keyword-index.txt)
 
 
-For systemtap version 4.1.
+For systemtap version 4.2.
 
 apps/gmalloc_watch.stp - Tracing glib2 memory allocations
 keywords: trace
@@ -16,7 +16,7 @@ keywords: trace
 
 
 apps/libguestfs_log.stp - Trace libguestfs startup
-keywords: application trace
+keywords: application trace bpf
 
   The libguestfs_log.stp script prints a log of when various
   libgueststartup steps are encountered.   The first column is
@@ -28,7 +28,7 @@ keywords: application trace
 
 
 apps/php-trace.stp - Tracing of PHP code execution
-keywords: trace
+keywords: trace dyninst
 
   Trace of executing PHP code using the enabled markers.
 
@@ -80,7 +80,7 @@ keywords: prometheus
 
 
 general/ansi_colors.stp - Color Table for ansi_set_color()
-keywords: format
+keywords: format bpf
 
   The script prints a table showing the available color combinations
   for the ansi_set_color() function in the ansi.stp tapset.
@@ -89,7 +89,7 @@ keywords: format
 
 
 general/ansi_colors2.stp - Show Attribues in Table for ansi_set_color()
-keywords: format
+keywords: format bpf
 
   The script prints a table showing the available attributes (bold,
   underline, and inverse) with color combinations for the
@@ -166,7 +166,7 @@ keywords: monitoring
 
 
 general/helloworld.stp - SystemTap "Hello World" Program
-keywords: _best simple
+keywords: _best simple bpf
 
   A basic "Hello World" program implemented in SystemTap script. It
   prints out "hello world" message and then immediately exits.
@@ -769,21 +769,12 @@ keywords: io
 
 
 memory/cachestat.stp - Count Page Cache Hits and Misses
-keywords: memory
-
-  Monitors hits and misses to the page cache and reports a count every
-  5 seconds. Based on a bpftrace tool by David Valin.
-
-  # stap cachestat.stp -T 1
-
-
-memory/cachestat.stp - Count Page Cache Hits and Misses
 keywords: memory bpf
 
   Monitors hits and misses to the page cache and reports a count every
   5 seconds. Based on a bpftrace tool by David Valin.
 
-  # stap --bpf cachestat.stp -T 1
+  # stap cachestat.stp -T 1
 
 
 memory/glibc-malloc.stp - Overview glibc malloc internal operations
@@ -916,7 +907,7 @@ keywords: memory
 
 
 memory/mmfilepage.stp - Track Virtual Memory System Actions on File Backed Pages
-keywords: memory
+keywords: memory bpf
 
   The mmfilepage.stp script uses the virtual memory tracepoints
   available in some kernels to track the number of faults, copy on
@@ -941,7 +932,7 @@ keywords: memory
 
 
 memory/mmwriteback.stp - Track Virtual Memory System Writing to Disk
-keywords: memory
+keywords: memory bpf
 
   The mmwriteback.stp script uses the virtual memory tracepoints
   available in some kernels to report all of the file writebacks that
@@ -1146,7 +1137,7 @@ keywords: network traffic
 
 
 network/sk_stream_wait_memory.stp - Track Start and Stop of Processes Due to Network Buffer Space
-keywords: network tcp process
+keywords: network tcp process bpf
 
   The sk_stream-wait_memory.stp prints a time stamp, executable, and
   pid each time a process blocks due to the send buffer being full. A
@@ -1886,6 +1877,14 @@ keywords: prometheus process syscall tracepoint
   syscalls for 32-bit applications running on 64-bit machines.
 
   # stap syscallsbypid.stp -T 1
+
+
+profiling/syscallsrw.stp - Provide a tally of read and write syscalls run on the system 
+keywords: prometheus syscall bpf
+
+  The syscall_read_write.stp script tallies the read and write
+  syscalls. This is a demo script for stapbpf prometheus-exporter
+  scripts.
 
 
 profiling/thread-times.stp - Profile Kernel Functions

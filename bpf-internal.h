@@ -180,7 +180,9 @@ const opcode BPF_LD_MAP = BPF_LD | BPF_IMM | BPF_DW | (BPF_PSEUDO_MAP_FD << 8);
   FN(set_procfs_value),           \
   FN(append_procfs_value),        \
   FN(get_procfs_value),           \
-  FN(str_concat),                 
+  FN(str_concat),                 \
+  FN(text_str),                   \
+  FN(string_quoted),
  
 const bpf_func_id BPF_FUNC_map_get_next_key    = (bpf_func_id) -1;
 const bpf_func_id BPF_FUNC_sprintf             = (bpf_func_id) -2;
@@ -191,6 +193,8 @@ const bpf_func_id BPF_FUNC_set_procfs_value    = (bpf_func_id) -6;
 const bpf_func_id BPF_FUNC_append_procfs_value = (bpf_func_id) -7;
 const bpf_func_id BPF_FUNC_get_procfs_value    = (bpf_func_id) -8;
 const bpf_func_id BPF_FUNC_str_concat          = (bpf_func_id) -9;
+const bpf_func_id BPF_FUNC_text_str            = (bpf_func_id) -10;
+const bpf_func_id BPF_FUNC_string_quoted       = (bpf_func_id) -11;
 
 struct insn
 {

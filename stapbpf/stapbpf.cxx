@@ -1861,8 +1861,9 @@ procfs_read_event_loop (procfsprobe_data* data, bpf_transport_context* uctx)
       // Run the probe and collect the message.
       bpf_interpret(prog->d_size / sizeof(bpf_insn), static_cast<bpf_insn *>(prog->d_buf), uctx);
 
-      // Make a copy of the message.
+      // Make a copy of the message and reset it.
       std::string msg = uctx->procfs_msg;
+      uctx->procfs_msg.clear();
 
       procfs_lock.unlock();
 
