@@ -638,14 +638,14 @@ probe nfsd.proc2.write = kernel.function("nfsd_proc_write") !,
 		count = @nfsd2_writeargs($rqstp->rq_argp)->len
 		offset = @nfsd2_writeargs($rqstp->rq_argp)->offset 
 		vec = $rqstp->rq_vec
-		vlen = @nfsd2_writeargs($rqstp->rq_argp)->vlen
+		vlen = @choose_defined(@nfsd2_writeargs($rqstp->rq_argp)->vlen, 0)
 	}
 	else {
 		fh = & @nfsd2_writeargs($argp)->fh
 		count = $argp->len
 		offset = $argp->offset 
 		vec = @choose_defined($rqstp->rq_vec, $argp->vec)
-		vlen = $argp->vlen
+		vlen = @choose_defined($argp->vlen, 0)
 	}
 
 	stable = 1			# hardcoded in nfsd_proc_write()
@@ -691,7 +691,7 @@ probe nfsd.proc3.write = kernel.function("nfsd3_proc_write") !,
 		count = @nfsd3_writeargs($rqstp->rq_argp)->count 
 		offset = @nfsd3_writeargs($rqstp->rq_argp)->offset 
 		vec = $rqstp->rq_vec
-		vlen = @nfsd3_writeargs($rqstp->rq_argp)->vlen
+		vlen = @choose_defined(@nfsd3_writeargs($rqstp->rq_argp)->vlen, 0)
 		stable = @nfsd3_writeargs($rqstp->rq_argp)->stable
 	}
 	else {
@@ -699,7 +699,7 @@ probe nfsd.proc3.write = kernel.function("nfsd3_proc_write") !,
 		count = $argp->count 
 		offset = $argp->offset 
 		vec = @choose_defined($rqstp->rq_vec, $argp->vec)
-		vlen = $argp->vlen
+		vlen = @choose_defined($argp->vlen, 0)
 		stable = $argp->stable
 	}
 
