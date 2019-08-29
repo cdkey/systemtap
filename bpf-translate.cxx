@@ -208,7 +208,9 @@ struct bpf_unparser : public throwing_visitor
   // ??? visit_regex_query -> UNHANDLED, requires new kernel functionality
   virtual void visit_compound_expression (compound_expression *e);
   virtual void visit_comparison (comparison* e);
-  // TODO visit_concatenation -> (2) pseudo-LOOP: copy the strings while concatenating
+  // TODO visit_concatenation for kernel probes -> (2) pseudo-LOOP: copy the 
+  // strings while concatenating
+  virtual void visit_concatenation (concatenation* e);
   virtual void visit_ternary_expression (ternary_expression* e);
   virtual void visit_assignment (assignment* e);
   virtual void visit_symbol (symbol* e);
@@ -2232,6 +2234,35 @@ void
 bpf_unparser::visit_comparison (comparison* e)
 {
   result = emit_bool (e);
+}
+
+void
+bpf_unparser::visit_concatenation (concatenation* e) 
+{
+  if (this_prog.target == target_kernel_bpf)
+    throw SEMANTIC_ERROR(_("unsupported in bpf kernel probe"), e->tok);
+
+  // We make use of many temporary registers because intermediate strings 
+  // can arise from function calls which may clobber registers that hold data.
+ 
+  value *l = emit_expr (e->left);
+  value* placeholder_l = this_prog.new_reg();
+  this_prog.mk_mov(this_ins, placeholder_l, l); 
+
+  value *r = emit_expr (e->right);
+  value* placeholder_r = this_prog.new_reg();
+  this_prog.mk_mov(this_ins, placeholder_r, r);
+
+  this_prog.mk_mov(this_ins, this_prog.lookup_reg(BPF_REG_1), placeholder_l);
+  this_prog.mk_mov(this_ins, this_prog.lookup_reg(BPF_REG_2), placeholder_r);
+
+  // Call function to concatenate. 
+  this_prog.mk_call(this_ins, BPF_FUNC_str_concat, 2);
+
+  value* str = this_prog.new_reg();
+  this_prog.mk_mov(this_ins, str, this_prog.lookup_reg(BPF_REG_0)); 
+
+  result = str;
 }
 
 void

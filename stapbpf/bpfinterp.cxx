@@ -397,6 +397,20 @@ bpf_sprintf(std::vector<std::string> &strings, char *fstr,
   return reinterpret_cast<uint64_t>(strings.back().c_str());
 }
 
+uint64_t
+bpf_str_concat(std::vector<std::string> &strings, char* left, char* right)
+{
+  std::string concat;
+  concat += left;
+  concat += right;
+
+  strings.push_back(concat);
+
+  // After adding the new string into the vector, the c_str() pointer value
+  // will be valid and safe to use 
+  return reinterpret_cast<uint64_t>(strings.back().c_str());
+}
+
 // Allocates and returns a buffer of percpu data for a stat field:
 uint64_t *
 stapbpf_stat_get_percpu(bpf::globals::map_idx map, uint64_t idx,
@@ -922,6 +936,10 @@ bpf_interpret(size_t ninsns, const struct bpf_insn insns[],
             case bpf::BPF_FUNC_sprintf:
               dr = bpf_sprintf(strings, as_str(regs[1]),
                                regs[3], regs[4], regs[5]);
+              break;
+            case bpf::BPF_FUNC_str_concat:
+              dr = bpf_str_concat(strings, as_str(regs[1]), 
+                                  as_str(regs[2]));
               break;
             case bpf::BPF_FUNC_map_get_next_key:
               dr = map_get_next_key(regs[1], regs[2], regs[3],

@@ -179,7 +179,8 @@ const opcode BPF_LD_MAP = BPF_LD | BPF_IMM | BPF_DW | (BPF_PSEUDO_MAP_FD << 8);
   FN(gettimeofday_ns),            \
   FN(set_procfs_value),           \
   FN(append_procfs_value),        \
-  FN(get_procfs_value),
+  FN(get_procfs_value),           \
+  FN(str_concat),                 
  
 const bpf_func_id BPF_FUNC_map_get_next_key    = (bpf_func_id) -1;
 const bpf_func_id BPF_FUNC_sprintf             = (bpf_func_id) -2;
@@ -189,6 +190,7 @@ const bpf_func_id BPF_FUNC_get_target          = (bpf_func_id) -5;
 const bpf_func_id BPF_FUNC_set_procfs_value    = (bpf_func_id) -6;
 const bpf_func_id BPF_FUNC_append_procfs_value = (bpf_func_id) -7;
 const bpf_func_id BPF_FUNC_get_procfs_value    = (bpf_func_id) -8;
+const bpf_func_id BPF_FUNC_str_concat          = (bpf_func_id) -9;
 
 struct insn
 {
