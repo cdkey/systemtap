@@ -2869,8 +2869,13 @@ emit_simple_literal_str(program &this_prog, insn_inserter &this_ins,
         if (i * 4 + j < str_bytes - 1)
           {
             // ??? assuming little-endian target
-            word |= (uint32_t)src[i * 4 + j] << (j * 8);
+            //
+            // Must cast each signed char in src to unsigned char first
+            // in order to avoid the implicit sign extension resulting 
+            // from the uint32_t cast. 
+            word |= ((uint32_t)(unsigned char)src[i * 4 + j]) << (j * 8);
           }
+
       this_prog.mk_st(this_ins, BPF_W,
                       dest, (int32_t)i * 4 + ofs,
                       this_prog.new_imm(word));

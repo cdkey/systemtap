@@ -136,7 +136,11 @@ fixup_operands(program &p)
 	      insn_before_inserter ins(b, j, "opt");
 	      p.mk_mov(ins, n, s1);
 	      j->src1 = s1 = n;
-	    }
+
+        // Since the content is in the src register, we need
+        // to use BPF_STX instead of BPF_ST
+        j->code = BPF_STX | BPF_MEM | BPF_W; 
+	    } 
 
 	  if (value *s0 = j->src0)
 	    {
