@@ -11589,6 +11589,14 @@ static vector<string> tracepoint_extra_decls (systemtap_session& s,
 	       && file_exists(s.kernel_source_tree + "/drivers/gpu/drm/i915"))
 	s.kernel_extra_cflags.push_back ("-I" + s.kernel_source_tree
 					 + "/drivers/gpu/drm/i915");
+
+      if (file_exists(s.kernel_build_tree + "/drivers/gpu/drm/i915/gt"))
+	s.kernel_extra_cflags.push_back ("-I" + s.kernel_build_tree
+					 + "/drivers/gpu/drm/i915/gt");
+      else if (!s.kernel_source_tree.empty()
+	       && file_exists(s.kernel_source_tree + "/drivers/gpu/drm/i915/gt"))
+	s.kernel_extra_cflags.push_back ("-I" + s.kernel_source_tree
+					 + "/drivers/gpu/drm/i915/gt");
     }
 
   if (header.find("/ath/") != string::npos)
@@ -11686,10 +11694,17 @@ static vector<string> tracepoint_extra_decls (systemtap_session& s,
 	they_live.push_back ("#include <linux/swiotlb.h>");
     }
 
-  if (header.find("afs") != string::npos
-      || header.find("rxrpc") != string::npos)
+
+  if (header.find("afs") != string::npos)
     {
+      if (header_exists (s, "/fs/afs/internal.h"))
+        they_live.push_back ("#include \"fs/afs/internal.h\"");
+
       they_live.push_back ("struct afs_call;");
+    }
+        
+  if (header.find("rxrpc") != string::npos)
+    {
       they_live.push_back ("struct rxrpc_call;");
       they_live.push_back ("struct rxrpc_connection;");
       they_live.push_back ("struct rxrpc_seq_t;");
@@ -11700,6 +11715,9 @@ static vector<string> tracepoint_extra_decls (systemtap_session& s,
       // So, we'll have to include the right kernel header file.
       if (header_exists(s, "/net/rxrpc/protocol.h"))
 	they_live.push_back ("#include \"net/rxrpc/protocol.h\"");
+
+      if (header_exists (s, "/net/rxrpc/ar-internal.h"))
+        they_live.push_back ("#include \"net/rxrpc/ar-internal.h\"");
     }
 
   if (header.find("xdp") != string::npos)
@@ -11749,6 +11767,18 @@ static vector<string> tracepoint_extra_decls (systemtap_session& s,
     they_live.push_back ("#include \"drivers/misc/mei/mei-trace.h\"");
   #endif
 
+  if (header.find("gpu_scheduler") != string::npos)
+    {
+      they_live.push_back("#include <drm/gpu_scheduler.h>");
+    }
+
+  if (header.find("siox.h") != string::npos)
+    {
+      they_live.push_back ("struct siox_device;"); // #include "drivers/siox/siox.h"
+      they_live.push_back ("struct siox_master;"); // #include "drivers/siox/siox.h"
+      they_live.push_back ("struct rxrpc_local;"); // #include "drivers/siox/siox.h"
+    }
+  
   return they_live;
 }
 
