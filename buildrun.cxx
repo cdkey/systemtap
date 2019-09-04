@@ -290,7 +290,8 @@ compile_pass (systemtap_session& s)
     redirecterrors = "";
 
   // Support O= (or KBUILD_OUTPUT) option
-  o << "_KBUILD_CFLAGS := $(call flags,KBUILD_CFLAGS)" << endl;
+  // but flags= filter was removed from kernel scripts/Kbuild.include mid-2019
+  o << "_KBUILD_CFLAGS := $(call flags,KBUILD_CFLAGS) $(KBUILD_CFLAGS)" << endl;
 
   o << "stap_check_gcc = $(shell " << superverbose
     << " if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; then "
