@@ -226,6 +226,11 @@ static const char *processor_modes[]=
 };
 
 
+/* get_ds() removed in 736706bee3298208343a76096370e4f6a5c55915 */
+#ifndef get_ds
+#define get_ds()	(KERNEL_DS)
+#endif
+
 static void _stp_print_regs(struct pt_regs * regs)
 {
 	unsigned long flags = regs->ARM_cpsr;
