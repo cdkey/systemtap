@@ -706,10 +706,15 @@ AC_ARG_ENABLE([virt],
 
 dnl We require libvirt >= 1.0.2 because stapvirt relies on the
 dnl virDomainOpenChannel function, which was implemented in 1.0.2.
-PKG_CHECK_MODULES([libvirt], [libvirt >= 1.0.2], [
-   have_libvirt=yes
-   AC_DEFINE([HAVE_LIBVIRT],[1],[Define to 1 if libvirt development libraries are installed])
-   ], [have_libvirt=no])
+AC_ARG_ENABLE([libvirt],
+  AS_HELP_STRING([--disable-libvirt], [Do not use libvirt even if present]))
+
+if test "$enable_libvirt" != no; then
+  PKG_CHECK_MODULES([libvirt], [libvirt >= 1.0.2], [
+     have_libvirt=yes
+     AC_DEFINE([HAVE_LIBVIRT],[1],[Define to 1 if libvirt development libraries are installed])
+     ], [have_libvirt=no])
+fi
 AM_CONDITIONAL([HAVE_LIBVIRT], [test "${have_libvirt}" = "yes"])
 PKG_CHECK_MODULES([libxml2], [libxml-2.0], [
    have_libxml2=yes
