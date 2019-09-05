@@ -294,7 +294,11 @@ clean_cache(systemtap_session& s)
         {
           //interval not passed, don't continue
           if (s.verbose > 1)
+#if defined(__x86_64__) && defined (__ILP32__)
+            clog << _F("Cache cleaning skipped, interval not reached %lld s / %lu s.",
+#else
             clog << _F("Cache cleaning skipped, interval not reached %lu s / %lu s.",
+#endif
                        (current_time.tv_sec-sb.st_mtime), cache_clean_interval)  << endl;
           return;
         }
@@ -302,7 +306,11 @@ clean_cache(systemtap_session& s)
         {
           //interval reached, continue
           if (s.verbose > 1)
+#if defined(__x86_64__) && defined (__ILP32__)
+            clog << _F("Cleaning cache, interval reached %lld s > %lu s.",
+#else
             clog << _F("Cleaning cache, interval reached %lu s > %lu s.",
+#endif
                        (current_time.tv_sec-sb.st_mtime), cache_clean_interval)  << endl;
         }
 
