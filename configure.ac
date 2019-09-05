@@ -801,13 +801,16 @@ dnl We want either (or both) python probe support.
 AM_CONDITIONAL([HAVE_PYTHON_PROBES],
   [test "x$have_python2_support" = "xyes" -o "x$have_python3_support" = "xyes"])
 
+AC_ARG_ENABLE([monitor], AS_HELP_STRING([--disable-monitor],[Disable monitor]))
+if test "$enable_monitor" != "no"; then
 dnl Check for presence of json-c and ncurses for use in monitor mode
 PKG_CHECK_MODULES([jsonc], [json-c >= 0.11], [have_jsonc=yes], [have_jsonc=no])
 PKG_CHECK_MODULES([ncurses], [ncurses], [have_ncurses=yes], [have_ncurses=no])
-AM_CONDITIONAL([HAVE_MONITOR_LIBS], [test "${have_jsonc}" == "yes" -a "${have_ncurses}" == "yes"])
 if test "${have_jsonc}" == "yes" -a "${have_ncurses}" == yes; then
   AC_DEFINE([HAVE_MONITOR_LIBS],[1],[Define to 1 if json-c and ncurses libraries are installed])
 fi
+fi
+AM_CONDITIONAL([HAVE_MONITOR_LIBS], [test "${have_jsonc}" == "yes" -a "${have_ncurses}" == "yes" -a "$enable_monitor" != "no"])
 
 AC_CACHE_CHECK([for assembler .section "?" flags support], stap_cv_sectionq, [
 old_CFLAGS="$CFLAGS"
