@@ -36,10 +36,6 @@ AC_CHECK_FUNCS(openat)
 AM_GNU_GETTEXT(external)
 AM_GNU_GETTEXT_VERSION([0.19.4])
 
-if test "x$GMSGFMT" = "x:"; then
-   AC_MSG_ERROR([missing gnu /usr/bin/msgfmt])
-fi
-
 # We want the 'PYTHON' varible to be python version 2. We also want
 # our custom 'PYTHON3' varible to be python version 3.
 #
