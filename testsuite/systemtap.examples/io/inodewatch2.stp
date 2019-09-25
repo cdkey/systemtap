@@ -2,11 +2,9 @@
 
 global ATTR_MODE = 1
 
-probe kernel.{function("setattr_copy")!,
-              function("generic_setattr")!,
-              function("inode_setattr")} {
-  dev_nr = $inode->i_sb->s_dev
-  inode_nr = $inode->i_ino
+probe kernel.function("notify_change") {
+  dev_nr = $dentry->d_inode->i_sb->s_dev
+  inode_nr = $dentry->d_inode->i_ino
 
   if (dev_nr == MKDEV($1,$2) # major/minor device
       && inode_nr == $3
