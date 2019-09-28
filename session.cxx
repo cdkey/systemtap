@@ -713,11 +713,11 @@ systemtap_session::usage (int exitcode)
     "              disable -DSTP_OVERLOAD, -DMAXACTION, and -DMAXTRYACTION limits\n"
     "   --save-uprobes\n"
     "              save uprobes.ko to current directory if it is built from source\n"
-    "   --target-namesapce=PID\n"
+    "   --target-namespace=PID\n"
     "              sets the target namespaces pid to PID\n"
 #if HAVE_MONITOR_LIBS
     "   --monitor=INTERVAL\n"
-    "              enables monitor interfaces\n"
+    "              enables runtime interactive monitoring\n"
 #endif
     , compatible.c_str()) << endl
   ;
