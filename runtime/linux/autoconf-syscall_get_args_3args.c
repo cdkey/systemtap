@@ -1,3 +1,4 @@
+#include <linux/sched.h>
 #include <asm/syscall.h>
 #include <asm/ptrace.h>
 #include <linux/sched.h>
