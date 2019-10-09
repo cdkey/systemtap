@@ -1,0 +1,85 @@
+# This test compiles BusyBox (GPLv2) from source files with the following additional 
+# CFLAGS: (-g) and (-g -flto -ffat-lto-objects). This test demonstrates that SystemTap
+# functionality is impacted by LTO. 
+
+set test        "busybox.exp"
+set testpath    "$srcdir/$subdir/busybox"
+set release     "busybox-1.30.1"
+
+set download    "wget -q https://busybox.net/downloads/$release.tar.bz2 -O $testpath/$release.tar.bz2"
+set extract     "tar xjf $testpath/$release.tar.bz2 -C $testpath"
+set config_reg  "cp $testpath/config_reg $testpath/$release/.config"
+set config_lto  "cp $testpath/config_lto $testpath/$release/.config"
+set make        "make -C $testpath/$release"
+set clean       "rm -rf $testpath/$release && rm -rf $testpath/$release.tar.bz2"
+
+set ok_probe_1 0
+set ok_probe_2 0 
+set ok_probe_3 0
+
+# Download and extract BusyBox sources 
+exec sh -c "$download && $extract"
+
+set probe_1 {probe process.function("echo_main") { printf("foo\n") }} 
+set probe_2 {probe process.function("echo_main") { print($argc, "\n", pp(), "\n") }}
+set probe_3 {probe process.function("run_applet_no_and_exit") { printf("foo\n") }} 
+set process "$testpath/$release/busybox_unstripped echo bar"
+
+set function "process(\"$testpath/$release/busybox_unstripped\").function(\"echo_main@coreutils/echo.c:83\")"
+
+# Test probes with non-LTO binary
+exec sh -c "$config_reg && $make" 
+
+spawn stap -e $probe_1 -c $process
+
+expect {
+    "foo" {incr ok_probe_1; exp_continue}
+    "bar" {incr ok_probe_1; exp_continue}
+}
+
+spawn stap -e $probe_2 -c $process
+
+expect {
+    "2" {incr ok_probe_2; exp_continue}
+    "$function" {incr ok_probe_2; exp_continue}
+}
+
+spawn stap -e $probe_3 -c $process
+
+expect {
+    "bar" {incr ok_probe_3; exp_continue}
+}
+
+# Test probes with LTO binary
+exec sh -c "$config_lto && $make"
+ 
+spawn stap -e $probe_1 -c $process
+
+expect {
+    "foo" {incr ok_probe_1; exp_continue}
+    "bar" {incr ok_probe_1; exp_continue}
+}
+
+spawn stap -e $probe_2 -c $process
+
+expect {
+    "2" {incr ok_probe_2; exp_continue}
+    "$function" {incr ok_probe_2; exp_continue}
+}
+
+spawn stap -e $probe_3 -c $process
+
+expect {
+    "bar" {incr ok_probe_3; exp_continue}
+}
+
+if { $ok_probe_1 == 4 } { pass "$test" } { fail "$test" }
+
+setup_kfail GCC *-*-*
+if { $ok_probe_2 == 4 } { pass "$test" } { fail "$test" }
+setup_kfail GCC *-*-*
+if { $ok_probe_3 == 2 } { pass "$test" } { fail "$test" }
+
+exec sh -c $clean
+
+
