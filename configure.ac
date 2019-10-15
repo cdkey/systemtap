@@ -557,14 +557,20 @@ LIBS=$LIBS_no_readline
 
 dnl Allow user to choose python3 for /usr/bin/dtrace
 AC_ARG_WITH([python3],
-  AS_HELP_STRING([--with-python3],[prefer python version 3]))
+  AS_HELP_STRING([--with-python3],[prefer python version 3]), [], [with_python3="auto"])
 AS_IF([test "x$with_python3" = "xyes"],
       [AS_IF([test "x$PYTHON3" = "x:"],
              [AC_MSG_ERROR([python version 3 is required])],
 	     [AC_SUBST(preferred_python,[$PYTHON3])])],
+      [test "x$with_python3" = "xno"],
       [AS_IF([test "x$PYTHON" = "x:"],
              [AC_MSG_ERROR([python version 2 is required])],
-	     [AC_SUBST(preferred_python,[$PYTHON])])])
+	     [AC_SUBST(preferred_python,[$PYTHON])])],
+      [test "x$PYTHON3" != "x:"],
+      [AC_SUBST(preferred_python,[$PYTHON3])],
+      [test "x$PYTHON" != "x:"],
+      [AC_SUBST(preferred_python,[$PYTHON])],
+      [AC_MSG_ERROR([neither python version 2 nor 3 found])])
       
 dnl Handle elfutils.  If '--with-elfutils=DIR' wasn't specified, used
 dnl the system's elfutils.

@@ -11393,6 +11393,8 @@ LIBS=$LIBS_no_readline
 # Check whether --with-python3 was given.
 if test "${with_python3+set}" = set; then :
   withval=$with_python3;
+else
+  with_python3="auto"
 fi
 
 if test "x$with_python3" = "xyes"; then :
@@ -11402,13 +11404,21 @@ else
   preferred_python=$PYTHON3
 
 fi
-else
+elif test "x$with_python3" = "xno"; then :
   if test "x$PYTHON" = "x:"; then :
   as_fn_error $? "python version 2 is required" "$LINENO" 5
 else
   preferred_python=$PYTHON
 
 fi
+elif test "x$PYTHON3" != "x:"; then :
+  preferred_python=$PYTHON3
+
+elif test "x$PYTHON" != "x:"; then :
+  preferred_python=$PYTHON
+
+else
+  as_fn_error $? "neither python version 2 nor 3 found" "$LINENO" 5
 fi
 
 build_elfutils=no
