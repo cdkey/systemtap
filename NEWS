@@ -1,5 +1,8 @@
 * What's new in version 4.2, PRERELEASE
 
+- When the -v option is set along with -L option, the output includes
+  duplicate probe points which are distinguished by their PC address.
+
 - The stapbpf backend now supports stap-exporter extensions. 
 
 - The stapbpf backend now supports procfs probes. The implementation 

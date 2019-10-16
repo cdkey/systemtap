@@ -358,6 +358,8 @@ syscall.writev
 .TP
 .BI \-L " PROBE"
 Similar to "\-l", but list matching probe points plus their available context variables.
+When -v is set with -L, the output includes duplicate probe points which are distinguished 
+by their PC address.
 .SAMPLE
 % stap -L 'process("/lib64/libpython*.so.*").mark("*")'
 process("/usr/lib64/libpython2.7.so.1.0").mark("function__entry") $arg1:long $arg2:long $arg3:long

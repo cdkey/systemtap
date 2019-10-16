@@ -555,7 +555,7 @@ struct dwarf_derived_probe: public generic_kprobe_derived_probe
   interned_string user_lib;
   bool access_vars;
 
-  void printsig (std::ostream &o) const;
+  void printsig (std::ostream &o, bool nest=true) const;
   virtual void join_group (systemtap_session& s);
   void emit_probe_local_init(systemtap_session& s, translator_output * o);
   void getargs(std::list<std::string> &arg_set) const;
@@ -5152,7 +5152,7 @@ dwarf_atvar_expanding_visitor::visit_atvar_op (atvar_op* e)
 
 
 void
-dwarf_derived_probe::printsig (ostream& o) const
+dwarf_derived_probe::printsig (ostream& o, bool nest) const
 {
   // Instead of just printing the plain locations, we add a PC value
   // as a comment as a way of telling e.g. apart multiple inlined
@@ -5163,7 +5163,9 @@ dwarf_derived_probe::printsig (ostream& o) const
     o << " /* pc=<" << symbol_name << "+" << offset << "> */";
   else
     o << " /* pc=" << section << "+0x" << hex << addr << dec << " */";
-  printsig_nested (o);
+
+  if (nest)
+    printsig_nested (o);
 }
 
 
@@ -10010,7 +10012,7 @@ struct kprobe_derived_probe: public generic_kprobe_derived_probe
   string path;
   string library;
   bool access_var;
-  void printsig (std::ostream &o) const;
+  void printsig (std::ostream &o, bool nest=true) const;
   void join_group (systemtap_session& s);
 };
 
@@ -10136,11 +10138,13 @@ kprobe_derived_probe::kprobe_derived_probe (systemtap_session& sess,
   this->sole_location()->components = comps;
 }
 
-void kprobe_derived_probe::printsig (ostream& o) const
+void kprobe_derived_probe::printsig (ostream& o, bool nest) const
 {
   sole_location()->print (o);
   o << " /* " << " name = " << symbol_name << "*/";
-  printsig_nested (o);
+
+  if (nest)
+    printsig_nested (o);
 }
 
 void kprobe_derived_probe::join_group (systemtap_session& s)
@@ -10367,7 +10371,7 @@ struct hwbkpt_derived_probe: public derived_probe
   string symbol_name;
   unsigned int hwbkpt_access,hwbkpt_len;
 
-  void printsig (std::ostream &o) const;
+  void printsig (std::ostream &o, bool nest) const;
   void join_group (systemtap_session& s);
 };
 
@@ -10430,10 +10434,12 @@ hwbkpt_derived_probe::hwbkpt_derived_probe (probe *base,
   this->sole_location()->components = comps;
 }
 
-void hwbkpt_derived_probe::printsig (ostream& o) const
+void hwbkpt_derived_probe::printsig (ostream& o, bool nest) const
 {
   sole_location()->print (o);
-  printsig_nested (o);
+
+  if (nest)
+    printsig_nested (o);
 }
 
 void hwbkpt_derived_probe::join_group (systemtap_session& s)

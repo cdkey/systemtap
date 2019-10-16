@@ -80,10 +80,12 @@ derived_probe::derived_probe (probe *p, probe_point *l, bool rewrite_loc):
 
 
 void
-derived_probe::printsig (ostream& o) const
+derived_probe::printsig (ostream& o, bool nest) const
 {
   probe::printsig (o);
-  printsig_nested (o);
+
+  if (nest)
+    printsig_nested (o);
 }
 
 void

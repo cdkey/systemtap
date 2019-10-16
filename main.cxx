@@ -135,11 +135,13 @@ printscript(systemtap_session& s, ostream& o)
       // print probe name and variables if there
       for (map<string, set<derived_probe *> >::iterator it=probe_list.begin(); it!=probe_list.end(); ++it)
         {
+          std::string pp;
+
           // probe name or alias
           if (s.dump_mode == systemtap_session::dump_matched_probes_vars && isatty(STDOUT_FILENO))
-            o << s.colorize(it->first, "source");
+            pp = s.colorize(it->first, "source");
           else
-            o << it->first;
+            pp = it->first;
 
           // Print the locals and arguments for -L mode only
           if (s.dump_mode == systemtap_session::dump_matched_probes_vars)
@@ -168,20 +170,55 @@ printscript(systemtap_session& s, ostream& o)
                     arg_count[*ia]++;
                     arg_list.push_back(*ia);
 		  }
+
+                  // If verbosity is set, we want to print out all instances of duplicated probes and
+                  // distinguish them with the PC address.
+                  if (s.verbose > 0)
+                    {
+                      // We want to print the probe point signature (without the nested components).
+                      std::ostringstream sig;
+                      p->printsig(sig, false);
+
+                      if (s.dump_mode == systemtap_session::dump_matched_probes_vars && isatty(STDOUT_FILENO))
+                        o << s.colorize(sig.str(), "source");
+                      else
+                        o << sig.str();
+
+                      for (list<string>::iterator ir=var_list.begin(); ir!=var_list.end(); ++ir)
+                        o << " " << *ir;
+                      for (list<string>::iterator ir=arg_list.begin(); ir!=arg_list.end(); ++ir)
+                        o << " " << *ir;
+                     
+                      o << endl;
+
+                      arg_list.clear();
+                      var_list.clear();
+                    }
                 }
 
-	      uniq_list(arg_list);
-	      uniq_list(var_list);
+              if (!(s.verbose > 0))
+                {
+                  uniq_list(arg_list);
+                  uniq_list(var_list);
+                  
+                  o << pp;
 
-              // print the set-intersection only
-              for (list<string>::iterator ir=var_list.begin(); ir!=var_list.end(); ++ir)
-                if (var_count.find(*ir)->second == it->second.size()) // print locals
-                  o << " " << *ir;
-              for (list<string>::iterator ir=arg_list.begin(); ir!=arg_list.end(); ++ir)
-                if (arg_count.find(*ir)->second == it->second.size()) // print arguments
-                  o << " " << *ir;
+                  // print the set-intersection only
+                  for (list<string>::iterator ir=var_list.begin(); ir!=var_list.end(); ++ir)
+                    if (var_count.find(*ir)->second == it->second.size()) // print locals
+                      o << " " << *ir;
+                  for (list<string>::iterator ir=arg_list.begin(); ir!=arg_list.end(); ++ir)
+                    if (arg_count.find(*ir)->second == it->second.size()) // print arguments
+                      o << " " << *ir;
+
+                  o << endl;
+                }
             }
-          o << endl;
+          else
+            { 
+              o << pp;
+              o << endl;
+            } 
         }
     }
   else
