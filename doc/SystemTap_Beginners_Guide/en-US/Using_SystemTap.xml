@@ -335,7 +335,7 @@ to indicate the order of the files.
 <para>
 The following command starts SystemTap in file
 flight recorder mode with the output going to files named
-<filename>/tmp/iotime.log.<replaceable>[0-9]+</replaceable></filename>, each
+<filename>/tmp/pfaults.log.<replaceable>[0-9]+</replaceable></filename>, each
 file 1MB or smaller, and keeping latest two files:
 </para>
 
