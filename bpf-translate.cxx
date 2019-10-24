@@ -1744,11 +1744,6 @@ bpf_unparser::visit_foreach_loop(foreach_loop* s)
   if (i == this_locals->end())
     throw SEMANTIC_ERROR(_("unknown index"), keydecl->tok);
 
-  vardecl *valdecl = s->value->referent;
-  auto j = this_locals->find(valdecl);
-  if (j == this_locals->end())
-     throw SEMANTIC_ERROR(_("unknown value"), valdecl->tok);
-
   symbol *a;
   if (! (a = dynamic_cast<symbol *>(s->base)))
     throw SEMANTIC_ERROR(_("unknown type"), s->base->tok);
@@ -1790,14 +1785,12 @@ bpf_unparser::visit_foreach_loop(foreach_loop* s)
 
   value *limit = this_prog.new_reg();
   value *key = i->second;
-  value *val = j->second;
   value *i0 = this_prog.new_imm(0);
   value *key_ofs = this_prog.new_imm(-keysize);
   value *newkey_ofs = this_prog.new_imm(-keysize-keysize);
   value *frame = this_prog.lookup_reg(BPF_REG_10);
   block *body_block = this_prog.new_block ();
   block *load_block_1 = this_prog.new_block ();
-  block *load_block_2 = this_prog.new_block ();
   block *iter_block = this_prog.new_block ();
   block *join_block = this_prog.new_block ();
 
@@ -1861,41 +1854,54 @@ bpf_unparser::visit_foreach_loop(foreach_loop* s)
 
   // Return the key. If it's a string, it's already a string address.
   this_prog.mk_ld (this_ins, BPF_DW, key, frame, -keysize-keysize);
-  this_prog.load_map (this_ins, this_prog.lookup_reg(BPF_REG_1), map_id);
 
-  // To lookup value, we need to pass a pointer to the key. If the key is an 
-  // integer, we need to pass the location in the stack.
-  switch (keydecl->type)
+  // If the foreach loop iterates over the value, then fetch it too.
+  if (s->value)
     {
-      case pe_long:
-        this_prog.mk_binary (this_ins, BPF_ADD, this_prog.lookup_reg(BPF_REG_2),
-                             frame, newkey_ofs);
-        break;
-      case pe_string:
-        this_prog.mk_mov (this_ins, this_prog.lookup_reg(BPF_REG_2), key);
-        break;
-      default:
-        throw SEMANTIC_ERROR (_("unhandled foreach key type"), keydecl->tok);
-    }
+      vardecl *valdecl = s->value->referent;
 
-  this_prog.mk_call (this_ins, BPF_FUNC_map_lookup_elem, 2);
-  this_prog.mk_jcond (this_ins, EQ, this_prog.lookup_reg(BPF_REG_0), i0,
-                      join_block, load_block_2);
+      auto j = this_locals->find(valdecl);
+      if (j == this_locals->end())
+        throw SEMANTIC_ERROR(_("unknown value"), valdecl->tok);
 
-  // Load the corresponding value if key is valid.
-  set_block(load_block_2);
+      value *val = j->second;
+      block *load_block_2 = this_prog.new_block ();
 
-  // If the value is an integer, we must deference the pointer.
-  switch (valdecl->type)
-    {
-      case pe_long:
-        this_prog.mk_ld(this_ins, BPF_DW, val, this_prog.lookup_reg(BPF_REG_0), 0);
-        break;
-      case pe_string:
-        this_prog.mk_mov(this_ins, val, this_prog.lookup_reg(BPF_REG_0));
-        break;
-      default:
-        throw SEMANTIC_ERROR (_("unhandled foreach value type"), valdecl->tok);
+      // To lookup value, we need to pass a pointer to the key. If the key is an
+      // integer, we need to pass the location in the stack.
+      this_prog.load_map (this_ins, this_prog.lookup_reg(BPF_REG_1), map_id);
+      switch (keydecl->type)
+        {
+          case pe_long:
+            this_prog.mk_binary (this_ins, BPF_ADD, this_prog.lookup_reg(BPF_REG_2),
+                                 frame, newkey_ofs);
+            break;
+          case pe_string:
+            this_prog.mk_mov (this_ins, this_prog.lookup_reg(BPF_REG_2), key);
+            break;
+          default:
+            throw SEMANTIC_ERROR (_("unhandled foreach key type"), keydecl->tok);
+        }
+
+      this_prog.mk_call (this_ins, BPF_FUNC_map_lookup_elem, 2);
+      this_prog.mk_jcond (this_ins, EQ, this_prog.lookup_reg(BPF_REG_0), i0,
+                          join_block, load_block_2);
+
+      // Load the corresponding value if key is valid.
+      set_block(load_block_2);
+
+      // If the value is an integer, we must deference the pointer.
+      switch (valdecl->type)
+        {
+          case pe_long:
+            this_prog.mk_ld(this_ins, BPF_DW, val, this_prog.lookup_reg(BPF_REG_0), 0);
+            break;
+          case pe_string:
+            this_prog.mk_mov(this_ins, val, this_prog.lookup_reg(BPF_REG_0));
+            break;
+          default:
+            throw SEMANTIC_ERROR (_("unhandled foreach value type"), valdecl->tok);
+        }
     }
 
   if (s->limit)
