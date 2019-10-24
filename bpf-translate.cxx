@@ -2476,6 +2476,12 @@ bpf_unparser::visit_symbol(symbol *s)
   vardecl *v = s->referent;
   assert (v->arity < 1);
 
+  if (bpf_context_vardecl *c = dynamic_cast<bpf_context_vardecl*>(v))
+    {
+      result = emit_context_var(c);
+      return;
+    }
+
   auto g = glob.globals.find (v);
   if (g != glob.globals.end())
     {
