@@ -584,17 +584,25 @@ find_block_igraph (interference_graph &igraph, bitset::set1_ref &cross_call,
       // Remove sets from used before adding the uses.
       j->mark_sets(live, 0);
       if (j->is_call())
-	cross_call |= live;
+        cross_call |= live;
+
       j->mark_uses(live, 1);
 
+      // We use another bitset to include the variables that are
+      // defined at this instruction in the interference.
+      bitset::set1 interference = live;
+
+      if (!j->is_call())
+        j->mark_sets(interference, 1);
+
       // Record interference between two simultaneously live registers.
-      for (size_t r1 = live.find_first();
-	   r1 != bitset::set1_ref::npos;
-	   r1 = live.find_next (r1))
-	for (size_t r2 = live.find_next(r1);
-	     r2 != bitset::set1_ref::npos;
-	     r2 = live.find_next (r2))
-	  igraph.add(r1, r2);
+      for (size_t r1 = interference.find_first();
+	       r1 != bitset::set1_ref::npos;
+	       r1 = interference.find_next (r1))
+	    for (size_t r2 = interference.find_next(r1);
+	         r2 != bitset::set1_ref::npos;
+	         r2 = interference.find_next (r2))
+	      igraph.add(r1, r2);
     }
 }
 

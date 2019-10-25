@@ -5,19 +5,19 @@ global lim0 = 1
 global lim1 = 0
 
 probe begin {
-	printf("BEGIN\n")
+    printf("BEGIN\n")
 
-	a["p"] = -1
-	a["q"] = 0
-	a["r"] = 1
+    a["p"] = -1
+    a["q"] = 0
+    a["r"] = 1
 
-	b[-1] = "p"
-	b[0] = "q"
-	b[1] = "r"
+    b[-1] = "p"
+    b[0] = "q"
+    b[1] = "r"
 
-        lim0 = 0
-        lim1 = 1
-	exit()
+    lim0 = 0
+    lim1 = 1
+    exit()
 }
 
 global flag = 1
@@ -26,104 +26,123 @@ global flag = 1
 global end_probes = 0 // TODO: Remove this workaround for PR24812.
 
 probe end(1) {
-        printf("first end probe\n")
+    printf("first end probe\n")
 
-	foreach (ks- in a limit -10)
-	  flag = 0
-
-	foreach (ks- in a limit lim0)
-	  flag = 0
-
-        found = 0
-        foreach (ks+ in a limit lim1) {
-          found++
-          if (a[ks] != -1)
+    found = 0
+    foreach (ks+ in a limit lim1) {
+        found++
+        if (a[ks] != -1)
             flag = 0
-        }
+    }
 
-        foreach (k in b+ limit lim1) {
-          found++
-          if (k != -1)
+    foreach (k in b+ limit lim1) {
+        found++
+        if (k != -1)
             flag = 0
-        }
-        if (found != 2)
-          flag = 0
+    }
 
-	foreach (ks1 in a limit lim0)
-	  foreach (ks2 in a)
-	    flag = 0
+    if (found != 2)
+        flag = 0
 
-	foreach (ks1 in a)
-	  foreach (ks2 in a limit lim0)
-	    flag = 0
-
-	x = 0
-	foreach (ks in a)
-	  x += a[ks]
-	flag = flag && x == 0
-
-        if (end_probes == 0)
-          end_probes++
-          // { end_probes++; next; } // TODO: Investigate using next here.
-        else if (flag)
-		printf("END PASS\n")
-	else
-		printf("END FAIL\n")
+    if (end_probes < 3)
+        end_probes++ // { end_probes++; next; } // TODO: Investigate using next here.
+    else if (flag)
+        printf("END PASS\n")
+    else
+        printf("END FAIL\n")
 }
 
 probe end(2) {
-        printf("second end probe\n")
+    printf("second end probe\n")
 
-	x = -1
-	foreach (ks+ in a) {
-          flag = flag && x++ == a[ks]
+    foreach (ks- in a limit -10)
+        flag = 0
+
+    foreach (ks- in a limit lim0)
+        flag = 0
+     
+    foreach (ks1 in a limit lim0)
+        foreach (ks2 in a)
+            flag = 0
+
+    foreach (ks1 in a)
+        foreach (ks2 in a limit lim0)
+            flag = 0
+
+    x = 0
+    foreach (ks in a)
+        x += a[ks]
+    flag = flag && x == 0
+
+    if (end_probes < 3)
+        end_probes++ // { end_probes++; next; } // TODO: Investigate using next here.
+    else if (flag)
+        printf("END PASS\n")
+    else
+        printf("END FAIL\n")
+}
+
+probe end(3) {
+    printf("third end probe\n")
+
+    x = -1
+    foreach (ks+ in a) {
+        flag = flag && x++ == a[ks]
+    }
+    flag = flag && x == 2
+
+    x = 1
+    foreach (ks- in a) {
+        flag = flag && x-- == a[ks]
+    }
+    flag = flag && x == -2
+
+    x = -1
+    y = 1
+    foreach (ks1+ in a) {
+        foreach (k2 in b-) {
+            flag = flag && x == a[ks1] && y-- == k2
         }
-        flag = flag && x == 2
+        x++
+        y = 1
+    }
+        
+    if (end_probes < 3)
+        end_probes++ // { end_probes++; next; } // TODO: Investigate using next here.
+    else if (flag)
+        printf("END PASS\n")
+    else
+        printf("END FAIL\n")
+}
 
-	x = 1
-	foreach (ks- in a) {
-	  flag = flag && x-- == a[ks]
+probe end(4) {
+    printf("fourth end probe\n")
+
+    x = -1
+    y = 1
+    foreach (ks1+ in a) {
+        foreach (ks2- in a) {
+            flag = flag && x == a[ks1] && y-- == a[ks2]
         }
-        flag = flag && x == -2
+        x++
+        y = 1
+    }
 
-        x = -1
-	y = 1
-	foreach (ks1+ in a) {
-	  foreach (k2 in b-) {
-            flag = flag && x == a[ks1]
-                   && y-- == k2
-          }
-	  x++
-	  y = 1
-        }
-
-        x = -1
-	y = 1
-        foreach (ks1+ in a) {
-          foreach (ks2- in a) {
-            flag = flag && x == a[ks1]
-                   && y-- == a[ks2]
-          }
-	  x++
-	  y = 1
-        }
-
-        // Also test outer loop with no sorting, inner loop with sorting.
-        x = -1
-	y = 1
-        foreach (ks1 in a) {
-          foreach (ks2- in a) {
+    // Also test outer loop with no sorting, inner loop with sorting.
+    x = -1
+    y = 1
+    foreach (ks1 in a) {
+        foreach (ks2- in a) {
             flag = flag && y-- == a[ks2]
-          }
-	  x++
-	  y = 1
         }
+        x++
+        y = 1
+    }
 
-        if (end_probes == 0)
-          end_probes++
-          // { end_probes++; next; } // TODO: Investigate using next here.
-        else if (flag)
-		printf("END PASS\n")
-	else
-		printf("END FAIL\n")
+    if (end_probes < 3)
+        end_probes++ // { end_probes++; next; } // TODO: Investigate using next here.
+    else if (flag)
+        printf("END PASS\n")
+    else
+        printf("END FAIL\n")
 }
