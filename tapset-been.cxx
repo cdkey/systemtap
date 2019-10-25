@@ -209,7 +209,7 @@ sort_for_bpf(systemtap_session& s __attribute__ ((unused)),
 	begin_v.push_back(p);
     }
 
-  for (auto i = be->probes.rbegin(); i != be->probes.rend(); ++i)
+  for (auto i = be->probes.begin(); i != be->probes.end(); ++i)
     {
       be_derived_probe *p = *i;
       if (p->type != BEGIN)
