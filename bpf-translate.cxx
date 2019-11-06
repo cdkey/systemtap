@@ -3303,7 +3303,15 @@ bpf_unparser::emit_transport_msg (globals::perf_event_type msg,
         if (arg->is_str() && arg->is_format())
           arg_size = sizeof(BPF_TRANSPORT_ARG); // pass index of interned str
         else
-          arg_size = BPF_MAXSTRINGLEN;
+          {
+            arg_size = BPF_MAXSTRINGLEN;
+            // XXX hack for PR25169: Unfortunately, we may conflict with prior
+            // stack allocations in embedded assembly code which were done
+            // before seeing this transport message. So we need to allocate
+            // below max_tmp_space. Could switch to a preallocation scheme that
+            // scans the code for string operations.
+            arg_size += this_prog.max_tmp_space;
+          }
         break;
       default:
         assert(false); // XXX: Should be caught earlier.
