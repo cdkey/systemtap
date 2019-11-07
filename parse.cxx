@@ -1248,6 +1248,7 @@ parser::expect_known (token_type tt, string const & expected)
   const token *t = next();
   if (! (t && t->type == tt && t->content == expected))
     throw PARSE_ERROR (_F("expected '%s'", expected.c_str()));
+  // NB: PR25174 may require consume_string_literals() someday
   swallow (); // We are done with it, content was copied.
 }
 
@@ -1258,8 +1259,17 @@ parser::expect_unknown (token_type tt, interned_string & target)
   const token *t = next();
   if (!(t && t->type == tt))
     throw PARSE_ERROR (_("expected ") + tt2str(tt));
-  target = t->content;
-  swallow (); // We are done with it, content was copied.
+  if (t->type==tok_string)
+    {
+      literal_string *ls = consume_string_literals (t);
+      target = ls->value;
+      delete ls;
+    }
+  else
+    {
+      target = t->content;
+      swallow (); // We are done with it, content was copied.
+    }
 }
 
 
@@ -1269,6 +1279,7 @@ parser::expect_unknown2 (token_type tt1, token_type tt2, interned_string & targe
   const token *t = next();
   if (!(t && (t->type == tt1 || t->type == tt2)))
     throw PARSE_ERROR (_F("expected %s or %s", tt2str(tt1).c_str(), tt2str(tt2).c_str()));
+  // NB: PR25174 may require consume_string_literals() someday
   target = t->content;
   swallow (); // We are done with it, content was copied.
 }
