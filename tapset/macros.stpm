@@ -1,7 +1,8 @@
 // Return MAXSTRINGLEN
 @define MAXSTRINGLEN
 %(
-	@const("MAXSTRINGLEN")
+  // XXX: For BPF, keep in sync with BPF_MAXSTRINGLEN in bpf-internal.h.
+  %( runtime == "bpf" %? 64 %: @const("MAXSTRINGLEN") %)
 %)
 
 @define __compat_task

@@ -1,0 +1,15 @@
+// note: requires coreutils-debuginfo
+
+probe begin {
+  printf("BEGIN\n")
+}
+
+probe process("/usr/bin/sleep").function("main") {
+  arg = user_string($argv[0])
+  printf("found %s\n", arg)
+  exit()
+}
+
+probe end {
+  printf("END PASS\n")
+}

@@ -45,6 +45,9 @@ proc stapbpf_run { TEST_NAME OUTPUT_STR options args } {
     # don't the following: ... $test_file_name could be some transient or leftover file
     # if [file readable $test_file_name] { lappend cmd $test_file_name }
 
+    # child process, only for some commands
+    set mypid2 0
+
     send_log "executing: $cmd\n"
     eval spawn $cmd
     set mypid [exp_pid -i $spawn_id]
@@ -63,6 +66,13 @@ proc stapbpf_run { TEST_NAME OUTPUT_STR options args } {
             # By default, "expect -re" will match up to 2000 chars.
             # Increase this to 8K worth of data.
             exp_match_max 8192
+
+            # create a child process for the tests that require one
+            switch $TEST_NAME {
+                user_string.stp {
+                    eval exec /usr/bin/sleep 2
+                }
+            }
 
             # Avoid PR17274 to propagate
             set origexpinternal 1
