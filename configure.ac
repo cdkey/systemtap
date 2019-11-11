@@ -218,10 +218,10 @@ dnl   AC_MSG_NOTICE([using ld.gold to link])
 dnl fi
 
 
-# Compiling without fPIE by default (see PR 9922)
+# Compiling with fPIE by default (but see PR 9922)
 AC_ARG_ENABLE([pie],
   [AS_HELP_STRING([--enable-pie], [enable position-independent-executable])])
-AS_IF([test "x$enable_pie" == xyes],[
+AS_IF([test "x$enable_pie" != xno],[
    PIECFLAGS='-fPIE'
    PIECXXFLAGS='-fPIE'
    PIELDFLAGS='-pie -Wl,-z,relro -Wl,-z,now'

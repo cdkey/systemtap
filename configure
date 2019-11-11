@@ -10148,13 +10148,13 @@ fi
 
 
 
-# Compiling without fPIE by default (see PR 9922)
+# Compiling with fPIE by default (but see PR 9922)
 # Check whether --enable-pie was given.
 if test "${enable_pie+set}" = set; then :
   enableval=$enable_pie;
 fi
 
-if test "x$enable_pie" == xyes; then :
+if test "x$enable_pie" != xno; then :
 
    PIECFLAGS='-fPIE'
    PIECXXFLAGS='-fPIE'
