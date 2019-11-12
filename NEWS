@@ -1,5 +1,8 @@
 * What's new in version 4.2, PRERELEASE
 
+- The values of an array can now be iterated over in foreach loops in 
+  the stapbpf backend. They are no longer defaulted to 0.
+
 - The stapbpf backend now supports order parameterization for begin
   and end probes.
 
