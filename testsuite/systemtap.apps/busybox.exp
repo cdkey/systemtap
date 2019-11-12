@@ -10,7 +10,7 @@ set download    "wget -q https://busybox.net/downloads/$release.tar.bz2 -O $test
 set extract     "tar xjf $testpath/$release.tar.bz2 -C $testpath"
 set config_reg  "cp $testpath/config_reg $testpath/$release/.config"
 set config_lto  "cp $testpath/config_lto $testpath/$release/.config"
-set make        "make -C $testpath/$release"
+set make        "make -C $testpath/$release busybox_unstripped"
 set clean       "rm -rf $testpath/$release && rm -rf $testpath/$release.tar.bz2"
 
 set ok_probe_1 0
@@ -69,17 +69,17 @@ expect {
 
 spawn stap -e $probe_3 -c $process
 
+
 expect {
     "bar" {incr ok_probe_3; exp_continue}
 }
 
-if { $ok_probe_1 == 4 } { pass "$test" } { fail "$test" }
+if { $ok_probe_1 == 4 } { pass "$test 1" } { fail "$test 1" }
 
 setup_kfail GCC *-*-*
-if { $ok_probe_2 == 4 } { pass "$test" } { fail "$test" }
+if { $ok_probe_2 == 4 } { pass "$test 2" } { fail "$test 2" }
 setup_kfail GCC *-*-*
-if { $ok_probe_3 == 2 } { pass "$test" } { fail "$test" }
+if { $ok_probe_3 == 2 } { pass "$test 3" } { fail "$test 3" }
 
 exec sh -c $clean
-
 
