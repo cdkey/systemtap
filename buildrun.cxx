@@ -158,7 +158,12 @@ make_make_objs_cmd(systemtap_session& s, const string& dir)
   //
   // So if we're only interested in the stage 1 objects, we can
   // cheat and make only the $(module-dirs) part.
-  return make_any_make_cmd(s, dir, "_module_" + dir);
+  //
+  // ... at least, before kernel commit c99f3918cf.
+  if (strverscmp (s.kernel_base_release.c_str(), "5.4") < 0)  
+    return make_any_make_cmd(s, dir, "_module_" + dir);
+  else
+    return make_any_make_cmd(s, dir, "modules"); // just build the lot
 }
 
 static void
