@@ -527,7 +527,7 @@ static int processCFI(const u8 *start, const u8 *end, unsigned long targetLoc,
 					REG_STATE.cfa.reg = value;
 					dbug_unwind(1, "DW_CFA_def_cfa reg=%ld\n", REG_STATE.cfa.reg);
 				}
-				/*nobreak */
+				/* fallthrough */
 			case DW_CFA_def_cfa_offset:
 				if (REG_STATE.cfa_is_expr != 0) {
 					_stp_warn("Unexpected DW_CFA_def_cfa_offset\n");
@@ -549,7 +549,7 @@ static int processCFI(const u8 *start, const u8 *end, unsigned long targetLoc,
 						    value, DWARF_REG_MAP(value));
 					REG_STATE.cfa.reg = value;
 				}
-				/*nobreak */
+				/* fallthrough */
 			case DW_CFA_def_cfa_offset_sf:
 				if (REG_STATE.cfa_is_expr != 0) {
 					_stp_warn("Unexpected DW_CFA_def_cfa_offset_sf\n");

@@ -154,12 +154,13 @@ static unsigned long read_ptr_sect(const u8 **pLoc, const void *end,
 				value = _stp_get_unaligned(ptr.p32u++);
 			break;
 		}
+		/* fallthrough */
 	case DW_EH_PE_data8:
 		BUILD_BUG_ON(sizeof(u64) != sizeof(value));
 #else
 		BUILD_BUG_ON(sizeof(u32) != sizeof(value));
 #endif
-	/* fallthrough, see above. */
+		/* fallthrough, see above. */
 	case DW_EH_PE_absptr:
 		if (compat_task)
 		{

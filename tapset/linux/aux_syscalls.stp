@@ -131,8 +131,11 @@ sigset_from_compat(sigset_t *set, compat_sigset_t *compat)
 {
 	switch (_NSIG_WORDS) {
 	case 4: set->sig[3] = compat->sig[6] | (((long)compat->sig[7]) << 32 );
+	  /*fallthrough*/
 	case 3: set->sig[2] = compat->sig[4] | (((long)compat->sig[5]) << 32 );
+	  /*fallthrough*/
 	case 2: set->sig[1] = compat->sig[2] | (((long)compat->sig[3]) << 32 );
+	  /*fallthrough*/
 	case 1: set->sig[0] = compat->sig[0] | (((long)compat->sig[1]) << 32 );
 	}
 }
@@ -3599,10 +3602,13 @@ function _struct_sigaction32_u:string(uaddr:long)
 	    {
 	    case 4: act.sa_mask.sig[3] = act32.sa_mask.sig[6]
 		| (((long)act32.sa_mask.sig[7]) << 32);
+	      /* fallthrough */
 	    case 3: act.sa_mask.sig[2] = act32.sa_mask.sig[4]
 		| (((long)act32.sa_mask.sig[5]) << 32);
+	      /* fallthrough */
 	    case 2: act.sa_mask.sig[1] = act32.sa_mask.sig[2]
 		| (((long)act32.sa_mask.sig[3]) << 32);
+	      /* fallthrough */
 	    case 1: act.sa_mask.sig[0] = act32.sa_mask.sig[0]
 		| (((long)act32.sa_mask.sig[1]) << 32);
 	    }

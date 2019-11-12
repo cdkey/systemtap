@@ -351,18 +351,23 @@ _stp_syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
 		case 0:
 			if (!n--) break;
 			*args++ = regs->bx;
+			/* fallthrough */
 		case 1:
 			if (!n--) break;
 			*args++ = regs->cx;
+			/* fallthrough */
 		case 2:
 			if (!n--) break;
 			*args++ = regs->dx;
+			/* fallthrough */
 		case 3:
 			if (!n--) break;
 			*args++ = regs->si;
+			/* fallthrough */
 		case 4:
 			if (!n--) break;
 			*args++ = regs->di;
+			/* fallthrough */
 		case 5:
 			if (!n--) break;
 			*args++ = regs->bp;
@@ -370,18 +375,23 @@ _stp_syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
 		case 0:
 			if (!n--) break;
 			*args++ = regs->rbx;
+			/* fallthrough */
 		case 1:
 			if (!n--) break;
 			*args++ = regs->rcx;
+			/* fallthrough */
 		case 2:
 			if (!n--) break;
 			*args++ = regs->rdx;
+			/* fallthrough */
 		case 3:
 			if (!n--) break;
 			*args++ = regs->rsi;
+			/* fallthrough */
 		case 4:
 			if (!n--) break;
 			*args++ = regs->rdi;
+			/* fallthrough */
 		case 5:
 			if (!n--) break;
 			*args++ = regs->rbp;
@@ -395,18 +405,23 @@ _stp_syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
 	case 0:
 		if (!n--) break;
 		*args++ = regs->di;
+		/* fallthrough */
 	case 1:
 		if (!n--) break;
 		*args++ = regs->si;
+		/* fallthrough */
 	case 2:
 		if (!n--) break;
 		*args++ = regs->dx;
+		/* fallthrough */
 	case 3:
 		if (!n--) break;
 		*args++ = regs->r10;
+		/* fallthrough */
 	case 4:
 		if (!n--) break;
 		*args++ = regs->r8;
+		/* fallthrough */
 	case 5:
 		if (!n--) break;
 		*args++ = regs->r9;
@@ -414,18 +429,23 @@ _stp_syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
 	case 0:
 		if (!n--) break;
 		*args++ = regs->rdi;
+		/* fallthrough */
 	case 1:
 		if (!n--) break;
 		*args++ = regs->rsi;
+		/* fallthrough */
 	case 2:
 		if (!n--) break;
 		*args++ = regs->rdx;
+		/* fallthrough */
 	case 3:
 		if (!n--) break;
 		*args++ = regs->r10;
+		/* fallthrough */
 	case 4:
 		if (!n--) break;
 		*args++ = regs->r8;
+		/* fallthrough */
 	case 5:
 		if (!n--) break;
 		*args++ = regs->r9;
@@ -555,23 +575,30 @@ static inline void _stp_syscall_get_arguments(struct task_struct *task,
 		case 6:
 			if (!n--) break;
 			*args++ = regs->r13;
+			/* fallthrough */
 		case 5:
 			if (!n--) break;
 			*args++ = regs->r15;
+			/* fallthrough */
 		case 4:
 			if (!n--) break;
 			*args++ = regs->r14;
+			/* fallthrough */
 		case 3:
 			if (!n--) break;
 			*args++ = regs->r10;
+			/* fallthrough */
 		case 2:
 			if (!n--) break;
 			*args++ = regs->r9;
+			/* fallthrough */
 		case 1:
 			if (!n--) break;
 			*args++ = regs->r11;
+			/* fallthrough */
 		case 0:
 			if (!n--) break;
+			/* fallthrough */
 		default:
 			BUG();
 			break;
@@ -603,18 +630,23 @@ _stp_syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
 	case 0:
 		if (!n--) break;
 		*args++ = regs->orig_gpr2 & mask;
+		/* fallthrough */
 	case 1:
 		if (!n--) break;
 		*args++ = regs->gprs[3] & mask;
+		/* fallthrough */
 	case 2:
 		if (!n--) break;
 		*args++ = regs->gprs[4] & mask;
+		/* fallthrough */
 	case 3:
 		if (!n--) break;
 		*args++ = regs->gprs[5] & mask;
+		/* fallthrough */
 	case 4:
 		if (!n--) break;
 		*args++ = regs->gprs[6] & mask;
+		/* fallthrough */
 	case 5:
 		if (!n--) break;
 		*args++ = regs->args[0] & mask;
