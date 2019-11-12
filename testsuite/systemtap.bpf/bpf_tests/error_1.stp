@@ -1,0 +1,19 @@
+probe error {
+
+    printf("END PASS\n")
+
+}
+
+probe end {
+
+    printf("END FAIL\n")
+
+}
+
+probe begin {
+
+    printf("BEGIN\n")
+    error("CONTINUE")
+    exit()
+
+}

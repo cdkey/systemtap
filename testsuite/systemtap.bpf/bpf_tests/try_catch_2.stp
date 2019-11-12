@@ -1,0 +1,40 @@
+probe kernel.function("vfs_read") {
+
+    try {
+
+        printf("BEGIN\n")
+
+        try {
+
+            error("E")
+
+        } catch {
+
+            printf("CONTINUE 1\n")
+
+            try {
+
+                printf("CONTINUE 2\n")
+                error("CONTINUE 3")
+
+            } catch (msg) {
+
+                printf("%s\n", msg)
+
+            }
+
+        }
+
+        printf("CONTINUE 4\n")
+        error("CONTINUE 5")
+        printf("END FAIL\n")
+
+    } catch (msg) {
+
+        printf("%s\n", msg);
+
+    }
+
+    printf("END PASS\n")
+    exit()
+}

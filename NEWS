@@ -1,5 +1,8 @@
 * What's new in version 4.3, PRERELEASE
 
+- The stapbpf backend now supports try-catch statements, an improved
+  error tapset and error probes.
+
 - The "Build-id mismatch" condition now becomes a warning, so while
   related probes are not inserted, the rest of the script may run.
 

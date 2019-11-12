@@ -131,6 +131,10 @@ static std::vector<int> prog_fds;
 // Programs to run at begin and end of execution.
 static Elf_Data *prog_begin;
 static Elf_Data *prog_end;
+static Elf_Data *prog_error;
+
+// Used to check if a hard error has occured.
+bool error = false; 
 
 #define DEBUGFS		"/sys/kernel/debug/tracing/"
 #define KPROBE_EVENTS	DEBUGFS "kprobe_events"
@@ -1302,13 +1306,16 @@ init_internal_globals()
 {
   using namespace bpf;
 
-  int key = globals::EXIT;
+  std::vector<int> keys;
+  keys.push_back(globals::EXIT);
+  keys.push_back(globals::ERRORS);
+
   int64_t val = 0;
 
-  if (bpf_update_elem(map_fds[globals::internal_map_idx],
-                     (void*)&key, (void*)&val, BPF_ANY) != 0)
-    fatal("Error updating pid: %s\n", strerror(errno));
-
+  for (int key: keys)
+    if (bpf_update_elem(map_fds[globals::internal_map_idx],
+                       (void*)&key, (void*)&val, BPF_ANY) != 0)
+      fatal("Error updating pid: %s\n", strerror(errno));
 }
 
 // PR22330: Initialize perf_event_map and perf_fds.
@@ -1350,7 +1357,7 @@ init_perf_transport()
       // Create a data structure to track what's happening on each CPU:
       bpf_transport_context *ctx
         = new bpf_transport_context(cpu, pmu_fd, ncpus, map_attrs, &map_fds,
-                                    output_f, &interned_strings, &aggregates);
+                                    output_f, &interned_strings, &aggregates, &error);
       transport_contexts.push_back(ctx);
     }
 
@@ -1466,6 +1473,7 @@ load_bpf_file(const char *module)
   unsigned kprobes_idx = 0;
   unsigned begin_idx = 0;
   unsigned end_idx = 0;
+  unsigned error_idx = 0;
 
   std::vector<unsigned> procfsprobes_idx;
 
@@ -1515,6 +1523,8 @@ load_bpf_file(const char *module)
 	begin_idx = i;
       else if (strcmp(shname, "stap_end") == 0)
 	end_idx = i;
+      else if (strcmp(shname, "stap_error") == 0)
+        error_idx = i;
       else if (strncmp(shname, "procfs", strlen("procfs")) == 0) {
         // procfs probes have a "procfs" prefix in their names, we don't
         // use normal strcmp as the full shname includes args
@@ -1622,7 +1632,7 @@ load_bpf_file(const char *module)
 	prog_fds[i] = prog_load(sh_data[i], sh_name[i]);
     }
 
-  // Remember begin, end and procfs-like probes.
+  // Remember begin, end, error and procfs-like probes.
   if (begin_idx)
     {
       Elf64_Shdr *shdr = shdrs[begin_idx];
@@ -1634,6 +1644,12 @@ load_bpf_file(const char *module)
       Elf64_Shdr *shdr = shdrs[end_idx];
       if (shdr->sh_flags & SHF_EXECINSTR)
 	prog_end = sh_data[end_idx];
+    }
+  if (error_idx)
+    {
+      Elf64_Shdr *shdr = shdrs[error_idx];
+      if (shdr->sh_flags & SHF_EXECINSTR)
+	prog_error = sh_data[error_idx];
     }
 
   for (unsigned i = 0; i < procfsprobes_idx.size(); ++i)
@@ -1693,6 +1709,19 @@ static int
 get_exit_status()
 {
   int key = bpf::globals::EXIT;
+  int64_t val = 0;
+
+  if (bpf_lookup_elem
+       (map_fds[bpf::globals::internal_map_idx], &key, &val) != 0)
+    fatal("error during bpf map lookup: %s\n", strerror(errno));
+
+  return val;
+}
+
+static int
+get_error_count()
+{
+  int key = bpf::globals::ERRORS;
   int64_t val = 0;
 
   if (bpf_lookup_elem
@@ -1814,7 +1843,7 @@ perf_event_loop(pthread_t main_thread)
               // Saw STP_EXIT message. If the exit flag is set,
               // wake up main thread to begin program shutdown.
               if (get_exit_status())
-                  goto signal_exit;
+                goto signal_exit;
               continue;
             }
           if (ret != LIBBPF_PERF_EVENT_CONT)
@@ -2117,7 +2146,7 @@ main(int argc, char **argv)
   unsigned ncpus = map_attrs[bpf::globals::perf_event_map_idx].max_entries;
   bpf_transport_context uctx(default_cpu, -1/*pmu_fd*/, ncpus,
                              map_attrs, &map_fds, output_f,
-                             &interned_strings, &aggregates);
+                             &interned_strings, &aggregates, &error);
 
   if (create_group_fds() < 0)
     fatal("Error creating perf event group: %s\n", strerror(errno));
@@ -2149,8 +2178,9 @@ main(int argc, char **argv)
   ioctl(group_fd, PERF_EVENT_IOC_ENABLE, 0);
 
   // Wait for STP_EXIT message:
-  while (!get_exit_status())
+  while (!get_exit_status()) {
     pause();
+  }
 
   // Disable the kprobes before deregistering and running exit probes.
   ioctl(group_fd, PERF_EVENT_IOC_DISABLE, 0);
@@ -2172,12 +2202,18 @@ main(int argc, char **argv)
   signal(SIGINT, (sighandler_t)sigint); // restore previously ignored signal
   signal(SIGTERM, (sighandler_t)sigint);
 
-  // Run the end+error probes.
-  if (prog_end)
+  // Run the end probes.
+  if (prog_end && !error)
     bpf_interpret(prog_end->d_size / sizeof(bpf_insn),
                   static_cast<bpf_insn *>(prog_end->d_buf),
                   &uctx);
 
+  // Run the error probes.
+  if (prog_error && error) 
+    bpf_interpret(prog_error->d_size / sizeof(bpf_insn),
+                  static_cast<bpf_insn *>(prog_error->d_buf),
+                  &uctx);
+  
   // Clean up transport layer allocations:
   for (std::vector<bpf_transport_context *>::iterator it = transport_contexts.begin();
        it != transport_contexts.end(); it++)
@@ -2185,5 +2221,14 @@ main(int argc, char **argv)
 
   elf_end(module_elf);
   fclose(kmsg);
+
+  int error_count = get_error_count();
+
+  if (error_count > 0) {
+    // TODO: Need better color configuration.
+    fprintf(stderr, "\033[0;33m" "WARNING:" "\033[0m" " Number of errors: %d\n", error_count); 
+    return 1;
+  }
+
   return 0;
 }

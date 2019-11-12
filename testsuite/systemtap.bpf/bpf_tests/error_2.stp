@@ -1,0 +1,29 @@
+global count
+
+probe error(1) {
+
+    count++
+
+}
+
+probe error(2) {
+
+    count++
+
+}
+
+probe error(5) {
+
+    if (count == 2)
+        printf("END PASS\n")
+    else
+        printf("END FAIL\n")
+
+}
+
+probe begin(1) {
+
+    printf("BEGIN\n")
+    error("CONTINUE")
+
+}

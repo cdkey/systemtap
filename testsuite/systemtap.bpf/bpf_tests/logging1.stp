@@ -12,9 +12,8 @@ probe kernel.function("vfs_read") {
   warn("(2) a warning")
   warn("(2) a warning with newline\n")
   assert(0, "failed assertion (supposed to happen when testing)")
-  exit()
 }
 
-probe end {
+probe error {
   printf("END PASS\n")
 }

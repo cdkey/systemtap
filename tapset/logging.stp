@@ -95,7 +95,8 @@ function abort ()
 %:
   { /* unprivileged */ /* bpf */
     printf("ERROR: abort() not supported in eBPF backend\n")
-    exit()  /* TODO: need to abort the execution flow immediately -- could be handled with a special assembly operation */
+    exit() 
+    /* TODO: need to abort the execution flow immediately -- consider using terminate statement */
   }
 %)
 %)
@@ -122,9 +123,18 @@ function error (msg:string)
   %}
 %:
    { /* unprivileged */ /* bpf */
-     // TODO: should communicate an 'error' exit status
-     printf("ERROR: %s\n", msg)
-     exit() // TODO: should support MAXERRORS, probe error {}
+   
+     // If error is called within a try block, the instruction flow
+     // will switch to the corresponding catch block.
+     _jump_to_catch(msg)   
+
+     // Execution will reach here if error was called outside a try
+     // block. In this case, the error message will be stored for
+     // printing and the error status will be set.
+     _register_error(msg)   
+
+     // Short-circuit the program to its exit.
+     _terminate()
    }
 %)
 

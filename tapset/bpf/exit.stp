@@ -29,3 +29,51 @@ function _send_exit_msg:long ()
     0x7a, $data, -, -, 0x0;  /* stdw [$data+0], STP_EXIT */
     call, $rc, perf_event_output, $ctx, $perf_events_map, BPF_F_CURRENT_CPU, $data, 8;
 %}
+
+/**
+ * function _send_error_msg
+ *
+ * Description: Communicate a hard error through perf_events transport.
+ */
+function _send_error_msg:long ()
+%{ /* bpf */ /* unprivileged */
+    0x118, $perf_events_map, -, -, 1; /* BPF_LD_MAP_FD($perf_events_map, map1) */
+    alloc, $data, 8, align;
+    0x7a, $data, 0, 0, 1; /* stdw [$data+0], STP_ERROR */
+    call, $rc, perf_event_output, $ctx, $perf_events_map, BPF_F_CURRENT_CPU, $data, 8;
+%}
+
+/**
+ * function _jump_to_catch
+ *
+ * Description: Wrapper for the jump_to_catch statement. Checks if there is a catch
+ * block that can be jumped to, and jumps if there is a valid block. It also passes 
+ * the error message during compile time for the creation of the catch block.
+ */
+function _jump_to_catch(msg:string)
+%{ /* bpf */ /* unprivileged */
+   jump_to_catch, $msg;
+%}
+
+/**
+ * function _register_error
+ *
+ * Description: Wrapper for the register_error statement. This function only runs after
+ * the program encounters an error outside try blocks. During runtime, it will increment
+ * the total error count and check that against the limit provided with -D. It will also
+ * pass the error message to the userspace during runtime for printing in the epilogue.
+ */
+function _register_error(msg:string)
+%{ /* bpf */ /* unprivileged */
+   register_error, $msg;
+%}
+
+/**
+ * function _terminate
+ *
+ * Description: Wrapper for the terminate statement. Short-circuit's the program to exit.
+ */
+function _terminate()
+%{ /* bpf */ /* unpriviledged */
+   terminate;
+%}

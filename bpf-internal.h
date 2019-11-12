@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include <vector>
+#include <queue>
 #include <cassert>
 #include <unordered_set>
 #include <unordered_map>
@@ -470,11 +471,13 @@ struct globals
 
   // Indicates whether exit() has been called from within a bpf program.
   struct vardecl internal_exit;
+  struct vardecl internal_errors;
 
   // Indexes into the bpf map of internal globals.
   enum internal_global_idx
   {
     EXIT = 0,
+    ERRORS, // Tracks the total number of errors.
     NUM_INTERNALS, // non-ABI
   };
 
@@ -491,6 +494,9 @@ struct globals
   enum perf_event_type
   {
     STP_EXIT = 0,
+    STP_ERROR,
+    STP_STORE_ERROR_MSG,
+    STP_PRINT_ERROR_MSG,
     STP_PRINTF_START,
     STP_PRINTF_END,
     STP_PRINTF_FORMAT,

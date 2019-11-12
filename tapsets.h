@@ -35,7 +35,8 @@ struct be_derived_probe_group;
 bool sort_for_bpf(systemtap_session& s,
 		  be_derived_probe_group *,
 		  std::vector<derived_probe *> &begin_v,
-		  std::vector<derived_probe *> &end_v);
+		  std::vector<derived_probe *> &end_v,
+                  std::vector<derived_probe *> &error_v);
 
 struct generic_kprobe_derived_probe_group;
 struct uprobe_derived_probe_group;

@@ -171,6 +171,16 @@ struct bpf_unparser : public throwing_visitor
   std::vector<value *> func_return_val;
   std::vector<functiondecl *> func_calls;
 
+  // Used to track errors.
+  value *error_status;
+
+  // Used to switch execution of program to catch blocks.
+  std::vector<block *> catch_jump;
+  std::vector<value *> catch_msg;
+
+  // Contains the mapping for resource constraints set by -D.
+  std::map<std::string, int> constraints;
+ 
   // Local variable declarations.
   typedef std::unordered_map<vardecl *, value *> locals_map;
   locals_map *this_locals;
@@ -183,7 +193,7 @@ struct bpf_unparser : public throwing_visitor
 
   // TODO General triage of bpf-possible functionality:
   virtual void visit_block (::block *s);
-  // TODO visit_try_block -> UNHANDLED
+  virtual void visit_try_block (try_block* s);
   virtual void visit_embeddedcode (embeddedcode *s);
   virtual void visit_null_statement (null_statement *s);
   virtual void visit_expr_statement (expr_statement *s);
@@ -283,6 +293,7 @@ struct bpf_unparser : public throwing_visitor
   void emit_str_arg(value *arg, int ofs, value *str);
 
   void add_prologue();
+  void add_epilogue();
   locals_map *new_locals(const std::vector<vardecl *> &);
 
   bpf_unparser (program &c, globals &g);
@@ -293,7 +304,24 @@ bpf_unparser::bpf_unparser(program &p, globals &g)
   : throwing_visitor ("unhandled statement or expression type"),
     result(NULL), this_prog(p), glob(g), this_locals(NULL),
     ret0_block(NULL), exit_block(NULL)
-{ }
+{
+  // If there are any resource constraints set with -D, we populate 
+  // them into a map (as we cannot use macros in stapbpf).
+  for (std::string macro: glob.session->c_macros) 
+    {
+      // Example: MAXERRORS=3
+      size_t delim = macro.find('='); 
+
+      std::string option = macro.substr(0, delim);
+      int limit = std::stoi(macro.substr(delim + 1));
+      
+      // Negative limits become 0.
+      if (limit < 0)
+        limit = 0;
+
+      constraints[option] = limit; 
+    }
+}
 
 bpf_unparser::~bpf_unparser()
 {
@@ -322,13 +350,17 @@ bpf_unparser::get_exit_block()
   if (exit_block)
     return exit_block;
 
-  block *b = this_prog.new_block();
-  insn_append_inserter ins(b, "exit_block");
+  block* cont = this_ins.get_block();
+  block* exit = this_prog.new_block();
 
-  this_prog.mk_exit(ins);
+  set_block(exit);
+  add_epilogue();
+  this_prog.mk_exit(this_ins);
 
-  exit_block = b;
-  return b;
+  set_block(cont);
+
+  exit_block = exit;
+  return exit;
 }
 
 block *
@@ -775,6 +807,9 @@ bpf_unparser::visit_block (::block *s)
    <stmt> ::= label, <dest=label>;
    <stmt> ::= alloc, <dest=reg>, <imm=imm> [, align|noalign];
    <stmt> ::= call, <dest=optreg>, <param[0]=function name>, <param[1]=arg>, ...;
+   <stmt> ::= jump_to_catch, <param[0]=error message>; 
+   <stmt> ::= register_error, <param[0]=error message>; 
+   <stmt> ::= terminate;
    <stmt> ::= <code=integer opcode>, <dest=reg>, <src1=reg>,
               <off/jmp_target=off>, <imm=imm>;
 
@@ -1045,6 +1080,26 @@ bpf_unparser::parse_asm_stmt (embeddedcode *s, size_t start,
         {
           stmt.align_alloc = false;
         }
+    }
+  else if (args[0] == "jump_to_catch")
+    {
+      if (args.size() != 2)
+        throw SEMANTIC_ERROR (_F("invalid bpf embeddedcode syntax (jump_to_catch expects 1 arg, found %llu)", (long long) args.size()-1), stmt.tok);
+      stmt.kind = args[0];
+      stmt.params.push_back(args[1]); // Error message
+    }
+  else if (args[0] == "register_error")
+    {
+      if (args.size() != 2)
+        throw SEMANTIC_ERROR (_F("invalid bpf embeddedcode syntax (register_error expects 1 arg, found %llu)", (long long) args.size()-1), stmt.tok);
+      stmt.kind = args[0];
+      stmt.params.push_back(args[1]); // Error message
+    }
+  else if (args[0] == "terminate")
+    { 
+      if (args.size() != 1)
+        throw SEMANTIC_ERROR (_F("invalid bpf embeddedcode syntax (terminate does not take any args, found %llu)", (long long) args.size()-1), stmt.tok);
+      stmt.kind = args[0];
     }
   else if (args[0] == "call")
     {
@@ -1367,6 +1422,56 @@ bpf_unparser::emit_asm_opcode (const asm_stmt &stmt,
 }
 
 void
+bpf_unparser::visit_try_block (try_block* s)
+{
+  block* catch_block = this_prog.new_block();
+  block* join_block = this_prog.new_block();
+
+  // Prepare the catch block in case an error is called. The 
+  // catch block code is emitted after the try block because 
+  // error messages are propagated during the error statements
+  // which are expected to occur in the try blocks. 
+  catch_jump.push_back(catch_block);
+
+  // Emit code for statements inside try block. If one of these 
+  // statements is a call to error(...), then the execution will
+  // switch over to the catch block set up above.
+  emit_stmt(s->try_block);
+
+  // Remove the catch block as the try block has been emitted
+  // (this is useful when dealing with nested try-catch blocks).
+  catch_jump.pop_back();
+
+  emit_jmp(join_block);
+
+  set_block(catch_block);
+
+  // Set up connection to the error message.
+  if (s->catch_error_var) 
+    {
+      vardecl* catch_var_decl = s->catch_error_var->referent;
+
+      auto j = this_locals->find(catch_var_decl);
+      if (j == this_locals->end())
+        throw SEMANTIC_ERROR(_("unknown value"), catch_var_decl->tok);
+
+      value* catch_var = j->second;
+
+      // This message is stored during jump_to_catch.
+      value* error_var = catch_msg.back();
+      catch_msg.pop_back();
+
+      this_prog.mk_mov(this_ins, catch_var, error_var);
+    }
+
+  // After setting up the message, the catch block can run.
+  emit_stmt(s->catch_block);
+  emit_jmp(join_block);
+  
+  set_block(join_block);
+}
+
+void
 bpf_unparser::visit_embeddedcode (embeddedcode *s)
 {
 #ifdef DEBUG_CODEGEN
@@ -1490,6 +1595,63 @@ bpf_unparser::visit_embeddedcode (embeddedcode *s)
           this_prog.mk_binary(this_ins, BPF_ADD, dest,
                               this_prog.lookup_reg(BPF_REG_10) /*frame*/,
                               this_prog.new_imm(ofs));
+        }
+      else if (stmt.kind == "jump_to_catch")
+        {
+          /** 
+           * jump_to_catch allows the program to switch the execution to 
+           * a catch block in the case that an error is called during the 
+           * corresponding try block. Pointers to catch blocks are set up
+           * before the code for the try block is emitted and are stored
+           * in catch_jump. 
+           */
+
+          // Store the error message for the catch block. 
+          value *msg = emit_asm_arg(stmt, stmt.params[0]);
+          catch_msg.push_back(msg);
+
+          // error_block contains the code for the error procedure in the 
+          // case that error is called outside a try-catch statement.
+          block* error_block = this_prog.new_block();
+
+          // NB: catch_block will be nullptr if the error was called outside 
+          // try and catch statements.
+          block* catch_block = catch_jump.back();
+
+          // Since it is known at compile time as to whether the error is 
+          // called inside a try-catch block or not, a jump to the correct
+          // procedure can be emitted.
+          if (!catch_jump.empty())
+            emit_jmp(catch_block);
+          else
+            emit_jmp(error_block); 
+
+          set_block(error_block);
+        }
+      else if (stmt.kind == "register_error")
+        {
+          // Set the error status.
+          value *status = this_prog.new_imm(1);
+          emit_mov(error_status, status);
+
+          // NB: The error message has to be stored for future printing. The current 
+          // mechanism uses a perf_event to pass the string into userspace. This has 
+          // to be done because storing the string on the BPF stack consumes too much
+          // space, and this space is only freed during the epilogue where the error 
+          // message is printed. If future versions of BPF introduce more stack space, 
+          // the mechanism could be altered to use the stack instead.
+          value *error_msg = emit_asm_arg(stmt, stmt.params[0]);
+          emit_transport_msg(globals::STP_STORE_ERROR_MSG, error_msg, pe_string);
+        }
+      else if (stmt.kind == "terminate")
+        {
+          /* Short-circuit the program to its completition. */
+
+          block* join_block = this_prog.new_block();
+          block* exit_block = get_exit_block();
+
+          emit_jmp(exit_block);
+          set_block(join_block);
         }
       else if (stmt.kind == "call")
         {
@@ -3680,9 +3842,20 @@ build_internal_globals(globals& glob)
   exit.arity = 0;
   glob.internal_exit = exit;
 
+  struct vardecl errors;
+  errors.name = "__global___STAPBPF_errors";
+  errors.unmangled_name = "__STAPBPF_errors";
+  errors.type = pe_long;
+  errors.arity = 0;
+  glob.internal_errors = errors;
+
   glob.globals.insert(std::pair<vardecl *, globals::map_slot>
                       (&glob.internal_exit,
                        globals::map_slot(0, globals::EXIT)));
+
+  glob.globals.insert(std::pair<vardecl *, globals::map_slot>
+                      (&glob.internal_errors,
+                       globals::map_slot(0, globals::ERRORS)));
   glob.maps.push_back
     ({ BPF_MAP_TYPE_HASH, 4, /* NB: value_size */ 8, globals::NUM_INTERNALS, 0 });
 
@@ -4194,36 +4367,168 @@ output_interned_aggregates(BPF_Output &eo, globals& glob)
 void
 bpf_unparser::add_prologue()
 {
-  value *i0 = this_prog.new_imm(0);
+  /**
+   * Before the probe can be executed, the probe's prologue will
+   * check to see if exit(...) has been called or if an error has
+   * occurred. To check if an error has occurred, it will see if
+   * the number of soft errors has exceeded the specified limit. 
+   */
 
-  // lookup exit global
-  value *frame = this_prog.lookup_reg(BPF_REG_10);
-  this_prog.mk_st(this_ins, BPF_W, frame, -4, i0);
-  this_prog.use_tmp_space(4);
+  // Create and clear error status and error message.
+  error_status = this_prog.new_reg();
+  emit_mov(error_status, this_prog.new_imm(0));
 
-  this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1),
-                     globals::internal_map_idx);
-  this_prog.mk_binary(this_ins, BPF_ADD, this_prog.lookup_reg(BPF_REG_2),
-                      frame, this_prog.new_imm(-4));
-  this_prog.mk_call(this_ins, BPF_FUNC_map_lookup_elem, 2);
-
-  value *r0 = this_prog.lookup_reg(BPF_REG_0);
-  block *cont_block = this_prog.new_block();
+  // Prepare exit block.
   block *exit_block = get_exit_block();
 
-  // check that map_lookup_elem returned non-null ptr
+  // Prepare commonly used variables.
+  value *i0 = this_prog.new_imm(0);
+  value* frame = this_prog.lookup_reg(BPF_REG_10);
+
+  // If there is no soft error constraint, it is defaulted to 0.
+  int l = (constraints.find("MAXERRORS") != constraints.end()) ? constraints["MAXERRORS"] : 0;
+  value* limit = this_prog.new_imm(l);
+
+  int map_id = bpf::globals::internal_map_idx;
+  int map_key = bpf::globals::EXIT;
+  int key_size = 4;
+
+  // Prepare arguments for BPF_FUNC_map_lookup_elem.
+  this_prog.mk_st(this_ins, BPF_W, frame, -key_size, this_prog.new_imm(map_key));
+  this_prog.use_tmp_space(key_size);
+
+  // Lookup exit status.
+  this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1), map_id);
+  this_prog.mk_binary(this_ins, BPF_ADD, this_prog.lookup_reg(BPF_REG_2), frame, this_prog.new_imm(-key_size));
+  this_prog.mk_call(this_ins, BPF_FUNC_map_lookup_elem, 2);
+
+  block *cont_block = this_prog.new_block();
+
+  // Check if BPF_FUNC_map_lookup_elem returned nullptr.
+  value *r0 = this_prog.lookup_reg(BPF_REG_0);
   this_prog.mk_jcond(this_ins, EQ, r0, i0, exit_block, cont_block);
   set_block(cont_block);
 
-  // load exit status from ptr
+  // Load exit status into exit_status.
   value *exit_status = this_prog.new_reg();
   this_prog.mk_ld(this_ins, BPF_DW, exit_status, r0, 0);
 
-  // if exit_status == 1 jump to exit, else continue with handler
   cont_block = this_prog.new_block();
-  this_prog.mk_jcond(this_ins, EQ, exit_status, this_prog.new_imm(1),
-                     exit_block, cont_block);
+
+  // If exit_status == 1, jump to exit, otherwise continue with handler.
+  this_prog.mk_jcond(this_ins, EQ, exit_status, this_prog.new_imm(1), exit_block, cont_block);
   set_block(cont_block);
+
+  // Check the error count.
+  map_key = bpf::globals::ERRORS;
+
+  // Prepare arguments for BPF_FUNC_map_lookup_elem.
+  this_prog.mk_st(this_ins, BPF_W, frame, -key_size, this_prog.new_imm(map_key));
+  this_prog.use_tmp_space(key_size);
+
+  // Lookup error count.
+  this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1), map_id);
+  this_prog.mk_binary(this_ins, BPF_ADD, this_prog.lookup_reg(BPF_REG_2), frame, this_prog.new_imm(-key_size));
+  this_prog.mk_call(this_ins, BPF_FUNC_map_lookup_elem, 2); 
+
+  cont_block = this_prog.new_block();
+
+  // Check if BPF_FUNC_map_lookup_elem returned nullptr.
+  r0 = this_prog.lookup_reg(BPF_REG_0);
+  this_prog.mk_jcond(this_ins, EQ, r0, i0, exit_block, cont_block);
+  set_block(cont_block);
+
+  // Load current error count into error_count.
+  value* error_count = this_prog.new_reg();
+  this_prog.mk_ld(this_ins, BPF_DW, error_count, r0, 0);
+
+  cont_block = this_prog.new_block();
+
+  // If the limit has been exceeded, proceed towards the exit.
+  this_prog.mk_jcond(this_ins, GT, error_count, limit, exit_block, cont_block);
+  set_block(cont_block);
+}
+
+void
+bpf_unparser::add_epilogue()
+{
+  /**
+   * Before the probe can finishes, the probe's epilogue will
+   * increment the error count if any errors occured and will
+   * also print the corresponding error message.
+   */
+
+  // Prepare commonly used variables.
+  value *i0 = this_prog.new_imm(0);
+  value* frame = this_prog.lookup_reg(BPF_REG_10);
+
+  // If no limit has been specified, it is defaulted to 0.
+  int l = (constraints.find("MAXERRORS") != constraints.end()) ? constraints["MAXERRORS"] : 0;
+  value* limit = this_prog.new_imm(l);
+
+  block *error_block = this_prog.new_block();
+  block *exit_block = this_prog.new_block();
+
+  // Check if an error was called. If it was, run the error handler.
+  this_prog.mk_jcond(this_ins, EQ, i0, error_status, exit_block, error_block);
+
+  set_block(error_block);
+
+  // Print error message.
+  emit_transport_msg(globals::STP_PRINT_ERROR_MSG);
+
+  int map_id = globals::internal_map_idx;
+  int map_key = globals::ERRORS;
+  int key_size = 4;
+  int val_size = 8;
+
+  // Prepare arguments for BPF_FUNC_map_lookup_elem.
+  this_prog.mk_st(this_ins, BPF_W, frame, -key_size, this_prog.new_imm(map_key));
+  this_prog.use_tmp_space(key_size);  
+
+  // Lookup error count.
+  this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1), map_id);
+  this_prog.mk_binary(this_ins, BPF_ADD, this_prog.lookup_reg(BPF_REG_2), frame, this_prog.new_imm(-key_size));
+  this_prog.mk_call(this_ins, BPF_FUNC_map_lookup_elem, 2);
+
+  block *increment_block = this_prog.new_block();
+
+  // Check if BPF_FUNC_map_lookup_elem returned nullptr.
+  value *r0 = this_prog.lookup_reg(BPF_REG_0);
+  this_prog.mk_jcond(this_ins, EQ, r0, i0, exit_block, increment_block);
+  set_block(increment_block);
+
+  // Load current error count into error_count.
+  value *error_count = this_prog.new_reg();
+  this_prog.mk_ld(this_ins, BPF_DW, error_count, r0, 0);
+
+  // Increment the number of errors.
+  this_prog.mk_binary(this_ins, BPF_ADD, error_count, error_count, this_prog.new_imm(1));
+
+  // Prepare arguments for BPF_FUNC_map_update_elem.
+  this_prog.mk_st(this_ins, BPF_DW, frame, -val_size, error_count);
+  this_prog.use_tmp_space(val_size); 
+  this_prog.mk_st(this_ins, BPF_W, frame, -val_size-key_size, this_prog.new_imm(map_key));
+  this_prog.use_tmp_space(key_size); 
+
+  // Update the global error count.
+  this_prog.load_map(this_ins, this_prog.lookup_reg(BPF_REG_1), map_id);
+  this_prog.mk_binary(this_ins, BPF_ADD, this_prog.lookup_reg(BPF_REG_2), frame, this_prog.new_imm(-val_size-key_size));
+  this_prog.mk_binary(this_ins, BPF_ADD, this_prog.lookup_reg(BPF_REG_3), frame, this_prog.new_imm(-val_size));
+  this_prog.mk_mov(this_ins, this_prog.lookup_reg(BPF_REG_4), this_prog.new_imm(0));
+  this_prog.mk_call(this_ins, BPF_FUNC_map_update_elem, 4);
+
+  block *exceeded_block = this_prog.new_block();
+
+  // Check if limit is exceeded. If so, communicate a hard error.
+  this_prog.mk_jcond(this_ins, LE, error_count, limit, exit_block, exceeded_block);
+  set_block(exceeded_block);
+
+  // Communicate a hard error.
+  emit_transport_msg(bpf::globals::STP_ERROR);
+  emit_jmp(exit_block);
+
+  set_block(exit_block);
 }
 
 static void
@@ -4272,16 +4577,25 @@ translate_probe_v(program &prog, globals &glob,
 
       derived_probe *dp = v[i];
       u.this_locals = u.new_locals(dp->locals);
+
+      if (i == 0)
+        {
+          // Create and clear the error status.
+          u.error_status = prog.new_reg();
+          prog.mk_mov(u.this_ins, u.error_status, prog.new_imm(0));
+        }
+
       dp->body->visit (&u);
       delete u.this_locals;
       u.this_locals = NULL;
 
       if (i == n - 1)
-	this_block = u.get_ret0_block();
+        this_block = u.get_ret0_block();
       else
-	this_block = prog.new_block();
+        this_block = prog.new_block();
+
       if (u.in_block())
-	u.emit_jmp(this_block);
+        u.emit_jmp(this_block);
     }
 }
 
@@ -4512,8 +4826,8 @@ translate_bpf_pass (systemtap_session& s)
 
       if (s.be_derived_probes || !glob.empty())
         {
-          std::vector<derived_probe *> begin_v, end_v;
-          sort_for_bpf(s, s.be_derived_probes, begin_v, end_v);
+          std::vector<derived_probe *> begin_v, end_v, error_v;
+          sort_for_bpf(s, s.be_derived_probes, begin_v, end_v, error_v);
           init_block init(glob);
 
           if (!init.empty())
@@ -4542,6 +4856,15 @@ translate_bpf_pass (systemtap_session& s)
               translate_probe_v(p, glob, end_v);
               p.generate();
               output_probe(eo, p, "stap_end", 0);
+            }
+
+          if (!error_v.empty())
+            {
+              t = error_v[0]->tok;
+              program p(target_user_bpfinterp);
+              translate_probe_v(p, glob, error_v);
+              p.generate();
+              output_probe(eo, p, "stap_error", 0);
             }
         }
 

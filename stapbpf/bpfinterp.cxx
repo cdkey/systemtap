@@ -617,9 +617,30 @@ bpf_handle_transport_msg(void *buf, size_t size,
 
   // Used for bpf::globals::STP_FORMAT_ARG:
   void *arg;
-
+  
   switch (msg_type)
     {
+    case bpf::globals::STP_STORE_ERROR_MSG:
+      // Store error message for future printing.
+      ctx->error_message.push(std::string((char*) msg_content));
+      break;
+
+    case bpf::globals::STP_PRINT_ERROR_MSG:
+      // Print error message that was stored previously.
+      assert(!ctx->error_message.empty());
+      // TODO: Need better color configuration.
+      std::cout << "\033[1m\033[31m" << "ERROR: " << "\033[0m" << ctx->error_message.front() << std::endl;
+      ctx->error_message.pop();
+      break;
+
+    case bpf::globals::STP_ERROR:
+      // Signal an exit from the program and communicate a hard error:
+      if (bpf_update_elem((*ctx->map_fds)[bpf::globals::internal_map_idx],
+                          &exit_key, &exit_val, BPF_ANY) != 0)
+        stapbpf_abort("could not set exit status");
+      *ctx->error = true;
+      return LIBBPF_PERF_EVENT_DONE;
+
     case bpf::globals::STP_EXIT:
       // Signal an exit from the program:
       if (bpf_update_elem((*ctx->map_fds)[bpf::globals::internal_map_idx],

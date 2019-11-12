@@ -58,6 +58,12 @@ struct bpf_transport_context {
   std::vector<void *> printf_args;
   std::vector<bpf::globals::perf_event_type> printf_arg_types; // either ..ARG_LONG or ..ARG_STR
 
+  // Used to communicate if a hard error has occured.
+  bool* error;
+
+  // Store error messages for printing later on.
+  std::queue<std::string> error_message;
+
   // TODO: Takes a lot of arguments. Refactor to be less unwieldy.
   bpf_transport_context(unsigned cpu, int pmu_fd, unsigned ncpus,
                         bpf_map_def *map_attrs,
@@ -65,11 +71,12 @@ struct bpf_transport_context {
                         FILE *output_f,
                         std::vector<std::string> *interned_strings,
                         std::unordered_map<bpf::globals::agg_idx,
-                                           bpf::globals::stats_map> *aggregates)
+                                           bpf::globals::stats_map> *aggregates,
+                        bool* error)
     : cpu(cpu), pmu_fd(pmu_fd), ncpus(ncpus),
       map_attrs(map_attrs), map_fds(map_fds), output_f(output_f),
       interned_strings(interned_strings), aggregates(aggregates),
-      in_printf(false), format_no(-1), expected_args(0) {}
+      in_printf(false), format_no(-1), expected_args(0), error(error) {}
 };
 
 enum bpf_perf_event_ret bpf_handle_transport_msg(void *buf, size_t size,

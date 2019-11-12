@@ -1,0 +1,14 @@
+probe oneshot {
+
+    try {
+
+        printf("BEGIN\n")
+        error("END PASS");
+        printf("END FAIL\n");
+
+    } catch (msg) {
+
+        printf("%s\n", msg);
+    }
+
+}

@@ -68,7 +68,8 @@ struct be_derived_probe_group: public generic_dpg<be_derived_probe>
   friend bool sort_for_bpf(systemtap_session& s,
 			   be_derived_probe_group *be,
 			   std::vector<derived_probe *> &begin_v,
-			   std::vector<derived_probe *> &end_v);
+			   std::vector<derived_probe *> &end_v,
+                           std::vector<derived_probe *> &error_v);
 
 public:
   void emit_module_decls (systemtap_session& s);
@@ -195,7 +196,8 @@ bool
 sort_for_bpf(systemtap_session& s __attribute__ ((unused)),
 	     be_derived_probe_group *be,
 	     std::vector<derived_probe *> &begin_v,
-	     std::vector<derived_probe *> &end_v)
+	     std::vector<derived_probe *> &end_v,
+             std::vector<derived_probe *> &error_v)
 {
   if (!be || be->probes.empty())
     return false;
@@ -207,13 +209,10 @@ sort_for_bpf(systemtap_session& s __attribute__ ((unused)),
       be_derived_probe *p = *i;
       if (p->type == BEGIN)
 	begin_v.push_back(p);
-    }
-
-  for (auto i = be->probes.begin(); i != be->probes.end(); ++i)
-    {
-      be_derived_probe *p = *i;
-      if (p->type != BEGIN)
-	end_v.push_back(p);
+      else if (p->type == END)
+        end_v.push_back(p);
+      else
+        error_v.push_back(p);
     }
 
   return true;
