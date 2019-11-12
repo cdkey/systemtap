@@ -8,6 +8,6 @@ status: experimental
 exit: user-controlled
 output: proc
 scope: system-wide
-description: The syscall_read_write.stp script tallies the read and write syscalls. This is a demo script for stapbpf prometheus-exporter scripts.
+description: The syscallsrw.stp script tallies the read and write syscalls. This is a demo script for stapbpf prometheus-exporter scripts.
 test_check_bpf: stap --bpf -p4 syscallsrw.stp
 test_installcheck_bpf: stap --bpf syscallsrw.stp -T 1

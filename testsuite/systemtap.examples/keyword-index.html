@@ -159,7 +159,7 @@ keywords: <a href="keyword-index.html#NETWORK">NETWORK</a> <a href="keyword-inde
 <p>The sk_stream-wait_memory.stp prints a time stamp, executable, and pid each time a process blocks due to the send buffer being full. A similar entry is printed each time a process continues because there is room in the buffer.</p><p><font size="-2"><pre># stap sk_stream_wait_memory.stp -T 1</pre></font></p>
 </li><li><a href="profiling/syscallsrw.stp">profiling/syscallsrw.stp</a> - Provide a tally of read and write syscalls run on the system <br>
 keywords: <a href="keyword-index.html#PROMETHEUS">PROMETHEUS</a> <a href="keyword-index.html#SYSCALL">SYSCALL</a> <a href="keyword-index.html#BPF">BPF</a> <br>
-<p>The syscall_read_write.stp script tallies the read and write syscalls. This is a demo script for stapbpf prometheus-exporter scripts.</p></p>
+<p>The syscallsrw.stp script tallies the read and write syscalls. This is a demo script for stapbpf prometheus-exporter scripts.</p></p>
 </li></ul>
 <h3><a name="CALLGRAPH"><a href="#CALLGRAPH">&para;</a> CALLGRAPH</a></h3>
 <ul>
@@ -875,7 +875,7 @@ keywords: <a href="keyword-index.html#PROMETHEUS">PROMETHEUS</a> <a href="keywor
 <p>The syscallsbypid.stp script tallies each syscall for each running process.  This information can be useful to determine the activity of various processes on the system.  The script makes the information available via procfs in Prometheus readable format.  When a process exits its data will be eliminated from the prometheus output.  To avoid exceeding the storage limitations of SystemTap older entries maybe overwritten by newer entries.  This can lead to some active process syscall counts disappearing and/or later reappearing with a lower value.  Also note that the script does not properly name syscalls for 32-bit applications running on 64-bit machines.</p><p><font size="-2"><pre># stap syscallsbypid.stp -T 1</pre></font></p>
 </li><li><a href="profiling/syscallsrw.stp">profiling/syscallsrw.stp</a> - Provide a tally of read and write syscalls run on the system <br>
 keywords: <a href="keyword-index.html#PROMETHEUS">PROMETHEUS</a> <a href="keyword-index.html#SYSCALL">SYSCALL</a> <a href="keyword-index.html#BPF">BPF</a> <br>
-<p>The syscall_read_write.stp script tallies the read and write syscalls. This is a demo script for stapbpf prometheus-exporter scripts.</p></p>
+<p>The syscallsrw.stp script tallies the read and write syscalls. This is a demo script for stapbpf prometheus-exporter scripts.</p></p>
 </li></ul>
 <h3><a name="QEMU"><a href="#QEMU">&para;</a> QEMU</a></h3>
 <ul>
@@ -1167,7 +1167,7 @@ keywords: <a href="keyword-index.html#PROMETHEUS">PROMETHEUS</a> <a href="keywor
 <p>The syscallsbypid.stp script tallies each syscall for each running process.  This information can be useful to determine the activity of various processes on the system.  The script makes the information available via procfs in Prometheus readable format.  When a process exits its data will be eliminated from the prometheus output.  To avoid exceeding the storage limitations of SystemTap older entries maybe overwritten by newer entries.  This can lead to some active process syscall counts disappearing and/or later reappearing with a lower value.  Also note that the script does not properly name syscalls for 32-bit applications running on 64-bit machines.</p><p><font size="-2"><pre># stap syscallsbypid.stp -T 1</pre></font></p>
 </li><li><a href="profiling/syscallsrw.stp">profiling/syscallsrw.stp</a> - Provide a tally of read and write syscalls run on the system <br>
 keywords: <a href="keyword-index.html#PROMETHEUS">PROMETHEUS</a> <a href="keyword-index.html#SYSCALL">SYSCALL</a> <a href="keyword-index.html#BPF">BPF</a> <br>
-<p>The syscall_read_write.stp script tallies the read and write syscalls. This is a demo script for stapbpf prometheus-exporter scripts.</p></p>
+<p>The syscallsrw.stp script tallies the read and write syscalls. This is a demo script for stapbpf prometheus-exporter scripts.</p></p>
 </li><li><a href="profiling/ucalls.stp">profiling/ucalls.stp</a> - Profile method invocations in Java, Perl, Php, Python, Ruby, and Tcl scripts<br>
 keywords: <a href="keyword-index.html#PROFILING">PROFILING</a> <a href="keyword-index.html#SYSCALL">SYSCALL</a> <br>
 <p>The ucalls.stp script is modeled after the BCC ucalls script (https://github.com/iovisor/bcc/blob/master/tools/lib/ucalls.py) by Sasha Goldshtein. The ucalls.stp script monitors the process indicated by the -x or -c option.  When the scripts exits it prints out information about the number of times that each method is invoked for code written in Java, Perl, Php, Python, Ruby, and Tcl.  Include the word &quot;syscalls&quot; on the command line to count syscalls invoked by the process.  If you want latency information, include &quot;latency&quot; on the command line. Note that the latency option does not work for recursive functions</p><p><font size="-2"><pre># stap ucalls.stp syscalls latency -c &quot;python -c &#39;print(\&quot;hello world\&quot;)&#39; \

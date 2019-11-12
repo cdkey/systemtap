@@ -1882,9 +1882,8 @@ keywords: prometheus process syscall tracepoint
 profiling/syscallsrw.stp - Provide a tally of read and write syscalls run on the system 
 keywords: prometheus syscall bpf
 
-  The syscall_read_write.stp script tallies the read and write
-  syscalls. This is a demo script for stapbpf prometheus-exporter
-  scripts.
+  The syscallsrw.stp script tallies the read and write syscalls. This
+  is a demo script for stapbpf prometheus-exporter scripts.
 
 
 profiling/thread-times.stp - Profile Kernel Functions
