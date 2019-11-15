@@ -1,4 +1,6 @@
-* What's new in version 4.2, PRERELEASE
+* What's new in version 4.3, PRERELEASE
+
+* What's new in version 4.2, 2019-11-18
 
 - The values of an array can now be iterated over in foreach loops in 
   the stapbpf backend. They are no longer defaulted to 0.

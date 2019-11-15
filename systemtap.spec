@@ -1266,6 +1266,9 @@ done
 
 # PRERELEASE
 %changelog
+* Mon Nov 18 2019 Sagar Patel <sapatel@redhat.com> - 4.2-1
+- Upstream release.
+
 * Tue May 07 2019 Serguei Makarov <smakarov@redhat.com> - 4.1-1
 - Upstream release.
 
