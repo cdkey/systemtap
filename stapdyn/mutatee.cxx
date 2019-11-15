@@ -61,7 +61,7 @@ get_dwarf_registers(BPatch_process *app,
       "r16", "r17", "r18", "r19",
       "r20", "r21", "r22", "r23",
       "r24", "r25", "r26", "r27",
-      "r28", "r29", "r30",
+      "r28", "r29", "r30", "r31",
 #endif
       NULL };
 
@@ -91,25 +91,8 @@ get_dwarf_registers(BPatch_process *app,
             registers.push_back(new BPatch_registerExpr(bpregs[i]));
             break;
           }
-
-      // If we didn't find it, put a zero in its place.
-      if (i >= bpregs.size())
-        registers.push_back(new BPatch_constExpr((unsigned long)0));
     }
-
-#if (defined(__powerpc__) || defined(__powerpc64__)) || defined(__aarch64__)
-  // In EmitterPOWER::emitCall(), Dyninst enforces a limit that "only 8
-  // arguments can (currently) be passed on the POWER architecture."
-  // We start with the probe index and nregs, leaving just 6 more...
-  // Do the same for aarch64 which has similar restrictions
-  while (registers.size() > 6)
-    {
-      delete registers.back();
-      registers.pop_back();
-    }
-#endif
-}
-
+  }
 
 // Simple object to temporarily make sure a process is stopped
 class mutatee_freezer {
@@ -299,6 +282,8 @@ mutatee::instrument_dynprobe_target(BPatch_object* object,
   for (size_t j = 0; j < target.probes.size(); ++j)
     {
       const dynprobe_location& probe = target.probes[j];
+      // powerpc64 or arch64 (with r31 patch): 32 registers + IP
+      const int ppc_and_aarch_register_count = 33;
 
       if ((probe.flags & (STAPDYN_PROBE_FLAG_PROC_BEGIN
 			  | STAPDYN_PROBE_FLAG_PROC_END
@@ -402,19 +387,67 @@ mutatee::instrument_dynprobe_target(BPatch_object* object,
       // the registers in whatever form we chose above.
       vector<BPatch_snippet *> args;
       args.push_back(new BPatch_constExpr((int64_t)probe.index));
-      if (use_pt_regs)
-        args.push_back(new BPatch_constExpr((void*)NULL)); // pt_regs
-      else
+      if (use_pt_regs) {
+          args.push_back(new BPatch_constExpr((void*)NULL)); // pt_regs
+          BPatch_funcCallExpr call(*enter_function, args);
+          BPatchSnippetHandle* handle = process->insertSnippet(call, points);
+          if (handle)
+            snippets.push_back(handle);
+        }
+      else if (registers.size() == ppc_and_aarch_register_count)
         {
+          // Save registers in chunks of six.
+          vector<BPatch_function *> functions;
+          stap_dso->findFunction("enter_dyninst_uprobe_partial_regs", functions, false);
+          if (functions.empty())
+            {
+              stapwarn() << "Couldn't find the uprobe entry function \"enter_dyninst_uprobe_partial_regs\""
+                  << endl << "disabled." << endl;
+              return;
+            }
+          BPatch_function* enter_function_partial_regs = functions[0];
+          args.insert(args.end(), 7, new BPatch_constExpr((int64_t)0));
+
+          bool ip_added = false;
+          long unsigned first_reg [] = {0, 6, 12, 18, 24, 30, 32};
+          for (int first = (sizeof(first_reg)/sizeof(long))-2; first >= 0; first--)
+            {
+              args[1] = new BPatch_constExpr((int64_t)first_reg[first]);
+              int argidx = 2;
+              for (long unsigned regidx = first_reg[first]; regidx < first_reg[first+1]; regidx++)
+                {
+                  args[argidx++] = registers[regidx+1];
+                }
+              // registers[0] is BPatch_originalAddressExpr; append to the end
+              if (!ip_added) {
+                  ip_added = true;
+                  args[argidx] = registers[0];
+              }
+              BPatch_funcCallExpr call(*enter_function_partial_regs, args);
+              BPatchSnippetHandle* handle = process->insertSnippet(call, points);
+              if (handle)
+                snippets.push_back(handle);
+            }
+        }
+      else {
+#if (defined(__powerpc__) || defined(__powerpc64__)) || defined(__aarch64__)
+          // In EmitterPOWER::emitCall(), Dyninst only uses register parm args.
+          // The case above should handle this except for older aarch64 backends
+          // which supported neither multiple calls nor the sp register
+          while (registers.size() > 6)
+            {
+                delete registers.back();
+                registers.pop_back();
+              }
+#endif
           args.push_back(new BPatch_constExpr((unsigned long)registers.size()));
           args.insert(args.end(), registers.begin(), registers.end());
-        }
-      BPatch_funcCallExpr call(*enter_function, args);
 
-      // Finally write the instrumentation for the probe!
-      BPatchSnippetHandle* handle = process->insertSnippet(call, points);
-      if (handle)
-        snippets.push_back(handle);
+          BPatch_funcCallExpr call(*enter_function, args);
+          BPatchSnippetHandle* handle = process->insertSnippet(call, points);
+          if (handle)
+            snippets.push_back(handle);
+      }
 
       // Update SDT semaphores as needed.
       if (probe.semaphore)

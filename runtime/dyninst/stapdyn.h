@@ -86,6 +86,7 @@ extern int enter_dyninst_uprobe(uint64_t index, struct pt_regs *regs);
  * struct directly with stapdyn.  The varargs are all unsigned long, giving
  * first the original PC, then DWARF-ordered registers.  */
 extern int enter_dyninst_uprobe_regs(uint64_t index, unsigned long nregs, ...);
+extern int enter_dyninst_uprobe_partial_regs(uint64_t index, unsigned long nregs, ...);
 
 
 /**** STAP 2.1 : ****/

@@ -11,7 +11,49 @@
 #ifndef _UPROBES_REGS_DYNINST_C_
 #define _UPROBES_REGS_DYNINST_C_
 
-int enter_dyninst_uprobe_regs(uint64_t index, unsigned long nregs, ...)
+
+int
+enter_dyninst_uprobe_partial_regs(uint64_t index, unsigned long first_reg, ...)
+{
+	static struct pt_regs regs = {};
+
+	va_list varegs;
+	va_start(varegs, first_reg);
+
+#if defined(__powerpc__) || defined(__powerpc64__)
+//  Dyninst BPatch_funcCallExpr only supports register parms
+#define MAX_REG 32
+	for (unsigned long r = first_reg;
+	     r < MAX_REG && r < first_reg + 6; ++r)
+		pt_regs_store_register((&regs), r,
+				va_arg(varegs, unsigned long));
+#elif defined(__aarch64__)
+#define MAX_REG 32
+	for (unsigned long r = first_reg;
+	     r < MAX_REG && r < first_reg + 6; ++r) {
+	        if (r == 31)
+	          regs.sp = va_arg(varegs, unsigned long);
+	        else
+	          regs.regs[r] = va_arg(varegs, unsigned long);
+	}
+#endif
+#undef MAX_REG
+
+	// The last chunk of saved registers is r30/r31/ip
+	if (first_reg == 30) {
+	    SET_REG_IP((&regs), va_arg(varegs, unsigned long));
+	    va_end(varegs);
+	    return enter_dyninst_uprobe(index, &regs);
+	}
+	else {
+	    va_end(varegs);
+	    return 0;
+	}
+}
+
+
+int
+enter_dyninst_uprobe_regs(uint64_t index, unsigned long nregs, ...)
 {
 	struct pt_regs regs = {};
 
@@ -71,7 +113,7 @@ int enter_dyninst_uprobe_regs(uint64_t index, unsigned long nregs, ...)
 
 #else
 #error "Unknown architecture!"
-#endif	
+#endif
 #undef MAX_REG
 
 #endif
@@ -82,4 +124,3 @@ int enter_dyninst_uprobe_regs(uint64_t index, unsigned long nregs, ...)
 }
 
 #endif /* _UPROBES_REGS_DYNINST_C_ */
-
