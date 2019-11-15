@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::LINUXMIB 3stap "May 2019" "SystemTap Tapset Reference"
+.TH TAPSET::LINUXMIB 3stap "November 2019" "SystemTap Tapset Reference"
 .SH NAME
 tapset::linuxmib \- systemtap linuxmib tapset
  

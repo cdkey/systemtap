@@ -2,12 +2,12 @@
 .\"     Title: function::nsecs_to_string
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Task Time Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::NSECS_TO_S" "3stap" "May 2019" "SystemTap Tapset Reference" "Task Time Tapset"
+.TH "FUNCTION::NSECS_TO_S" "3stap" "November 2019" "SystemTap Tapset Reference" "Task Time Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

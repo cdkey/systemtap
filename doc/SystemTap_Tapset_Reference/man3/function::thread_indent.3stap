@@ -2,12 +2,12 @@
 .\"     Title: function::thread_indent
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Utility functions for using ansi control chars in logs
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::THREAD_IND" "3stap" "May 2019" "SystemTap Tapset Reference" "Utility functions for using an"
+.TH "FUNCTION::THREAD_IND" "3stap" "November 2019" "SystemTap Tapset Reference" "Utility functions for using an"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

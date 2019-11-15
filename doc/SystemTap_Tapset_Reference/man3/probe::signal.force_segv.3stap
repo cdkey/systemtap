@@ -2,12 +2,12 @@
 .\"     Title: probe::signal.force_segv
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Signal Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SIGNAL\&.FORC" "3stap" "May 2019" "SystemTap Tapset Reference" "Signal Tapset"
+.TH "PROBE::SIGNAL\&.FORC" "3stap" "November 2019" "SystemTap Tapset Reference" "Signal Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,24 +36,24 @@ signal\&.force_segv
 .fi
 .SH "VALUES"
 .PP
-\fIpid_name\fR
-.RS 4
-Name of the process receiving the signal
-.RE
-.PP
-\fIsig_name\fR
-.RS 4
-A string representation of the signal
-.RE
-.PP
 \fIsig_pid\fR
 .RS 4
 The PID of the process receiving the signal
 .RE
 .PP
+\fIpid_name\fR
+.RS 4
+Name of the process receiving the signal
+.RE
+.PP
 \fIname\fR
 .RS 4
 Name of the probe point
+.RE
+.PP
+\fIsig_name\fR
+.RS 4
+A string representation of the signal
 .RE
 .PP
 \fIsig\fR

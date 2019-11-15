@@ -2,12 +2,12 @@
 .\"     Title: function::json_set_prefix
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: JSON Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::JSON_SET_P" "3stap" "May 2019" "SystemTap Tapset Reference" "JSON Tapset"
+.TH "FUNCTION::JSON_SET_P" "3stap" "November 2019" "SystemTap Tapset Reference" "JSON Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

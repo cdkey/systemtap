@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::QUEUE_STATS 3stap "May 2019" "SystemTap Tapset Reference"
+.TH TAPSET::QUEUE_STATS 3stap "November 2019" "SystemTap Tapset Reference"
 .SH NAME
 tapset::queue_stats \- systemtap queue_stats tapset
  

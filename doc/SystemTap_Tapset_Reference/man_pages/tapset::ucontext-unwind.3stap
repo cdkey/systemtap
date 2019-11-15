@@ -1,10 +1,18 @@
 .\" -*- nroff -*-
-.TH TAPSET::UCONTEXT-UNWIND 3stap "May 2019" "SystemTap Tapset Reference"
+.TH TAPSET::UCONTEXT-UNWIND 3stap "November 2019" "SystemTap Tapset Reference"
 .SH NAME
 tapset::ucontext-unwind \- systemtap ucontext-unwind tapset
  
 .SH DESCRIPTION
 .TP
+.P
+.TP
+.B print_ubacktrace 
+Print stack back trace for current user-space task.
+.IP
+See 
+.IR function::print_ubacktrace (3stap)
+ for details.
 .P
 .TP
 .B print_ubacktrace 
@@ -23,6 +31,22 @@ See
  for details.
 .P
 .TP
+.B print_ubacktrace_fileline 
+Print stack back trace for current user-space task.
+.IP
+See 
+.IR function::print_ubacktrace_fileline (3stap)
+ for details.
+.P
+.TP
+.B print_ubacktrace 
+Print stack back trace for current user-space task.
+.IP
+See 
+.IR function::print_ubacktrace (3stap)
+ for details.
+.P
+.TP
 .B ubacktrace 
 Hex backtrace of current user-space task stack.
 .IP
@@ -35,6 +59,10 @@ See
 .IR \%function::print_ubacktrace (3stap),
 .BR
 .IR \%function::sprint_ubacktrace (3stap),
+.BR
+.IR \%function::print_ubacktrace_fileline (3stap),
+.BR
+.IR \%function::print_ubacktrace (3stap),
 .BR
 .IR \%function::ubacktrace (3stap),
 .BR

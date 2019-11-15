@@ -2,12 +2,12 @@
 .\"     Title: probe::netdev.rx
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Networking Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NETDEV\&.RX" "3stap" "May 2019" "SystemTap Tapset Reference" "Networking Tapset"
+.TH "PROBE::NETDEV\&.RX" "3stap" "November 2019" "SystemTap Tapset Reference" "Networking Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,14 @@ netdev\&.rx
 .fi
 .SH "VALUES"
 .PP
-\fIprotocol\fR
-.RS 4
-The packet protocol
-.RE
-.PP
 \fIdev_name\fR
 .RS 4
 The device received the packet
+.RE
+.PP
+\fIprotocol\fR
+.RS 4
+The packet protocol
 .RE
 .SH SEE ALSO\n 
 .IR tapset::networking (3stap)

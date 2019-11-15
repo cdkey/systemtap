@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.proc.write_setup
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.PROC\&." "3stap" "May 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.PROC\&." "3stap" "November 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,26 +36,6 @@ nfs\&.proc\&.write_setup
 .fi
 .SH "VALUES"
 .PP
-\fIversion\fR
-.RS 4
-NFS version
-.RE
-.PP
-\fIsize\fR
-.RS 4
-bytes written in this execution
-.RE
-.PP
-\fIhow\fR
-.RS 4
-used to set args\&.stable\&. The stable value could be: NFS_UNSTABLE,NFS_DATA_SYNC,NFS_FILE_SYNC (in nfs\&.proc3\&.write_setup and nfs\&.proc4\&.write_setup)
-.RE
-.PP
-\fIserver_ip\fR
-.RS 4
-IP address of server
-.RE
-.PP
 \fIoffset\fR
 .RS 4
 the file offset
@@ -66,9 +46,29 @@ the file offset
 transfer protocol
 .RE
 .PP
-\fIcount\fR
+\fIserver_ip\fR
+.RS 4
+IP address of server
+.RE
+.PP
+\fIhow\fR
+.RS 4
+used to set args\&.stable\&. The stable value could be: NFS_UNSTABLE,NFS_DATA_SYNC,NFS_FILE_SYNC (in nfs\&.proc3\&.write_setup and nfs\&.proc4\&.write_setup)
+.RE
+.PP
+\fIversion\fR
+.RS 4
+NFS version
+.RE
+.PP
+\fIsize\fR
 .RS 4
 bytes written in this execution
+.RE
+.PP
+\fIbitmask0\fR
+.RS 4
+V4 bitmask representing the set of attributes supported on this filesystem
 .RE
 .PP
 \fIbitmask1\fR
@@ -76,9 +76,9 @@ bytes written in this execution
 V4 bitmask representing the set of attributes supported on this filesystem
 .RE
 .PP
-\fIbitmask0\fR
+\fIcount\fR
 .RS 4
-V4 bitmask representing the set of attributes supported on this filesystem
+bytes written in this execution
 .RE
 .SH "DESCRIPTION"
 .PP

@@ -2,12 +2,12 @@
 .\"     Title: function::get_loadavg_index
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Kernel Process Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::GET_LOADAV" "3stap" "May 2019" "SystemTap Tapset Reference" "Kernel Process Tapset"
+.TH "FUNCTION::GET_LOADAV" "3stap" "November 2019" "SystemTap Tapset Reference" "Kernel Process Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

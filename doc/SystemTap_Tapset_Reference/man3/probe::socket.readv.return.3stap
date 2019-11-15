@@ -2,12 +2,12 @@
 .\"     Title: probe::socket.readv.return
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Socket Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SOCKET\&.READ" "3stap" "May 2019" "SystemTap Tapset Reference" "Socket Tapset"
+.TH "PROBE::SOCKET\&.READ" "3stap" "November 2019" "SystemTap Tapset Reference" "Socket Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,24 +36,9 @@ socket\&.readv\&.return
 .fi
 .SH "VALUES"
 .PP
-\fIsize\fR
-.RS 4
-Size of message received (in bytes) or error code if success = 0
-.RE
-.PP
-\fIname\fR
-.RS 4
-Name of this probe
-.RE
-.PP
 \fIprotocol\fR
 .RS 4
 Protocol value
-.RE
-.PP
-\fIfamily\fR
-.RS 4
-Protocol family value
 .RE
 .PP
 \fIsuccess\fR
@@ -61,19 +46,34 @@ Protocol family value
 Was receive successful? (1 = yes, 0 = no)
 .RE
 .PP
-\fIflags\fR
-.RS 4
-Socket flags value
-.RE
-.PP
 \fIstate\fR
 .RS 4
 Socket state value
 .RE
 .PP
+\fIsize\fR
+.RS 4
+Size of message received (in bytes) or error code if success = 0
+.RE
+.PP
 \fItype\fR
 .RS 4
 Socket type value
+.RE
+.PP
+\fIflags\fR
+.RS 4
+Socket flags value
+.RE
+.PP
+\fIname\fR
+.RS 4
+Name of this probe
+.RE
+.PP
+\fIfamily\fR
+.RS 4
+Protocol family value
 .RE
 .SH "CONTEXT"
 .PP

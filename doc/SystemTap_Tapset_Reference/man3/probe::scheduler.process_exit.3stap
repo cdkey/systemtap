@@ -2,12 +2,12 @@
 .\"     Title: probe::scheduler.process_exit
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Scheduler Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SCHEDULER\&.P" "3stap" "May 2019" "SystemTap Tapset Reference" "Scheduler Tapset"
+.TH "PROBE::SCHEDULER\&.P" "3stap" "November 2019" "SystemTap Tapset Reference" "Scheduler Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,9 +36,9 @@ scheduler\&.process_exit
 .fi
 .SH "VALUES"
 .PP
-\fIname\fR
+\fIpriority\fR
 .RS 4
-name of the probe point
+priority of the process exiting
 .RE
 .PP
 \fIpid\fR
@@ -46,9 +46,9 @@ name of the probe point
 PID of the process exiting
 .RE
 .PP
-\fIpriority\fR
+\fIname\fR
 .RS 4
-priority of the process exiting
+name of the probe point
 .RE
 .SH SEE ALSO\n 
 .IR tapset::scheduler (3stap)

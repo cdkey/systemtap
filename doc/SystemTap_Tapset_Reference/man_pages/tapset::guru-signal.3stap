@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::GURU-SIGNAL 3stap "May 2019" "SystemTap Tapset Reference"
+.TH TAPSET::GURU-SIGNAL 3stap "November 2019" "SystemTap Tapset Reference"
 .SH NAME
 tapset::guru-signal \- systemtap guru-signal tapset
  

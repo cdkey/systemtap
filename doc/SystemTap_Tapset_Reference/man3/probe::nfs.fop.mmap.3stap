@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.fop.mmap
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.FOP\&.M" "3stap" "May 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.FOP\&.M" "3stap" "November 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,34 +36,14 @@ nfs\&.fop\&.mmap
 .fi
 .SH "VALUES"
 .PP
-\fIino\fR
-.RS 4
-inode number
-.RE
-.PP
-\fIattrtimeo\fR
-.RS 4
-how long the cached information is assumed to be valid\&. We need to revalidate the cached attrs for this inode if jiffies \- read_cache_jiffies > attrtimeo\&.
-.RE
-.PP
-\fIfile_name\fR
-.RS 4
-file name
-.RE
-.PP
 \fIvm_start\fR
 .RS 4
 start address within vm_mm
 .RE
 .PP
-\fIbuf\fR
+\fIino\fR
 .RS 4
-the address of buf in user space
-.RE
-.PP
-\fIparent_name\fR
-.RS 4
-parent dir name
+inode number
 .RE
 .PP
 \fIvm_end\fR
@@ -71,9 +51,14 @@ parent dir name
 the first byte after end address within vm_mm
 .RE
 .PP
-\fIvm_flag\fR
+\fIattrtimeo\fR
 .RS 4
-vm flags
+how long the cached information is assumed to be valid\&. We need to revalidate the cached attrs for this inode if jiffies \- read_cache_jiffies > attrtimeo\&.
+.RE
+.PP
+\fIcache_valid\fR
+.RS 4
+cache related bit mask flag
 .RE
 .PP
 \fIdev\fR
@@ -81,14 +66,29 @@ vm flags
 device identifier
 .RE
 .PP
+\fIfile_name\fR
+.RS 4
+file name
+.RE
+.PP
+\fIparent_name\fR
+.RS 4
+parent dir name
+.RE
+.PP
+\fIbuf\fR
+.RS 4
+the address of buf in user space
+.RE
+.PP
+\fIvm_flag\fR
+.RS 4
+vm flags
+.RE
+.PP
 \fIcache_time\fR
 .RS 4
 when we started read\-caching this inode
-.RE
-.PP
-\fIcache_valid\fR
-.RS 4
-cache related bit mask flag
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfs (3stap)

@@ -2,12 +2,12 @@
 .\"     Title: probe::nfsd.proc.write
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFSD\&.PROC\&" "3stap" "May 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFSD\&.PROC\&" "3stap" "November 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,9 +36,9 @@ nfsd\&.proc\&.write
 .fi
 .SH "VALUES"
 .PP
-\fIversion\fR
+\fIvec\fR
 .RS 4
-nfs version
+struct kvec, includes buf address in kernel address and length of each buffer
 .RE
 .PP
 \fIfh\fR
@@ -46,37 +46,7 @@ nfs version
 file handle (the first part is the length of the file handle)
 .RE
 .PP
-\fIstable\fR
-.RS 4
-argp\->stable
-.RE
-.PP
-\fIgid\fR
-.RS 4
-requester\*(Aqs group id
-.RE
-.PP
-\fIuid\fR
-.RS 4
-requester\*(Aqs user id
-.RE
-.PP
-\fIproto\fR
-.RS 4
-transfer protocol
-.RE
-.PP
 \fIsize\fR
-.RS 4
-read bytes
-.RE
-.PP
-\fIvec\fR
-.RS 4
-struct kvec, includes buf address in kernel address and length of each buffer
-.RE
-.PP
-\fIcount\fR
 .RS 4
 read bytes
 .RE
@@ -91,9 +61,39 @@ read blocks
 the ip address of client
 .RE
 .PP
+\fIgid\fR
+.RS 4
+requester\*(Aqs group id
+.RE
+.PP
+\fIcount\fR
+.RS 4
+read bytes
+.RE
+.PP
+\fIuid\fR
+.RS 4
+requester\*(Aqs user id
+.RE
+.PP
+\fIproto\fR
+.RS 4
+transfer protocol
+.RE
+.PP
+\fIversion\fR
+.RS 4
+nfs version
+.RE
+.PP
 \fIoffset\fR
 .RS 4
 the offset of file
+.RE
+.PP
+\fIstable\fR
+.RS 4
+argp\->stable
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfsd (3stap)

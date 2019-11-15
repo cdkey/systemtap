@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.aop.write_end
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.AOP\&.W" "3stap" "May 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.AOP\&.W" "3stap" "November 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,24 @@ nfs\&.aop\&.write_end
 .fi
 .SH "VALUES"
 .PP
-\fIino\fR
+\fIdev\fR
 .RS 4
-inode number
+device identifier
 .RE
 .PP
 \fIoffset\fR
 .RS 4
 start address of this write operation
+.RE
+.PP
+\fIi_size\fR
+.RS 4
+file length in bytes
+.RE
+.PP
+\fI__page\fR
+.RS 4
+the address of page
 .RE
 .PP
 \fIsize\fR
@@ -56,19 +66,9 @@ write bytes
 end address of this write operation
 .RE
 .PP
-\fI__page\fR
-.RS 4
-the address of page
-.RE
-.PP
 \fIi_flag\fR
 .RS 4
 file flags
-.RE
-.PP
-\fIi_size\fR
-.RS 4
-file length in bytes
 .RE
 .PP
 \fIsb_flag\fR
@@ -81,9 +81,9 @@ super block flags
 offset within mapping, can used a page identifier and position identifier in the page frame
 .RE
 .PP
-\fIdev\fR
+\fIino\fR
 .RS 4
-device identifier
+inode number
 .RE
 .SH "DESCRIPTION"
 .PP

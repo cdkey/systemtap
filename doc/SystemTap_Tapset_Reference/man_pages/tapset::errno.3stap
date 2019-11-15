@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::ERRNO 3stap "May 2019" "SystemTap Tapset Reference"
+.TH TAPSET::ERRNO 3stap "November 2019" "SystemTap Tapset Reference"
 .SH NAME
 tapset::errno \- systemtap errno tapset
  

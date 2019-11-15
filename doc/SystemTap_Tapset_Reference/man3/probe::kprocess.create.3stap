@@ -2,12 +2,12 @@
 .\"     Title: probe::kprocess.create
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Kernel Process Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::KPROCESS\&.CR" "3stap" "May 2019" "SystemTap Tapset Reference" "Kernel Process Tapset"
+.TH "PROBE::KPROCESS\&.CR" "3stap" "November 2019" "SystemTap Tapset Reference" "Kernel Process Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,14 @@ kprocess\&.create
 .fi
 .SH "VALUES"
 .PP
-\fInew_tid\fR
-.RS 4
-The TID of the newly created task
-.RE
-.PP
 \fInew_pid\fR
 .RS 4
 The PID of the newly created process
+.RE
+.PP
+\fInew_tid\fR
+.RS 4
+The TID of the newly created task
 .RE
 .SH "CONTEXT"
 .PP

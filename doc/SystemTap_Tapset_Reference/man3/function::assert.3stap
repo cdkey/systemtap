@@ -2,12 +2,12 @@
 .\"     Title: function::assert
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Logging Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::ASSERT" "3stap" "May 2019" "SystemTap Tapset Reference" "Logging Tapset"
+.TH "FUNCTION::ASSERT" "3stap" "November 2019" "SystemTap Tapset Reference" "Logging Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

@@ -2,12 +2,12 @@
 .\"     Title: probe::socket.close
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Socket Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SOCKET\&.CLOS" "3stap" "May 2019" "SystemTap Tapset Reference" "Socket Tapset"
+.TH "PROBE::SOCKET\&.CLOS" "3stap" "November 2019" "SystemTap Tapset Reference" "Socket Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,9 @@ socket\&.close
 .fi
 .SH "VALUES"
 .PP
-\fIname\fR
+\fIstate\fR
 .RS 4
-Name of this probe
-.RE
-.PP
-\fIflags\fR
-.RS 4
-Socket flags value
+Socket state value
 .RE
 .PP
 \fIprotocol\fR
@@ -51,19 +46,24 @@ Socket flags value
 Protocol value
 .RE
 .PP
+\fItype\fR
+.RS 4
+Socket type value
+.RE
+.PP
+\fIflags\fR
+.RS 4
+Socket flags value
+.RE
+.PP
 \fIfamily\fR
 .RS 4
 Protocol family value
 .RE
 .PP
-\fIstate\fR
+\fIname\fR
 .RS 4
-Socket state value
-.RE
-.PP
-\fItype\fR
-.RS 4
-Socket type value
+Name of this probe
 .RE
 .SH "CONTEXT"
 .PP

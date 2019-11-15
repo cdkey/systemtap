@@ -2,12 +2,12 @@
 .\"     Title: function::symfileline
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Context Functions
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::SYMFILELIN" "3stap" "May 2019" "SystemTap Tapset Reference" "Context Functions"
+.TH "FUNCTION::SYMFILELIN" "3stap" "November 2019" "SystemTap Tapset Reference" "Context Functions"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

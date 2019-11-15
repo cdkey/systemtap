@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.proc.rename_done
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.PROC\&." "3stap" "May 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.PROC\&." "3stap" "November 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,19 +36,14 @@ nfs\&.proc\&.rename_done
 .fi
 .SH "VALUES"
 .PP
-\fIold_fh\fR
+\fIstatus\fR
 .RS 4
-file handle of old parent dir
+result of last operation
 .RE
 .PP
-\fIversion\fR
+\fItimestamp\fR
 .RS 4
-NFS version
-.RE
-.PP
-\fInew_fh\fR
-.RS 4
-file handle of new parent dir
+V4 timestamp, which is used for lease renewal
 .RE
 .PP
 \fIserver_ip\fR
@@ -56,19 +51,24 @@ file handle of new parent dir
 IP address of server
 .RE
 .PP
-\fIstatus\fR
-.RS 4
-result of last operation
-.RE
-.PP
 \fIprot\fR
 .RS 4
 transfer protocol
 .RE
 .PP
-\fItimestamp\fR
+\fIversion\fR
 .RS 4
-V4 timestamp, which is used for lease renewal
+NFS version
+.RE
+.PP
+\fIold_fh\fR
+.RS 4
+file handle of old parent dir
+.RE
+.PP
+\fInew_fh\fR
+.RS 4
+file handle of new parent dir
 .RE
 .SH "DESCRIPTION"
 .PP

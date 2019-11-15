@@ -2,12 +2,12 @@
 .\"     Title: probe::nfsd.commit
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFSD\&.COMMIT" "3stap" "May 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFSD\&.COMMIT" "3stap" "November 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,9 +36,9 @@ nfsd\&.commit
 .fi
 .SH "VALUES"
 .PP
-\fIsize\fR
+\fIflag\fR
 .RS 4
-read bytes
+indicates whether this execution is a sync operation
 .RE
 .PP
 \fIfh\fR
@@ -46,17 +46,7 @@ read bytes
 file handle (the first part is the length of the file handle)
 .RE
 .PP
-\fIoffset\fR
-.RS 4
-the offset of file
-.RE
-.PP
-\fIflag\fR
-.RS 4
-indicates whether this execution is a sync operation
-.RE
-.PP
-\fIcount\fR
+\fIsize\fR
 .RS 4
 read bytes
 .RE
@@ -64,6 +54,16 @@ read bytes
 \fIclient_ip\fR
 .RS 4
 the ip address of client
+.RE
+.PP
+\fIcount\fR
+.RS 4
+read bytes
+.RE
+.PP
+\fIoffset\fR
+.RS 4
+the offset of file
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfsd (3stap)

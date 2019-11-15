@@ -2,12 +2,12 @@
 .\"     Title: function::tz_gmtoff
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Time utility functions
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::TZ_GMTOFF" "3stap" "May 2019" "SystemTap Tapset Reference" "Time utility functions"
+.TH "FUNCTION::TZ_GMTOFF" "3stap" "November 2019" "SystemTap Tapset Reference" "Time utility functions"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

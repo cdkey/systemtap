@@ -2,12 +2,12 @@
 .\"     Title: probe::stap.pass1.end
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: SystemTap Translator Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::STAP\&.PASS1\" "3stap" "May 2019" "SystemTap Tapset Reference" "SystemTap Translator Tapset"
+.TH "PROBE::STAP\&.PASS1\" "3stap" "November 2019" "SystemTap Tapset Reference" "SystemTap Translator Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

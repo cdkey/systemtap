@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::TASK_ANCESTRY 3stap "May 2019" "SystemTap Tapset Reference"
+.TH TAPSET::TASK_ANCESTRY 3stap "November 2019" "SystemTap Tapset Reference"
 .SH NAME
 tapset::task_ancestry \- systemtap task_ancestry tapset
  

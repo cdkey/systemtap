@@ -2,12 +2,12 @@
 .\"     Title: function::switch_file
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Output file switching Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::SWITCH_FIL" "3stap" "May 2019" "SystemTap Tapset Reference" "Output file switching Tapset"
+.TH "FUNCTION::SWITCH_FIL" "3stap" "November 2019" "SystemTap Tapset Reference" "Output file switching Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

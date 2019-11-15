@@ -2,12 +2,12 @@
 .\"     Title: probe::netfilter.arp.forward
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Networking Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NETFILTER\&.A" "3stap" "May 2019" "SystemTap Tapset Reference" "Networking Tapset"
+.TH "PROBE::NETFILTER\&.A" "3stap" "November 2019" "SystemTap Tapset Reference" "Networking Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,29 +36,20 @@ netfilter\&.arp\&.forward
 .fi
 .SH "VALUES"
 .PP
-\fInf_drop\fR
+\fIar_sip\fR
 .RS 4
-Constant used to signify a \*(Aqdrop\*(Aq verdict
+Ethernet+IP only (ar_pro==0x800): source IP address
 .RE
 .PP
-\fIar_pro\fR
+\fIpf\fR
 .RS 4
-Format of protocol address
-.RE
-.PP
-\fInf_accept\fR
-.RS 4
-Constant used to signify an \*(Aqaccept\*(Aq verdict
+Protocol family \-\- always
+\(lqarp\(rq
 .RE
 .PP
 \fIindev_name\fR
 .RS 4
 Name of network device packet was received on (if known)
-.RE
-.PP
-\fInf_stop\fR
-.RS 4
-Constant used to signify a \*(Aqstop\*(Aq verdict
 .RE
 .PP
 \fIar_data\fR
@@ -71,29 +62,9 @@ Address of ARP packet data region (after the header)
 Ethernet+IP only (ar_pro==0x800): target IP address
 .RE
 .PP
-\fIlength\fR
+\fIar_pro\fR
 .RS 4
-The length of the packet buffer contents, in bytes
-.RE
-.PP
-\fIar_sha\fR
-.RS 4
-Ethernet+IP only (ar_pro==0x800): source hardware (MAC) address
-.RE
-.PP
-\fInf_repeat\fR
-.RS 4
-Constant used to signify a \*(Aqrepeat\*(Aq verdict
-.RE
-.PP
-\fIoutdev_name\fR
-.RS 4
-Name of network device packet will be routed to (if known)
-.RE
-.PP
-\fIar_hrd\fR
-.RS 4
-Format of hardware address
+Format of protocol address
 .RE
 .PP
 \fIindev\fR
@@ -101,45 +72,9 @@ Format of hardware address
 Address of net_device representing input device, 0 if unknown
 .RE
 .PP
-\fIar_pln\fR
-.RS 4
-Length of protocol address
-.RE
-.PP
-\fIdata_hex\fR
-.RS 4
-A hexadecimal string representing the packet buffer contents
-.RE
-.PP
-\fIar_sip\fR
-.RS 4
-Ethernet+IP only (ar_pro==0x800): source IP address
-.RE
-.PP
-\fIdata_str\fR
-.RS 4
-A string representing the packet buffer contents
-.RE
-.PP
 \fInf_stolen\fR
 .RS 4
 Constant used to signify a \*(Aqstolen\*(Aq verdict
-.RE
-.PP
-\fIar_tha\fR
-.RS 4
-Ethernet+IP only (ar_pro==0x800): target hardware (MAC) address
-.RE
-.PP
-\fIpf\fR
-.RS 4
-Protocol family \-\- always
-\(lqarp\(rq
-.RE
-.PP
-\fInf_queue\fR
-.RS 4
-Constant used to signify a \*(Aqqueue\*(Aq verdict
 .RE
 .PP
 \fIoutdev\fR
@@ -147,9 +82,59 @@ Constant used to signify a \*(Aqqueue\*(Aq verdict
 Address of net_device representing output device, 0 if unknown
 .RE
 .PP
+\fInf_stop\fR
+.RS 4
+Constant used to signify a \*(Aqstop\*(Aq verdict
+.RE
+.PP
+\fInf_accept\fR
+.RS 4
+Constant used to signify an \*(Aqaccept\*(Aq verdict
+.RE
+.PP
+\fIlength\fR
+.RS 4
+The length of the packet buffer contents, in bytes
+.RE
+.PP
+\fInf_queue\fR
+.RS 4
+Constant used to signify a \*(Aqqueue\*(Aq verdict
+.RE
+.PP
+\fInf_repeat\fR
+.RS 4
+Constant used to signify a \*(Aqrepeat\*(Aq verdict
+.RE
+.PP
 \fIar_hln\fR
 .RS 4
 Length of hardware address
+.RE
+.PP
+\fIar_hrd\fR
+.RS 4
+Format of hardware address
+.RE
+.PP
+\fIar_op\fR
+.RS 4
+ARP opcode (command)
+.RE
+.PP
+\fIdata_hex\fR
+.RS 4
+A hexadecimal string representing the packet buffer contents
+.RE
+.PP
+\fIoutdev_name\fR
+.RS 4
+Name of network device packet will be routed to (if known)
+.RE
+.PP
+\fIdata_str\fR
+.RS 4
+A string representing the packet buffer contents
 .RE
 .PP
 \fIarphdr\fR
@@ -157,9 +142,24 @@ Length of hardware address
 Address of ARP header
 .RE
 .PP
-\fIar_op\fR
+\fIar_tha\fR
 .RS 4
-ARP opcode (command)
+Ethernet+IP only (ar_pro==0x800): target hardware (MAC) address
+.RE
+.PP
+\fIar_pln\fR
+.RS 4
+Length of protocol address
+.RE
+.PP
+\fIar_sha\fR
+.RS 4
+Ethernet+IP only (ar_pro==0x800): source hardware (MAC) address
+.RE
+.PP
+\fInf_drop\fR
+.RS 4
+Constant used to signify a \*(Aqdrop\*(Aq verdict
 .RE
 .SH SEE ALSO\n 
 .IR tapset::netfilter (3stap)

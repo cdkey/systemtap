@@ -2,12 +2,12 @@
 .\"     Title: probe::irq_handler.entry
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Interrupt Request (IRQ) Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::IRQ_HANDLER\&" "3stap" "May 2019" "SystemTap Tapset Reference" "Interrupt Request (IRQ) Tapset"
+.TH "PROBE::IRQ_HANDLER\&" "3stap" "November 2019" "SystemTap Tapset Reference" "Interrupt Request (IRQ) Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,29 +36,9 @@ irq_handler\&.entry
 .fi
 .SH "VALUES"
 .PP
-\fIflags_str\fR
-.RS 4
-symbolic string representation of IRQ flags
-.RE
-.PP
-\fIthread_flags\fR
-.RS 4
-Flags related to thread
-.RE
-.PP
 \fIthread\fR
 .RS 4
 thread pointer for threaded interrupts
-.RE
-.PP
-\fIhandler\fR
-.RS 4
-interrupt handler function
-.RE
-.PP
-\fIdir\fR
-.RS 4
-pointer to the proc/irq/NN/name entry
 .RE
 .PP
 \fIthread_fn\fR
@@ -66,24 +46,14 @@ pointer to the proc/irq/NN/name entry
 interrupt handler function for threaded interrupts
 .RE
 .PP
-\fInext_irqaction\fR
+\fIthread_flags\fR
 .RS 4
-pointer to next irqaction for shared interrupts
+Flags related to thread
 .RE
 .PP
-\fIirq\fR
+\fIhandler\fR
 .RS 4
-irq number
-.RE
-.PP
-\fIdev_id\fR
-.RS 4
-Cookie to identify device
-.RE
-.PP
-\fIdev_name\fR
-.RS 4
-name of device
+interrupt handler function
 .RE
 .PP
 \fIflags\fR
@@ -91,9 +61,39 @@ name of device
 Flags for IRQ handler
 .RE
 .PP
+\fIdev_id\fR
+.RS 4
+Cookie to identify device
+.RE
+.PP
+\fInext_irqaction\fR
+.RS 4
+pointer to next irqaction for shared interrupts
+.RE
+.PP
+\fIflags_str\fR
+.RS 4
+symbolic string representation of IRQ flags
+.RE
+.PP
+\fIdev_name\fR
+.RS 4
+name of device
+.RE
+.PP
+\fIirq\fR
+.RS 4
+irq number
+.RE
+.PP
 \fIaction\fR
 .RS 4
 struct irqaction* for this interrupt num
+.RE
+.PP
+\fIdir\fR
+.RS 4
+pointer to the proc/irq/NN/name entry
 .RE
 .SH SEE ALSO\n 
 .IR tapset::irq (3stap)

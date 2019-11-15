@@ -2,12 +2,12 @@
 .\"     Title: probe::sunrpc.svc.destroy
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Networking Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SUNRPC\&.SVC\" "3stap" "May 2019" "SystemTap Tapset Reference" "Networking Tapset"
+.TH "PROBE::SUNRPC\&.SVC\" "3stap" "November 2019" "SystemTap Tapset Reference" "Networking Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,6 +36,16 @@ sunrpc\&.svc\&.destroy
 .fi
 .SH "VALUES"
 .PP
+\fIrpcbadfmt\fR
+.RS 4
+the count of requests dropped for bad formats
+.RE
+.PP
+\fInettcpconn\fR
+.RS 4
+the count of accepted TCP connections
+.RE
+.PP
 \fIrpccnt\fR
 .RS 4
 the count of valid RPC requests
@@ -56,11 +66,6 @@ the number of the program
 the count of requests drooped for authentication failure
 .RE
 .PP
-\fIrpcbadfmt\fR
-.RS 4
-the count of requests dropped for bad formats
-.RE
-.PP
 \fIsv_progname\fR
 .RS 4
 the name of the program
@@ -74,11 +79,6 @@ the service name
 \fInetcnt\fR
 .RS 4
 the count of received RPC requests
-.RE
-.PP
-\fInettcpconn\fR
-.RS 4
-the count of accepted TCP connections
 .RE
 .SH SEE ALSO\n 
 .IR tapset::rpc (3stap)

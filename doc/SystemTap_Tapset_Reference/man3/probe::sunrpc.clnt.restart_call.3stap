@@ -2,12 +2,12 @@
 .\"     Title: probe::sunrpc.clnt.restart_call
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Networking Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SUNRPC\&.CLNT" "3stap" "May 2019" "SystemTap Tapset Reference" "Networking Tapset"
+.TH "PROBE::SUNRPC\&.CLNT" "3stap" "November 2019" "SystemTap Tapset Reference" "Networking Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -41,14 +41,14 @@ sunrpc\&.clnt\&.restart_call
 the task run status
 .RE
 .PP
-\fIxid\fR
-.RS 4
-the transmission id
-.RE
-.PP
 \fItk_flags\fR
 .RS 4
 the task flags
+.RE
+.PP
+\fIxid\fR
+.RS 4
+the transmission id
 .RE
 .PP
 \fItk_priority\fR

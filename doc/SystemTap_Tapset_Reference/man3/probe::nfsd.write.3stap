@@ -2,12 +2,12 @@
 .\"     Title: probe::nfsd.write
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFSD\&.WRITE" "3stap" "May 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFSD\&.WRITE" "3stap" "November 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,24 +36,19 @@ nfsd\&.write
 .fi
 .SH "VALUES"
 .PP
-\fIoffset\fR
+\fIclient_ip\fR
 .RS 4
-the offset of file
+the ip address of client
 .RE
 .PP
-\fIcount\fR
+\fIfile\fR
 .RS 4
-read bytes
+argument file, indicates if the file has been opened\&.
 .RE
 .PP
 \fIvlen\fR
 .RS 4
 read blocks
-.RE
-.PP
-\fIclient_ip\fR
-.RS 4
-the ip address of client
 .RE
 .PP
 \fIsize\fR
@@ -71,9 +66,14 @@ struct kvec, includes buf address in kernel address and length of each buffer
 file handle (the first part is the length of the file handle)
 .RE
 .PP
-\fIfile\fR
+\fIoffset\fR
 .RS 4
-argument file, indicates if the file has been opened\&.
+the offset of file
+.RE
+.PP
+\fIcount\fR
+.RS 4
+read bytes
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfsd (3stap)

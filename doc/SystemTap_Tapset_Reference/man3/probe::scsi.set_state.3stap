@@ -2,12 +2,12 @@
 .\"     Title: probe::scsi.set_state
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: SCSI Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SCSI\&.SET_ST" "3stap" "May 2019" "SystemTap Tapset Reference" "SCSI Tapset"
+.TH "PROBE::SCSI\&.SET_ST" "3stap" "November 2019" "SystemTap Tapset Reference" "SCSI Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,19 +36,9 @@ scsi\&.set_state
 .fi
 .SH "VALUES"
 .PP
-\fIchannel\fR
+\fIlun\fR
 .RS 4
-The channel number
-.RE
-.PP
-\fIstate\fR
-.RS 4
-The new state of the device
-.RE
-.PP
-\fIold_state\fR
-.RS 4
-The current state of the device
+The lun number
 .RE
 .PP
 \fIold_state_str\fR
@@ -61,19 +51,29 @@ The current state of the device, as a string
 The new state of the device, as a string
 .RE
 .PP
-\fIhost_no\fR
+\fIstate\fR
 .RS 4
-The host number
-.RE
-.PP
-\fIlun\fR
-.RS 4
-The lun number
+The new state of the device
 .RE
 .PP
 \fIdev_id\fR
 .RS 4
 The scsi device id
+.RE
+.PP
+\fIhost_no\fR
+.RS 4
+The host number
+.RE
+.PP
+\fIchannel\fR
+.RS 4
+The channel number
+.RE
+.PP
+\fIold_state\fR
+.RS 4
+The current state of the device
 .RE
 .SH SEE ALSO\n 
 .IR tapset::scsi (3stap)

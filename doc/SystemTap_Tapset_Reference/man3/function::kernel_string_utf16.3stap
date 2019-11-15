@@ -2,12 +2,12 @@
 .\"     Title: function::kernel_string_utf16
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: String and data retrieving functions Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::KERNEL_STR" "3stap" "May 2019" "SystemTap Tapset Reference" "String and data retrieving fun"
+.TH "FUNCTION::KERNEL_STR" "3stap" "November 2019" "SystemTap Tapset Reference" "String and data retrieving fun"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

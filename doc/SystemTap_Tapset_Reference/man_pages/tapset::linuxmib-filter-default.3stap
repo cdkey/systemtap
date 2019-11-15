@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::LINUXMIB-FILTER-DEFAULT 3stap "May 2019" "SystemTap Tapset Reference"
+.TH TAPSET::LINUXMIB-FILTER-DEFAULT 3stap "November 2019" "SystemTap Tapset Reference"
 .SH NAME
 tapset::linuxmib-filter-default \- systemtap linuxmib-filter-default tapset
  

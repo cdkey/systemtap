@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.fop.sendfile
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.FOP\&.S" "3stap" "May 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.FOP\&.S" "3stap" "November 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,9 @@ nfs\&.fop\&.sendfile
 .fi
 .SH "VALUES"
 .PP
-\fIcount\fR
+\fIcache_valid\fR
 .RS 4
-read bytes
-.RE
-.PP
-\fIino\fR
-.RS 4
-inode number
+cache related bit mask flag
 .RE
 .PP
 \fIattrtimeo\fR
@@ -51,9 +46,14 @@ inode number
 how long the cached information is assumed to be valid\&. We need to revalidate the cached attrs for this inode if jiffies \- read_cache_jiffies > attrtimeo\&.
 .RE
 .PP
-\fIcache_valid\fR
+\fIino\fR
 .RS 4
-cache related bit mask flag
+inode number
+.RE
+.PP
+\fIppos\fR
+.RS 4
+current position of file
 .RE
 .PP
 \fIcache_time\fR
@@ -61,9 +61,9 @@ cache related bit mask flag
 when we started read\-caching this inode
 .RE
 .PP
-\fIppos\fR
+\fIcount\fR
 .RS 4
-current position of file
+read bytes
 .RE
 .PP
 \fIdev\fR

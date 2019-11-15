@@ -2,12 +2,12 @@
 .\"     Title: function::user_char
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: String and data retrieving functions Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::USER_CHAR" "3stap" "May 2019" "SystemTap Tapset Reference" "String and data retrieving fun"
+.TH "FUNCTION::USER_CHAR" "3stap" "November 2019" "SystemTap Tapset Reference" "String and data retrieving fun"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

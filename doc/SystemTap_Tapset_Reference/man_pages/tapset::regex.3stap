@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::REGEX 3stap "May 2019" "SystemTap Tapset Reference"
+.TH TAPSET::REGEX 3stap "November 2019" "SystemTap Tapset Reference"
 .SH NAME
 tapset::regex \- systemtap regex tapset
  

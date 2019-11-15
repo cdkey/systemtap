@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::CONTEXT-UNWIND 3stap "May 2019" "SystemTap Tapset Reference"
+.TH TAPSET::CONTEXT-UNWIND 3stap "November 2019" "SystemTap Tapset Reference"
 .SH NAME
 tapset::context-unwind \- systemtap context-unwind tapset
  
@@ -17,6 +17,14 @@ Print kernel stack back trace
 .IP
 See 
 .IR function::print_backtrace (3stap)
+ for details.
+.P
+.TP
+.B print_backtrace_fileline 
+Print kernel stack back trace
+.IP
+See 
+.IR function::print_backtrace_fileline (3stap)
  for details.
 .P
 .TP
@@ -46,6 +54,8 @@ See
 .SH SEE ALSO
 .BR
 .IR \%function::print_backtrace (3stap),
+.BR
+.IR \%function::print_backtrace_fileline (3stap),
 .BR
 .IR \%function::sprint_backtrace (3stap),
 .BR

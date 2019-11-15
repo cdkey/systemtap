@@ -2,12 +2,12 @@
 .\"     Title: probe::ioscheduler.elv_next_request.return
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: IO Scheduler and block IO Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::IOSCHEDULER\&" "3stap" "May 2019" "SystemTap Tapset Reference" "IO Scheduler and block IO Taps"
+.TH "PROBE::IOSCHEDULER\&" "3stap" "November 2019" "SystemTap Tapset Reference" "IO Scheduler and block IO Taps"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,9 +36,9 @@ ioscheduler\&.elv_next_request\&.return
 .fi
 .SH "VALUES"
 .PP
-\fIrq_flags\fR
+\fIdisk_minor\fR
 .RS 4
-Request flags
+Disk minor number of the request
 .RE
 .PP
 \fIdisk_major\fR
@@ -46,9 +46,9 @@ Request flags
 Disk major number of the request
 .RE
 .PP
-\fIdisk_minor\fR
+\fIrq_flags\fR
 .RS 4
-Disk minor number of the request
+Request flags
 .RE
 .PP
 \fIrq\fR

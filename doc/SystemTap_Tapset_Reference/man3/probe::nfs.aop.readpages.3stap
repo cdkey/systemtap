@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.aop.readpages
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.AOP\&.R" "3stap" "May 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.AOP\&.R" "3stap" "November 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,9 @@ nfs\&.aop\&.readpages
 .fi
 .SH "VALUES"
 .PP
-\fIino\fR
+\fIdev\fR
 .RS 4
-inode number
-.RE
-.PP
-\fIfile\fR
-.RS 4
-filp argument
+device identifier
 .RE
 .PP
 \fInr_pages\fR
@@ -56,19 +51,24 @@ number of pages attempted to read in this execution
 number of pages attempted to read in this execution
 .RE
 .PP
-\fIrsize\fR
-.RS 4
-read size (in bytes)
-.RE
-.PP
 \fIrpages\fR
 .RS 4
 read size (in pages)
 .RE
 .PP
-\fIdev\fR
+\fIrsize\fR
 .RS 4
-device identifier
+read size (in bytes)
+.RE
+.PP
+\fIino\fR
+.RS 4
+inode number
+.RE
+.PP
+\fIfile\fR
+.RS 4
+filp argument
 .RE
 .SH "DESCRIPTION"
 .PP

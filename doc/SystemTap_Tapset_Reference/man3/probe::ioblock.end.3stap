@@ -2,12 +2,12 @@
 .\"     Title: probe::ioblock.end
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: IO Scheduler and block IO Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::IOBLOCK\&.END" "3stap" "May 2019" "SystemTap Tapset Reference" "IO Scheduler and block IO Taps"
+.TH "PROBE::IOBLOCK\&.END" "3stap" "November 2019" "SystemTap Tapset Reference" "IO Scheduler and block IO Taps"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,34 +36,9 @@ ioblock\&.end
 .fi
 .SH "VALUES"
 .PP
-\fIsize\fR
-.RS 4
-total size in bytes
-.RE
-.PP
 \fIrw\fR
 .RS 4
 binary trace for read/write request
-.RE
-.PP
-\fIino\fR
-.RS 4
-i\-node number of the mapped file
-.RE
-.PP
-\fIsector\fR
-.RS 4
-beginning sector for the entire bio
-.RE
-.PP
-\fIflags\fR
-.RS 4
-see below BIO_UPTODATE 0 ok after I/O completion BIO_RW_BLOCK 1 RW_AHEAD set, and read/write would block BIO_EOF 2 out\-out\-bounds error BIO_SEG_VALID 3 nr_hw_seg valid BIO_CLONED 4 doesn\*(Aqt own data BIO_BOUNCED 5 bio is a bounce bio BIO_USER_MAPPED 6 contains user pages BIO_EOPNOTSUPP 7 not supported
-.RE
-.PP
-\fIhw_segments\fR
-.RS 4
-number of segments after physical and DMA remapping hardware coalescing is performed
 .RE
 .PP
 \fIerror\fR
@@ -71,9 +46,44 @@ number of segments after physical and DMA remapping hardware coalescing is perfo
 0 on success
 .RE
 .PP
+\fIphys_segments\fR
+.RS 4
+number of segments in this bio after physical address coalescing is performed\&.
+.RE
+.PP
 \fIname\fR
 .RS 4
 name of the probe point
+.RE
+.PP
+\fIopf\fR
+.RS 4
+operations and flags
+.RE
+.PP
+\fIsector\fR
+.RS 4
+beginning sector for the entire bio
+.RE
+.PP
+\fIino\fR
+.RS 4
+i\-node number of the mapped file
+.RE
+.PP
+\fIdevname\fR
+.RS 4
+block device name
+.RE
+.PP
+\fIhw_segments\fR
+.RS 4
+number of segments after physical and DMA remapping hardware coalescing is performed
+.RE
+.PP
+\fIflags\fR
+.RS 4
+see below BIO_UPTODATE 0 ok after I/O completion BIO_RW_BLOCK 1 RW_AHEAD set, and read/write would block BIO_EOF 2 out\-out\-bounds error BIO_SEG_VALID 3 nr_hw_seg valid BIO_CLONED 4 doesn\*(Aqt own data BIO_BOUNCED 5 bio is a bounce bio BIO_USER_MAPPED 6 contains user pages BIO_EOPNOTSUPP 7 not supported
 .RE
 .PP
 \fIvcnt\fR
@@ -86,24 +96,14 @@ bio vector count which represents number of array element (page, offset, length)
 number of bytes transferred
 .RE
 .PP
-\fIphys_segments\fR
-.RS 4
-number of segments in this bio after physical address coalescing is performed\&.
-.RE
-.PP
-\fIdevname\fR
-.RS 4
-block device name
-.RE
-.PP
 \fIidx\fR
 .RS 4
 offset into the bio vector array
 .RE
 .PP
-\fIopf\fR
+\fIsize\fR
 .RS 4
-operations and flags
+total size in bytes
 .RE
 .SH "CONTEXT"
 .PP

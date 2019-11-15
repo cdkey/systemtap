@@ -2,12 +2,12 @@
 .\"     Title: function::print_ubacktrace
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Context Functions
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::PRINT_UBAC" "3stap" "May 2019" "SystemTap Tapset Reference" "Context Functions"
+.TH "FUNCTION::PRINT_UBAC" "3stap" "November 2019" "SystemTap Tapset Reference" "Context Functions"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -32,19 +32,40 @@ function::print_ubacktrace \- Print stack back trace for current user\-space tas
 .SH "SYNOPSIS"
 .sp
 .nf
-    print_ubacktrace()
+1) print_ubacktrace()
+.fi
+.sp
+.nf
+2) print_ubacktrace(pc:long,sp:long,fp:long)
 .fi
 .SH "ARGUMENTS"
 .PP
-None
+\fIpc\fR
+.RS 4
+\-\- undescribed \-\-
+.RE
+.PP
+\fIsp\fR
+.RS 4
+\-\- undescribed \-\-
+.RE
+.PP
+\fIfp\fR
+.RS 4
+\-\- undescribed \-\-
+.RE
 .SH "DESCRIPTION"
 .PP
+1)
 .PP
-Equivalent to print_ustack(\fBubacktrace\fR), except that deeper stack nesting may be supported\&. Returns nothing\&. See
+2) Equivalent to print_ustack(\fBubacktrace\fR), except that deeper stack nesting may be supported\&. Returns nothing\&. See
 \fBprint_backtrace\fR
 for kernel backtrace\&.
+.PP
 .SH "NOTE"
 .PP
 To get (full) backtraces for user space applications and shared shared libraries not mentioned in the current script run stap with \-d /path/to/exe\-or\-so and/or add \-\-ldd to load all needed unwind data\&.
+.SH SEE ALSO\n 
+.IR tapset::ucontext-unwind (3stap)
 .SH SEE ALSO\n 
 .IR tapset::ucontext-unwind (3stap)

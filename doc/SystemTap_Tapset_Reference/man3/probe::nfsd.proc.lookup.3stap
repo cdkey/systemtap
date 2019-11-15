@@ -2,12 +2,12 @@
 .\"     Title: probe::nfsd.proc.lookup
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFSD\&.PROC\&" "3stap" "May 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFSD\&.PROC\&" "3stap" "November 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,19 +36,9 @@ nfsd\&.proc\&.lookup
 .fi
 .SH "VALUES"
 .PP
-\fIversion\fR
+\fIgid\fR
 .RS 4
-nfs version
-.RE
-.PP
-\fIfh\fR
-.RS 4
-file handle of parent dir (the first part is the length of the file handle)
-.RE
-.PP
-\fIuid\fR
-.RS 4
-requester\*(Aqs user id
+requester\*(Aqs group id
 .RE
 .PP
 \fIclient_ip\fR
@@ -56,19 +46,29 @@ requester\*(Aqs user id
 the ip address of client
 .RE
 .PP
-\fIproto\fR
+\fIfh\fR
 .RS 4
-transfer protocol
-.RE
-.PP
-\fIgid\fR
-.RS 4
-requester\*(Aqs group id
+file handle of parent dir (the first part is the length of the file handle)
 .RE
 .PP
 \fIfilename\fR
 .RS 4
 file name
+.RE
+.PP
+\fIversion\fR
+.RS 4
+nfs version
+.RE
+.PP
+\fIproto\fR
+.RS 4
+transfer protocol
+.RE
+.PP
+\fIuid\fR
+.RS 4
+requester\*(Aqs user id
 .RE
 .PP
 \fIfilelen\fR

@@ -2,12 +2,12 @@
 .\"     Title: probe::tcpmib.RetransSegs
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: May 2019
+.\"      Date: November 2019
 .\"    Manual: SNMP Information Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::TCPMIB\&.RETR" "3stap" "May 2019" "SystemTap Tapset Reference" "SNMP Information Tapset"
+.TH "PROBE::TCPMIB\&.RETR" "3stap" "November 2019" "SystemTap Tapset Reference" "SNMP Information Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

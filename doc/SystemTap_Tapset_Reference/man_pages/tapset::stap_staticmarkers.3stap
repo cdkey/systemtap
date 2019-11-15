@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::STAP_STATICMARKERS 3stap "May 2019" "SystemTap Tapset Reference"
+.TH TAPSET::STAP_STATICMARKERS 3stap "November 2019" "SystemTap Tapset Reference"
 .SH NAME
 tapset::stap_staticmarkers \- systemtap stap_staticmarkers tapset
  
