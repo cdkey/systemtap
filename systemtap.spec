@@ -131,7 +131,7 @@ BuildRequires: gettext-devel
 BuildRequires: pkgconfig(nss)
 BuildRequires: pkgconfig(avahi-client)
 %if %{with_dyninst}
-BuildRequires: dyninst-devel >= 10.1
+BuildRequires: dyninst-devel >= 10.0
 BuildRequires: pkgconfig(libselinux)
 %endif
 %if %{with_sqlite}
