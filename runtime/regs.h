@@ -1,5 +1,5 @@
 /* common register includes used in multiple modules
- * Copyright (C) 2005-2008 Red Hat Inc.
+ * Copyright (C) 2005-2019 Red Hat Inc.
  * Copyright (C) 2005 Intel Corporation.
  *
  * This file is part of systemtap, and is free software.  You can

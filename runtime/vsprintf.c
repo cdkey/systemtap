@@ -1,6 +1,6 @@
 /* -*- linux-c -*-
  * vsprintf.c
- * Copyright (C) 2006, 2008 Red Hat Inc.
+ * Copyright (C) 2006, 2008-2019 Red Hat Inc.
  * Based on code from the Linux kernel
  * Copyright (C) 1991, 1992  Linus Torvalds
  *

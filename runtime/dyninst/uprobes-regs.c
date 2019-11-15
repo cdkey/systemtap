@@ -1,6 +1,6 @@
 /* -*- linux-c -*-
  * function for preparing registers for dyninst-based uprobes
- * Copyright (C) 2012-2013 Red Hat Inc.
+ * Copyright (C) 2012-2019 Red Hat Inc.
  *
  * This file is part of systemtap, and is free software.  You can
  * redistribute it and/or modify it under the terms of the GNU General

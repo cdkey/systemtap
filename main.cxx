@@ -1,5 +1,5 @@
 // systemtap translator/driver
-// Copyright (C) 2005-2018 Red Hat Inc.
+// Copyright (C) 2005-2019 Red Hat Inc.
 // Copyright (C) 2005 IBM Corp.
 // Copyright (C) 2006 Intel Corporation.
 //

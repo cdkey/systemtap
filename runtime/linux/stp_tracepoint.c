@@ -3,7 +3,7 @@
  *
  * SystemTap layer for registering various kernel tracepoint APIs.
  *
- * Copyright (C) 2014-2018 Red Hat Inc.
+ * Copyright (C) 2014-2019 Red Hat Inc.
  *
  * Initially derived from lttng-tracepoints.c:
  * LTTng adaptation layer for Linux kernel 3.15+ tracepoints.
