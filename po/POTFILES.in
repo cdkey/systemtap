@@ -4,6 +4,7 @@ bpf-bitset.h
 bpf.h
 bpf-internal.h
 bpf-opt.cxx
+bpf-shared-globals.h
 bpf-translate.cxx
 buildrun.cxx
 buildrun.h
