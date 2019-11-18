@@ -2,6 +2,19 @@
 
 * What's new in version 4.2, 2019-11-18
 
+- Initial support for multi-dimensional supports has been added to
+  the stapbpf backend. Note that these arrays cannot be iterated upon
+  with a foreach loop.
+
+- The stapbpf backend now supports sorting by value in foreach loops.
+
+- The stapbpf backend now supports the concatenation operator for
+  userspace probes.
+
+- The stapbpf backend now supports the target() function and -x option.
+
+- The gettimeofday_* functions are now provided for the stapbpf backend.
+
 - The values of an array can now be iterated over in foreach loops in 
   the stapbpf backend. They are no longer defaulted to 0.
 
