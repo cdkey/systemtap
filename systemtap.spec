@@ -87,7 +87,7 @@
 %define __brp_mangle_shebangs_exclude_from .stp$
 
 Name: systemtap
-Version: 4.2
+Version: 4.3
 Release: 1%{?release_override}%{?dist}
 # for version, see also configure.ac
 
