@@ -40,12 +40,6 @@ dynsdt_CXXFLAGS = $(AM_CXXFLAGS) @DYNINST_CXXFLAGS@
 dynsdt_LDFLAGS = $(AM_LDFLAGS) @DYNINST_LDFLAGS@
 dynsdt_LDADD = -ldl -lelf -ldyninstAPI -lsymtabAPI -lpthread
 
-if BUILD_ELFUTILS
-dynsdt_CPPFLAGS += -I../include-elfutils
-dynsdt_LDFLAGS += -L../lib-elfutils -Wl,-rpath-link,lib-elfutils \
-		-Wl,--enable-new-dtags,-rpath,$(pkglibdir)
-endif
-
 endif # HAVE_DYNINST
 
 BUILT_SOURCES =

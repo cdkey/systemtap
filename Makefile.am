@@ -166,32 +166,6 @@ stap_SOURCES += client-http.cxx
 stap_LDADD += $(libcurl_LIBS) $(jsonc_LIBS) $(openssl_LIBS)
 endif
 
-if BUILD_ELFUTILS
-stap_CPPFLAGS += -Iinclude-elfutils
-stap_LDFLAGS += -Llib-elfutils -Wl,-rpath-link,lib-elfutils \
-		-Wl,--enable-new-dtags,-rpath,$(pkglibdir)
-
-
-BUILT_SOURCES += stamp-elfutils
-CLEANFILES += stamp-elfutils
-stamp-elfutils: config.status
-	$(MAKE) $(AM_MAKEFLAGS) -C build-elfutils all bin_PROGRAMS=
-	for dir in libelf libebl libdw libdwfl libdwelf backends; do \
-	  $(MAKE) $(AM_MAKEFLAGS) -j1 -C build-elfutils/$$dir bin_PROGRAMS= install; \
-	done
-	$(MAKE) $(AM_MAKEFLAGS) -j1 -C build-elfutils install-pkgincludeHEADERS;
-	touch $@
-stap_DEPENDENCIES += lib-elfutils/libdw.so
-lib-elfutils/libdw.so: stamp-elfutils ;
-
-PHONIES += install-elfutils
-install-elfutils:
-	mkdir -p $(DESTDIR)$(pkglibdir)
-	for file in lib-elfutils/*.so* lib-elfutils/${PACKAGE_NAME}/*.so*; do \
-	   $(INSTALL_PROGRAM) $$file $(DESTDIR)$(pkglibdir); \
-	done
-install-exec-local: install-elfutils
-endif
 endif
 
 CLEANFILES +=  $(pkglibexec_PROGRAMS)
@@ -325,7 +299,6 @@ clean-local:
 	rm -rf staplog.so
 
 distclean-local:
-	rm -rf build-elfutils include-elfutils lib-elfutils
 	rm -f doc/beginners/en-US doc/beginners/build/en-US/testsuite
 
 uninstall-local:
@@ -441,7 +414,7 @@ update-po:
 
 # Any extra flags, such as:
 #     --define "with_docs 0"
-#     --define "with_bundled_elfutils 1" --define "elfutils_version 0.135"
+#     --define "elfutils_version 0.135"
 RPMBUILDFLAGS=
 
 PHONIES += dist-gzip rpm srpm

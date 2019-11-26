@@ -689,9 +689,6 @@ CXXCPP
 stapbpf_LIBS
 staprun_LIBS
 stap_LIBS
-elfutils_abs_srcdir
-BUILD_ELFUTILS_FALSE
-BUILD_ELFUTILS_TRUE
 preferred_python
 HAVE_LIBREADLINE_FALSE
 HAVE_LIBREADLINE_TRUE
@@ -918,7 +915,6 @@ enable_server
 with_avahi
 with_rpm
 with_python3
-with_elfutils
 with_dyninst
 enable_virt
 enable_libvirt
@@ -1643,8 +1639,6 @@ Optional Packages:
   --without-avahi         Do not use Avahi even if present
   --with-rpm              query rpm database for missing debuginfos
   --with-python3          prefer python version 3
-  --with-elfutils=DIRECTORY
-                          find elfutils source code in DIRECTORY
   --with-dyninst=DIRECTORY
                           find dyninst headers/libraries in DIRECTORY
   --without-python2-probes
@@ -11421,36 +11415,10 @@ else
   as_fn_error $? "neither python version 2 nor 3 found" "$LINENO" 5
 fi
 
-build_elfutils=no
-
-# Check whether --with-elfutils was given.
-if test "${with_elfutils+set}" = set; then :
-  withval=$with_elfutils;
-case "$with_elfutils" in
-yes) as_fn_error $? "--with-elfutils requires an argument" "$LINENO" 5 ;;
-''|no) ;;
-*) build_elfutils=yes ;;
-esac
-fi
-
- if test $build_elfutils = yes; then
-  BUILD_ELFUTILS_TRUE=
-  BUILD_ELFUTILS_FALSE='#'
-else
-  BUILD_ELFUTILS_TRUE='#'
-  BUILD_ELFUTILS_FALSE=
-fi
-
-elfutils_abs_srcdir=`if test $build_elfutils = yes; then :
-  cd $with_elfutils && pwd
-fi`
-
-
 if test $enable_translator = yes; then
-  if test $build_elfutils = no; then
     # Need libdwfl-capable recent elfutils http://elfutils.org/
-
-    # On modern debian/ubuntu, libebl has been merged into libdw
+    # On modern debian/ubuntu and modern elfutils, libebl has been
+    # merged into libdw
     # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=457543
     save_LIBS="$LIBS"
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ebl_get_elfmachine in -lebl" >&5
@@ -11596,10 +11564,6 @@ fi
 
     stap_LIBS="$stap_LIBS -Wl,--start-group -ldw $ebl_LIBS -Wl,--end-group -lelf"
     LIBS="$save_LIBS"
-  else
-    # We built our own and stap_LDFLAGS points at the install.
-    stap_LIBS="$stap_LIBS -Wl,--start-group -ldw -lebl -Wl,--end-group -lelf"
-  fi
 fi
 
 
@@ -11607,9 +11571,8 @@ fi
 $as_echo "$as_me: stap will link $stap_LIBS" >&6;}
 
 # staprun has more modest libelf needs
-if test $build_elfutils = no; then
-  save_LIBS="$LIBS"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for elf_getshdrstrndx in -lelf" >&5
+save_LIBS="$LIBS"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for elf_getshdrstrndx in -lelf" >&5
 $as_echo_n "checking for elf_getshdrstrndx in -lelf... " >&6; }
 if ${ac_cv_lib_elf_elf_getshdrstrndx+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -11654,20 +11617,15 @@ _ACEOF
 
 else
 
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "libelf too old, need 0.142+
 See \`config.log' for more details" "$LINENO" 5; }
 fi
 
-  staprun_LIBS="$staprun_LIBS -lelf"
-  stapbpf_LIBS="$stapbpf_LIBS -lelf"
-  LIBS="$save_LIBS"
-else
-  # We built our own and staprun_LDFLAGS points at the install.
-  staprun_LIBS="$staprun_LIBS -lelf"
-  stapbpf_LIBS="$stapbpf_LIBS -lelf"
-fi
+staprun_LIBS="$staprun_LIBS -lelf"
+stapbpf_LIBS="$stapbpf_LIBS -lelf"
+LIBS="$save_LIBS"
 
 
 
@@ -12599,75 +12557,6 @@ $as_echo "#define HAVE_BPF_PROG_TYPE_RAW_TRACEPOINT 1" >>confdefs.h
 fi
 
 
-if test $build_elfutils = yes -a $enable_translator = yes; then
-  here=`pwd`
-  case "$with_elfutils" in
-  /*) elfutils_srcdir="$with_elfutils" ;;
-  *) elfutils_srcdir="${here}/$with_elfutils" ;;
-  esac
-
-  if ! test -f ${elfutils_srcdir}/configure; then
-    as_fn_error $? "No ${elfutils_srcdir}/configure, forgot to run autoreconf -i?" "$LINENO" 5
-  fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: running ${elfutils_srcdir}/configure" >&5
-$as_echo "$as_me: running ${elfutils_srcdir}/configure" >&6;}
-
-  save_CFLAGS="$CFLAGS"
-  save_CXXFLAGS="$CXXFLAGS"
-  CXXFLAGS="$CXXFLAGS -fgnu89-inline"
-  CFLAGS="$CFLAGS -fgnu89-inline"
-  gnu89_inline_flag=""
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-int something ();
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Compiling elfutils with gcc -fgnu89-inline" >&5
-$as_echo "$as_me: Compiling elfutils with gcc -fgnu89-inline" >&6;}
-    gnu89_inline_flag="-fgnu89-inline"
-else
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Compiler does not support -fgnu89-inline" >&5
-$as_echo "$as_me: Compiler does not support -fgnu89-inline" >&6;}
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  CFLAGS="$save_CFLAGS"
-  CXXFLAGS="$save_CXXFLAGS"
-
-  # Our libdw.so's libebl will look in $ORIGIN/../lib/... but that
-  # $ORIGIN is where libdw.so resides, which is not where there is a ../lib.
-  # Note that $libdir might be using a quoted use of $exec_prefix or $prefix.
-  # So we must make sure to pass those settings to elfutils configure.
-  elfutils_rpath="-Wl,--enable-new-dtags,-rpath,${libdir}/${PACKAGE_NAME}"
-  # Check whether this is a source release, or a source checkout.
-  # We need --enable-maintainer-mode if it isn't a source release.
-  # elfutils.spec is only distributed in source releases.
-  if test -f ${elfutils_srcdir}/elfutils.spec; then
-	need_maintainer_option=""
-  else
-	need_maintainer_option="--enable-maintainer-mode"
-  fi
-  (mkdir -p build-elfutils && cd build-elfutils &&
-   bash ${elfutils_srcdir}/configure --enable-libebl-subdir=${PACKAGE_NAME} \
-				--includedir="${here}/include-elfutils" \
-				--libdir="${here}/lib-elfutils" \
-				--exec-prefix="$exec_prefix" \
-				--prefix="$prefix" \
-				--enable-dwz \
-				${need_maintainer_option} \
-				CFLAGS="${CFLAGS/-Wall/} $gnu89_inline_flag -fexceptions" \
-				LDFLAGS="$LDFLAGS $elfutils_rpath" &&
-   if test -f ${elfutils_srcdir}/config/version.h.in; then
-        echo Found elfutils/version.h header...
-   else
-	echo elfutils/version.h header not found, need elfutils 0.142+...
-	exit -1
-   fi
-  )
-  if test $? != 0; then exit -1; fi
-fi
-
 
 # Check whether --with-selinux was given.
 if test "${with_selinux+set}" = set; then :
@@ -13450,10 +13339,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${HAVE_LIBREADLINE_TRUE}" && test -z "${HAVE_LIBREADLINE_FALSE}"; then
   as_fn_error $? "conditional \"HAVE_LIBREADLINE\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${BUILD_ELFUTILS_TRUE}" && test -z "${BUILD_ELFUTILS_FALSE}"; then
-  as_fn_error $? "conditional \"BUILD_ELFUTILS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${HAVE_DYNINST_TRUE}" && test -z "${HAVE_DYNINST_FALSE}"; then

@@ -97,10 +97,6 @@ bin_PROGRAMS = $(am__EXEEXT_1)
 noinst_PROGRAMS = $(am__EXEEXT_2)
 @HAVE_DYNINST_TRUE@am__append_3 = stapdyn
 @HAVE_DYNINST_TRUE@am__append_4 = dynsdt
-@BUILD_ELFUTILS_TRUE@@HAVE_DYNINST_TRUE@am__append_5 = -I../include-elfutils
-@BUILD_ELFUTILS_TRUE@@HAVE_DYNINST_TRUE@am__append_6 = -L../lib-elfutils -Wl,-rpath-link,lib-elfutils \
-@BUILD_ELFUTILS_TRUE@@HAVE_DYNINST_TRUE@		-Wl,--enable-new-dtags,-rpath,$(pkglibdir)
-
 subdir = stapdyn
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -353,7 +349,6 @@ docdir = @docdir@
 dracutbindir = @dracutbindir@
 dracutstap = @dracutstap@
 dvidir = @dvidir@
-elfutils_abs_srcdir = @elfutils_abs_srcdir@
 exec_prefix = @exec_prefix@
 have_dvips = @have_dvips@
 have_fop = @have_fop@
@@ -446,10 +441,9 @@ AM_LDFLAGS = @PIELDFLAGS@ @BOOST_SYSTEM_LIB@ $(am__append_2)
 @HAVE_DYNINST_TRUE@stapdyn_LDFLAGS = $(AM_LDFLAGS) @DYNINST_LDFLAGS@
 @HAVE_DYNINST_TRUE@stapdyn_LDADD = -ldl -ldyninstAPI -lsymtabAPI -lpthread
 @HAVE_DYNINST_TRUE@dynsdt_SOURCES = dynsdt.cxx dynutil.cxx ../util.cxx
-@HAVE_DYNINST_TRUE@dynsdt_CPPFLAGS = $(AM_CPPFLAGS) $(am__append_5)
+@HAVE_DYNINST_TRUE@dynsdt_CPPFLAGS = $(AM_CPPFLAGS)
 @HAVE_DYNINST_TRUE@dynsdt_CXXFLAGS = $(AM_CXXFLAGS) @DYNINST_CXXFLAGS@
-@HAVE_DYNINST_TRUE@dynsdt_LDFLAGS = $(AM_LDFLAGS) @DYNINST_LDFLAGS@ \
-@HAVE_DYNINST_TRUE@	$(am__append_6)
+@HAVE_DYNINST_TRUE@dynsdt_LDFLAGS = $(AM_LDFLAGS) @DYNINST_LDFLAGS@
 @HAVE_DYNINST_TRUE@dynsdt_LDADD = -ldl -lelf -ldyninstAPI -lsymtabAPI -lpthread
 
 # Arrange for the top-level git_version.h to be regenerated at every "make".

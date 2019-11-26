@@ -335,7 +335,6 @@ docdir = @docdir@
 dracutbindir = @dracutbindir@
 dracutstap = @dracutstap@
 dvidir = @dvidir@
-elfutils_abs_srcdir = @elfutils_abs_srcdir@
 exec_prefix = @exec_prefix@
 have_dvips = @have_dvips@
 have_fop = @have_fop@
@@ -674,9 +673,9 @@ maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
 	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
-@HAVE_JAVA_FALSE@install-data-local:
-@HAVE_JAVA_FALSE@install-exec-local:
 @HAVE_JAVA_FALSE@uninstall-local:
+@HAVE_JAVA_FALSE@install-exec-local:
+@HAVE_JAVA_FALSE@install-data-local:
 clean: clean-am
 
 clean-am: clean-binPROGRAMS clean-generic clean-noinstPROGRAMS \

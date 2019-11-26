@@ -161,7 +161,7 @@ am__py_compile = PYTHON=$(PYTHON) $(SHELL) $(py_compile)
 am__installdirs = "$(DESTDIR)$(pkglibexecdockerdir)" \
 	"$(DESTDIR)$(pkgdatadockerdir)"
 am__pep3147_tweak = \
-  sed -e 's|\.py$$||' -e 's|[^/]*$$|&.*.pyc\n&.*.pyo|'
+  sed -e 's|\.py$$||' -e 's|[^/]*$$|__pycache__/&.*.py|'
 py_compile = $(top_srcdir)/py-compile
 DATA = $(pkgdatadocker_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
@@ -292,7 +292,6 @@ docdir = @docdir@
 dracutbindir = @dracutbindir@
 dracutstap = @dracutstap@
 dvidir = @dvidir@
-elfutils_abs_srcdir = @elfutils_abs_srcdir@
 exec_prefix = @exec_prefix@
 have_dvips = @have_dvips@
 have_fop = @have_fop@
@@ -444,15 +443,20 @@ uninstall-pkglibexecdockerPYTHON:
 	dir='$(DESTDIR)$(pkglibexecdockerdir)'; \
 	pyc_files=`echo "$$py_files" | sed 's|$$|c|'`; \
 	pyo_files=`echo "$$py_files" | sed 's|$$|o|'`; \
+	py_files_pep3147=`echo "$$py_files" | $(am__pep3147_tweak)`; \
+	echo "$$py_files_pep3147";\
+	pyc_files_pep3147=`echo "$$py_files_pep3147" | sed 's|$$|c|'`; \
+	pyo_files_pep3147=`echo "$$py_files_pep3147" | sed 's|$$|o|'`; \
 	st=0; \
-	for files in "$$py_files" "$$pyc_files" "$$pyo_files"; do \
+	for files in \
+	  "$$py_files" \
+	  "$$pyc_files" \
+	  "$$pyo_files" \
+	  "$$pyc_files_pep3147" \
+	  "$$pyo_files_pep3147" \
+	; do \
 	  $(am__uninstall_files_from_dir) || st=$$?; \
 	done; \
-	dir='$(DESTDIR)$(pkglibexecdockerdir)/__pycache__'; \
-	echo "$$py_files" | $(am__pep3147_tweak) | $(am__base_list) | \
-	  while read files; do \
-	    $(am__uninstall_files_from_dir) || st=$$?; \
-	  done || exit $$?; \
 	exit $$st
 install-pkgdatadockerDATA: $(pkgdatadocker_DATA)
 	@$(NORMAL_INSTALL)

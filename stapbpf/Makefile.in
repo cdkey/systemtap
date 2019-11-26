@@ -92,10 +92,6 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 @HAVE_BPF_DECLS_TRUE@bin_PROGRAMS = stapbpf$(EXEEXT)
-@BUILD_ELFUTILS_TRUE@@HAVE_BPF_DECLS_TRUE@am__append_1 = -I../include-elfutils
-@BUILD_ELFUTILS_TRUE@@HAVE_BPF_DECLS_TRUE@am__append_2 = -L../lib-elfutils -Wl,-rpath-link,lib-elfutils \
-@BUILD_ELFUTILS_TRUE@@HAVE_BPF_DECLS_TRUE@		-Wl,--enable-new-dtags,-rpath,$(pkglibdir)
-
 subdir = stapbpf
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -348,7 +344,6 @@ docdir = @docdir@
 dracutbindir = @dracutbindir@
 dracutstap = @dracutstap@
 dvidir = @dvidir@
-elfutils_abs_srcdir = @elfutils_abs_srcdir@
 exec_prefix = @exec_prefix@
 have_dvips = @have_dvips@
 have_fop = @have_fop@
@@ -435,10 +430,10 @@ AM_CPPFLAGS = -D_GNU_SOURCE -I$(srcdir)/../includes \
 AM_LDFLAGS = @PIELDFLAGS@
 @HAVE_BPF_DECLS_TRUE@man_MANS = stapbpf.8
 @HAVE_BPF_DECLS_TRUE@stapbpf_SOURCES = stapbpf.cxx bpfinterp.cxx libbpf.c ../util.cxx
-@HAVE_BPF_DECLS_TRUE@stapbpf_CPPFLAGS = $(AM_CPPFLAGS) $(am__append_1)
+@HAVE_BPF_DECLS_TRUE@stapbpf_CPPFLAGS = $(AM_CPPFLAGS)
 @HAVE_BPF_DECLS_TRUE@stapbpf_CFLAGS = $(AM_CFLAGS)
 @HAVE_BPF_DECLS_TRUE@stapbpf_CXXFLAGS = $(AM_CXXFLAGS)
-@HAVE_BPF_DECLS_TRUE@stapbpf_LDFLAGS = $(AM_LDFLAGS) $(am__append_2)
+@HAVE_BPF_DECLS_TRUE@stapbpf_LDFLAGS = $(AM_LDFLAGS)
 @HAVE_BPF_DECLS_TRUE@stapbpf_LDADD = $(stapbpf_LIBS) -lpthread
 
 # Arrange for the top-level git_version.h to be regenerated at every "make".

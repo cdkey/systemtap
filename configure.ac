@@ -572,27 +572,10 @@ AS_IF([test "x$with_python3" = "xyes"],
       [AC_SUBST(preferred_python,[$PYTHON])],
       [AC_MSG_ERROR([neither python version 2 nor 3 found])])
       
-dnl Handle elfutils.  If '--with-elfutils=DIR' wasn't specified, used
-dnl the system's elfutils.
-build_elfutils=no
-AC_ARG_WITH([elfutils],
-  AS_HELP_STRING([--with-elfutils=DIRECTORY],
-    [find elfutils source code in DIRECTORY]),
-  [
-case "$with_elfutils" in
-yes) AC_MSG_ERROR([--with-elfutils requires an argument]) ;;
-''|no) ;;
-*) build_elfutils=yes ;;
-esac])
-AM_CONDITIONAL(BUILD_ELFUTILS, test $build_elfutils = yes)
-AC_SUBST(elfutils_abs_srcdir, `AS_IF([test $build_elfutils = yes],
-				     [cd $with_elfutils && pwd])`)
-
 if test $enable_translator = yes; then
-  if test $build_elfutils = no; then
     # Need libdwfl-capable recent elfutils http://elfutils.org/
-
-    # On modern debian/ubuntu, libebl has been merged into libdw
+    # On modern debian/ubuntu and modern elfutils, libebl has been
+    # merged into libdw
     # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=457543
     save_LIBS="$LIBS"
     AC_CHECK_LIB(ebl, ebl_get_elfmachine,[ebl_LIBS=-lebl],[ebl_LIBS=])
@@ -607,29 +590,19 @@ if test $enable_translator = yes; then
       [-Wl,--start-group -ldw $ebl_LIBS -Wl,--end-group -lelf])
     stap_LIBS="$stap_LIBS -Wl,--start-group -ldw $ebl_LIBS -Wl,--end-group -lelf"
     LIBS="$save_LIBS"
-  else
-    # We built our own and stap_LDFLAGS points at the install.
-    stap_LIBS="$stap_LIBS -Wl,--start-group -ldw -lebl -Wl,--end-group -lelf"
-  fi
 fi
 
 AC_SUBST(stap_LIBS)
 AC_MSG_NOTICE([stap will link $stap_LIBS])
 
 # staprun has more modest libelf needs
-if test $build_elfutils = no; then
-  save_LIBS="$LIBS"
-  dnl this will only succeed with elfutils 0.142+
-  AC_CHECK_LIB(elf,elf_getshdrstrndx,[],[
-    AC_MSG_FAILURE([libelf too old, need 0.142+])])
-  staprun_LIBS="$staprun_LIBS -lelf"
-  stapbpf_LIBS="$stapbpf_LIBS -lelf"
-  LIBS="$save_LIBS"
-else
-  # We built our own and staprun_LDFLAGS points at the install.
-  staprun_LIBS="$staprun_LIBS -lelf"
-  stapbpf_LIBS="$stapbpf_LIBS -lelf"
-fi
+save_LIBS="$LIBS"
+dnl this will only succeed with elfutils 0.142+
+AC_CHECK_LIB(elf,elf_getshdrstrndx,[],[
+  AC_MSG_FAILURE([libelf too old, need 0.142+])])
+staprun_LIBS="$staprun_LIBS -lelf"
+stapbpf_LIBS="$stapbpf_LIBS -lelf"
+LIBS="$save_LIBS"
 
 AC_SUBST(staprun_LIBS)
 AC_SUBST(stapbpf_LIBS)
@@ -855,63 +828,6 @@ AC_CHECK_DECLS([BPF_PROG_TYPE_RAW_TRACEPOINT],
                [AC_DEFINE([HAVE_BPF_PROG_TYPE_RAW_TRACEPOINT], [1], [Define to 1 if you have the necessary declarations in bpf.h])],
                [],
                [#include <linux/bpf.h>])
-
-if test $build_elfutils = yes -a $enable_translator = yes; then
-  here=`pwd`
-  case "$with_elfutils" in
-  /*) elfutils_srcdir="$with_elfutils" ;;
-  *) elfutils_srcdir="${here}/$with_elfutils" ;;
-  esac
-
-  if ! test -f ${elfutils_srcdir}/configure; then
-    AC_MSG_ERROR([No ${elfutils_srcdir}/configure, forgot to run autoreconf -i?])
-  fi
-  AC_MSG_NOTICE([running ${elfutils_srcdir}/configure])
-
-  save_CFLAGS="$CFLAGS"
-  save_CXXFLAGS="$CXXFLAGS"
-  CXXFLAGS="$CXXFLAGS -fgnu89-inline"
-  CFLAGS="$CFLAGS -fgnu89-inline"
-  gnu89_inline_flag=""
-  AC_COMPILE_IFELSE([AC_LANG_SOURCE([int something ();])], [
-    AC_MSG_NOTICE([Compiling elfutils with gcc -fgnu89-inline])
-    gnu89_inline_flag="-fgnu89-inline"],[
-    AC_MSG_NOTICE([Compiler does not support -fgnu89-inline])])
-  CFLAGS="$save_CFLAGS"
-  CXXFLAGS="$save_CXXFLAGS"
-
-  # Our libdw.so's libebl will look in $ORIGIN/../lib/... but that
-  # $ORIGIN is where libdw.so resides, which is not where there is a ../lib.
-  # Note that $libdir might be using a quoted use of $exec_prefix or $prefix.
-  # So we must make sure to pass those settings to elfutils configure.
-  elfutils_rpath="-Wl,--enable-new-dtags,-rpath,${libdir}/${PACKAGE_NAME}"
-  # Check whether this is a source release, or a source checkout.
-  # We need --enable-maintainer-mode if it isn't a source release.
-  # elfutils.spec is only distributed in source releases.
-  if test -f ${elfutils_srcdir}/elfutils.spec; then
-	need_maintainer_option=""
-  else
-	need_maintainer_option="--enable-maintainer-mode"
-  fi
-  (mkdir -p build-elfutils && cd build-elfutils &&
-   bash ${elfutils_srcdir}/configure --enable-libebl-subdir=${PACKAGE_NAME} \
-				--includedir="${here}/include-elfutils" \
-				--libdir="${here}/lib-elfutils" \
-				--exec-prefix="$exec_prefix" \
-				--prefix="$prefix" \
-				--enable-dwz \
-				${need_maintainer_option} \
-				CFLAGS="${CFLAGS/-Wall/} $gnu89_inline_flag -fexceptions" \
-				LDFLAGS="$LDFLAGS $elfutils_rpath" &&
-   if test -f ${elfutils_srcdir}/config/version.h.in; then
-        echo Found elfutils/version.h header...
-   else
-	echo elfutils/version.h header not found, need elfutils 0.142+...
-	exit -1
-   fi
-  )
-  if test $? != 0; then exit -1; fi
-fi
 
 dnl Optional libselinux support allows stapdyn to check
 dnl for booleans that would prevent Dyninst from working.

@@ -29,11 +29,6 @@ staprun_CXXFLAGS = $(AM_CXXFLAGS) -DSINGLE_THREADED
 staprun_CPPFLAGS = $(AM_CPPFLAGS)
 staprun_LDADD = libstrfloctime.a $(staprun_LIBS)
 staprun_LDFLAGS =  $(AM_LDFLAGS)
-if BUILD_ELFUTILS
-staprun_CPPFLAGS += -I../include-elfutils
-staprun_LDFLAGS += -L../lib-elfutils -Wl,-rpath-link,lib-elfutils \
-		-Wl,--enable-new-dtags,-rpath,$(pkglibdir)
-endif
 
 if HAVE_NSS
 staprun_SOURCES += modverify.c ../nsscommon.cxx

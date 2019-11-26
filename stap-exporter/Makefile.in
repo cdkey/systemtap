@@ -279,7 +279,6 @@ docdir = @docdir@
 dracutbindir = @dracutbindir@
 dracutstap = @dracutstap@
 dvidir = @dvidir@
-elfutils_abs_srcdir = @elfutils_abs_srcdir@
 exec_prefix = @exec_prefix@
 have_dvips = @have_dvips@
 have_fop = @have_fop@
@@ -511,9 +510,9 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+@HAVE_PYTHON3_PROBES_FALSE@uninstall-local:
 @HAVE_PYTHON3_PROBES_FALSE@clean-local:
 @HAVE_PYTHON3_PROBES_FALSE@install-data-local:
-@HAVE_PYTHON3_PROBES_FALSE@uninstall-local:
 clean: clean-am
 
 clean-am: clean-generic clean-local mostlyclean-am

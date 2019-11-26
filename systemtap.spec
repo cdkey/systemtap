@@ -10,7 +10,6 @@
 %{!?with_crash: %global with_crash 1}
 %endif
 %{!?with_rpm: %global with_rpm 1}
-%{!?with_bundled_elfutils: %global with_bundled_elfutils 0}
 %{!?elfutils_version: %global elfutils_version 0.142}
 %{!?pie_supported: %global pie_supported 1}
 %{!?with_boost: %global with_boost 0}
@@ -154,14 +153,7 @@ BuildRequires: crash-devel zlib-devel
 %if %{with_rpm}
 BuildRequires: rpm-devel
 %endif
-%if %{with_bundled_elfutils}
-Source1: elfutils-%{elfutils_version}.tar.gz
-Patch1: elfutils-portability.patch
-BuildRequires: m4
-%global setup_elfutils -a1
-%else
 BuildRequires: elfutils-devel >= %{elfutils_version}
-%endif
 %if %{with_docs}
 BuildRequires: /usr/bin/latex /usr/bin/dvips /usr/bin/ps2pdf
 %if 0%{?fedora} >= 18 || 0%{?rhel} >= 7
@@ -514,34 +506,9 @@ systemtap-runtime-virthost machine to execute systemtap scripts.
 # ------------------------------------------------------------------------
 
 %prep
-%setup -q %{?setup_elfutils}
-
-%if %{with_bundled_elfutils}
-cd elfutils-%{elfutils_version}
-%patch1 -p1
-sleep 1
-find . \( -name Makefile.in -o -name aclocal.m4 \) -print | xargs touch
-sleep 1
-find . \( -name configure -o -name config.h.in \) -print | xargs touch
-cd ..
-%endif
+%setup -q
 
 %build
-
-%if %{with_bundled_elfutils}
-# Build our own copy of elfutils.
-%global elfutils_config --with-elfutils=elfutils-%{elfutils_version}
-
-# We have to prevent the standard dependency generation from identifying
-# our private elfutils libraries in our provides and requires.
-%global _use_internal_dependency_generator	0
-%global filter_eulibs() /bin/sh -c "%{1} | sed '/libelf/d;/libdw/d;/libebl/d'"
-%global __find_provides %{filter_eulibs /usr/lib/rpm/find-provides}
-%global __find_requires %{filter_eulibs /usr/lib/rpm/find-requires}
-
-# This will be needed for running stap when not installed, for the test suite.
-%global elfutils_mflags LD_LIBRARY_PATH=`pwd`/lib-elfutils
-%endif
 
 # Enable/disable the dyninst pure-userspace backend
 %if %{with_dyninst}
@@ -638,7 +605,7 @@ cd ..
 # We don't ship compileworthy python code, just oddball samples
 %global py_auto_byte_compile 0
 
-%configure %{?elfutils_config} %{dyninst_config} %{sqlite_config} %{crash_config} %{docs_config} %{pie_config} %{rpm_config} %{java_config} %{virt_config} %{dracut_config} %{python3_config} %{python2_probes_config} %{python3_probes_config} %{httpd_config} %{bpf_config} --disable-silent-rules --with-extra-version="rpm %{version}-%{release}"
+%configure %{dyninst_config} %{sqlite_config} %{crash_config} %{docs_config} %{pie_config} %{rpm_config} %{java_config} %{virt_config} %{dracut_config} %{python3_config} %{python2_probes_config} %{python3_probes_config} %{httpd_config} %{bpf_config} --disable-silent-rules --with-extra-version="rpm %{version}-%{release}"
 make %{?_smp_mflags}
 
 %if %{with_emacsvim}
@@ -1089,10 +1056,6 @@ done
 %if %{with_java}
 %dir %{_libexecdir}/systemtap
 %{_libexecdir}/systemtap/libHelperSDT_*.so
-%endif
-%if %{with_bundled_elfutils}
-%dir %{_libdir}/systemtap
-%{_libdir}/systemtap/lib*.so*
 %endif
 %if %{with_emacsvim}
 %{_emacs_sitelispdir}/*.el*

@@ -60,9 +60,8 @@ Build steps:
 
 - Build systemtap normally:
   % .../configure [other autoconf options]
-  Or, with build it with a bundled internal copy of elfutils:
-  % .../configure --with-elfutils=ELFUTILS-SOURCE-DIR [other autoconf options]
-  (Ensure decompression library headers/libraries are installed for elfutils' use.)
+  Add env LDFLAGS=-L/path/ CPPFLAGS=-I/path/ before configure
+  to locate libraries in non-system directories.
 
   Consider configuring with "--enable-dejazilla" to automatically
   contribute to our public test result database.
