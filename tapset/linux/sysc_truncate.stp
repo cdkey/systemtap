@@ -121,7 +121,7 @@ probe __nd2_syscall.compat_truncate = kprobe.function(@arch_syscall_prefix "comp
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
-probe tp_syscall.tuncate = __tp_syscall.truncate ?,
+probe tp_syscall.truncate = __tp_syscall.truncate ?,
 			   __tp_syscall.truncate64 ?,
 			   __tp_syscall.compat_truncate ?
 {
