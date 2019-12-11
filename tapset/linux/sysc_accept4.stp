@@ -25,20 +25,20 @@
 
 @define _SYSCALL_SOCKETCALL_ACCEPT4_REGARGS
 %(
-	__args = &@ulong_cast(pointer_arg(2))
-	sockfd = __int32(user_ulong(&@ulong_cast(__args)[0]))
-	addr_uaddr = user_ulong(&@ulong_cast(__args)[1])
-	addrlen_uaddr = user_ulong(&@ulong_cast(__args)[2])
-	flags = __int32(user_ulong(&@ulong_cast(__args)[3]))
+	__argsl = &@ulong_cast(pointer_arg(2))
+	sockfd = __int32(user_ulong(&@ulong_cast(__argsl)[0]))
+	addr_uaddr = user_ulong(&@ulong_cast(__argsl)[1])
+	addrlen_uaddr = user_ulong(&@ulong_cast(__argsl)[2])
+	flags = __int32(user_ulong(&@ulong_cast(__argsl)[3]))
 %)
 
 @define _SYSCALL_COMPAT_SOCKETCALL_ACCEPT4_REGARGS
 %(
-	__args = &@uint_cast(pointer_arg(2))
-	sockfd = user_int(&@uint_cast(__args)[0])
-	addr_uaddr = user_uint32(&@uint_cast(__args)[1])
-	addrlen_uaddr = user_uint32(&@uint_cast(__args)[2])
-	flags = user_int(&@uint_cast(__args)[3])
+	__argsi = &@uint_cast(pointer_arg(2))
+	sockfd = user_int(&@uint_cast(__argsi)[0])
+	addr_uaddr = user_uint32(&@uint_cast(__argsi)[1])
+	addrlen_uaddr = user_uint32(&@uint_cast(__argsi)[2])
+	flags = user_int(&@uint_cast(__argsi)[3])
 %)
 
 probe syscall.accept4 = dw_syscall.accept4 !, nd_syscall.accept4 ? {}

@@ -21,18 +21,18 @@
 
 @define _SYSCALL_SOCKETCALL_BIND_REGARGS
 %(
-	__args = &@ulong_cast(pointer_arg(2))
-	sockfd = __int32(user_ulong(&@ulong_cast(__args)[0]))
-	my_addr_uaddr = user_ulong(&@ulong_cast(__args)[1])
-	addrlen = __int32(user_ulong(&@ulong_cast(__args)[2]))
+	__argsl = &@ulong_cast(pointer_arg(2))
+	sockfd = __int32(user_ulong(&@ulong_cast(__argsl)[0]))
+	my_addr_uaddr = user_ulong(&@ulong_cast(__argsl)[1])
+	addrlen = __int32(user_ulong(&@ulong_cast(__argsl)[2]))
 %)
 
 @define _SYSCALL_COMPAT_SOCKETCALL_BIND_REGARGS
 %(
-	__args = &@uint_cast(pointer_arg(2))
-	sockfd = user_int(&@uint_cast(__args)[0])
-	my_addr_uaddr = user_uint32(&@uint_cast(__args)[1])
-	addrlen = user_int(&@uint_cast(__args)[2])
+	__argsi = &@uint_cast(pointer_arg(2))
+	sockfd = user_int(&@uint_cast(__argsi)[0])
+	my_addr_uaddr = user_uint32(&@uint_cast(__argsi)[1])
+	addrlen = user_int(&@uint_cast(__argsi)[2])
 %)
 
 probe syscall.bind = dw_syscall.bind !, nd_syscall.bind ? {}
