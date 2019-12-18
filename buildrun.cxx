@@ -167,9 +167,13 @@ make_make_objs_cmd(systemtap_session& s, const string& dir)
 }
 
 static void
-output_autoconf(systemtap_session& s, ofstream& o, const char *autoconf_c,
-                const char *deftrue, const char *deffalse)
+output_autoconf(systemtap_session& s, ofstream& o,
+                vector<string>& autoconf_c_files,
+                const char *autoconf_c, const char *deftrue,
+                const char *deffalse)
 {
+  autoconf_c_files.push_back (autoconf_c);
+  o << endl << s.tmpdir << "/" << autoconf_c << ".h:" << endl;
   o << "\t";
   if (s.verbose < 4)
     o << "@";
@@ -188,12 +192,8 @@ output_autoconf(systemtap_session& s, ofstream& o, const char *autoconf_c,
 void output_exportconf(systemtap_session& s, ofstream& o, const char *symbol,
                      const char *deftrue)
 {
-  o << "\t";
-  if (s.verbose < 4)
-    o << "@";
   if (s.kernel_exports.find(symbol) != s.kernel_exports.end())
-    o << "echo \"#define " << deftrue << " 1\"";
-  o << ">> $@" << endl;
+    o << "#define " << deftrue << " 1" << endl;
 }
 
 
@@ -201,13 +201,9 @@ void output_dual_exportconf(systemtap_session& s, ofstream& o,
 			    const char *symbol1, const char *symbol2,
 			    const char *deftrue)
 {
-  o << "\t";
-  if (s.verbose < 4)
-    o << "@";
   if (s.kernel_exports.find(symbol1) != s.kernel_exports.end()
       && s.kernel_exports.find(symbol2) != s.kernel_exports.end())
-    o << "echo \"#define " << deftrue << " 1\"";
-  o << ">> $@" << endl;
+    o << "#define " << deftrue << " 1" << endl;
 }
 
 
@@ -215,13 +211,9 @@ void output_either_exportconf(systemtap_session& s, ofstream& o,
 			      const char *symbol1, const char *symbol2,
 			      const char *deftrue)
 {
-  o << "\t";
-  if (s.verbose < 4)
-    o << "@";
   if (s.kernel_exports.find(symbol1) != s.kernel_exports.end()
       || s.kernel_exports.find(symbol2) != s.kernel_exports.end())
-    o << "echo \"#define " << deftrue << " 1\"";
-  o << ">> $@" << endl;
+    o << "#define " << deftrue << " 1" << endl;
 }
 
 
@@ -283,6 +275,9 @@ compile_pass (systemtap_session& s)
   string makefile_nm = s.tmpdir + "/Makefile";
   ofstream o (makefile_nm.c_str());
 
+  string stap_export_nm = s.tmpdir + "/stapconf_export.h";
+  ofstream o2 (stap_export_nm.c_str());
+
   // Create makefile
 
   // Clever hacks copied from vmware modules
@@ -335,170 +330,188 @@ compile_pass (systemtap_session& s)
   // since such headers are cleansed of _KERNEL_ pieces that we need
 
   o << "STAPCONF_HEADER := " << s.tmpdir << "/" << s.stapconf_name << endl;
+  o << ".DELETE_ON_ERROR: $(STAPCONF_HEADER)" << endl;
   o << "$(STAPCONF_HEADER):" << endl;
-  o << "\t@> $@" << endl;
-  output_autoconf(s, o, "autoconf-hrtimer-rel.c", "STAPCONF_HRTIMER_REL", NULL);
-  output_exportconf(s, o, "hrtimer_get_res", "STAPCONF_HRTIMER_GET_RES");
-  output_autoconf(s, o, "autoconf-generated-compile.c", "STAPCONF_GENERATED_COMPILE", NULL);
-  output_autoconf(s, o, "autoconf-hrtimer-getset-expires.c", "STAPCONF_HRTIMER_GETSET_EXPIRES", NULL);
-  output_autoconf(s, o, "autoconf-inode-private.c", "STAPCONF_INODE_PRIVATE", NULL);
-  output_autoconf(s, o, "autoconf-inode-rwsem.c", "STAPCONF_INODE_RWSEM", NULL);
-  output_autoconf(s, o, "autoconf-constant-tsc.c", "STAPCONF_CONSTANT_TSC", NULL);
-  output_autoconf(s, o, "autoconf-ktime-get-real.c", "STAPCONF_KTIME_GET_REAL", NULL);
-  output_exportconf(s, o, "ktime_get_real_fast_ns", "STAPCONF_KTIME_GET_REAL_FAST_NS");
-  output_autoconf(s, o, "autoconf-x86-uniregs.c", "STAPCONF_X86_UNIREGS", NULL);
-  output_autoconf(s, o, "autoconf-nameidata.c", "STAPCONF_NAMEIDATA_CLEANUP", NULL);
-  output_dual_exportconf(s, o, "unregister_kprobes", "unregister_kretprobes", "STAPCONF_UNREGISTER_KPROBES");
-  output_autoconf(s, o, "autoconf-kprobe-symbol-name.c", "STAPCONF_KPROBE_SYMBOL_NAME", NULL);
-  output_autoconf(s, o, "autoconf-real-parent.c", "STAPCONF_REAL_PARENT", NULL);
-  output_autoconf(s, o, "autoconf-uaccess.c", "STAPCONF_LINUX_UACCESS_H", NULL);
-  output_autoconf(s, o, "autoconf-oneachcpu-retry.c", "STAPCONF_ONEACHCPU_RETRY", NULL);
-  output_autoconf(s, o, "autoconf-dpath-path.c", "STAPCONF_DPATH_PATH", NULL);
-  output_exportconf(s, o, "synchronize_kernel", "STAPCONF_SYNCHRONIZE_KERNEL");
-  output_exportconf(s, o, "synchronize_rcu", "STAPCONF_SYNCHRONIZE_RCU");
-  output_exportconf(s, o, "synchronize_sched", "STAPCONF_SYNCHRONIZE_SCHED");
-  output_autoconf(s, o, "autoconf-task-uid.c", "STAPCONF_TASK_UID", NULL);
-  output_autoconf(s, o, "autoconf-from_kuid_munged.c", "STAPCONF_FROM_KUID_MUNGED", NULL);
-  output_exportconf(s, o, "get_mm_exe_file", "STAPCONF_GET_MM_EXE_FILE");
-  output_dual_exportconf(s, o, "alloc_vm_area", "free_vm_area", "STAPCONF_VM_AREA");
-  output_autoconf(s, o, "autoconf-procfs-owner.c", "STAPCONF_PROCFS_OWNER", NULL);
-  output_autoconf(s, o, "autoconf-alloc-percpu-align.c", "STAPCONF_ALLOC_PERCPU_ALIGN", NULL);
-  output_autoconf(s, o, "autoconf-x86-fs.c", "STAPCONF_X86_FS", NULL);
-  output_autoconf(s, o, "autoconf-x86-xfs.c", "STAPCONF_X86_XFS", NULL);
-  output_autoconf(s, o, "autoconf-x86-gs.c", "STAPCONF_X86_GS", NULL);
-  output_autoconf(s, o, "autoconf-grsecurity.c", "STAPCONF_GRSECURITY", NULL);
-  output_autoconf(s, o, "autoconf-trace-printk.c", "STAPCONF_TRACE_PRINTK", NULL);
-  output_autoconf(s, o, "autoconf-regset.c", "STAPCONF_REGSET", NULL);
-  output_autoconf(s, o, "autoconf-utrace-regset.c", "STAPCONF_UTRACE_REGSET", NULL);
-  output_autoconf(s, o, "autoconf-uprobe-get-pc.c", "STAPCONF_UPROBE_GET_PC", NULL);
-  output_autoconf(s, o, "autoconf-hlist-4args.c", "STAPCONF_HLIST_4ARGS", NULL);
-  output_exportconf(s, o, "tsc_khz", "STAPCONF_TSC_KHZ");
-  output_exportconf(s, o, "cpu_khz", "STAPCONF_CPU_KHZ");
-  output_exportconf(s, o, "__module_text_address", "STAPCONF_MODULE_TEXT_ADDRESS");
-  output_exportconf(s, o, "add_timer_on", "STAPCONF_ADD_TIMER_ON");
+  o << "\t";
+  if (s.verbose < 4)
+    o << "@";
+  o << "$(MAKE) -f \"$(firstword $(MAKEFILE_LIST))\" gen-stapconf" << endl;
 
-  output_dual_exportconf(s, o, "probe_kernel_read", "probe_kernel_write", "STAPCONF_PROBE_KERNEL");
-  output_autoconf(s, o, "autoconf-hw_breakpoint_context.c",
+  vector<string> cs;  // to hold autoconf C file names
+
+  output_autoconf(s, o, cs, "autoconf-hrtimer-rel.c", "STAPCONF_HRTIMER_REL", NULL);
+  output_exportconf(s, o2, "hrtimer_get_res", "STAPCONF_HRTIMER_GET_RES");
+  output_autoconf(s, o, cs, "autoconf-generated-compile.c", "STAPCONF_GENERATED_COMPILE", NULL);
+  output_autoconf(s, o, cs, "autoconf-hrtimer-getset-expires.c", "STAPCONF_HRTIMER_GETSET_EXPIRES", NULL);
+  output_autoconf(s, o, cs, "autoconf-inode-private.c", "STAPCONF_INODE_PRIVATE", NULL);
+  output_autoconf(s, o, cs, "autoconf-inode-rwsem.c", "STAPCONF_INODE_RWSEM", NULL);
+  output_autoconf(s, o, cs, "autoconf-constant-tsc.c", "STAPCONF_CONSTANT_TSC", NULL);
+  output_autoconf(s, o, cs, "autoconf-ktime-get-real.c", "STAPCONF_KTIME_GET_REAL", NULL);
+  output_exportconf(s, o2, "ktime_get_real_fast_ns", "STAPCONF_KTIME_GET_REAL_FAST_NS");
+  output_autoconf(s, o, cs, "autoconf-x86-uniregs.c", "STAPCONF_X86_UNIREGS", NULL);
+  output_autoconf(s, o, cs, "autoconf-nameidata.c", "STAPCONF_NAMEIDATA_CLEANUP", NULL);
+  output_dual_exportconf(s, o2, "unregister_kprobes", "unregister_kretprobes", "STAPCONF_UNREGISTER_KPROBES");
+  output_autoconf(s, o, cs, "autoconf-kprobe-symbol-name.c", "STAPCONF_KPROBE_SYMBOL_NAME", NULL);
+  output_autoconf(s, o, cs, "autoconf-real-parent.c", "STAPCONF_REAL_PARENT", NULL);
+  output_autoconf(s, o, cs, "autoconf-uaccess.c", "STAPCONF_LINUX_UACCESS_H", NULL);
+  output_autoconf(s, o, cs, "autoconf-oneachcpu-retry.c", "STAPCONF_ONEACHCPU_RETRY", NULL);
+  output_autoconf(s, o, cs, "autoconf-dpath-path.c", "STAPCONF_DPATH_PATH", NULL);
+  output_exportconf(s, o2, "synchronize_kernel", "STAPCONF_SYNCHRONIZE_KERNEL");
+  output_exportconf(s, o2, "synchronize_rcu", "STAPCONF_SYNCHRONIZE_RCU");
+  output_exportconf(s, o2, "synchronize_sched", "STAPCONF_SYNCHRONIZE_SCHED");
+  output_autoconf(s, o, cs, "autoconf-task-uid.c", "STAPCONF_TASK_UID", NULL);
+  output_autoconf(s, o, cs, "autoconf-from_kuid_munged.c", "STAPCONF_FROM_KUID_MUNGED", NULL);
+  output_exportconf(s, o2, "get_mm_exe_file", "STAPCONF_GET_MM_EXE_FILE");
+  output_dual_exportconf(s, o2, "alloc_vm_area", "free_vm_area", "STAPCONF_VM_AREA");
+  output_autoconf(s, o, cs, "autoconf-procfs-owner.c", "STAPCONF_PROCFS_OWNER", NULL);
+  output_autoconf(s, o, cs, "autoconf-alloc-percpu-align.c", "STAPCONF_ALLOC_PERCPU_ALIGN", NULL);
+  output_autoconf(s, o, cs, "autoconf-x86-fs.c", "STAPCONF_X86_FS", NULL);
+  output_autoconf(s, o, cs, "autoconf-x86-xfs.c", "STAPCONF_X86_XFS", NULL);
+  output_autoconf(s, o, cs, "autoconf-x86-gs.c", "STAPCONF_X86_GS", NULL);
+  output_autoconf(s, o, cs, "autoconf-grsecurity.c", "STAPCONF_GRSECURITY", NULL);
+  output_autoconf(s, o, cs, "autoconf-trace-printk.c", "STAPCONF_TRACE_PRINTK", NULL);
+  output_autoconf(s, o, cs, "autoconf-regset.c", "STAPCONF_REGSET", NULL);
+  output_autoconf(s, o, cs, "autoconf-utrace-regset.c", "STAPCONF_UTRACE_REGSET", NULL);
+  output_autoconf(s, o, cs, "autoconf-uprobe-get-pc.c", "STAPCONF_UPROBE_GET_PC", NULL);
+  output_autoconf(s, o, cs, "autoconf-hlist-4args.c", "STAPCONF_HLIST_4ARGS", NULL);
+  output_exportconf(s, o2, "tsc_khz", "STAPCONF_TSC_KHZ");
+  output_exportconf(s, o2, "cpu_khz", "STAPCONF_CPU_KHZ");
+  output_exportconf(s, o2, "__module_text_address", "STAPCONF_MODULE_TEXT_ADDRESS");
+  output_exportconf(s, o2, "add_timer_on", "STAPCONF_ADD_TIMER_ON");
+
+  output_dual_exportconf(s, o2, "probe_kernel_read", "probe_kernel_write", "STAPCONF_PROBE_KERNEL");
+  output_autoconf(s, o, cs, "autoconf-hw_breakpoint_context.c",
 		  "STAPCONF_HW_BREAKPOINT_CONTEXT", NULL);
-  output_exportconf(s, o, "save_stack_trace_regs", "STAPCONF_SAVE_STACK_TRACE_REGS_EXPORTED");
-  output_autoconf(s, o, "autoconf-save-stack-trace.c",
+  output_exportconf(s, o2, "save_stack_trace_regs", "STAPCONF_SAVE_STACK_TRACE_REGS_EXPORTED");
+  output_autoconf(s, o, cs, "autoconf-save-stack-trace.c",
                   "STAPCONF_KERNEL_STACKTRACE", NULL);
-  output_autoconf(s, o, "autoconf-save-stack-trace-no-bp.c",
+  output_autoconf(s, o, cs, "autoconf-save-stack-trace-no-bp.c",
                   "STAPCONF_KERNEL_STACKTRACE_NO_BP", NULL);
-  output_autoconf(s, o, "autoconf-unwind-stack-trace.c",
+  output_autoconf(s, o, cs, "autoconf-unwind-stack-trace.c",
                   "STAPCONF_KERNEL_UNWIND_STACK", NULL);
-  output_autoconf(s, o, "autoconf-asm-syscall.c",
+  output_autoconf(s, o, cs, "autoconf-asm-syscall.c",
 		  "STAPCONF_ASM_SYSCALL_H", NULL);
-  output_autoconf(s, o, "autoconf-syscall_get_args_3args.c",
+  output_autoconf(s, o, cs, "autoconf-syscall_get_args_3args.c",
 		  "STAPCONF_SYSCALL_GET_ARGS_3ARGS", NULL);
-  output_autoconf(s, o, "autoconf-ring_buffer-flags.c", "STAPCONF_RING_BUFFER_FLAGS", NULL);
-  output_autoconf(s, o, "autoconf-ring_buffer_lost_events.c", "STAPCONF_RING_BUFFER_LOST_EVENTS", NULL);
-  output_autoconf(s, o, "autoconf-ring_buffer_read_prepare.c", "STAPCONF_RING_BUFFER_READ_PREPARE", NULL);
-  output_autoconf(s, o, "autoconf-kallsyms-on-each-symbol.c", "STAPCONF_KALLSYMS_ON_EACH_SYMBOL", NULL);
-  output_autoconf(s, o, "autoconf-walk-stack.c", "STAPCONF_WALK_STACK", NULL);
-  output_autoconf(s, o, "autoconf-stacktrace_ops-warning.c",
+  output_autoconf(s, o, cs, "autoconf-ring_buffer-flags.c", "STAPCONF_RING_BUFFER_FLAGS", NULL);
+  output_autoconf(s, o, cs, "autoconf-ring_buffer_lost_events.c", "STAPCONF_RING_BUFFER_LOST_EVENTS", NULL);
+  output_autoconf(s, o, cs, "autoconf-ring_buffer_read_prepare.c", "STAPCONF_RING_BUFFER_READ_PREPARE", NULL);
+  output_autoconf(s, o, cs, "autoconf-kallsyms-on-each-symbol.c", "STAPCONF_KALLSYMS_ON_EACH_SYMBOL", NULL);
+  output_autoconf(s, o, cs, "autoconf-walk-stack.c", "STAPCONF_WALK_STACK", NULL);
+  output_autoconf(s, o, cs, "autoconf-stacktrace_ops-warning.c",
                   "STAPCONF_STACKTRACE_OPS_WARNING", NULL);
-  output_autoconf(s, o, "autoconf-stacktrace_ops-int-address.c",
+  output_autoconf(s, o, cs, "autoconf-stacktrace_ops-int-address.c",
                   "STAPCONF_STACKTRACE_OPS_INT_ADDRESS", NULL);
-  output_autoconf(s, o, "autoconf-mm-context-vdso.c", "STAPCONF_MM_CONTEXT_VDSO", NULL);
-  output_autoconf(s, o, "autoconf-mm-context-vdso-base.c", "STAPCONF_MM_CONTEXT_VDSO_BASE", NULL);
-  output_autoconf(s, o, "autoconf-blk-types.c", "STAPCONF_BLK_TYPES", NULL);
-  output_autoconf(s, o, "autoconf-perf-structpid.c", "STAPCONF_PERF_STRUCTPID", NULL);
-  output_autoconf(s, o, "perf_event_counter_context.c",
+  output_autoconf(s, o, cs, "autoconf-mm-context-vdso.c", "STAPCONF_MM_CONTEXT_VDSO", NULL);
+  output_autoconf(s, o, cs, "autoconf-mm-context-vdso-base.c", "STAPCONF_MM_CONTEXT_VDSO_BASE", NULL);
+  output_autoconf(s, o, cs, "autoconf-blk-types.c", "STAPCONF_BLK_TYPES", NULL);
+  output_autoconf(s, o, cs, "autoconf-perf-structpid.c", "STAPCONF_PERF_STRUCTPID", NULL);
+  output_autoconf(s, o, cs, "perf_event_counter_context.c",
 		  "STAPCONF_PERF_COUNTER_CONTEXT", NULL);
-  output_autoconf(s, o, "perf_probe_handler_nmi.c",
+  output_autoconf(s, o, cs, "perf_probe_handler_nmi.c",
 		  "STAPCONF_PERF_HANDLER_NMI", NULL);
-  output_exportconf(s, o, "path_lookup", "STAPCONF_PATH_LOOKUP");
-  output_exportconf(s, o, "kern_path_parent", "STAPCONF_KERN_PATH_PARENT");
-  output_exportconf(s, o, "vfs_path_lookup", "STAPCONF_VFS_PATH_LOOKUP");
-  output_exportconf(s, o, "kern_path", "STAPCONF_KERN_PATH");
-  output_exportconf(s, o, "proc_create_data", "STAPCONF_PROC_CREATE_DATA");
-  output_exportconf(s, o, "PDE_DATA", "STAPCONF_PDE_DATA");
-  output_autoconf(s, o, "autoconf-module-sect-attrs.c", "STAPCONF_MODULE_SECT_ATTRS", NULL);
+  output_exportconf(s, o2, "path_lookup", "STAPCONF_PATH_LOOKUP");
+  output_exportconf(s, o2, "kern_path_parent", "STAPCONF_KERN_PATH_PARENT");
+  output_exportconf(s, o2, "vfs_path_lookup", "STAPCONF_VFS_PATH_LOOKUP");
+  output_exportconf(s, o2, "kern_path", "STAPCONF_KERN_PATH");
+  output_exportconf(s, o2, "proc_create_data", "STAPCONF_PROC_CREATE_DATA");
+  output_exportconf(s, o2, "PDE_DATA", "STAPCONF_PDE_DATA");
+  output_autoconf(s, o, cs, "autoconf-module-sect-attrs.c", "STAPCONF_MODULE_SECT_ATTRS", NULL);
 
-  output_autoconf(s, o, "autoconf-utrace-via-tracepoints.c", "STAPCONF_UTRACE_VIA_TRACEPOINTS", NULL);
-  output_autoconf(s, o, "autoconf-task_work-struct.c", "STAPCONF_TASK_WORK_STRUCT", NULL);
-  output_autoconf(s, o, "autoconf-vm-area-pte.c", "STAPCONF_VM_AREA_PTE", NULL);
-  output_autoconf(s, o, "autoconf-relay-umode_t.c", "STAPCONF_RELAY_UMODE_T", NULL);
-  output_autoconf(s, o, "autoconf-relay_buf-per_cpu_ptr.c", "STAPCONF_RELAY_BUF_PER_CPU_PTR", NULL);
-  output_autoconf(s, o, "autoconf-fs_supers-hlist.c", "STAPCONF_FS_SUPERS_HLIST", NULL);
-  output_autoconf(s, o, "autoconf-compat_sigaction.c", "STAPCONF_COMPAT_SIGACTION", NULL);
-  output_autoconf(s, o, "autoconf-netfilter.c", "STAPCONF_NETFILTER_V313", NULL);
-  output_autoconf(s, o, "autoconf-netfilter-313b.c", "STAPCONF_NETFILTER_V313B", NULL);
-  output_autoconf(s, o, "autoconf-netfilter-4_1.c", "STAPCONF_NETFILTER_V41", NULL);
-  output_autoconf(s, o, "autoconf-netfilter-4_4.c", "STAPCONF_NETFILTER_V44", NULL);
-  output_autoconf(s, o, "autoconf-smpcall-5args.c", "STAPCONF_SMPCALL_5ARGS", NULL);
-  output_autoconf(s, o, "autoconf-smpcall-4args.c", "STAPCONF_SMPCALL_4ARGS", NULL);
-  output_autoconf(s, o, "autoconf-access_ok_2args.c", "STAPCONF_ACCESS_OK_2ARGS", NULL);
-  output_autoconf(s, o, "autoconf-uapi-mount.c", "STAPCONF_UAPI_LINUX_MOUNT_H", NULL);
-  output_autoconf(s, o, "autoconf-time32.c", "STAPCONF_TIME32_H", NULL);
-  output_autoconf(s, o, "autoconf-compat-utimbuf.c", "STAPCONF_COMPAT_UTIMBUF", NULL);
+  output_autoconf(s, o, cs, "autoconf-utrace-via-tracepoints.c", "STAPCONF_UTRACE_VIA_TRACEPOINTS", NULL);
+  output_autoconf(s, o, cs, "autoconf-task_work-struct.c", "STAPCONF_TASK_WORK_STRUCT", NULL);
+  output_autoconf(s, o, cs, "autoconf-vm-area-pte.c", "STAPCONF_VM_AREA_PTE", NULL);
+  output_autoconf(s, o, cs, "autoconf-relay-umode_t.c", "STAPCONF_RELAY_UMODE_T", NULL);
+  output_autoconf(s, o, cs, "autoconf-relay_buf-per_cpu_ptr.c", "STAPCONF_RELAY_BUF_PER_CPU_PTR", NULL);
+  output_autoconf(s, o, cs, "autoconf-fs_supers-hlist.c", "STAPCONF_FS_SUPERS_HLIST", NULL);
+  output_autoconf(s, o, cs, "autoconf-compat_sigaction.c", "STAPCONF_COMPAT_SIGACTION", NULL);
+  output_autoconf(s, o, cs, "autoconf-netfilter.c", "STAPCONF_NETFILTER_V313", NULL);
+  output_autoconf(s, o, cs, "autoconf-netfilter-313b.c", "STAPCONF_NETFILTER_V313B", NULL);
+  output_autoconf(s, o, cs, "autoconf-netfilter-4_1.c", "STAPCONF_NETFILTER_V41", NULL);
+  output_autoconf(s, o, cs, "autoconf-netfilter-4_4.c", "STAPCONF_NETFILTER_V44", NULL);
+  output_autoconf(s, o, cs, "autoconf-smpcall-5args.c", "STAPCONF_SMPCALL_5ARGS", NULL);
+  output_autoconf(s, o, cs, "autoconf-smpcall-4args.c", "STAPCONF_SMPCALL_4ARGS", NULL);
+  output_autoconf(s, o, cs, "autoconf-access_ok_2args.c", "STAPCONF_ACCESS_OK_2ARGS", NULL);
+  output_autoconf(s, o, cs, "autoconf-uapi-mount.c", "STAPCONF_UAPI_LINUX_MOUNT_H", NULL);
+  output_autoconf(s, o, cs, "autoconf-time32.c", "STAPCONF_TIME32_H", NULL);
+  output_autoconf(s, o, cs, "autoconf-compat-utimbuf.c", "STAPCONF_COMPAT_UTIMBUF", NULL);
   
   // used by tapset/timestamp_monotonic.stp
-  output_autoconf(s, o, "autoconf-cpu-clock.c", "STAPCONF_CPU_CLOCK", NULL);
-  output_autoconf(s, o, "autoconf-local-clock.c", "STAPCONF_LOCAL_CLOCK", NULL);
+  output_autoconf(s, o, cs, "autoconf-cpu-clock.c", "STAPCONF_CPU_CLOCK", NULL);
+  output_autoconf(s, o, cs, "autoconf-local-clock.c", "STAPCONF_LOCAL_CLOCK", NULL);
   
   // used by runtime/uprobe-inode.c
-  output_either_exportconf(s, o, "uprobe_register", "register_uprobe",
+  output_either_exportconf(s, o2, "uprobe_register", "register_uprobe",
 			   "STAPCONF_UPROBE_REGISTER_EXPORTED");
-  output_either_exportconf(s, o, "uprobe_unregister", "unregister_uprobe",
+  output_either_exportconf(s, o2, "uprobe_unregister", "unregister_uprobe",
 			   "STAPCONF_UPROBE_UNREGISTER_EXPORTED");
-  output_autoconf(s, o, "autoconf-old-inode-uprobes.c", "STAPCONF_OLD_INODE_UPROBES", NULL);
-  output_autoconf(s, o, "autoconf-inode-uretprobes.c", "STAPCONF_INODE_URETPROBES", NULL);
+  output_autoconf(s, o, cs, "autoconf-old-inode-uprobes.c", "STAPCONF_OLD_INODE_UPROBES", NULL);
+  output_autoconf(s, o, cs, "autoconf-inode-uretprobes.c", "STAPCONF_INODE_URETPROBES", NULL);
 
   // used by tapsets.cxx inode uprobe generated code
-  output_exportconf(s, o, "uprobe_get_swbp_addr", "STAPCONF_UPROBE_GET_SWBP_ADDR_EXPORTED");
+  output_exportconf(s, o2, "uprobe_get_swbp_addr", "STAPCONF_UPROBE_GET_SWBP_ADDR_EXPORTED");
 
   // used by runtime/loc2c-runtime.h
-  output_exportconf(s, o, "task_user_regset_view", "STAPCONF_TASK_USER_REGSET_VIEW_EXPORTED");
+  output_exportconf(s, o2, "task_user_regset_view", "STAPCONF_TASK_USER_REGSET_VIEW_EXPORTED");
 
   // used by runtime/stp_utrace.c
-  output_exportconf(s, o, "task_work_add", "STAPCONF_TASK_WORK_ADD_EXPORTED");
-  output_exportconf(s, o, "task_work_cancel", "STAPCONF_TASK_WORK_CANCEL_EXPORTED");  
-  output_exportconf(s, o, "wake_up_state", "STAPCONF_WAKE_UP_STATE_EXPORTED");
-  output_exportconf(s, o, "try_to_wake_up", "STAPCONF_TRY_TO_WAKE_UP_EXPORTED");
-  output_exportconf(s, o, "signal_wake_up_state", "STAPCONF_SIGNAL_WAKE_UP_STATE_EXPORTED");
-  output_exportconf(s, o, "signal_wake_up", "STAPCONF_SIGNAL_WAKE_UP_EXPORTED");
-  output_exportconf(s, o, "__lock_task_sighand", "STAPCONF___LOCK_TASK_SIGHAND_EXPORTED");
+  output_exportconf(s, o2, "task_work_add", "STAPCONF_TASK_WORK_ADD_EXPORTED");
+  output_exportconf(s, o2, "task_work_cancel", "STAPCONF_TASK_WORK_CANCEL_EXPORTED");
+  output_exportconf(s, o2, "wake_up_state", "STAPCONF_WAKE_UP_STATE_EXPORTED");
+  output_exportconf(s, o2, "try_to_wake_up", "STAPCONF_TRY_TO_WAKE_UP_EXPORTED");
+  output_exportconf(s, o2, "signal_wake_up_state", "STAPCONF_SIGNAL_WAKE_UP_STATE_EXPORTED");
+  output_exportconf(s, o2, "signal_wake_up", "STAPCONF_SIGNAL_WAKE_UP_EXPORTED");
+  output_exportconf(s, o2, "__lock_task_sighand", "STAPCONF___LOCK_TASK_SIGHAND_EXPORTED");
 
-  output_autoconf(s, o, "autoconf-pagefault_disable.c", "STAPCONF_PAGEFAULT_DISABLE", NULL);
-  output_exportconf(s, o, "kallsyms_lookup_name", "STAPCONF_KALLSYMS");
-  output_autoconf(s, o, "autoconf-uidgid.c", "STAPCONF_LINUX_UIDGID_H", NULL);
-  output_exportconf(s, o, "sigset_from_compat", "STAPCONF_SIGSET_FROM_COMPAT_EXPORTED");
-  output_exportconf(s, o, "vzalloc", "STAPCONF_VZALLOC");
-  output_exportconf(s, o, "vzalloc_node", "STAPCONF_VZALLOC_NODE");
-  output_exportconf(s, o, "vmalloc_node", "STAPCONF_VMALLOC_NODE");
+  output_autoconf(s, o, cs, "autoconf-pagefault_disable.c", "STAPCONF_PAGEFAULT_DISABLE", NULL);
+  output_exportconf(s, o2, "kallsyms_lookup_name", "STAPCONF_KALLSYMS");
+  output_autoconf(s, o, cs, "autoconf-uidgid.c", "STAPCONF_LINUX_UIDGID_H", NULL);
+  output_exportconf(s, o2, "sigset_from_compat", "STAPCONF_SIGSET_FROM_COMPAT_EXPORTED");
+  output_exportconf(s, o2, "vzalloc", "STAPCONF_VZALLOC");
+  output_exportconf(s, o2, "vzalloc_node", "STAPCONF_VZALLOC_NODE");
+  output_exportconf(s, o2, "vmalloc_node", "STAPCONF_VMALLOC_NODE");
 
   // RHBZ1233912 - s390 temporary workaround for non-atomic udelay()
-  output_exportconf(s, o, "udelay_simple", "STAPCONF_UDELAY_SIMPLE_EXPORTED");
-  output_autoconf(s, o, "autoconf-udelay_simple.c", "STAPCONF_UDELAY_SIMPLE",
+  output_exportconf(s, o2, "udelay_simple", "STAPCONF_UDELAY_SIMPLE_EXPORTED");
+  output_autoconf(s, o, cs, "autoconf-udelay_simple.c", "STAPCONF_UDELAY_SIMPLE",
 		  NULL);
 
-  output_autoconf(s, o, "autoconf-tracepoint-strings.c", "STAPCONF_TRACEPOINT_STRINGS", NULL);
-  output_autoconf(s, o, "autoconf-timerfd.c", "STAPCONF_TIMERFD_H", NULL);
+  output_autoconf(s, o, cs, "autoconf-tracepoint-strings.c", "STAPCONF_TRACEPOINT_STRINGS", NULL);
+  output_autoconf(s, o, cs, "autoconf-timerfd.c", "STAPCONF_TIMERFD_H", NULL);
 
-  output_autoconf(s, o, "autoconf-module_layout.c",
+  output_autoconf(s, o, cs, "autoconf-module_layout.c",
 		  "STAPCONF_MODULE_LAYOUT", NULL);
-  output_autoconf(s, o, "autoconf-mod_kallsyms.c",
+  output_autoconf(s, o, cs, "autoconf-mod_kallsyms.c",
 		  "STAPCONF_MOD_KALLSYMS", NULL);
-  output_exportconf(s, o, "get_user_pages_remote", "STAPCONF_GET_USER_PAGES_REMOTE");
-  output_autoconf(s, o, "autoconf-get_user_pages_remote-flags.c",
+  output_exportconf(s, o2, "get_user_pages_remote", "STAPCONF_GET_USER_PAGES_REMOTE");
+  output_autoconf(s, o, cs, "autoconf-get_user_pages_remote-flags.c",
 		  "STAPCONF_GET_USER_PAGES_REMOTE_FLAGS", NULL);
-  output_autoconf(s, o, "autoconf-get_user_pages_remote-flags_locked.c",
+  output_autoconf(s, o, cs, "autoconf-get_user_pages_remote-flags_locked.c",
 		  "STAPCONF_GET_USER_PAGES_REMOTE_FLAGS_LOCKED", NULL);
-  output_autoconf(s, o, "autoconf-get_user_pages-flags.c",
+  output_autoconf(s, o, cs, "autoconf-get_user_pages-flags.c",
 		  "STAPCONF_GET_USER_PAGES_FLAGS", NULL);
-  output_autoconf(s, o, "autoconf-bio-bi_opf.c", "STAPCONF_BIO_BI_OPF", NULL);
-  output_autoconf(s, o, "autoconf-linux-sched_headers.c",
+  output_autoconf(s, o, cs, "autoconf-bio-bi_opf.c", "STAPCONF_BIO_BI_OPF", NULL);
+  output_autoconf(s, o, cs, "autoconf-linux-sched_headers.c",
 		  "STAPCONF_LINUX_SCHED_HEADERS", NULL);
-  output_autoconf(s, o, "autoconf-stack-trace-save-regs.c",
+  output_autoconf(s, o, cs, "autoconf-stack-trace-save-regs.c",
 		  "STAPCONF_STACK_TRACE_SAVE_REGS", NULL);
 
   // used by runtime/linux/netfilter.c
-  output_exportconf(s, o, "nf_register_hook", "STAPCONF_NF_REGISTER_HOOK");
+  output_exportconf(s, o2, "nf_register_hook", "STAPCONF_NF_REGISTER_HOOK");
 
   // used by tapset/linux/ioblock.stp
-  output_exportconf(s, o, "disk_get_part", "STAPCONF_DISK_GET_PART");
+  output_exportconf(s, o2, "disk_get_part", "STAPCONF_DISK_GET_PART");
+
+  o << ".PHONY: gen-stapconf" << endl;
+  o << "gen-stapconf: stapconf_export.h";
+  for (unsigned i=0; i<cs.size(); i++)
+    o << " " << s.tmpdir << "/" << cs[i] << ".h";
+  o << endl;
+
+  o << "\t";
+  if (s.verbose < 4)
+    o << "@";
+  o << "cat $^ > $(STAPCONF_HEADER)" << endl;
 
   o << module_cflags << " += -include $(STAPCONF_HEADER)" << endl;
 
