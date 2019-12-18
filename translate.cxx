@@ -7610,11 +7610,20 @@ prepare_symbol_data (systemtap_session& s)
 void
 emit_symbol_data (systemtap_session& s)
 {
-  string symfile = "stap-symbols.h";
+  ofstream kallsyms_out (s.symbols_source.c_str ());
 
-  s.op->newline() << "#include " << lex_cast_qstring (symfile);
-
-  ofstream kallsyms_out ((s.tmpdir + "/" + symfile).c_str());
+  if (s.runtime_usermode_p ())
+    {
+      kallsyms_out << "#include \"stap_common.h\"\n"
+        "#include <sym.h>\n";
+    }
+  else
+    {
+      kallsyms_out << "#include <linux/module.h>\n"
+        "#include <linux/kernel.h>\n"
+        "#include <sym.h>\n"
+        "#include \"stap_common.h\"\n";
+    }
 
   vector<pair<string,unsigned> > seclist;
   map<unsigned, addrmap_t> addrmap;
@@ -7712,13 +7721,13 @@ void
 self_unwind_declarations(unwindsym_dump_context *ctx)
 {
   ctx->output << "static uint8_t _stp_module_self_eh_frame [] = {0,};\n";
-  ctx->output << "static struct _stp_symbol _stp_module_self_symbols_0[] = {{0},};\n";
-  ctx->output << "static struct _stp_symbol _stp_module_self_symbols_1[] = {{0},};\n";
-  ctx->output << "static struct _stp_section _stp_module_self_sections[] = {\n";
+  ctx->output << "struct _stp_symbol _stp_module_self_symbols_0[] = {{0},};\n";
+  ctx->output << "struct _stp_symbol _stp_module_self_symbols_1[] = {{0},};\n";
+  ctx->output << "struct _stp_section _stp_module_self_sections[] = {\n";
   ctx->output << "{.name = \".symtab\", .symbols = _stp_module_self_symbols_0, .num_symbols = 0},\n";
   ctx->output << "{.name = \".text\", .symbols = _stp_module_self_symbols_1, .num_symbols = 0},\n";
   ctx->output << "};\n";
-  ctx->output << "static struct _stp_module _stp_module_self = {\n";
+  ctx->output << "struct _stp_module _stp_module_self = {\n";
   ctx->output << ".name = \"stap_self_tmp_value\",\n";
   ctx->output << ".path = \"stap_self_tmp_value\",\n";
   ctx->output << ".num_sections = 2,\n";
@@ -7751,16 +7760,16 @@ emit_symbol_data_done (unwindsym_dump_context *ctx, systemtap_session& s)
   // Print out a definition of the runtime's _stp_modules[] globals.
   ctx->output << "\n";
   self_unwind_declarations(ctx);
-   ctx->output << "static struct _stp_module *_stp_modules [] = {\n";
+   ctx->output << "struct _stp_module *_stp_modules [] = {\n";
   for (unsigned i=0; i<ctx->stp_module_index; i++)
     {
       ctx->output << "& _stp_module_" << i << ",\n";
     }
   ctx->output << "& _stp_module_self,\n";
   ctx->output << "};\n";
-  ctx->output << "static const unsigned _stp_num_modules = ARRAY_SIZE(_stp_modules);\n";
+  ctx->output << "const unsigned _stp_num_modules = ARRAY_SIZE(_stp_modules);\n";
 
-  ctx->output << "static unsigned long _stp_kretprobe_trampoline = ";
+  ctx->output << "unsigned long _stp_kretprobe_trampoline = ";
   // Special case for -1, which is invalid in hex if host width > target width.
   if (ctx->stp_kretprobe_trampoline_addr == (unsigned long) -1)
     ctx->output << "-1;\n";
@@ -7860,8 +7869,11 @@ int
 translate_pass (systemtap_session& s)
 {
   int rc = 0;
+  string comm_hdr_file = s.tmpdir + "/stap_common.h";
 
   s.op = new translator_output (s.translated_source);
+  s.op->new_common_header (comm_hdr_file);
+
   // additional outputs might be found in s.auxiliary_outputs
   c_unparser cup (& s);
   s.up = & cup;
@@ -7929,31 +7941,55 @@ translate_pass (systemtap_session& s)
 		      << "__attribute__ ((section (\"" << STAP_PRIVILEGE_SECTION <<"\")))"
 		      << " = STP_PRIVILEGE;";
 
-      s.op->newline() << "#ifndef MAXNESTING";
-      s.op->newline() << "#define MAXNESTING " << nesting;
-      s.op->newline() << "#endif";
+      s.op->newline() << "#include \"stap_common.h\"";
+
+      if (s.runtime_usermode_p ())
+        {
+          s.op->hdr->line() << "#include <stdint.h>";
+          s.op->hdr->newline() << "#include <stddef.h>";
+          s.op->hdr->newline() << "struct task_struct;";
+          s.op->hdr->newline() << "#define __must_be_array(arr) 0";
+          s.op->hdr->newline() << "#define ARRAY_SIZE(arr) (sizeof(arr) "
+            "/ sizeof((arr)[0]) + __must_be_array(arr))";
+        }
+
+      s.op->hdr->newline() << "#ifndef MAXNESTING";
+      s.op->hdr->newline() << "#define MAXNESTING " << nesting;
+      s.op->hdr->newline() << "#endif";
 
       // Generated macros specifying how much storage is required for
       // regexp subexpressions. (TODOXXX Skip when there are no DFAs?)
-      s.op->newline() << "#define STAPREGEX_MAX_MAP " << s.dfa_maxmap;
-      s.op->newline() << "#define STAPREGEX_MAX_TAG " << s.dfa_maxtag;
+      s.op->hdr->newline() << "#define STAPREGEX_MAX_MAP " << s.dfa_maxmap;
+      s.op->hdr->newline() << "#define STAPREGEX_MAX_TAG " << s.dfa_maxtag;
 
-      s.op->newline() << "#define STP_SKIP_BADVARS " << (s.skip_badvars ? 1 : 0);
+      s.op->hdr->newline() << "#define STP_SKIP_BADVARS " << (s.skip_badvars ? 1 : 0);
 
       if (s.bulk_mode)
-	  s.op->newline() << "#define STP_BULKMODE";
+	  s.op->hdr->newline() << "#define STP_BULKMODE";
 
       if (s.timing || s.monitor)
-	s.op->newline() << "#define STP_TIMING";
+	s.op->hdr->newline() << "#define STP_TIMING";
 
       if (s.need_unwind)
-	s.op->newline() << "#define STP_NEED_UNWIND_DATA 1";
+	s.op->hdr->newline() << "#define STP_NEED_UNWIND_DATA 1";
 
       if (s.need_lines)
-        s.op->newline() << "#define STP_NEED_LINE_DATA 1";
+        s.op->hdr->newline() << "#define STP_NEED_LINE_DATA 1";
 
       // Emit the total number of probes (not regarding merged probe handlers)
-      s.op->newline() << "#define STP_PROBE_COUNT " << s.probes.size();
+      s.op->hdr->newline() << "#define STP_PROBE_COUNT " << s.probes.size();
+
+      s.op->hdr->newline() << "#if (defined(__arm__) || defined(__i386__) "
+        "|| defined(__x86_64__) || defined(__powerpc64__)) "
+        "|| defined (__s390x__) || defined(__aarch64__) || defined(__mips__)\n"
+        "#ifdef STP_NEED_UNWIND_DATA\n"
+        "#ifndef STP_USE_DWARF_UNWINDER\n"
+        "#define STP_USE_DWARF_UNWINDER\n"
+        "#endif\n"
+        "#endif\n"
+        "#endif";
+
+      s.op->hdr->close ();
 
       // Emit systemtap_module_refresh() prototype so we can reference it
       s.op->newline() << "static void systemtap_module_refresh (const char* modname);";

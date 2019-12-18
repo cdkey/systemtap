@@ -537,10 +537,15 @@ passes_0_4 (systemtap_session &s)
 	}
     }
 
-  // Create the name of the C source file within the temporary
+  // Create the name of the main C source file within the temporary
   // directory.  Note the _src prefix, explained in
   // buildrun.cxx:compile_pass()
   s.translated_source = string(s.tmpdir) + "/" + s.module_name + "_src.c";
+
+  // Create the name of the C source file for the dumped symbol data
+  // within the temporary directory. This file will be generated in
+  // translate.cxx:emit_symbol_data()
+  s.symbols_source = string(s.tmpdir) + "/stap_symbols.c";
 
   PROBE1(stap, pass0__end, &s);
 

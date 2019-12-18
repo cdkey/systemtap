@@ -337,7 +337,8 @@ public:
   // temporary directory for module builds etc.
   // hazardous - it is "rm -rf"'d at exit
   std::string tmpdir;
-  std::string translated_source; // C source code
+  std::string translated_source; // main C source code
+  std::string symbols_source; // C source code for stap_symbols.c
 
   match_node* pattern_root;
   void register_library_aliases();

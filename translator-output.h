@@ -27,9 +27,14 @@ public:
   std::string filename;
   bool trailer_p; // is this file to be linked before or after main generated source file
 
+  translator_output* hdr;  /* for stap_common.h file */
+
   translator_output (std::ostream& file);
   translator_output (const std::string& filename, size_t bufsize = 8192);
   ~translator_output ();
+
+  void new_common_header (std::ostream& file);
+  void new_common_header (const std::string& filename, size_t bufsize = 8192);
 
   void close ();
   

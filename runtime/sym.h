@@ -133,13 +133,13 @@ struct _stp_module {
 };
 
 /* Defined by translator-generated stap-symbols.h. */
-static struct _stp_module *_stp_modules [];
-static const unsigned _stp_num_modules;
+extern struct _stp_module *_stp_modules [];
+extern const unsigned _stp_num_modules;
 
 /* Used in the unwinder to special case unwinding through kretprobes. */
 /* Initialized through translator (stap-symbols.h) relative to kernel */
 /* load address, fixup by transport symbols _stp_do_relocation */
-static unsigned long _stp_kretprobe_trampoline;
+extern unsigned long _stp_kretprobe_trampoline;
 
 static unsigned long _stp_kmodule_relocate (const char *module,
 					    const char *section,
@@ -154,10 +154,10 @@ static void _stp_kmodule_update_address(const char* module,
 
 #if (defined(STP_USE_DWARF_UNWINDER) && defined(STP_NEED_UNWIND_DATA)) \
     || defined(STP_NEED_LINE_DATA)
-static struct _stp_module _stp_module_self;
-static struct _stp_section _stp_module_self_sections[];
-static struct _stp_symbol _stp_module_self_symbols_0[];
-static struct _stp_symbol _stp_module_self_symbols_1[];
+extern struct _stp_module _stp_module_self;
+extern struct _stp_section _stp_module_self_sections[];
+extern struct _stp_symbol _stp_module_self_symbols_0[];
+extern struct _stp_symbol _stp_module_self_symbols_1[];
 #endif /* defined(STP_USE_DWARF_UNWINDER) && defined(STP_NEED_UNWIND_DATA)
           || defined(STP_NEED_LINE_DATA) */
 #endif /* _STP_SYM_H_ */

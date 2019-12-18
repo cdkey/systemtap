@@ -15,7 +15,7 @@
 using namespace std;
 
 translator_output::translator_output (ostream& f):
-  buf(0), o2 (0), o (f), tablevel (0), trailer_p(false)
+  buf(0), o2 (0), o (f), tablevel (0), trailer_p(false), hdr (NULL)
 {
 }
 
@@ -26,10 +26,28 @@ translator_output::translator_output (const string& filename, size_t bufsize):
   o (*o2),
   tablevel (0),
   filename (filename),
-  trailer_p (false)
+  trailer_p (false),
+  hdr (NULL)
 {
   o2->rdbuf()->pubsetbuf(buf, bufsize);
 }
+
+
+void
+translator_output::new_common_header (ostream& f)
+{
+  delete hdr;
+  hdr = new translator_output (f);
+}
+
+
+void
+translator_output::new_common_header (const string& filename, size_t bufsize)
+{
+  delete hdr;
+  hdr = new translator_output (filename, bufsize);
+}
+
 
 void
 translator_output::close()

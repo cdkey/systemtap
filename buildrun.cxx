@@ -224,7 +224,7 @@ compile_dyninst (systemtap_session& s)
 
   vector<string> cmd
     {
-      "gcc", "--std=gnu99", s.translated_source, "-o", module,
+      "gcc", "--std=gnu99", s.translated_source, s.symbols_source, "-o", module,
       "-fvisibility=hidden", "-O2", "-I" + s.runtime_path, "-D__DYNINST__",
       "-Wall", WERROR, "-Wno-unused", "-Wno-strict-aliasing",
       "-pthread", "-lrt", "-fPIC", "-shared",
@@ -607,7 +607,9 @@ compile_pass (systemtap_session& s)
       objname[objname.size()-1] = 'o'; // now objname
       o << " " + objname;
     }
-  o << endl;
+  o << " stap_symbols.o" << endl;
+
+  o << s.tmpdir << "/stap_symbols.o: $(STAPCONF_HEADER)" << endl;
 
   // add all stapconf dependencies
   string translated = s.translated_source;
