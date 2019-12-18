@@ -56,6 +56,14 @@
 #define dbug_otf(args...) ;
 #endif
 
+#ifdef DEBUG_UPROBES
+#define dbug_uprobes(args...) do {						\
+		_stp_dbug(__FUNCTION__, __LINE__, args);		\
+	} while (0)
+#else
+#define dbug_uprobes(args...) ;
+#endif
+
 #ifdef DEBUG_UNWIND /* stack unwinder */
 #define dbug_unwind(level, args...) do {					\
 		if ((level) <= DEBUG_UNWIND)				\

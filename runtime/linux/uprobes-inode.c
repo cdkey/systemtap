@@ -365,8 +365,15 @@ stapiu_target_unreg(struct stapiu_target *target)
 	if (! target->inode)
 		return;
 	list_for_each_entry(c, &target->consumers, target_consumer) {
-		if (c->registered)
+		if (c->registered) {
+			dbug_uprobes("unregistering (u%sprobe) inode-offset "
+				     "%lu:%p pidx %zu\n",
+				     c->return_p ? "ret" : "",
+				     (unsigned long) target->inode->i_ino,
+				     (void*) (uintptr_t) c->offset,
+				     c->probe->index);
 			stapiu_unregister(target->inode, c);
+		}
 	}
 }
 
@@ -386,14 +393,30 @@ stapiu_target_reg(struct stapiu_target *target, struct task_struct* task)
 			    _stp_perf_read_init ((c->perf_counters)[i], task);
 			}
 			if (!c->probe->cond_enabled) {
-				dbug_otf("not registering (u%sprobe) pidx %zu\n",
-					 c->return_p ? "ret" : "", c->probe->index);
+				dbug_uprobes("not registering (u%sprobe) "
+					     "inode-offset %lu:%p pidx %zu\n",
+					     c->return_p ? "ret" : "",
+					     (unsigned long)
+						target->inode->i_ino,
+					     (void*) (uintptr_t) c->offset,
+					     c->probe->index);
 				continue;
 			}
+			dbug_uprobes("registering (u%sprobe) at inode-offset "
+				     "%lu:%p pidx %zu\n",
+				     c->return_p ? "ret" : "",
+				     (unsigned long) target->inode->i_ino,
+				     (void*) (uintptr_t) c->offset,
+				     c->probe->index);
+
 			ret = stapiu_register(target->inode, c);
 			if (ret != 0)
-				_stp_warn("probe %s inode-offset %p registration error (rc %d)",
-					  c->probe->pp, (void*) (uintptr_t) c->offset, ret);
+				_stp_warn("probe %s at inode-offset %lu:%p "
+					  "registration error (rc %d)",
+					  c->probe->pp,
+					  (unsigned long) target->inode->i_ino,
+					  (void*) (uintptr_t) c->offset,
+					  ret);
 		}
 	}
 	if (ret)
@@ -415,18 +438,32 @@ stapiu_target_refresh(struct stapiu_target *target)
 		// should we unregister it?
 		if (c->registered && !c->probe->cond_enabled) {
 
-			dbug_otf("unregistering (u%sprobe) pidx %zu\n",
-				 c->return_p ? "ret" : "", c->probe->index);
+			dbug_uprobes("unregistering (u%sprobe) at inode-offset "
+				     "%lu:%p pidx %zu\n",
+				     c->return_p ? "ret" : "",
+				     (unsigned long) target->inode->i_ino,
+				     (void*) (uintptr_t) c->offset,
+				     c->probe->index);
 			stapiu_unregister(target->inode, c);
 
 		// should we register it?
 		} else if (!c->registered && c->probe->cond_enabled) {
 
-			dbug_otf("registering (u%sprobe) pidx %zu\n",
-				 c->return_p ? "ret" : "", c->probe->index);
+			dbug_uprobes("registering (u%sprobe) at inode-offset "
+				     "%lu:%p pidx %zu\n",
+				     c->return_p ? "ret" : "",
+				     (unsigned long) target->inode->i_ino,
+				     (void*) (uintptr_t) c->offset,
+				     c->probe->index);
+
 			if (stapiu_register(target->inode, c) != 0)
-				dbug_otf("couldn't register (u%sprobe) pidx %zu\n",
-					 c->return_p ? "ret" : "", c->probe->index);
+				dbug_uprobes("couldn't register (u%sprobe) "
+					     "inode-offset %lu:%p pidx %zu\n",
+					     c->return_p ? "ret" : "",
+					     (unsigned long)
+						target->inode->i_ino,
+					     (void*) (uintptr_t) c->offset,
+					     c->probe->index);
 		}
 	}
 }
