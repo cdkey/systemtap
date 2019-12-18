@@ -540,6 +540,9 @@ systemtap_session::version ()
 #ifdef HAVE_LIBREADLINE
        << " READLINE"
 #endif
+#ifdef HAVE_MONITOR_LIBS
+       << " MONITOR_LIBS"
+#endif
        << endl;
 }
 
