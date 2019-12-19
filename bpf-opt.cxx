@@ -353,7 +353,22 @@ reorder_blocks(program &p)
   // Remove any unreachable blocks.
   for (unsigned i = 0; i < nblocks; ++i)
     if (!visited[i])
-      delete p.blocks[i];
+      {
+        // XXX: Before any of the unreachable blocks are deleted,
+        // any edges between other blocks that lead to the current
+        // block are set as nullptr. This eliminates access to the
+        // deleted blocks.
+        for (edge *e: p.blocks[i]->prevs)
+          {
+            if (e == e->prev->fallthru)
+              e->prev->fallthru = nullptr;
+            else if (e == e->prev->taken)
+              e->prev->taken = nullptr;
+          }
+
+        delete p.blocks[i];
+        p.blocks[i] = nullptr;
+      }
 
   // Renumber the blocks for the new ordering.
   nblocks = ordered.size ();
