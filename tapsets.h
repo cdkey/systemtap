@@ -21,6 +21,7 @@ void register_standard_tapsets(systemtap_session& sess);
 std::vector<derived_probe_group*> all_session_groups(systemtap_session& s);
 std::string common_probe_init (derived_probe* p);
 void common_probe_entryfn_prologue (systemtap_session& s, std::string statestr,
+                                    std::string statestr2,
 				    std::string probe, std::string probe_type,
 				    bool overload_processing = true,
 				    void (*declaration_callback)(systemtap_session& s, void* data) = NULL,

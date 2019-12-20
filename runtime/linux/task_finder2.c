@@ -35,10 +35,10 @@ static atomic_t __stp_attach_count = ATOMIC_INIT (0);
 
 #define debug_task_finder_attach() (atomic_inc(&__stp_attach_count))
 #define debug_task_finder_detach() (atomic_dec(&__stp_attach_count))
-#define debug_task_finder_report()					\
-    (printk(KERN_ERR "%s:%d - attach count: %d, inuse count: %d\n",	\
-	    __FUNCTION__, __LINE__, atomic_read(&__stp_attach_count),	\
-	    atomic_read(&__stp_inuse_count)))
+#define debug_task_finder_report()			  \
+    dbug_task(1, "attach count: %d, inuse count: %d\n",	  \
+	    atomic_read(&__stp_attach_count),		  \
+	    atomic_read(&__stp_inuse_count))
 #else
 #define debug_task_finder_attach()	/* empty */
 #define debug_task_finder_detach()	/* empty */
@@ -532,6 +532,8 @@ __stp_utrace_attach(struct task_struct *tsk,
 	}
 	else {
 		rc = utrace_set_events(tsk, engine, event_flags);
+		dbug_task(2, "utrace_set_events(%lu) returned %d", event_flags,
+			  rc);
 		if (rc == -EINPROGRESS) {
 			/*
 			 * It's running our callback, so we have to
@@ -553,6 +555,7 @@ __stp_utrace_attach(struct task_struct *tsk,
 
 			if (action != UTRACE_RESUME) {
 				rc = utrace_control(tsk, engine, action);
+				dbug_task(2, "utrace_control(%d) returned %d", action, rc);
 				/* If utrace_control() returns
 				 * EINPROGRESS when we're trying to
 				 * stop/interrupt, that means the task
@@ -588,6 +591,8 @@ __stp_call_callbacks(struct stap_task_finder_target *tgt,
 	struct list_head *cb_node;
 	int rc;
 
+	dbug_task(2, "entering tgt=%p tsk=%p pid=%d", tgt, tsk, tsk ? tsk->tgid : -1);
+
 	if (tgt == NULL || tsk == NULL)
 		return;
 
@@ -600,6 +605,13 @@ __stp_call_callbacks(struct stap_task_finder_target *tgt,
 			continue;
 
 		rc = cb_tgt->callback(cb_tgt, tsk, register_p, process_p);
+
+		dbug_task(1, "tgt %s callback returned %d (proc=%s pid=%d, "
+			  "pathlen=%d, engine-attached=%d)",
+			  (cb_tgt->purpose?:""), rc, cb_tgt->procname,
+			  cb_tgt->pid, (int) cb_tgt->pathlen,
+			  cb_tgt->engine_attached);
+
 		if (rc != 0) {
 			_stp_warn("task_finder %s%scallback for task %d failed: %d",
                                   (cb_tgt->purpose?:""), (cb_tgt->purpose?" ":""),
@@ -835,7 +847,11 @@ __stp_utrace_attach_match_filename(struct task_struct *tsk,
 		else if (tgt->pathlen > 0
 			 && (tgt->pathlen != filelen
 			     || strcmp(tgt->procname, filename) != 0))
+		{
+			dbug_task(2, "target path NOT matched: [%s] != [%s]",
+			          tgt->procname, filename);
 			continue;
+		}
 		/* Ignore pid-based target, they were handled at startup. */
 		else if (tgt->pid != 0)
 			continue;
@@ -1660,6 +1676,10 @@ stap_start_task_finder(void)
 		rc = __stp_utrace_attach(tsk, &__stp_utrace_task_finder_ops, 0,
 					 __STP_TASK_FINDER_EVENTS,
 					 UTRACE_RESUME);
+
+		dbug_task(2, "__stp_utrace_attach() for pid %d returned %d",
+		          tsk->tgid, rc);
+
 		if (rc == EPERM) {
 			/* Ignore EPERM errors, which mean this wasn't
 			 * a thread we can attach to. */
@@ -1724,7 +1744,11 @@ stap_start_task_finder(void)
 			else if (tgt->pathlen > 0
 				 && (tgt->pathlen != mmpathlen
 				     || strcmp(tgt->procname, mmpath) != 0))
+			{
+				dbug_task(2, "target path not matched: [%s] != [%s]",
+					  tgt->procname, mmpath);
 				continue;
+			}
 			/* pid-based target */
 			else if (tgt->pid != 0 && tgt->pid != tsk->pid)
 				continue;
@@ -1747,6 +1771,10 @@ stap_start_task_finder(void)
 			rc = __stp_utrace_attach(tsk, &tgt->ops, tgt,
 						 __STP_ATTACHED_TASK_EVENTS,
 						 UTRACE_STOP);
+
+			dbug_task(2, "__stp_utrace_attach() for %d returned %d", tsk->tgid,
+				  rc);
+
 			if (rc != 0 && rc != EPERM)
 				goto stf_err;
 			rc = 0;		/* ignore EPERM */
@@ -1771,18 +1799,13 @@ stap_task_finder_post_init(void)
 		return;
 	}
 
-#ifdef DEBUG_TASK_FINDER
-	printk(KERN_ERR "%s:%d - entry.\n", __FUNCTION__, __LINE__);
-#endif
+	dbug_task(2, "entry.");
 	rcu_read_lock();
 	do_each_thread(grp, tsk) {
 		struct list_head *tgt_node;
 
 		if (atomic_read(&__stp_task_finder_state) != __STP_TF_RUNNING) {
-#ifdef DEBUG_TASK_FINDER
-			printk(KERN_ERR "%s:%d - exiting early...\n",
-			       __FUNCTION__, __LINE__);
-#endif
+			dbug_task(2, "exiting early...");
 			break;
 		}
 
@@ -1824,6 +1847,10 @@ stap_task_finder_post_init(void)
 					_stp_error("utrace_control returned error %d on pid %d",
 						   rc, (int)tsk->pid);
 				}
+
+				dbug_task(2, "utrace_control(UTRACE_INTERRUPT) for pid %d "
+					  "returned %d (%d)", tsk->pid, rc, -EINPROGRESS);
+
 				utrace_engine_put(engine);
 
 				/* Since we only need to interrupt
@@ -1835,9 +1862,7 @@ stap_task_finder_post_init(void)
 	} while_each_thread(grp, tsk);
 	rcu_read_unlock();
 	atomic_set(&__stp_task_finder_complete, 1);
-#ifdef DEBUG_TASK_FINDER
-	printk(KERN_ERR "%s:%d - exit.\n", __FUNCTION__, __LINE__);
-#endif
+	dbug_task(2, "exit.");
 	return;
 }
 

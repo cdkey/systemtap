@@ -313,7 +313,7 @@ netfilter_derived_probe_group::emit_module_decls (systemtap_session& s)
       s.op->newline() << "#elif defined(STAPCONF_NETFILTER_V41)";
       s.op->newline() << "int (*nf_okfn)(struct sock *, struct sk_buff *) = nf_state->okfn;";
       s.op->newline() << "#endif";
-      common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "stp",
+      common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "", "stp",
                                      "stp_probe_type_netfilter",
                                      false);
 

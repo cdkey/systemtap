@@ -2,6 +2,9 @@
 
 * What's new in version 4.2, 2019-11-18
 
+- The process(EXE).begin probe handlers are now always triggered for
+  already-running target processes.
+
 - Initial support for multi-dimensional supports has been added to
   the stapbpf backend. Note that these arrays cannot be iterated upon
   with a foreach loop.

@@ -235,7 +235,7 @@ perf_derived_probe_group::emit_module_decls (systemtap_session& s)
   s.op->newline() << "static void handle_perf_probe (unsigned i, struct pt_regs *regs)";
   s.op->newline() << "{";
   s.op->newline(1) << "struct stap_perf_probe* stp = & stap_perf_probes [i];";
-  common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "stp->probe",
+  common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "", "stp->probe",
 				 "stp_probe_type_perf");
   s.op->newline() << "if (user_mode(regs)) {";
   s.op->newline(1)<< "c->user_mode_p = 1;";

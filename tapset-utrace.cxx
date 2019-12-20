@@ -862,10 +862,15 @@ utrace_derived_probe_group::emit_module_linux_decls (systemtap_session& s)
       s.op->newline() << "static void stap_utrace_probe_handler(struct task_struct *tsk, struct stap_utrace_probe *p) {";
       s.op->indent(1);
 
-      common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "p->probe",
+      // PR25290, utrace process callbacks might get fired in the
+      // STAP_SESSION_STARTING state occasionally.
+      common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING",
+                                     "STAP_SESSION_STARTING",
+                                     "p->probe",
 				     "stp_probe_type_utrace");
 
       // call probe function
+      s.op->newline() << "dbug_task(2, \"calling UDPF probe function\");";
       s.op->newline() << "(*p->probe->ph) (c);";
       common_probe_entryfn_epilogue (s, true, otf_safe_context(s));
 
@@ -889,7 +894,7 @@ utrace_derived_probe_group::emit_module_linux_decls (systemtap_session& s)
       s.op->indent(1);
       s.op->newline() << "struct stap_utrace_probe *p = (struct stap_utrace_probe *)engine->data;";
 
-      common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "p->probe",
+      common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "", "p->probe",
 				     "stp_probe_type_utrace_syscall");
       s.op->newline() << "c->uregs = regs;";
       s.op->newline() << "c->user_mode_p = 1;";
@@ -914,6 +919,10 @@ utrace_derived_probe_group::emit_module_linux_decls (systemtap_session& s)
   s.op->newline() << "int rc = 0;";
   s.op->newline() << "struct stap_utrace_probe *p = container_of(tgt, struct stap_utrace_probe, tgt);";
   s.op->newline() << "struct utrace_engine *engine;";
+  s.op->newline() << "dbug_task(2, \"utrace probe cb: register_p=%d "
+    "process_p=%d, p->flags=%x (begin: %d, thr begin: %d)\", "
+    "register_p, process_p, (unsigned) p->flags, UDPF_BEGIN, "
+    "UDPF_THREAD_BEGIN);";
 
   s.op->newline() << "if (register_p) {";
   s.op->indent(1);
@@ -1176,7 +1185,7 @@ utrace_derived_probe_group::emit_module_dyninst_decls (systemtap_session& s)
                   << "(uint64_t index, struct pt_regs *regs) {";
   s.op->newline(1) << "struct stapdu_probe *sup = &stapdu_probes[index];";
 
-  common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "sup->probe",
+  common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "", "sup->probe",
                                  "stp_probe_type_utrace");
   s.op->newline() << "c->uregs = regs ?: &stapdu_dummy_uregs;";
   s.op->newline() << "c->user_mode_p = 1;";

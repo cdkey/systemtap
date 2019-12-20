@@ -91,7 +91,7 @@ common_probe_init (derived_probe* p)
 
 void
 common_probe_entryfn_prologue (systemtap_session& s,
-			       string statestr, string probe,
+			       string statestr, string statestr2, string probe,
 			       string probe_type, bool overload_processing,
 			       void (*declaration_callback)(systemtap_session& s, void *data),
 			       void (*pre_context_callback)(systemtap_session& s, void *data),
@@ -159,9 +159,20 @@ common_probe_entryfn_prologue (systemtap_session& s,
       s.op->newline(-1) << "}";
     }
 
-  s.op->newline() << "if (atomic_read (session_state()) != " << statestr << ")";
-  s.op->newline(1) << "goto probe_epilogue;";
-  s.op->indent(-1);
+  s.op->newline() << "{";
+  s.op->newline(1) << "unsigned sess_state = atomic_read (session_state());";
+  s.op->newline() << "#ifdef DEBUG_PROBES";
+  s.op->newline() << "_stp_dbug(__FUNCTION__, __LINE__, \"session state: %d, "
+    "expecting " << statestr << " (%d)"
+    << (statestr2.empty() ? "" : string(" or ") + statestr2 + " (%d)")
+    << "\", sess_state, " << statestr
+    << (statestr2.empty() ? "" : string(", ") + statestr2)  << ");";
+  s.op->newline() << "#endif";
+  s.op->newline() << "if (sess_state != " << statestr
+    << (statestr2.empty() ? "" : string(" && sess_state != ") + statestr2)
+    << ")";
+  s.op->newline() << "goto probe_epilogue;";
+  s.op->newline(-1) << "}";
 
   if (pre_context_callback)
     {
@@ -6079,7 +6090,7 @@ generic_kprobe_derived_probe_group::emit_module_decls (systemtap_session& s)
   s.op->line() << "kprobe_idx:0)"; // NB: at least we avoid memory corruption
   // XXX: it would be nice to give a more verbose error though; BUG_ON later?
   s.op->line() << "];";
-  common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "skp->probe",
+  common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "", "skp->probe",
 				 "stp_probe_type_kprobe");
   s.op->newline() << "c->kregs = regs;";
 
@@ -6116,7 +6127,7 @@ generic_kprobe_derived_probe_group::emit_module_decls (systemtap_session& s)
   s.op->newline() << "const struct stap_probe *sp = entry ? skp->entry_probe : skp->probe;";
   s.op->newline() << "if (sp) {";
   s.op->indent(1);
-  common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "sp",
+  common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "", "sp",
 				 "stp_probe_type_kretprobe");
   s.op->newline() << "c->kregs = regs;";
 
@@ -9465,7 +9476,7 @@ uprobe_derived_probe_group::emit_module_utrace_decls (systemtap_session& s)
   s.op->newline() << "static void enter_uprobe_probe (struct uprobe *inst, struct pt_regs *regs) {";
   s.op->newline(1) << "struct stap_uprobe *sup = container_of(inst, struct stap_uprobe, up);";
   s.op->newline() << "const struct stap_uprobe_spec *sups = &stap_uprobe_specs [sup->spec_index];";
-  common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "sups->probe",
+  common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "", "sups->probe",
 				 "stp_probe_type_uprobe", true,
 				 udpg_entryfn_prologue_declaration_callback,
 				 udpg_entryfn_prologue_pre_context_callback,
@@ -9500,7 +9511,7 @@ uprobe_derived_probe_group::emit_module_utrace_decls (systemtap_session& s)
   s.op->newline() << "static void enter_uretprobe_probe (struct uretprobe_instance *inst, struct pt_regs *regs) {";
   s.op->newline(1) << "struct stap_uprobe *sup = container_of(inst->rp, struct stap_uprobe, urp);";
   s.op->newline() << "const struct stap_uprobe_spec *sups = &stap_uprobe_specs [sup->spec_index];";
-  common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "sups->probe",
+  common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "", "sups->probe",
 				 "stp_probe_type_uretprobe", true,
 				 udpg_entryfn_prologue_declaration_callback,
 				 udpg_entryfn_prologue_pre_context_callback,
@@ -9664,7 +9675,7 @@ uprobe_derived_probe_group::emit_module_inode_decls (systemtap_session& s)
 
   // Since we're sharing the entry function, we have to dynamically choose the probe_type
   string probe_type = "(sup->return_p ? stp_probe_type_uretprobe : stp_probe_type_uprobe)";
-  common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "sup->probe",
+  common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "", "sup->probe",
                                  probe_type, true,
 				 udpg_entryfn_prologue_declaration_callback,
 				 udpg_entryfn_prologue_pre_context_callback,
@@ -9857,7 +9868,7 @@ uprobe_derived_probe_group::emit_module_dyninst_decls (systemtap_session& s)
   // Since we're sharing the entry function, we have to dynamically choose the probe_type
   string probe_type = "((sup->flags & STAPDYN_PROBE_FLAG_RETURN) ?"
                       " stp_probe_type_uretprobe : stp_probe_type_uprobe)";
-  common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "sup->probe",
+  common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "", "sup->probe",
                                  probe_type);
 
   s.op->newline() << "c->uregs = regs ?: &stapdu_dummy_uregs;";
@@ -10546,7 +10557,7 @@ hwbkpt_derived_probe_group::emit_module_decls (systemtap_session& s)
   // XXX: why not match stap_hwbkpt_ret_array[i] against bp instead?
   s.op->newline() << "if (bp->attr.bp_addr==hp->bp_addr && bp->attr.bp_type==hp->bp_type && bp->attr.bp_len==hp->bp_len) {";
   s.op->newline(1) << "struct stap_hwbkpt_probe *skp = &stap_hwbkpt_probes[i];";
-  common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "skp->probe",
+  common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "", "skp->probe",
 				 "stp_probe_type_hwbkpt");
   s.op->newline() << "if (user_mode(regs)) {";
   s.op->newline(1)<< "c->user_mode_p = 1;";
@@ -11866,7 +11877,7 @@ tracepoint_derived_probe_group::emit_module_decls (systemtap_session& s)
       s.op->newline() << "{";
       s.op->newline(1) << "const struct stap_probe * const probe = "
                        << common_probe_init (p) << ";";
-      common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "probe",
+      common_probe_entryfn_prologue (s, "STAP_SESSION_RUNNING", "", "probe",
 				     "stp_probe_type_tracepoint");
       s.op->newline() << "c->ips.tp.tracepoint_system = "
                       << lex_cast_qstring (p->tracepoint_system)
