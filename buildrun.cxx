@@ -502,6 +502,8 @@ compile_pass (systemtap_session& s)
   // used by tapset/linux/ioblock.stp
   output_exportconf(s, o2, "disk_get_part", "STAPCONF_DISK_GET_PART");
 
+  o2.close ();
+
   o << ".PHONY: gen-stapconf" << endl;
   o << "gen-stapconf: stapconf_export.h";
   for (unsigned i=0; i<cs.size(); i++)
