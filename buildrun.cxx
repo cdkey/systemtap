@@ -505,7 +505,7 @@ compile_pass (systemtap_session& s)
   o2.close ();
 
   o << ".PHONY: gen-stapconf" << endl;
-  o << "gen-stapconf: stapconf_export.h";
+  o << "gen-stapconf: " << stap_export_nm;
   for (unsigned i=0; i<cs.size(); i++)
     o << " " << s.tmpdir << "/" << cs[i] << ".h";
   o << endl;
