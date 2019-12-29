@@ -1,6 +1,6 @@
 #include <linux/stacktrace.h>
 
-unsigned int foo ()
+unsigned int foo (void)
 {
         unsigned long e[10];
         struct pt_regs* r = 0;
