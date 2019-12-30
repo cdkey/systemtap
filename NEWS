@@ -1,11 +1,12 @@
 * What's new in version 4.3, PRERELEASE
 
-* What's new in version 4.2, 2019-11-18
-
-- The "Build-id mismatch" error now becomes a warning.
+- The "Build-id mismatch" condition now becomes a warning, so while
+  related probes are not inserted, the rest of the script may run.
 
 - The process(EXE).begin probe handlers are now always triggered for
   already-running target processes.
+
+* What's new in version 4.2, 2019-11-18
 
 - Initial support for multi-dimensional supports has been added to
   the stapbpf backend. Note that these arrays cannot be iterated upon
