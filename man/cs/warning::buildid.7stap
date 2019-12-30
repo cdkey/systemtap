@@ -1,7 +1,7 @@
 .\" t
-.TH ERROR::BUILDID 7stap 
+.TH WARNING::BUILDID 7stap
 .SH NAME
-error::buildid \- chyby ověření build-id
+warning::buildid \- chyby ověření build-id
 
 .\" macros
 .de SAMPLE
