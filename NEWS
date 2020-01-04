@@ -6,6 +6,10 @@
 - The process(EXE).begin probe handlers are now always triggered for
   already-running target processes.
 
+- The proc_mem_rss() tapset function now includes the resident shared
+  memory pages as expected. The old behavior can be restored by the
+  --compatible=4.2 option on the command line.
+
 * What's new in version 4.2, 2019-11-18
 
 - Initial support for multi-dimensional supports has been added to

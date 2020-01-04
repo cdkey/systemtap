@@ -71,6 +71,13 @@ enum {
 	return @const("MM_ANONPAGES")
 }
 
+%(systemtap_v > "4.2" %?
+@__private30 function _MM_SHMEMPAGES:long()
+{
+	return @const("MM_SHMEMPAGES")
+}
+%)
+
 @__private30 function _stp_get_mm_counter:long(mm_ptr:long, member:long)
 {
     mm = & @mm(mm_ptr)
@@ -167,7 +174,11 @@ function proc_mem_rss:long ()
     mm = @task(task)->mm
     if (mm != 0)
       return (_stp_get_mm_counter(mm, _MM_FILEPAGES())
-	      + _stp_get_mm_counter(mm, _MM_ANONPAGES()))
+	      + _stp_get_mm_counter(mm, _MM_ANONPAGES())
+%(systemtap_v > "4.2" %?
+	      + _stp_get_mm_counter(mm, _MM_SHMEMPAGES())
+%)
+              )
   }
   return 0
 }
@@ -188,7 +199,11 @@ function proc_mem_rss:long (pid:long)
     mm = @task(task)->mm
     if (mm != 0)
         return (_stp_get_mm_counter(mm, _MM_FILEPAGES())
-                + _stp_get_mm_counter(mm, _MM_ANONPAGES()))
+                + _stp_get_mm_counter(mm, _MM_ANONPAGES())
+%(systemtap_v > "4.2" %?
+	      + _stp_get_mm_counter(mm, _MM_SHMEMPAGES())
+%)
+                )
   }
   return 0
 }
