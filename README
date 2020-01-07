@@ -38,13 +38,11 @@ Build steps:
   
 - If available, install your distribution's copy of elfutils and its
   development headers/libraries.
-  Or if desired, download an elfutils source release to build in
-  "bundled mode" (below), and untar it into some new directory.
   Or if desired, build elfutils separately one time, and install
   it to /usr/local.
   See http://elfutils.org/
-  Version 0.151 is recommended for i386 hosts probing prelinked programs.
-  (PR12141)
+  elfutils version 0.178 introduces automatic debuginfo downloading,
+  which can makes systemtap usage easier.
 
 - On modern Fedora, install general optional build-requisites:
   # yum-builddep systemtap
