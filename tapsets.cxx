@@ -6949,17 +6949,30 @@ sdt_uprobe_var_expanding_visitor::try_parse_arg_register_pair (target_symbol *e,
                                                                const string& asmarg,
                                                                long precision)
 {
+  
   // BZ1613157: for powerpc, accept "R,R", as an alias of "(Ra,Rb)"
-  if (sess.architecture.substr(0,7) != "powerpc")
-    return NULL;
-    
-  // test for BASE_REGISTER,INDEX_REGISTER
-  string regexp = "^(" + regnames + "),(" + regnames + ")$";
-  vector<string> matches;
-  if (!regexp_match(asmarg, regexp, matches))
+  if (sess.architecture.substr(0,7) == "powerpc")
     {
-      // delegate to parenthetic syntax
-      return try_parse_arg_effective_addr (e, string("(")+asmarg+string(")"), precision);
+      // test for BASE_REGISTER,INDEX_REGISTER
+      string regexp = "^(" + regnames + "),(" + regnames + ")$";
+      vector<string> matches;
+      if (!regexp_match(asmarg, regexp, matches))
+        {
+          // delegate to parenthetic syntax
+          return try_parse_arg_effective_addr (e, string("(")+asmarg+string(")"), precision);
+        }
+    }
+  else if (elf_machine == EM_AARCH64) // BZ1788648
+    {
+      // test for [BASE_REGISTER, INDEX_REGISTER]
+      string regexp = "^\\[(" + regnames + "), (" + regnames + ")\\]$";
+      vector<string> matches;
+      if (!regexp_match(asmarg, regexp, matches))
+        {
+          // delegate to parenthetic syntax
+          string regnames = asmarg.substr(1, asmarg.length()-2); // trim the []
+          return try_parse_arg_effective_addr (e, string("(")+regnames+string(")"), precision); // add the ()
+        }
     }
 
   return NULL;
@@ -6975,7 +6988,7 @@ sdt_uprobe_var_expanding_visitor::try_parse_arg_effective_addr (target_symbol *e
   // test for OFFSET(BASE_REGISTER,INDEX_REGISTER[,SCALE]) where OFFSET is +-N+-N+-N
   // NB: Despite PR11821, we can use regnames here, since the parentheses
   // make things unambiguous. (Note: gdb/stap-probe.c also parses this)
-  string regexp = "^([+-]?[0-9]*)([+-][0-9]*)?([+-][0-9]*)?[(](" + regnames + "),(" +
+  string regexp = "^([+-]?[0-9]*)([+-][0-9]*)?([+-][0-9]*)?[(](" + regnames + "),[ ]?(" +
                                                                    regnames + ")(,[1248])?[)]$";
   vector<string> matches;
   if (!regexp_match(asmarg, regexp, matches))
