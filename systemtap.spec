@@ -608,9 +608,6 @@ systemtap-runtime-virthost machine to execute systemtap scripts.
 %configure %{dyninst_config} %{sqlite_config} %{crash_config} %{docs_config} %{pie_config} %{rpm_config} %{java_config} %{virt_config} %{dracut_config} %{python3_config} %{python2_probes_config} %{python3_probes_config} %{httpd_config} %{bpf_config} --disable-silent-rules --with-extra-version="rpm %{version}-%{release}"
 make %{?_smp_mflags}
 
-%if %{with_emacsvim}
-%{_emacs_bytecompile} emacs/systemtap-mode.el
-%endif
 
 %install
 make DESTDIR=$RPM_BUILD_ROOT install
