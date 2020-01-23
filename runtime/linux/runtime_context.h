@@ -73,6 +73,8 @@ static void _stp_runtime_contexts_free(void)
 
 static inline struct context * _stp_runtime_get_context(void)
 {
+        if (! rcu_is_watching()) // rcu operations are rejected in idle-cpu contexts
+                return 0; // in effect: skip probe
 	return rcu_dereference_sched(contexts[smp_processor_id()]);
 }
 
