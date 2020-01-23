@@ -12196,11 +12196,19 @@ tracepoint_query::handle_query_func(Dwarf_Die * func)
   // PR17126: blacklist
   if (!sess.guru_mode)
     {
+      bool blacklisted_p = false;
+      
       if ((sess.architecture.substr(0,3) == "ppc" ||
            sess.architecture.substr(0,7) == "powerpc") &&
           (tracepoint_instance == "hcall_entry" ||
            tracepoint_instance == "hcall_exit" ||
-	   tracepoint_instance == "hash_fault"))
+	   tracepoint_instance == "hash_fault")) // PR17126
+        blacklisted_p = true;
+
+      if (tracepoint_instance == "cpu_idle") // RHBZ1788662: idle context mustn't do rcu
+        blacklisted_p = true;
+
+      if (blacklisted_p)
         {
           sess.print_warning(_F("tracepoint %s is blacklisted on architecture %s",
                                 tracepoint_instance.c_str(), sess.architecture.c_str()));
