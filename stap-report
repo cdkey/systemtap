@@ -96,13 +96,13 @@ run "cat /var/log/stap-server/log"
 run "cat /proc/cpuinfo | egrep 'processor|vendor_id|model name'"
 if [ -x /usr/bin/dpkg ]; then
   # debian/ubuntu
-  run "dpkg --list | egrep 'systemtap|elfutils|kernel|linux|gcc|dyninst|java|avahi|nss|nspr|dejagnu|libdw' | awk '{print \$2,\$3}' | sort"
+  run "dpkg --list | egrep 'systemtap|elfutils|kernel|linux|gcc|dyninst|java|byteman|avahi|nss|nspr|dejagnu|libdw' | awk '{print \$2,\$3}' | sort"
 elif [ -x /usr/bin/rpm -o -x /bin/rpm ]; then
   # fedora/rhel/suse/...
-  run "rpm -qa --qf '%{name}-%{version} %{release}.%{arch}\\t%{buildtime:date}@%{buildhost}\\n' | egrep 'systemtap|elfutils|kernel|gcc|dyninst|java|avahi|nss|nspr|dejagnu|libdw' | sort"
+  run "rpm -qa --qf '%{name}-%{version} %{release}.%{arch}\\t%{buildtime:date}@%{buildhost}\\n' | egrep 'systemtap|elfutils|kernel|gcc|dyninst|java|byteman|avahi|nss|nspr|dejagnu|libdw' | sort"
 elif [ -f /var/log/packages ]; then
   # slackware
-  run "cat /var/log/packages | egrep 'systemtap|elfutils|kernel|gcc|dyninst|java|avahi|nss|nspr|dejagnu' | sort -k9"
+  run "cat /var/log/packages | egrep 'systemtap|elfutils|kernel|gcc|dyninst|java|byteman|avahi|nss|nspr|dejagnu' | sort -k9"
 fi
 run "egrep 'PROBE|RANDOMIZE|RELOC|TRACE|MARKER|KALLSYM|_DEBUG_|LOCKDEP|LOCKING|MODULE|FENTRY|_SIG|BPF' /lib/modules/`uname -r`/build/.config | grep -v not.set | sort | fmt -w 80"
 run "find /debugfs /proc /sys /dev /sys/kernel/debug -type f -path '*kprobe*' -o -path '*yama*' 2>/dev/null | xargs grep -H ."
