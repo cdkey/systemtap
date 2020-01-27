@@ -160,7 +160,7 @@ static unsigned long read_ptr_sect(const u8 **pLoc, const void *end,
 #else
 		BUILD_BUG_ON(sizeof(u32) != sizeof(value));
 #endif
-		/* fallthrough, see above. */
+		/* fallthrough */
 	case DW_EH_PE_absptr:
 		if (compat_task)
 		{
