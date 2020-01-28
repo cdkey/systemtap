@@ -6,11 +6,7 @@ set script {"probe timer.profile {print_stack(backtrace()); exit()}"}
 set passed 0
 
 # don't let stap find kernel debuginfo!
-setenv SYSTEMTAP_DEBUGINFO_PATH $srcdir
-setenv DEBUGINFOD_URLS ""
-setenv DEBUGINFOD_CACHE_PATH "/dev/null"
-
-eval spawn stap --all-modules -e $script
+eval spawn env SYSTEMTAP_DEBUGINFO_PATH=$srcdir DEBUGINFOD_URLS= DEBUGINFOD_CACHE_PATH=/dev/null stap --all-modules -e $script
 expect {
   -timeout 30
   -re "\\\[kernel\\\]" {
@@ -24,5 +20,3 @@ if {$passed == 1} {
 } else {
   fail $test
 }
-
-unsetenv SYSTEMTAP_DEBUGINFO_PATH
