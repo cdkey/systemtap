@@ -6786,7 +6786,17 @@ dump_symbol_tables (Dwfl_Module *m,
   dwfl_module_info (m, NULL, NULL, &end, NULL, NULL, NULL, NULL);
 
   int syments = dwfl_module_getsymtab(m);
-  DWFL_ASSERT (_F("Getting symbol table for %s", modname), syments >= 0);
+  if (syments < 0) // RHBZ1795196: elfutils 0.178+ can open vmlinuz as elf.main but fail here
+    {
+      c->session.print_warning(_F("libdwfl failure getting symbol table for %s: %s",
+                                  modname, dwfl_errmsg(-1)));
+      return DWARF_CB_ABORT;
+
+      // signal to dump_unwindsyms() to not let things proceed all the way to
+      // dump_unwindsym_cxt(), which then believes it has all the info for a
+      // complete record about this module.  In the kernel's case, this allows
+      // PR17921 fallback to /proc/kallsyms via dump_kallsyms().
+    }
 
   // Look up the relocation basis for symbols
   int n = dwfl_module_relocations (m);

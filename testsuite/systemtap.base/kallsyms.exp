@@ -5,7 +5,10 @@ if {![installtest_p]} {untested $test; return}
 set script {"probe timer.profile {print_stack(backtrace()); exit()}"}
 set passed 0
 
+# don't let stap find kernel debuginfo!
 setenv SYSTEMTAP_DEBUGINFO_PATH $srcdir
+setenv DEBUGINFOD_URLS ""
+setenv DEBUGINFOD_CACHE_PATH "/dev/null"
 
 eval spawn stap --all-modules -e $script
 expect {
