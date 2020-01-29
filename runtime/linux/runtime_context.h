@@ -73,8 +73,17 @@ static void _stp_runtime_contexts_free(void)
 
 static inline struct context * _stp_runtime_get_context(void)
 {
-        if (! rcu_is_watching()) // rcu operations are rejected in idle-cpu contexts
-                return 0; // in effect: skip probe
+	// RHBZ1788662 rcu operations are rejected in idle-cpu contexts
+	// in effect: skip probe if it's in rcu-idle state
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,13,0) // linux commit #5c173eb8
+        if (! rcu_is_watching())
+		return 0;
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0) // linux commit #9b2e4f18
+        if (! rcu_is_cpu_idle())
+		return 0;
+#else
+	; // XXX older kernels didn't put tracepoints in idle-cpu
+#endif
 	return rcu_dereference_sched(contexts[smp_processor_id()]);
 }
 
