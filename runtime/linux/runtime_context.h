@@ -75,7 +75,7 @@ static inline struct context * _stp_runtime_get_context(void)
 {
 	// RHBZ1788662 rcu operations are rejected in idle-cpu contexts
 	// in effect: skip probe if it's in rcu-idle state
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,13,0) // linux commit #5c173eb8
+#if defined(STAPCONF_RCU_IS_WATCHING) || LINUX_VERSION_CODE >= KERNEL_VERSION(3,13,0) // linux commit #5c173eb8
         if (! rcu_is_watching())
 		return 0;
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0) // linux commit #9b2e4f18

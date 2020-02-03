@@ -476,6 +476,9 @@ compile_pass (systemtap_session& s)
   output_autoconf(s, o, cs, "autoconf-udelay_simple.c", "STAPCONF_UDELAY_SIMPLE",
 		  NULL);
 
+  // RHBZ1788662 - need rcu_is_watching()
+  output_autoconf(s, o, cs, "autoconf-rcu_is_watching.c", "STAPCONF_RCU_IS_WATCHING", NULL);
+
   output_autoconf(s, o, cs, "autoconf-tracepoint-strings.c", "STAPCONF_TRACEPOINT_STRINGS", NULL);
   output_autoconf(s, o, cs, "autoconf-timerfd.c", "STAPCONF_TIMERFD_H", NULL);
 
