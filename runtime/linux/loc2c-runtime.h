@@ -294,7 +294,7 @@ static void ursl_store64 (const struct usr_regset_lut* lut,unsigned lutsize,  in
 #define uu_store_register(_regs,regno,value)  (_stp_is_compat_task() ? ursl_store32(url_i386, ARRAY_SIZE(url_i386), EM_386, regno, value) : ursl_store64(url_x86_64, ARRAY_SIZE(url_x86_64), EM_X86_64, regno, value))
 
 #define u_fetch_register(regno) check_fetch_register(c->uregs,regno,_stp_is_compat_task()?ARRAY_SIZE(url_i386):ARRAY_SIZE(url_x86_64),uu_fetch_register)
-#define u_store_register(regno,value) check_store_register(c->uregs,regnoo,_stp_is_compat_task()?ARRAY_SIZE(url_i386):ARRAY_SIZE(url_x86_64),value,uu_store_register)
+#define u_store_register(regno,value) check_store_register(c->uregs,regno,_stp_is_compat_task()?ARRAY_SIZE(url_i386):ARRAY_SIZE(url_x86_64),value,uu_store_register)
 
 #endif
 
