@@ -42,11 +42,20 @@ is the number after the slash in the
 output:
 .SAMPLE
 % stap -V
-Systemtap translator/driver (version 2.3/0.156, rpm 2.3-1.fc19)
-Copyright (C) 2005-2014 Red Hat, Inc. and others
+Systemtap translator/driver (version 4.2/0.178, rpm 4.2-1.fc30)
+Copyright (C) 2005-2019 Red Hat, Inc. and others
 [...]
 .ESAMPLE
-This indicates systemtap version 2.3 with elfutils version 0.156.
+This indicates systemtap version 4.2 with elfutils version 0.178.
+
+New enough versions of elfutils (0.178+) enable systemtap to automatically
+download correct debuginfo from servers run by you, your organization,
+and/or someone on the public internet.  Try:
+.SAMPLE
+% export DEBUGINFOD_URLS=https://debuginfod.elfutils.org/
+% export DEBUGINFOD_PROGRESS=1   # for progress messages, if you like
+.ESAMPLE
+and rerun systemtap.  It might just work.  If it doesn't, read on.
 
 .TP
 kernel debuginfo
@@ -106,13 +115,13 @@ expression, it may be possible to use
 .IR @cast(var,"foo","foo.h")->foo->bar
 to synthesize debuginfo for that type from a header file.
 
-.SH AUTOMATION
+.SH OTHER AUTOMATION
 
 On some platforms, systemtap may advise what commands to run, in order
 to download needed debuginfo.  Another possibility is to invoke systemtap
 with the
 .IR \-\-download\-debuginfo
-flag.
+flag, which uses ABRT.
 The
 .IR stap\-prep
 script included with systemtap may be able to download the
@@ -137,5 +146,7 @@ option, in case such a server is already running.
 .IR error::dwarf (7stap),
 .IR error::reporting (7stap),
 .IR error::contextvars (7stap),
+.IR debuginfod (8),
 .IR http://elfutils.org/ ,
+.IR https://sourceware.org/elfutils/Debuginfod.html ,
 .IR http://fedoraproject.org/wiki/Features/MiniDebugInfo

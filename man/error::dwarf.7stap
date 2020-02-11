@@ -18,6 +18,12 @@ result.
 Common conditions that trigger these problems include:
 
 .TP
+debuginfo missing or mismatching
+Sometimes debuginfo is installed, but does not match the binaries being
+probed.  See the \fIwarning::debuginfo\fP man page for more help for
+locating correct debuginfo.
+
+.TP
 compiler version
 Prior to GCC version 4.5, debuginfo quality was fairly limited.
 Often developers were advised to build their programs with 
@@ -84,6 +90,7 @@ Some tools may generate debuginfo that is unsupported by systemtap, such
 as the linux kernel CONFIG_DEBUG_INFO_SPLIT (\f2.dwo\f1 files) option.
 Stick with plain ELF/DWARF (optinally split, Fedora-style), if possible.
 
+
 .SH ALTERNATIVES
 
 In order to reduce reliance on ELF/DWARF debuginfo, consider the use of
@@ -102,4 +109,5 @@ all without reliance on debuginfo.
 .IR http://sourceware.org/systemtap/wiki/TipContextVariables ,
 .IR http://gcc.gnu.org/wiki/Var_Tracking_Assignments ,
 .IR warning::debuginfo (7stap),
+.IR warning::buildid (7stap),
 .IR error::reporting (7stap)
