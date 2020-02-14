@@ -2788,9 +2788,10 @@ dwflpp::find_variable_and_frame_base (vector<Dwarf_Die>& scopes,
                                            vardie);
   if (declaring_scope < 0)
     {
+      // XXX: instead: add suggested locals and let a caller throw a single error
       set<string> locals;
       get_locals(scopes, locals);
-      string sugs = levenshtein_suggest(local, locals); // probably not that many, so no limit
+      string sugs = levenshtein_suggest(local, locals, 5);
       if (pc)
         throw SEMANTIC_ERROR (_F("unable to find local '%s', [man error::dwarf] dieoffset %s in %s, near pc %s %s %s %s (%s)",
                                  local.c_str(),
@@ -3245,7 +3246,18 @@ dwflpp::translate_location(location_context *ctx,
   ctx->pc = pc;
   ctx->dw = this;
 
-  return ctx->translate_location (expr, len, input);
+  try
+    {
+      return ctx->translate_location (expr, len, input);
+    }
+  catch (const semantic_error& er)
+    {
+      // copy lower level loc2stap exception; add a DIE# to it so user
+      // has a chance to find the problematic raw debuginfo
+      semantic_error err(er);
+      err.details.push_back(die_location_as_string(die));
+      throw err;
+    }
 }
 
 

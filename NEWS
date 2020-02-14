@@ -1,5 +1,9 @@
 * What's new in version 4.3, PRERELEASE
 
+- More $variable resolution errors may be generated, especially for
+  @var("") constructs that target global variables.  These are
+  duplicate-eliminated by default, but may be seen with verbosity>=2.
+
 - The stapbpf backend now supports try-catch statements, an improved
   error tapset and error probes.
 

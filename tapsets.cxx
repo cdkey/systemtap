@@ -5066,8 +5066,10 @@ dwarf_atvar_query::atvar_query_cu (Dwarf_Die * cudie, dwarf_atvar_query *q)
     }
   catch (const semantic_error& er)
     {
-      // Here we suppress the error because we often just have too many
-      // when scanning all the CUs.
+      if (q->sess.verbose > 3)
+        clog << "chaining to " << q->e.tok << endl
+             << q->sess.build_error_msg(er) << endl;
+      q->e.chain (er);
       return DWARF_CB_OK;
     }
 
