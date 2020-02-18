@@ -120,7 +120,9 @@ debugger.
 
 systemtap comes with a variety of educational, documentation and
 reference resources.  They come online and/or packaged for offline
-use.  For online documentation, see the project web site,
+use.  Some systemtap diagnostic warning/error messages specially
+suggest reading a man page by including a string
+like \%[man\ error::pass5].  For online documentation, see the project web site,
 .nh
 https://sourceware.org/systemtap/
 .hy
@@ -131,6 +133,8 @@ tab(%) allbox;
 l l.
 \fBman pages\fP
 stap (this page)%language syntax, concepts, operation, options
+error::*%further explanation of error conditions
+warning::*%further explanation of warning conditions
 stapprobes%probe points and their $context variables
 stapref%quick reference to language syntax
 stappaths%T{
