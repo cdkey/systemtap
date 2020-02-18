@@ -1,0 +1,3 @@
+probe process.function("*").return {
+  println(ppfunc(),(@entry($$vars) != "" ? " ok" : " ko"))
+}

@@ -1,0 +1,32 @@
+set test "retblacklist"
+
+set res [target_compile $srcdir/$subdir/$test.c $test.exe executable "-g"]
+if { $res != "" } {
+    verbose "target_compile $test failed: $res" 2
+    fail "$test.c compile"
+    untested "$test"
+    return
+} else {
+    pass "$test.c compile"
+}
+
+
+if {! [installtest_p]} {
+    untested "#test"
+    return
+}
+
+set ko 0
+spawn stap -w $srcdir/$subdir/$test.stp -c ./$test.exe
+expect {
+    -timeout 20
+    "_start" { incr ko; exp_continue }
+    "get_pc_thunk" { incr ko; exp_continue }
+    eof { }
+}
+verbose -log "ko=$ko"
+
+if {$ko == 0} then { pass $test } else { fail $test }
+
+catch {exec rm -f $test.exe}
+

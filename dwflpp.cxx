@@ -4577,11 +4577,13 @@ dwflpp::build_user_blacklist()
 
   // Non-matching placeholders until we have real things to match
   blfn += ".^";
+  blfn_ret += ".^";
   blfile += ".^";
   blsection += ".^";
 
   // These functions don't use the normal function-entry ABI, so can't be .return probed safely
-  blfn_ret += "_start";
+  blfn_ret += "|_start";
+  blfn_ret += "|__.*\\.get_pc_thunk\\..*"; // PR11249 etc.
 
   blfn += ")$";
   blfn_ret += ")$";
