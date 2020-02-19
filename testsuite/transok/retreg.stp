@@ -1,0 +1,3 @@
+#! stap -gp3
+
+probe process("stap").function("main").return { $return = 1}
