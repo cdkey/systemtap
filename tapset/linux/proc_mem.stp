@@ -73,9 +73,14 @@ enum {
 
 %(systemtap_v > "4.2" %?
 @__private30 function _MM_SHMEMPAGES:long()
-{
-	return @const("MM_SHMEMPAGES")
-}
+%{ /* pure */
+    STAP_RETVALUE =
+#ifdef STAPCONF_MM_SHMEMPAGES
+	MM_SHMEMPAGES;
+#else
+	0;
+#endif
+%}
 %)
 
 @__private30 function _stp_get_mm_counter:long(mm_ptr:long, member:long)

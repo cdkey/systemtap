@@ -440,6 +440,9 @@ compile_pass (systemtap_session& s)
   output_autoconf(s, o, cs, "autoconf-cpu-clock.c", "STAPCONF_CPU_CLOCK", NULL);
   output_autoconf(s, o, cs, "autoconf-local-clock.c", "STAPCONF_LOCAL_CLOCK", NULL);
   
+  // used by tapset/linux/proc_mem.stp
+  output_autoconf(s, o, cs, "autoconf-mm-shmempages.c", "STAPCONF_MM_SHMEMPAGES", NULL);
+
   // used by runtime/uprobe-inode.c
   output_either_exportconf(s, o2, "uprobe_register", "register_uprobe",
 			   "STAPCONF_UPROBE_REGISTER_EXPORTED");
