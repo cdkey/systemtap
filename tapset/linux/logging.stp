@@ -25,6 +25,8 @@ function ftrace (msg:string) %{ /* unmodified-fnargs */
        to defeat trace_printk -> __trace_bprintk optimization.  That's
        because bprintk doesn't save the incoming strings, only their
        addresses. */
+#else
+  #error "trace_printk not supported"
 #endif
 %}
 

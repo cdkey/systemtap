@@ -8,6 +8,6 @@ probe begin {
       exit()
       error("error")
       stp_print_binary(1, 0, 0, 0, 0)
-      ftrace("ftrace")
+      // ftrace() tested in logging-embedded2.stp
       printk(0,"Zoink!  The paper tape punch is burning chads!")
 }

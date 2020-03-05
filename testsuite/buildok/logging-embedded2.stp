@@ -1,0 +1,7 @@
+#! stap -gp4
+
+// build-test the logging tapset functions - ftrace() only usable if STAPCONF detects it
+
+probe begin {
+      ftrace("ftrace")
+}
