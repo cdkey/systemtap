@@ -93,8 +93,7 @@ def main():
     functions = collect_overloads(refentries)
     merge_overloads(functions)
     output_file = getattr(sys.stdout, "buffer", sys.stdout)
-    tree.write(output_file, encoding="UTF-8", xml_declaration=True,
-                 doctype=tree.docinfo.doctype)
+    tree.write(output_file, encoding="UTF-8", xml_declaration=True)
 
 if __name__ == '__main__':
     main()

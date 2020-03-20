@@ -24,9 +24,12 @@ function print_ubacktrace () %{ /* pragma:unwind */ /* pragma:symbols */
 
 /**
  * sfunction print_ubacktrace - Print stack back trace for current user-space task.
+ * @pc: override PC
+ * @sp: override SP
+ * @fp: override FP
  *
  * Equivalent to print_ubacktrace(), but it performs the backtrace
- * using the pc, sp, and fp provided.
+ * using the pc, sp, and fp provided.  Useful 
  *
  * Note: To get (full) backtraces for user space applications and shared
  * shared libraries not mentioned in the current script run stap with
@@ -124,6 +127,9 @@ function print_ubacktrace_fileline () %{ /* pragma:unwind */ /* pragma:symbols *
 
 /**
  * sfunction print_ubacktrace - Print stack back trace for current user-space task.
+ * @pc: override PC
+ * @sp: override SP
+ * @fp: override FP
  *
  * Equivalent to print_ubacktrace_fileline(), but it performs the backtrace
  * using the pc, sp, and fp passed in.
