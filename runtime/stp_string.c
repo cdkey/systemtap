@@ -206,7 +206,6 @@ static int _stp_text_str(char *outstr, const char *in, int inlen, int outlen,
 			*out++ = c;
 		else {
 			switch (c) {
-			case '\0':
 			case '\a':
 			case '\b':
 			case '\f':
@@ -216,6 +215,14 @@ static int _stp_text_str(char *outstr, const char *in, int inlen, int outlen,
 			case '\v':
 			case '"':
 			case '\\':
+				/*
+				 * Do not add '\0' to the short-escapes list.
+				 * If we emit \0 and the next char is a
+				 * printable digit, say "6", the resulting \06
+				 * will be interpreted incorrectly as a
+				 * single-byte octal escape, not a null byte
+				 * then a printable digit.
+				 */
 				num = 2; // "\c"
 				break;
 			default:
