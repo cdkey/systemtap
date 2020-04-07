@@ -88,7 +88,7 @@ if {[regexp "^kernel\\.function\\(\"vfs_read@\[^\"\]*\"\\)$" $output]} {
 
 set subtest "verbatim stap -L vfs_read"
 verbose -log "output is $outputL"
-if {[regexp "^kernel\\.function\\(\"vfs_read@\[^\"\]*\"\\).call \\\$file:struct file\\* \\\$buf:char\\* \\\$count:size_t \\\$pos:loff_t\\*$" $outputL]} {
+if {[regexp "^kernel.function.*vfs_read.*call.*file.*buf.*count.*pos.*ret" $outputL]} {
    pass "$test ($subtest)"
 } else {
    fail "$test ($subtest)"
