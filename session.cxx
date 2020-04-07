@@ -1814,6 +1814,11 @@ systemtap_session::check_options (int argc, char * const argv [])
   // FIXME: we need to think through other options that shouldn't be
   // used with '-i'.
 
+  // ignore any -E bits in list modes; their presence could flip the
+  // process result code even if list results are empty
+  if (dump_mode)
+    additional_scripts.clear();
+
 #if ! HAVE_NSS
   if (client_options)
     print_warning("--client-options is not supported by this version of systemtap");
@@ -2890,11 +2895,12 @@ systemtap_session::is_user_file (const string &name)
 bool
 systemtap_session::is_primary_probe (derived_probe *dp)
 {
-
+#if 0
+  // RHBZ1795159: more synthetic probes now exist that are 'primary enough'
   // If the probe is synthetically generated, then it's not primary.
-  
   if (dp->synthetic)
     return false;
+#endif
 
   // We check if this probe is from the primary user file by going back to its
   // original probe and checking if that probe was found in the primary user
