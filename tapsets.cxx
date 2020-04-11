@@ -2192,6 +2192,10 @@ query_dwarf_inline_instance (Dwarf_Die * die, dwarf_query * q)
       Dwarf_Addr entrypc;
       if (q->dw.die_entrypc (die, &entrypc))
         {
+          // PR12609: The tails of partially-inlined functions show up
+          // in the query_dwarf_func() path, not here.  The heads do
+          // come here, and should be processed here.
+
           inline_instance_info inl;
           inl.die = *die;
           inl.name = q->dw.function_name;
@@ -2258,6 +2262,7 @@ query_dwarf_func (Dwarf_Die * func, dwarf_query * q)
           if (q->sess.verbose>2)
             clog << _F("selected function %s\n", q->dw.function_name.c_str());
 
+         
           func_info func;
           q->dw.function_die (&func.die);
           func.name = q->dw.function_name;
@@ -2270,6 +2275,27 @@ query_dwarf_func (Dwarf_Die * func, dwarf_query * q)
           if (q->dw.function_entrypc (&entrypc))
             {
               func.entrypc = entrypc;
+
+              // PR12609: handle partial-inlined functions.  These look
+              // like normal inlined instances in DWARF (so come through
+              // here), but in fact are common/tail parts of a normal
+              // inlined function instance.  They do not represent entry
+              // points, so we filter them out.  DWARF/gcc doesn't leave
+              // any attributes to identify these from there, so we look
+              // up the ELF symbol name and rely on a heuristic.
+              GElf_Sym sym;
+              GElf_Off off = 0;
+              const char *name = dwfl_module_addrinfo (q->dw.module, entrypc,
+                                                       &off, &sym, NULL, NULL, NULL);
+
+              if (name != NULL && strstr(name, ".part.") != NULL)
+                {
+                  if (q->sess.verbose>2)
+                    clog << _F("skipping partially-inlined instance "
+                               "%s at %p\n", name, (void*)entrypc);
+                  return DWARF_CB_OK;
+                }
+
               q->filtered_functions.push_back (func);
             }
           /* else this function is fully inlined, just ignore it */

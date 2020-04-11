@@ -1,0 +1,22 @@
+set test "partial-inline"
+if {![installtest_p]} { untested $test; return }
+
+target_compile $srcdir/$subdir/$test.c $test.exe executable "additional_flags=-O2 additional_flags=-g additional_flags=-fasynchronous-unwind-tables"
+
+spawn stap $srcdir/$subdir/$test.stp -c ./$test.exe
+set bad 0
+set good 0
+expect {
+    -timeout 30
+    "foo.part" { incr bad; exp_continue }
+    "foo" { incr good; exp_continue }
+    "main" { incr good; exp_continue }
+    timeout { fail "$test (timeout)" }
+    eof { }
+}
+catch {close}; catch {wait}
+if {$good > 0 && $bad == 0} {
+    pass "$test"
+} else {
+    fail "$test ($good,$bad)"
+}

@@ -1,0 +1,8 @@
+#! /usr/bin/env stap
+
+probe process.function("foo")
+{
+  println(usymname(uaddr())) /* "main" for inlined parts of foo(), 
+                              and we don't want to see 
+                              foo.part for partially-inlined body */
+}
