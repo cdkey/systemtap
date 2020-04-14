@@ -11573,6 +11573,20 @@ static vector<string> tracepoint_extra_decls (systemtap_session& s,
   // linux 3.0
   they_live.push_back ("struct cpu_workqueue_struct;");
 
+  if (header.find("clk") != string::npos)
+      they_live.push_back ("struct clk_duty;");
+  
+  if (header.find("fsi") != string::npos)
+      they_live.push_back ("struct fsi_master_acf;");
+  
+  if (header.find("ib_") != string::npos) {
+      they_live.push_back ("struct ib_mad_hdr;");
+      they_live.push_back ("struct ib_user_mad_hdr;");
+      they_live.push_back ("struct ib_umad_file;");
+      if (header_exists(s, "/include/rdma/id_mad.h"))
+        they_live.push_back ("#include \"rdma/id_mad.h\"");
+  }
+
   if (header.find("ext4") != string::npos
       && s.kernel_config["CONFIG_EXT4_FS"] != string("")
       && header_exists(s, "/fs/ext4/ext4.h"))
