@@ -59,3 +59,16 @@ function printk (level:long,msg:string) %{ /* guru */ /* unmodified-fnargs */
 #endif
                  , STAP_ARG_msg);
 %}
+
+
+/**
+ * sfunction dump_stack - Send the kernel backtrace to the kernel trace buffer
+ *
+ * Description: Print the current kernel backtrace to the kernel trace buffer.
+ This function may * not be safely called from all kernel probe contexts, so
+ * is restricted to guru mode only. Under the hood, it calls the kernel C API
+ * function dump_stack directly.
+ */
+function dump_stack () %{ /* guru */
+	dump_stack();
+%}

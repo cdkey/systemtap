@@ -1,5 +1,9 @@
 * What's new in version 4.3, PRERELEASE
 
+- Add new tapset function dump_stack() which prints the current
+  kernel backtrace to the kernel trace buffer (as a thin wrapper
+  around the kernel C API function dump_stack).
+
 - Almost all of the kmalloc() allocations exceeding 4KB have been
   replaced by vmalloc(). This helps stap's kernel runtime work
   properly on systems with serious fragmentation in physical memory
