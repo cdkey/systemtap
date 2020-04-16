@@ -33,7 +33,7 @@ static void _stp_mempool_destroy(_stp_mempool_t *pool)
 	if (pool) {
 		list_for_each_safe(p, tmp, &pool->free_list) {
 			list_del(p);
-			_stp_kfree(p);
+			_stp_vfree(p);
 		}
 		_stp_kfree(pool);
 	}
@@ -57,7 +57,7 @@ static _stp_mempool_t *_stp_mempool_init(size_t size, size_t num)
 	alloc_size = size + sizeof(struct _stp_mem_buffer) - sizeof(void *);
 
 	for (i = 0; i < num; i++) {
-		m = (struct _stp_mem_buffer *)_stp_kmalloc(alloc_size);
+		m = (struct _stp_mem_buffer *)_stp_vzalloc(alloc_size);
 		if (unlikely(m == NULL))
 			goto err;
 		m->pool = pool;

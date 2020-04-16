@@ -1,5 +1,10 @@
 * What's new in version 4.3, PRERELEASE
 
+- Almost all of the kmalloc() allocations exceeding 4KB have been
+  replaced by vmalloc(). This helps stap's kernel runtime work
+  properly on systems with serious fragmentation in physical memory
+  address space.
+
 - More $variable resolution errors may be generated, especially for
   @var("") constructs that target global variables.  These are
   duplicate-eliminated by default, but may be seen with verbosity>=2.

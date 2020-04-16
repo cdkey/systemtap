@@ -1194,7 +1194,7 @@ __stp_call_mmap_callbacks_for_task(struct stap_task_finder_target *tgt,
 
 	// Now allocate an array to cache vma information in.
 	if (file_based_vmas > 0)
-		vma_cache = _stp_kmalloc(sizeof(struct vma_cache_t)
+		vma_cache = _stp_vzalloc(sizeof(struct vma_cache_t)
 					 * file_based_vmas);
 	if (vma_cache != NULL) {
 		// Loop through the vmas again, and cache needed information.
@@ -1269,7 +1269,7 @@ __stp_call_mmap_callbacks_for_task(struct stap_task_finder_target *tgt,
 			}
 			vma_cache_p++;
 		}
-		_stp_kfree(vma_cache);
+		_stp_vfree(vma_cache);
 	}
 
 	_stp_kfree(mmpath_buf);
