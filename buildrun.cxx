@@ -227,6 +227,7 @@ compile_dyninst (systemtap_session& s)
       "gcc", "--std=gnu99", s.translated_source, s.symbols_source, "-o", module,
       "-fvisibility=hidden", "-O2", "-I" + s.runtime_path, "-D__DYNINST__",
       "-Wall", WERROR, "-Wno-unused", "-Wno-strict-aliasing",
+      "-Wno-pointer-to-int-cast", "-Wno-int-to-pointer-cast",
       "-pthread", "-lrt", "-fPIC", "-shared",
     };
 
