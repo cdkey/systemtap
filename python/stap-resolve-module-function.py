@@ -1,7 +1,11 @@
 from __future__ import print_function
 
 import ast
-import imp
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    # deprecated in python 3.4, but still works as of python 3.7.6
+    import imp
 import os.path
 import re
 import sys
