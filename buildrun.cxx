@@ -566,6 +566,11 @@ compile_pass (systemtap_session& s)
   o << "EXTRA_CFLAGS += -Wpointer-arith" << endl;
   #endif
 
+  // PR25845: Recent gcc (seen on 9.3.1) warns fairly common 32-bit pointer-conversions:
+  o << "EXTRA_CFLAGS += $(call cc-option,-Wno-pointer-to-int-cast)" << endl;
+  o << "EXTRA_CFLAGS += $(call cc-option,-Wno-int-to-pointer-cast)" << endl;
+  // TODO: Some tests also suffer from -Werror=overflow. That seems like a warning requiring a tiny bit more care.
+
   // If we've got a reasonable runtime path from the user, we'll just
   // do '-IDIR'. If there are any sneaky/odd characters in it, we'll
   // have to quote it, like '-I"DIR"'.
