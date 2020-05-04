@@ -267,8 +267,9 @@ printscript(systemtap_session& s, ostream& o)
             }
           if (s.verbose)
             {
+              o << "{ ";
               f->body->print (o);
-              o << endl;
+              o << " }" << endl;
             }
         }
 
@@ -291,8 +292,9 @@ printscript(systemtap_session& s, ostream& o)
             }
           if (s.verbose)
             {
+              o << "{ ";
               p->body->print (o);
-              o << endl;
+              o << " }" << endl;
             }
         }
     }
