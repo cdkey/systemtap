@@ -122,6 +122,9 @@ struct parse_error: public std::runtime_error
     }
 };
 
+
+class symresolution_info;
+
 struct systemtap_session
 {
 private:
@@ -451,6 +454,7 @@ public:
   unsigned suppress_costly_diagnostics; /* set during processing of optional probes */
 
   const token* last_token;
+
   void print_token (std::ostream& o, const token* tok);
   void print_error (const semantic_error& e);
   std::string build_error_msg (const semantic_error& e);
@@ -467,6 +471,9 @@ public:
   void printscript(std::ostream& o);
   void report_suppression();
 
+  // PR25841, for early probe-derivation-time symbol resolution
+  symresolution_info* symbol_resolver; // may be NULL
+  
   // NB: It is very important for all of the above (and below) fields
   // to be cleared in the systemtap_session ctor (session.cxx).
 

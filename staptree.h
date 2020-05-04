@@ -675,6 +675,7 @@ struct functiondecl: public symboldecl
   bool synthetic;
   bool mangle_oldstyle;
   bool has_next;
+  bool cloned_p; // during probe-derivation time
   int64_t priority;
   functiondecl ();
   void print (std::ostream& o) const;

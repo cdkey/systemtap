@@ -1,5 +1,14 @@
 * What's new in version 4.3, PRERELEASE
 
+- Functions can now be context-sensitive, meaning that they may make
+  references to $context variables and similar constructs that could
+  formerly appear only inside probe handlers.  This is implemented by
+  cloning the such functions for each probe.
+  Only some probe point (dwarf-based user & kernel) types supported.
+  function foo () { println ($$vars) }
+  probe kernel.function("do_exit") { foo() }
+  probe process("/bin/ls").function("main") { foo() }
+
 - Add new tapset function dump_stack() which prints the current
   kernel backtrace to the kernel trace buffer (as a thin wrapper
   around the kernel C API function dump_stack).

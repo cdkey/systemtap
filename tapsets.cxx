@@ -1,5 +1,5 @@
 // tapset resolution
-// Copyright (C) 2005-2019 Red Hat Inc.
+// Copyright (C) 2005-2020 Red Hat Inc.
 // Copyright (C) 2005-2007 Intel Corporation.
 // Copyright (C) 2008 James.Bottomley@HansenPartnership.com
 //
@@ -478,14 +478,6 @@ static const string TOK_CALLEE("callee");;
 static const string TOK_CALLEES("callees");;
 static const string TOK_NEAREST("nearest");;
 
-// Can we handle this query with just symbol-table info?
-enum dbinfo_reqt
-{
-  dbr_unknown,
-  dbr_none,		// kernel.statement(NUM).absolute
-  dbr_need_symtab,	// can get by with symbol table if there's no dwarf
-  dbr_need_dwarf
-};
 
 
 struct dwarf_query; // forward decl
@@ -928,9 +920,6 @@ struct dwarf_query : public base_query
 
   bool has_mark;
 
-  enum dbinfo_reqt dbinfo_reqt;
-  enum dbinfo_reqt assess_dbinfo_reqt();
-
   void parse_function_spec(const string & spec);
   function_spec_type spec_type;
   vector<string> scopes;
@@ -938,7 +927,6 @@ struct dwarf_query : public base_query
   interned_string file;
   lineno_t lineno_type;
   vector<int> linenos;
-  bool query_done;	// Found exact match
 
   // Holds the prologue end of the current function
   Dwarf_Addr prologue_end;
@@ -1052,10 +1040,9 @@ dwarf_query::dwarf_query(probe * base_probe,
     has_label(false), has_callee(false),
     has_callees_num(false), callees_num_val(0),
     has_absolute(false), has_mark(false),
-    dbinfo_reqt(dbr_unknown),
     spec_type(function_alone),
     lineno_type(ABSOLUTE),
-    query_done(false), prologue_end(0)
+    prologue_end(0)
 {
   // Reduce the query to more reasonable semantic values (booleans,
   // extracted strings, numbers, etc).
@@ -1093,9 +1080,6 @@ dwarf_query::dwarf_query(probe * base_probe,
     parse_function_spec(function_str_val);
   else if (has_statement_str)
     parse_function_spec(statement_str_val);
-
-  dbinfo_reqt = assess_dbinfo_reqt();
-  query_done = false;
 }
 
 
@@ -1163,26 +1147,18 @@ query_symtab_func_info (func_info & fi, dwarf_query * q)
 void
 dwarf_query::query_module_symtab()
 {
-  // Get the symbol table if it's necessary, sufficient, and not already got.
-  if (dbinfo_reqt == dbr_need_dwarf)
-    return;
-
+  // Get the symbol table if we don't already have it
   module_info *mi = dw.mod_info;
-  if (dbinfo_reqt == dbr_need_symtab)
-    {
-      if (mi->symtab_status == info_unknown)
-        mi->get_symtab();
-      if (mi->symtab_status == info_absent)
-        return;
-    }
+  if (mi->symtab_status == info_unknown)
+    mi->get_symtab();
+  if (mi->symtab_status == info_absent)
+    return;
 
   func_info *fi = NULL;
   symbol_table *sym_table = mi->sym_table;
 
-  if (has_function_str)
+  if (has_function_str && spec_type == function_alone)
     {
-      // Per dwarf_query::assess_dbinfo_reqt()...
-      assert(spec_type == function_alone);
       if (dw.name_has_wildcard(function_str_val))
         {
           for (auto iter = sym_table->map_by_addr.begin();
@@ -1219,8 +1195,14 @@ dwarf_query::handle_query_module()
       return;
     }
 
-  bool report = dbinfo_reqt == dbr_need_dwarf;
-  dw.get_module_dwarf(false, report);
+  // PR25841.  We may only need dwarf depending on the context-related
+  // constructs in the probe handler and/or transitively called
+  // functions.  Otherwise, for some probe types (as per the former
+  // assess_dbinfo_reqt()), we could fall back to query_module_symtab
+  // (elf-only) and not bother look for / complain about absence of
+  // dwarf.  But ... the worst case for probes where pure elf symbols are
+  // enough is a warning that dwarf wasn't available.  Grin and bear it.
+  dw.get_module_dwarf(false /* don't require */, true /* warn */);
 
   // prebuild the symbol table to resolve aliases
   dw.mod_info->get_symtab();
@@ -1236,7 +1218,7 @@ dwarf_query::handle_query_module()
   // in the symbol table but not in dwarf and minidebuginfo is
   // located in the gnu_debugdata section, alias_dupes checking
   // is done before adding any probe points
-  if (!query_done && !pending_interrupts)
+  if (results.size()==0 && !pending_interrupts)
     query_module_symtab();
 }
 
@@ -1689,44 +1671,6 @@ dwarf_query::remove_probe_point_component(interned_string functor)
   base_loc->components = new_comps;
 }
 
-enum dbinfo_reqt
-dwarf_query::assess_dbinfo_reqt()
-{
-  if (has_absolute)
-    {
-      // kernel.statement(NUM).absolute
-      return dbr_none;
-    }
-  if (has_inline || has_label || has_callee || has_callees_num)
-    {
-      // kernel.function("f").inline or module("m").function("f").inline
-      return dbr_need_dwarf;
-    }
-  if (has_function_str && spec_type == function_alone)
-    {
-      // kernel.function("f") or module("m").function("f")
-      return dbr_need_symtab;
-    }
-  if (has_statement_num)
-    {
-      // kernel.statement(NUM) or module("m").statement(NUM)
-      // Technically, all we need is the module offset (or _stext, for
-      // the kernel).  But for that we need either the ELF file or (for
-      // _stext) the symbol table.  In either case, the symbol table
-      // is available, and that allows us to map the NUM (address)
-      // to a function, which is goodness.
-      return dbr_need_symtab;
-    }
-  if (has_function_num)
-    {
-      // kernel.function(NUM) or module("m").function(NUM)
-      // Need the symbol table so we can back up from NUM to the
-      // start of the function.
-      return dbr_need_symtab;
-    }
-  // Symbol table tells us nothing about source files or line numbers.
-  return dbr_need_dwarf;
-}
 
 interned_string
 dwarf_query::final_function_name(interned_string final_func,
@@ -2349,9 +2293,7 @@ query_cu (Dwarf_Die * cudie, dwarf_query * q)
       // Pick up [entrypc, name, DIE] tuples for all the functions
       // matching the query, and fill in the prologue endings of them
       // all in a single pass.
-      int rc = q->dw.iterate_over_functions (query_dwarf_func, q, q->function);
-      if (rc != DWARF_CB_OK)
-        q->query_done = true;
+      q->dw.iterate_over_functions (query_dwarf_func, q, q->function);
 
       if (!q->filtered_functions.empty() &&
           !q->has_statement_str && // PR 2608
@@ -2452,10 +2394,7 @@ dwarf_query::query_module_functions ()
       // Collect all module functions so we know which CUs are interesting
       int rc = dw.iterate_single_function(query_dwarf_func, this, function);
       if (rc != DWARF_CB_OK)
-        {
-          query_done = true;
-          return;
-        }
+        return;
 
       set<void*> used_cus; // by cu->addr
       vector<Dwarf_Die> cus;
@@ -2475,10 +2414,7 @@ dwarf_query::query_module_functions ()
       for (auto i = cus.begin(); i != cus.end(); ++i){
         rc = query_cu(&*i, this);
 	if (rc != DWARF_CB_OK)
-	  {
-	    query_done = true;
-	    return;
-	  }
+          return;
       }
     }
   catch (const semantic_error& e)
@@ -3092,6 +3028,138 @@ var_expanding_visitor::visit_defined_op (defined_op* e)
   literal_number* ln = new literal_number (resolved ? 1 : 0);
   ln->tok = e->tok;
   abort_provide (ln); // PR20672; stop updating visitor
+}
+
+
+// Traverse a staptree*, looking for any operation that requires probe
+// context to work
+struct context_op_finder: public traversing_visitor
+{
+public:
+  bool context_op_p;
+  context_op_finder(): context_op_p(false) {}
+  
+  void visit_target_symbol (target_symbol* e)
+  { context_op_p = true; traversing_visitor::visit_target_symbol(e); }
+  void visit_defined_op (defined_op* e)
+  { context_op_p = true; traversing_visitor::visit_defined_op(e); }
+  void visit_atvar_op (atvar_op* e)
+  { context_op_p = true; traversing_visitor::visit_atvar_op(e); }
+  void visit_cast_op (cast_op* e) // if module is specified, not a context_op_p
+  { if (e->module == "") context_op_p = true; traversing_visitor::visit_cast_op(e); }
+  void visit_autocast_op (autocast_op* e) // XXX do these show up early?
+  { context_op_p = true; traversing_visitor::visit_autocast_op(e); }
+  void visit_perf_op (perf_op* e)
+  { context_op_p = true; traversing_visitor::visit_perf_op(e); }
+};
+
+
+void
+var_expanding_visitor::visit_functioncall (functioncall* e)
+{
+  update_visitor::visit_functioncall(e); // for arguments etc.
+
+  if (strverscmp(sess.compatible.c_str(), "4.3") >= 0 && // PR25841 behaviour
+      e->referents.size() == 0 && // first time seeing this functioncall
+      sess.symbol_resolver && // from some sort of symbol-resolution context
+      sess.symbol_resolver->current_probe) // prevent being called from semantic_pass_symbols function-only loop
+    {
+      // need to early resolve
+      auto refs = sess.symbol_resolver->find_functions (e, e->function, e->args.size (), e->tok);
+
+      vector<functiondecl*> copyrefs;
+      for (auto r: refs)
+        {
+          // We accumulate these functiondecls, so we don't recurse infinitely.
+          // Recursive functions will be handled correctly though because the second
+          // time we clone, the first clone will be found & reused.
+          if (early_resolution_in_progress.find(r) != early_resolution_in_progress.end())
+            continue;
+          
+          context_op_finder cop;
+          r->body->visit(& cop);
+          if (cop.context_op_p) // need to clone
+            {
+              r->cloned_p = true; // so don't warn about elision later
+              
+              if (sess.verbose > 2)
+                clog << _("need a clone of context-op function ") << *r->tok << endl;
+
+              // check if we already cloned it, e.g. if we have two
+              // calls to the same function from a probe.
+              string clone_function_name = string("__clone_") +
+                sess.symbol_resolver->current_probe->name() + string("_of_") + string(r->name);
+
+              auto johnny = sess.functions.find(clone_function_name);
+              if (johnny != sess.functions.end())
+                {
+                  if (sess.verbose > 3)
+                    clog << _("reusing previous clone") << endl;
+                  e->function = johnny->first; // overwrite functioncall name for -p2 disambiguation
+                  copyrefs.push_back(johnny->second);
+                  continue;
+                }
+
+              // nope, must make a new clone
+              
+              auto nf = new functiondecl();
+              nf->synthetic = true;
+              nf->tok = r->tok;
+              // nf->unmangled_name = r->unmangled_name;
+              nf->unmangled_name = nf->name = clone_function_name;
+              nf->mangle_oldstyle = r->mangle_oldstyle;
+              nf->has_next = r->has_next;
+              nf->priority = r->priority;
+              for (auto j: r->formal_args)
+                {
+                  auto v = new vardecl();
+                  v->type = pe_unknown; // = j->type anyway; we're before type inference
+                  v->tok = j->tok;
+                  v->name = j->name;
+                  v->unmangled_name = j->unmangled_name;
+                  nf->formal_args.push_back (v);
+                }
+              // leave empty locals, unused_locals -- they'll be filled soon
+              
+              // deep_copy the body then process it recursively
+              nf->body = deep_copy_visitor::deep_copy(r->body);
+              early_resolution_in_progress.insert(r);
+              require (nf->body, false); // process it recursively
+              early_resolution_in_progress.erase(r);
+
+              sess.functions.insert(make_pair(nf->name, nf));
+              e->function = nf->name; // overwrite functioncall name for -p2 disambiguation
+              copyrefs.push_back(nf);
+
+              if (sess.verbose > 3) {
+                clog << _("clone: ");
+                nf->print(clog);
+                clog << endl;
+              }
+            }
+          else
+            copyrefs = refs; // already added into s.functions[]
+        }
+
+      e->referents = copyrefs;
+    }
+
+  else if (strverscmp(sess.compatible.c_str(), "4.3") >= 0 && // PR25841 behaviour
+           e->referents.size() != 0) // second or later time calling
+    {
+      for (auto r: e->referents)
+        {
+          if (early_resolution_in_progress.find(r) != early_resolution_in_progress.end())
+            {
+              // already warned earlier
+              continue;
+            }
+
+          early_resolution_in_progress.insert(r);
+          require (r->body, false); // process it recursively
+          early_resolution_in_progress.erase(r);
+        }          
+    }
 }
 
 
@@ -4878,8 +4946,10 @@ void dwarf_cast_expanding_visitor::visit_cast_op (cast_op* e)
   if (lvalue && !sess.guru_mode)
     throw SEMANTIC_ERROR(_("write to @cast context variable not permitted; need stap -g"), e->tok);
 
-  if (e->module.empty())
-    e->module = "kernel"; // "*" may also be reasonable to search all kernel modules
+
+  if (strverscmp(sess.compatible.c_str(), "4.3") < 0) // PR25841 - no need to sub "kernel" 
+    if (e->module.empty())
+      e->module = "kernel"; // "*" may also be reasonable to search all kernel modules
 
   functioncall* result = NULL;
 
@@ -5123,8 +5193,9 @@ dwarf_atvar_expanding_visitor::visit_atvar_op (atvar_op* e)
     throw SEMANTIC_ERROR(_("write to @var variable not permitted; "
                            "need stap -g"), e->tok);
 
-  if (e->module.empty())
-    e->module = "kernel";
+  if (strverscmp(sess.compatible.c_str(), "4.3") < 0) // PR25841 - no need to sub "kernel"
+    if (e->module.empty())
+      e->module = "kernel";
 
   functioncall* result = NULL;
 
@@ -5379,6 +5450,8 @@ dwarf_derived_probe::dwarf_derived_probe(interned_string funcname,
       // processed (to generate synthetic .call etc. probes).  We do a
       // a mini relaxation loop here.
       dwarf_var_expanding_visitor v (q, scope_die, handler_dwfl_addr);
+      if (q.sess.symbol_resolver)
+        q.sess.symbol_resolver->current_probe = this;
       var_expand_const_fold_loop (q.sess, this->body, v);
       
       // Propagate perf.counters so we can emit later
@@ -10151,6 +10224,9 @@ kprobe_derived_probe::kprobe_derived_probe (systemtap_session& sess,
     comps.push_back (new probe_point::component(TOK_MAXACTIVE, new literal_number(maxactive_val)));
 
   kprobe_var_expanding_visitor v (sess, has_return);
+  // PR25841: no need for this as kprobe.* probes don't support $context vars at all
+  // if (sess.symbol_resolver)
+  //   sess.symbol_resolver->current_probe = this;
   var_expand_const_fold_loop (sess, this->body, v);
 
   // If during target-variable-expanding the probe, we added a new block
@@ -11080,6 +11156,10 @@ tracepoint_derived_probe::tracepoint_derived_probe (systemtap_session& s,
 
   // Now expand the local variables in the probe body
   tracepoint_var_expanding_visitor v (dw, args);
+  // PR25841 -- not yet, need to put tracepoint parameters somewhere else, so
+  // function context code can access it.
+  // if (sess.symbol_resolver)
+  //  sess.symbol_resolver->current_probe = this;
   var_expand_const_fold_loop (sess, this->body, v);
 
   for (unsigned i = 0; i < args.size(); i++)

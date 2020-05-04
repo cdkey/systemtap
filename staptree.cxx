@@ -212,7 +212,7 @@ vardecl::compatible_arity (int a)
 
 
 functiondecl::functiondecl ():
-  body (0), synthetic (false), mangle_oldstyle (false), has_next(false),
+  body (0), synthetic (false), mangle_oldstyle (false), has_next(false), cloned_p(false),
   priority(1)
 {
 }
@@ -3907,7 +3907,7 @@ void
 deep_copy_visitor::visit_functioncall (functioncall* e)
 {
   functioncall* n = new functioncall(*e);
-  n->referents.clear(); // don't copy!
+  n->referents.clear(); // don't copy!  XXX: reasons why predate memory and y2009
   update_visitor::visit_functioncall(n);
 }
 

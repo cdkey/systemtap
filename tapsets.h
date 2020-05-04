@@ -108,7 +108,12 @@ struct var_expanding_visitor: public update_visitor
   void visit_delete_statement (delete_statement* s);
   void visit_defined_op (defined_op* e);
 
+  // PR25841: update through functions
+  void visit_functioncall (functioncall* e);
+  
 protected:
+  std::set<functiondecl*> early_resolution_in_progress;
+  
   systemtap_session& sess;
   static unsigned tick;
   std::stack<defined_op*> defined_ops;

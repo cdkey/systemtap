@@ -48,11 +48,14 @@ struct symresolution_info: public traversing_visitor
 {
 protected:
   systemtap_session& session;
+  symresolution_info* saved_session_symbol_resolver;
+  
   bool unmangled_p;
 public:
   functiondecl* current_function;
   derived_probe* current_probe;
   symresolution_info (systemtap_session& s, bool omniscient_unmangled = false);
+  ~symresolution_info ();
 
   vardecl* find_var (const std::string& name, int arity, const token *tok);
   std::vector<functiondecl*> find_functions (functioncall *call, const std::string& name, unsigned arity, const token *tok);

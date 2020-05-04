@@ -1948,7 +1948,10 @@ semantic_pass_symbols (systemtap_session& s)
 	      if (s.verbose > 2)
 		{
 		  clog << _("symbol resolution for derived-probe ");
-		  dp->printsig(clog);
+                  if (s.verbose > 3)
+                    dp->print(clog);
+                  else
+                    dp->printsig(clog);
 		  clog << endl;
 		}
 
@@ -1981,7 +1984,14 @@ semantic_pass_symbols (systemtap_session& s)
           assert_no_interrupts();
           functiondecl* fd = it->second;
 	  if (s.verbose > 2)
-	    clog << _("symbol resolution for function ") << fd->name << endl;
+            {
+              clog << _("symbol resolution for function ");
+              if (s.verbose > 3)
+                fd->print(clog);
+              else
+                clog << fd->name;
+              clog << endl;
+            }
 
           try
             {
@@ -2566,6 +2576,14 @@ semantic_pass (systemtap_session& s)
 symresolution_info::symresolution_info (systemtap_session& s, bool omniscient_unmangled):
   session (s), unmangled_p(omniscient_unmangled), current_function (0), current_probe (0)
 {
+  saved_session_symbol_resolver = s.symbol_resolver;
+  s.symbol_resolver = this; // save resolver for early PR25841 function resolution
+}
+
+
+symresolution_info::~symresolution_info()
+{
+  session.symbol_resolver = saved_session_symbol_resolver;
 }
 
 
@@ -2897,7 +2915,20 @@ symresolution_info::visit_functioncall (functioncall* e)
 
   // already resolved?
   if (!e->referents.empty())
-    return;
+    {
+#if 0
+      // PR25841: we could hypothetically traverse through function
+      // calls here, but don't need to, since semantic_pass_symbols()
+      // will iterate over s.functions[] anyway.  Plus we'd have to
+      // put in infinite recursion limits.
+      for (auto i : e->referents)
+        {
+          save_and_restore<functiondecl*>(& this->current_function, i);
+          i->body->visit (this);
+        }
+#endif
+      return;
+    }
 
   vector<functiondecl*> fds = find_functions (e, e->function, e->args.size (), e->tok);
   if (!fds.empty())
@@ -3280,7 +3311,7 @@ void semantic_pass_opt1 (systemtap_session& s, bool& relaxed_p)
       functiondecl* fd = it->second;
       if (ftv.seen.find(fd) == ftv.seen.end())
         {
-          if (! fd->synthetic && s.is_user_file(fd->tok->location.file->name))
+          if (! fd->synthetic && !fd->cloned_p && s.is_user_file(fd->tok->location.file->name))
             s.print_warning (_F("Eliding unused function '%s'",
                                 fd->unmangled_name.to_string().c_str()),
 			     fd->tok);

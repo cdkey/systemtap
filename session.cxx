@@ -187,6 +187,7 @@ systemtap_session::systemtap_session ():
   pass_1a_complete = false;
   timeout = 0;
   use_bpf_raw_tracepoint = false;
+  symbol_resolver = 0;
 
   // PR12443: put compiled-in / -I paths in front, to be preferred during 
   // tapset duplicate-file elimination
@@ -299,7 +300,8 @@ systemtap_session::systemtap_session (const systemtap_session& other,
   warningerr_count(0),
   target_namespaces_pid(0),
   suppress_costly_diagnostics(0),
-  last_token (0)
+  last_token (0),
+  symbol_resolver (0)
 {
   release = kernel_release = kern;
   kernel_build_tree = "/lib/modules/" + kernel_release + "/build";
