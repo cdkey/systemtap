@@ -562,6 +562,7 @@ the ".absolute" suffix.  Such an address is considered already relocated,
 as if it came from 
 .BR /proc/kallsyms ,
 so it cannot be checked against statement/instruction boundaries.
+
 .SS CONTEXT VARIABLES
 
 .PP
@@ -576,6 +577,10 @@ See also
 Note that variables may be inaccessible due to them being paged out,
 or for a few other reasons.  See also man
 .IR error::fault (7stap).
+
+.PP
+Functions called from DWARF class probe points may also refer to context
+variables.
 
 .TP
 $var

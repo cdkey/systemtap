@@ -1383,7 +1383,10 @@ Some probe types have very little context.
 See the 
 .IR stapprobes (3stap)
 man pages to see the kinds of context variables available at each kind
-of probe point.
+of probe point.  As of systemtap version 4.3, functions called from
+the handlers of some probe point types may also refer to context
+variables.  These are treated as if a clone of that function was inlined
+into the calling probe handler and $variables evaluated in its context.
 .PP
 Probes may be decorated with an 
 .IR "arming condition" ,
