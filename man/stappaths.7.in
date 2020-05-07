@@ -82,7 +82,16 @@ By default, systemtap will also look for vmlinux in these locations:
 Corresponding source files are usually located under /usr/src/debug/.
 Further file information on user-space applications can be determined per-basis using
 rpm \-ql <package>\-debuginfo. For supported user-space applications information please 
-visit the systemtap wiki. 
+visit the systemtap wiki.
+
+With elfutils version >0.178, systemtap can automatically download
+debugging information from \%debuginfod servers.  You can try it by
+setting an environment variable or two:
+.SAMPLE
+export DEBUGINFOD_URLS=https://debuginfod.elfutils.org/
+export DEBUGINFOD_PROGRESS=1
+.ESAMPLE
+
 .TP
 $HOME/.systemtap
 Systemtap data directory for cached systemtap files, unless overridden
@@ -102,7 +111,7 @@ Examples with greater detail can be found here. Each example comes with a .txt
 or .meta file explaining what the example, sample or demo does and how it is
 ordinarily run.  See also online at:
 .nh
-.IR http://sourceware.org/systemtap/examples/
+.IR https://sourceware.org/systemtap/examples/
 .hy
 .TP
 $SYSTEMTAP_DIR/ssl/server
@@ -141,7 +150,7 @@ stap\-server service default log file.
 .IR stap\-server (8),
 .IR awk (1),
 .IR gdb (1)
-
+.IR \%http://sourceware.org/elfutils/Debuginfod.html
 
 .SH BUGS
 Use the Bugzilla link of the project web page or our mailing list.
