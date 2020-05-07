@@ -38,7 +38,8 @@ static void _stp_vma_match_vdso(struct task_struct *tsk)
 
       for (i = 0; i < _stp_num_modules && found == NULL; i++) {
 	struct _stp_module *m = _stp_modules[i];
-	if (m->path[0] == '/'
+	if (m->path
+	    && m->path[0] == '/'
 	    && m->num_sections == 1)
 	  {
 	    unsigned long notes_addr;
