@@ -1,7 +1,9 @@
 #! stap -p2
 
-function baz () { foo() bar () } // recurse
+function baz () { if(@defined($$provider)) println($$provider, $$name)
+                  foo() bar () } // recurse
 function bar () { if(@defined($code)) println (& @cast($code,"task_struct")->fs) } // kernel 
 function foo () { println ($$vars) bar () baz() }
 probe kernel.function("do_exit") { foo() foo () }
 probe process("stap").function("main") { foo() foo() }
+probe process("stap").mark("pass0*") { foo() foo() }

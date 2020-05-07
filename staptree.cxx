@@ -3907,7 +3907,16 @@ void
 deep_copy_visitor::visit_functioncall (functioncall* e)
 {
   functioncall* n = new functioncall(*e);
-  n->referents.clear(); // don't copy!  XXX: reasons why predate memory and y2009
+  
+  // PR25841 ... we used to clear n->referents(), anticipating a later
+  // symbol resolution pass to replace all the functiondecl*'s, for
+  // reasons lost to history.  But in the face of function cloning,
+  // and the peculiar naming conventions there, ::find_functions()
+  // can't easily do the right thing.  So let's just preserve the
+  // referents.
+  //
+  // n->referents.clear();
+
   update_visitor::visit_functioncall(n);
 }
 

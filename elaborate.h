@@ -53,7 +53,7 @@ protected:
   bool unmangled_p;
 public:
   functiondecl* current_function;
-  derived_probe* current_probe;
+  probe* current_probe;
   symresolution_info (systemtap_session& s, bool omniscient_unmangled = false);
   ~symresolution_info ();
 

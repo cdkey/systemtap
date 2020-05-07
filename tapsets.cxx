@@ -7507,7 +7507,6 @@ private:
                                const string& note_name, int type,
                                const char *data, size_t len);
 
-  void convert_probe(probe *base);
   void record_semaphore(vector<derived_probe *> & results, unsigned start);
   probe* convert_location();
   bool have_uprobe() {return probe_type == uprobe1_type || probe_type == uprobe2_type || probe_type == uprobe3_type;}
@@ -7600,6 +7599,16 @@ sdt_query::handle_probe_entry()
   sdt_uprobe_var_expanding_visitor svv (sess, dw, elf_machine, module_val,
                                         provider_name, probe_name, probe_type,
                                         arg_string, arg_count);
+  if (sess.symbol_resolver) // trigger an early var_expanding_visitor::visit_functioncall pass
+    sess.symbol_resolver->current_probe = new_base;
+  // We can't do this the normal DWARF PR25841 way, because here we
+  // don't have the derived_probe yet, just a new copy of a new base
+  // probe.  Yet we can't wait to do this mapping until later, because
+  // we need to know the need_debug_info flag as a prerequisite.  XXX:
+  // maybe we could split this visitor into a need_debug_info
+  // calculator, and do $$name/etc.  expansion later on the
+  // uprobe_derived_probes ... but they may be hiding in this->results
+  // or odd places.
   var_expand_const_fold_loop (sess, new_base->body, svv);
 
   need_debug_info = svv.need_debug_info;
@@ -7923,46 +7932,6 @@ sdt_query::record_semaphore (vector<derived_probe *> & results, unsigned start)
       if (sess.verbose > 2)
         clog << _(", not found") << endl;
   }
-}
-
-
-void
-sdt_query::convert_probe (probe *base)
-{
-  block *b = new block;
-  b->tok = base->body->tok;
-
-  // Generate: if (arg1 != mark("label")) next;
-  functioncall *fc = new functioncall;
-  fc->function = "ulong_arg";
-  fc->tok = b->tok;
-  literal_number* num = new literal_number(1);
-  num->tok = b->tok;
-  fc->args.push_back(num);
-
-  functioncall *fcus = new functioncall;
-  fcus->function = "user_string";
-  fcus->type = pe_string;
-  fcus->tok = b->tok;
-  fcus->args.push_back(fc);
-
-  if_statement *is = new if_statement;
-  is->thenblock = new next_statement;
-  is->elseblock = NULL;
-  is->tok = b->tok;
-  is->thenblock->tok = b->tok;
-  comparison *be = new comparison;
-  be->op = "!=";
-  be->tok = b->tok;
-  be->left = fcus;
-  be->right = new literal_string(probe_name);
-  be->right->tok = b->tok;
-  is->condition = be;
-  b->statements.push_back(is);
-
-  // Now replace the body
-  b->statements.push_back(base->body);
-  base->body = b;
 }
 
 

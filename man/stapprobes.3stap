@@ -579,8 +579,8 @@ or for a few other reasons.  See also man
 .IR error::fault (7stap).
 
 .PP
-Functions called from DWARF class probe points may also refer to context
-variables.
+Functions called from DWARF class probe points and from process.mark
+probes may also refer to context variables.
 
 .TP
 $var

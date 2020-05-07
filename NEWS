@@ -8,6 +8,7 @@
   function foo () { println ($$vars) }
   probe kernel.function("do_exit") { foo() }
   probe process("/bin/ls").function("main") { foo() }
+  probe process("/lib*/libc.so.6").mark("*") { foo() }
 
 - Add new tapset function dump_stack() which prints the current
   kernel backtrace to the kernel trace buffer (as a thin wrapper
