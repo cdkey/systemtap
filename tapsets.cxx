@@ -3068,8 +3068,9 @@ var_expanding_visitor::visit_functioncall (functioncall* e)
       auto refs = sess.symbol_resolver->find_functions (e, e->function, e->args.size (), e->tok);
 
       vector<functiondecl*> copyrefs;
-      for (auto r: refs)
+      for (auto ri = refs.begin(); ri != refs.end(); ri++)
         {
+          auto r = *ri;
           // We accumulate these functiondecls, so we don't recurse infinitely.
           // Recursive functions will be handled correctly though because the second
           // time we clone, the first clone will be found & reused.
@@ -3110,8 +3111,9 @@ var_expanding_visitor::visit_functioncall (functioncall* e)
               nf->mangle_oldstyle = r->mangle_oldstyle;
               nf->has_next = r->has_next;
               nf->priority = r->priority;
-              for (auto j: r->formal_args)
+              for (auto ji = r->formal_args.begin(); ji != r->formal_args.end(); ji++)
                 {
+                  auto j = *ji;
                   auto v = new vardecl();
                   v->type = pe_unknown; // = j->type anyway; we're before type inference
                   v->tok = j->tok;
@@ -3147,8 +3149,9 @@ var_expanding_visitor::visit_functioncall (functioncall* e)
   else if (strverscmp(sess.compatible.c_str(), "4.3") >= 0 && // PR25841 behaviour
            e->referents.size() != 0) // second or later time calling
     {
-      for (auto r: e->referents)
+      for (auto ri = e->referents.begin(); ri != e->referents.end(); ri++)
         {
+          auto r = *ri;
           if (early_resolution_in_progress.find(r) != early_resolution_in_progress.end())
             {
               // already warned earlier
