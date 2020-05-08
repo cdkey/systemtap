@@ -80,7 +80,8 @@ static unsigned long _stp_umodule_relocate(const char *path,
   for (i = 0; i < _stp_num_modules; i++) {
     struct _stp_module *m = _stp_modules[i];
 
-    if (strcmp(path, m->path)
+    if (!m->path
+        || strcmp(path, m->path)
         || m->num_sections != 1)
       continue;
 
@@ -840,7 +841,7 @@ static int _stp_usermodule_check(struct task_struct *tsk, const char *path_name,
       m = _stp_modules[i];
 
       /* PR16406 must be unique userspace name (/-prefixed path); it's also in m->name */
-      if (strcmp(path_name, m->path) != 0) continue;
+      if (!m->path || strcmp(path_name, m->path) != 0) continue;
 
       if (m->build_id_len > 0) {
 	int ret, build_id_len;
