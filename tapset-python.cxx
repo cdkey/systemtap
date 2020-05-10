@@ -79,18 +79,6 @@ public:
 };
 
 
-struct python_functioncall_expanding_visitor: public update_visitor
-{
-  python_functioncall_expanding_visitor (systemtap_session& s, int pv)
-    : sess(s), python_version(pv) {}
-
-  systemtap_session& sess;
-  int python_version;
-
-  void visit_functioncall (functioncall* e);
-};
-
-
 struct python_var_expanding_visitor: public var_expanding_visitor
 {
   python_var_expanding_visitor(systemtap_session& s, int pv)
@@ -233,44 +221,17 @@ python_derived_probe_group::enroll (python_derived_probe* p)
 
 
 void
-python_functioncall_expanding_visitor::visit_functioncall (functioncall* e)
-{
-  // If it isn't one of the functions we're interested in, we're done.
-  if (e->function != "python_print_backtrace"
-      && e->function != "python_sprint_backtrace")
-    {
-      provide (e);
-      return;
-    }
-
-  // Construct a new function call that replaces the generic python
-  // backtrace function call with a python version specific call with
-  // the right argument.
-  target_symbol *tsym = new target_symbol;
-  tsym->tok = e->tok;
-  tsym->name = "$arg3";
-  tsym->synthetic = true;
-
-  functioncall *fcall = new functioncall;
-  fcall->tok = e->tok;
-  if (python_version == 2)
-    fcall->function = (e->function == "python_print_backtrace"
-		       ? "python2_print_backtrace"
-		       : "python2_sprint_backtrace");
-  else
-    fcall->function = (e->function == "python_print_backtrace"
-		       ? "python3_print_backtrace"
-		       : "python3_sprint_backtrace");
-  fcall->type = e->type;
-  fcall->type_details = e->type_details;
-  fcall->args.push_back (tsym);
-  provide (fcall);
-}
-
-
-void
 python_var_expanding_visitor::visit_target_symbol (target_symbol* e)
 {
+  // PR25841: provide an escape to the underlying dwarf variables
+  // Preserve $$$XYZ as $XYZ into the underlying dwarf probe
+  if (e->name.size() > 3 && e->name.substr(0,3) == "$$$")
+    {
+      e->name = e->name.substr(2);
+      provide(e);
+      return;
+    }
+  
     // Convert '$$parms', '$$locals', and '$$vars' references to a
     // function call.
     if (e->name == "$$parms" || e->name == "$$locals" || e->name == "$$vars")
@@ -396,6 +357,12 @@ python_var_expanding_visitor::visit_target_symbol (target_symbol* e)
 	  }
 	repr_fcall->args.push_back(last_fcall);
 
+        // NB: we might someday need to process the generated tapset
+        // functioncalls recursively, in case they have require
+        // $$$FOOBAR -> $FOOBAR sdt.h context-var passthrough.
+
+        // require (repr_fcall);
+        
 	provide (repr_fcall);
 	return;
       }
@@ -535,10 +502,10 @@ python_builder::build(systemtap_session & sess, probe * base,
 	  stringstream code;
 	  const token* tok = base->body->tok;
 
-	  // Notice this synthetic probe has no body. That's OK,
+	  // Notice this synthetic probe has a dummy body. That's OK,
 	  // since we'll point it at our internal buffer.
-	  code << "probe procfs(\"_stp_python2_probes\").read {" << endl;
-	  code << "}" << endl;
+          // NB: it cannot be empty, because then we optimize it away.
+	  code << "probe procfs(\"_stp_python2_probes\").read { exit() } " << endl;
 	  probe *base_probe = parse_synthetic_probe (sess, code, tok);
 	  if (!base_probe)
 	    throw SEMANTIC_ERROR (_("can't create python2 procfs probe"),
@@ -564,10 +531,10 @@ python_builder::build(systemtap_session & sess, probe * base,
 	  stringstream code;
 	  const token* tok = base->body->tok;
 
-	  // Notice this synthetic probe has no body. That's OK,
+	  // Notice this synthetic probe has a dummy body. That's OK,
 	  // since we'll point it at our internal buffer.
-	  code << "probe procfs(\"_stp_python3_probes\").read {" << endl;
-	  code << "}" << endl;
+          // NB: it cannot be empty, because then we optimize it away.
+	  code << "probe procfs(\"_stp_python3_probes\").read { exit() } " << endl;
 	  probe *base_probe = parse_synthetic_probe (sess, code, tok);
 	  if (!base_probe)
 	    throw SEMANTIC_ERROR (_("can't create python3 procfs probe"),
@@ -590,7 +557,7 @@ python_builder::build(systemtap_session & sess, probe * base,
 	  stringstream code2;
 	  code2 << "probe process(\"" << PYTHON3_BASENAME
 		<< "\").library(\"" << PY3EXECDIR
-		<< "/HelperSDT/_HelperSDT.*.so\").provider(\"HelperSDT\")"
+		<< "/HelperSDT/_HelperSDT.*.so\").provider(\"HelperSDT*\")"
 		<< ".mark(\"Init\") {"
 		<< endl;
 	  code2 << "  if (user_string($arg1) != module_name()) { next }" << endl;
@@ -617,7 +584,7 @@ python_builder::build(systemtap_session & sess, probe * base,
 	  // a wildcard to find it.
 	   << (python_version == 2 ? "/HelperSDT/_HelperSDT.so\")"
 	       : "/HelperSDT/_HelperSDT.*.so\")")
-	   << ".provider(\"HelperSDT\").mark(\""
+	   << ".provider(\"HelperSDT*\").mark(\""
 	   << (has_return ? "PyTrace_RETURN"
 	       : (has_call ? "PyTrace_CALL" : "PyTrace_LINE"))
 	   << "\") {" << endl;
@@ -653,9 +620,9 @@ python_builder::build(systemtap_session & sess, probe * base,
       // The 'key' values aren't unique system wide (and just start at
       // 0), but the combination of module name and key is unique
       // system-wide.
-      code << "  if ($arg2 != "
+      code << "  if ($$$arg2 != "
 	   << (python_version == 2 ? python2_key++ : python3_key++)
-	   << " || user_string($arg1) != module_name()) { next }";
+	   << " || user_string($$$arg1) != module_name()) { next }";
       code << "}" << endl;
 
       probe *mark_probe = parse_synthetic_probe (sess, code, tok);
@@ -673,17 +640,23 @@ python_builder::build(systemtap_session & sess, probe * base,
 
       // Note that order *is* important here. We want to expand python
       // variable requests in the probe body first, then expand python
-      // backtrace requests in the probe body. The latter uses '$arg3'
+      // backtrace requests in the probe body. The latter uses '$$$arg3'
       // as the python frame pointer, and we don't want the python
       // variable exander to find those maker argument references.
       python_var_expanding_visitor pvev (sess, python_version);
-      var_expand_const_fold_loop (sess, base_copy->body, pvev);
       
-      python_functioncall_expanding_visitor v (sess, python_version);
-      v.replace (base_copy->body);
-
       // Splice base_copy->body in after the parsed body
       mark_probe->body = new block(mark_probe->body, base_copy->body);
+
+      if (sess.symbol_resolver)
+        sess.symbol_resolver->current_probe = mark_probe;
+      
+      // apply pvev ONCE only, to map $$$var -> $var (and later -> sdt.h)
+      // rather than $$$var -> $var -> python-tapset-call (now)
+      pvev.replace(mark_probe->body);
+      // const-fold-loop will be done as a part of the uprobe building
+      // var_expand_const_fold_loop (sess, mark_probe->body, pvev);
+
       derive_probes(sess, mark_probe, finished_results);
 
       // Create a python_derived_probe, but don't return it in

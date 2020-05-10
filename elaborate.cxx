@@ -5062,6 +5062,7 @@ static int semantic_pass_const_fold (systemtap_session& s, bool& relaxed_p)
 }
 
 
+
 struct dead_control_remover: public traversing_visitor
 {
   systemtap_session& session;
@@ -5081,6 +5082,7 @@ struct dead_control_remover: public traversing_visitor
 };
 
 
+
 void dead_control_remover::visit_block (block* b)
 {
   vector<statement*>& vs = b->statements;
@@ -5091,8 +5093,9 @@ void dead_control_remover::visit_block (block* b)
       vs[i]->visit (this);
       if (vs[i] == control)
         {
-          session.print_warning(_("statement will never be reached"),
-                                vs[i + 1]->tok);
+          if (session.verbose > 3) // suppress in PR25841 context
+            session.print_warning(_("statement will never be reached"),
+                                  vs[i + 1]->tok);
           vs.erase(vs.begin() + i + 1, vs.end());
           relaxed_p = false;
           break;
@@ -5175,8 +5178,9 @@ void dead_overload_remover::visit_functioncall(functioncall *e)
       for (unsigned fd = reachable; fd < e->referents.size(); fd++)
         {
           functiondecl* r = e->referents[fd];
-          s.print_warning(_("instance of overloaded function will "
-                            "never be reached"), r->tok);
+          if (s.verbose > 3) // suppress in PR25841 context
+            s.print_warning(_("instance of overloaded function will "
+                              "never be reached"), r->tok);
         }
       e->referents.erase(e->referents.begin()+reachable, e->referents.end());
       relaxed_p = false;
@@ -5691,6 +5695,12 @@ semantic_pass_optimize1 (systemtap_session& s)
       else if (iterations > 0)
         s.suppress_warnings = true;
 
+      if (s.unoptimized) // need these even in -u mode
+        {
+          semantic_pass_opt1 (s, relaxed_p);
+          semantic_pass_opt5 (s, relaxed_p);
+          semantic_pass_dead_control (s, relaxed_p);
+        }
       if (!s.unoptimized)
         {
           semantic_pass_opt1 (s, relaxed_p);

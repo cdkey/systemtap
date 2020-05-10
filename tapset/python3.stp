@@ -53,88 +53,67 @@ private global Py3Object_GenericGetAttr_addr = 0
 
 #
 # Macros to cast to various python 3 types
+# PR25841 makes this easy
 #
-
-###########################################
-#
-# FIXME: We've got a couple of problems with @cast() here.
-#
-# 1) The first thing in the @cast module list is 'python3'. On some
-#    systems, the python3 executable is just named
-#    'python'. Systemtap's configure script finds the right name for
-#    the python 3 executable, but that information doesn't make it
-#    here. This file may need to be generated at systemtap build time
-#    (i.e. have a 'python3.stp.in' tapset file that gets turned into
-#    'python3.stp').
-#
-# 2) Because @cast module paths doesn't support wildcards (see
-#    PR20394), we have to list 64-bit and 32-bit versions of the
-#    python 3.4, 3.5, and 3.6 versions of the shared library.
-#
-###########################################
-
-@define Py3ModuleList %(
-    "python3:/usr/lib64/libpython3.6.so:/usr/lib64/libpython3.6m.so:/usr/lib64/libpython3.5m.so:/usr/lib64/libpython3.4m.so:/usr/lib/libpython3.6.so:/usr/lib/libpython3.6m.so:/usr/lib/libpython3.5m.so:/usr/lib/libpython3.4m.so"
-%)
 
 @define Py3Object(object) %(
-    @cast(@object, "PyObject", @Py3ModuleList)
+    @cast(@object, "PyObject")
 %)
 @define Py3VarObject(object) %(
-    @cast(@object, "PyVarObject", @Py3ModuleList)
+    @cast(@object, "PyVarObject")
 %)
 @define Py3LongObject(object) %(
-    @cast(@object, "PyLongObject", @Py3ModuleList)
+    @cast(@object, "PyLongObject")
 %)
 @define Py3BytesObject(object) %(
-    @cast(@object, "PyBytesObject", @Py3ModuleList)
+    @cast(@object, "PyBytesObject")
 %)
 @define Py3UnicodeObject(object) %(
-    @cast(@object, "PyUnicodeObject", @Py3ModuleList)
+    @cast(@object, "PyUnicodeObject")
 %)
 @define Py3TypeObject(object) %(
-    @cast(@object, "PyTypeObject", @Py3ModuleList)
+    @cast(@object, "PyTypeObject")
 %)
 @define Py3TupleObject(object) %(
-    @cast(@object, "PyTupleObject", @Py3ModuleList)
+    @cast(@object, "PyTupleObject")
 %)
 @define Py3ListObject(object) %(
-    @cast(@object, "PyListObject", @Py3ModuleList)
+    @cast(@object, "PyListObject")
 %)
 @define Py3SetObject(object) %(
-    @cast(@object, "PySetObject", @Py3ModuleList)
+    @cast(@object, "PySetObject")
 %)
 @define Py3DictObject(object) %(
-    @cast(@object, "PyDictObject", @Py3ModuleList)
+    @cast(@object, "PyDictObject")
 %)
 @define Py3DictEntry(object) %(
-    @cast(@object, "PyDictEntry", @Py3ModuleList)
+    @cast(@object, "PyDictEntry")
 %)
 @define Py3DictKeysObject(object) %(
-    @cast(@object, "PyDictKeysObject", @Py3ModuleList)
+    @cast(@object, "PyDictKeysObject")
 %)
 @define Py3DictKeyEntry(object) %(
-    @cast(@object, "PyDictKeyEntry", @Py3ModuleList)
+    @cast(@object, "PyDictKeyEntry")
 %)
 @define Py3FrameObject(object) %(
-    @cast(@object, "PyFrameObject", @Py3ModuleList)
+    @cast(@object, "PyFrameObject")
 %)
 @define Py3CodeObject(object) %(
-    @cast(@object, "PyCodeObject", @Py3ModuleList)
+    @cast(@object, "PyCodeObject")
 %)
 
 @define Py3ASCIIObject(object) %(
-    @cast(@object, "PyASCIIObject", @Py3ModuleList)
+    @cast(@object, "PyASCIIObject")
 %)
 @define Py3ASCIIObject_Sizeof %(
-    @cast_module_sizeof(@Py3ModuleList, "PyASCIIObject")
+    @cast_sizeof("PyASCIIObject")
 %)
 
 @define Py3CompactUnicodeObject(object) %(
-    @cast(@object, "PyCompactUnicodeObject", @Py3ModuleList)
+    @cast(@object, "PyCompactUnicodeObject")
 %)
 @define Py3CompactUnicodeObject_Sizeof %(
-    @cast_module_sizeof(@Py3ModuleList, "PyCompactUnicodeObject")
+    @cast_sizeof("PyCompactUnicodeObject")
 %)
 
 #
@@ -599,7 +578,9 @@ private function Py3List_Repr:string(object:long)
 
 @define DK_ENTRIES(dk) %(
      (@choose_defined(@Py3DictKeysObject(@dk)->dk_entries,
-      (&@Py3DictKeyEntry(&@Py3DictKeysObject(@dk)->dk_indices->as_1[@DK_SIZE(@dk) * @DK_IXSIZE(@dk)]))))
+                      (&@Py3DictKeyEntry(&@Py3DictKeysObject(@dk)->dk_indices[@DK_SIZE(@dk) * @DK_IXSIZE(@dk)]))))
+     // XXX: python 3.6?
+     //      (&@Py3DictKeyEntry(&@Py3DictKeysObject(@dk)->dk_indices->as_1[@DK_SIZE(@dk) * @DK_IXSIZE(@dk)]))))
 %)
 
 private function Py3Dict_GetItem:long(op:long, key:string)
@@ -886,18 +867,16 @@ function Py3Object_GetAttr:long(object:long, attr:string)
 #
 
 /*
- * python3_print_backtrace - Print python backtrace
+ * python_print_backtrace - Print python backtrace
  *
  * Description: This function is equivalent to
- * print(python3_sprint_backtrace(frame)), except that deeper stack
+ * print(python_sprint_backtrace(frame)), except that deeper stack
  * tracing may be supported. 
- *
- * Note that users should call 'python_print_backtrace()', and the
- * translator will call the appropriate python 2 or python 3 function
- * with the correct argument.
  */
-function python3_print_backtrace:long(frame:long)
+function python_print_backtrace:long()
 {
+    if ($$$$provider != "HelperSDT3") next;
+    frame = $$$arg3;    
     printf("Traceback (most recent call first):\n")
     while (frame != 0) {
 	lineno = Py3Frame_GetLineNumber(frame)
@@ -920,18 +899,16 @@ function python3_print_backtrace:long(frame:long)
 }
 
 /*
- * python3_sprint_backtrace - Get python backtrace
+ * python_sprint_backtrace - Get python backtrace
  * 
  * Description: This function returns a string containing a python
  * backtrace.  Output may be truncated as per maximum string length
  * (MAXSTRINGLEN).
- *
- * Note that users should call 'python_sprint_backtrace()', and the
- * translator will call the appropriate python 2 or python 3 function
- * with the correct argument.
  */
-function python3_sprint_backtrace:string(frame:long)
+function python_sprint_backtrace:string()
 {
+    if ($$$$provider != "HelperSDT3") next;
+    frame = $$$arg3;
     retstr = "Traceback (most recent call first):\n"
     while (frame != 0) {
 	lineno = Py3Frame_GetLineNumber(frame)

@@ -508,8 +508,6 @@ struct const_folder: public update_visitor
   void visit_target_symbol (target_symbol* e);
 };
 
-
-
 // Run the given code filter visitors against the given body.
 // Repeat until they all report having relaxed.
 template <class T>
@@ -535,7 +533,7 @@ void update_visitor_loop (systemtap_session& sess, std::vector<update_visitor*>&
 template <class X, class Y>
 void var_expand_const_fold_loop(systemtap_session& sess, X& body, Y& v)
 {
-  bool relaxed_p; /* ignored */
+  bool relaxed_p = false;
   const_folder cf (sess, relaxed_p);
   std::vector<update_visitor*> k;
   k.push_back (& v);

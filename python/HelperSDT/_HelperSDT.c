@@ -1,5 +1,5 @@
 // systemtap python SDT marker C module
-// Copyright (C) 2016 Red Hat Inc.
+// Copyright (C) 2016-2020 Red Hat Inc.
 //
 // This file is part of systemtap, and is free software.  You can
 // redistribute it and/or modify it under the terms of the GNU General
@@ -9,6 +9,68 @@
 #include <Python.h>
 #include <sys/sdt.h>
 #include <stdlib.h>
+
+
+// PR25841: ensure that the libHelperSDT.so file contains debuginfo
+// for the tapset helper functions, so they don't have to look into libpython*
+#include <frameobject.h>
+PyFrameObject _dummy_frame;
+#include <object.h>
+PyVarObject _dummy_var;
+#include <dictobject.h>
+PyDictObject _dummy_dict;
+#include <listobject.h>
+PyListObject _dummy_list;
+#include <tupleobject.h>
+PyTupleObject _dummy_tuple;
+#include <unicodeobject.h>
+PyUnicodeObject _dummy_unicode;
+
+#if PY_MAJOR_VERSION < 3
+
+#include <stringobject.h>
+PyStringObject _dummy_string;
+#include <classobject.h>
+PyClassObject _dummy_class;
+PyDictEntry _dummy_dictentry;
+PyInstanceObject _dummy_instance;
+
+#else
+
+PyASCIIObject _dummy_ascii;
+PyCompactUnicodeObject _dummy_compactunicode;
+// PyStringObject _dummy_string;
+#include <bytesobject.h>
+PyBytesObject _dummy_bytes;
+#include <longobject.h>
+PyLongObject _dummy_long;
+
+/* This is internal to libpython. */
+#if PY_MINOR_VERSION == 7  /* python 3.7 */
+typedef Py_ssize_t (*dict_lookup_func)(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
+typedef struct {
+  Py_hash_t me_hash;
+  PyObject *me_key;
+  PyObject *me_value;
+} PyDictKeyEntry;
+PyDictKeyEntry _dummy_dictkeyentry;
+struct _dictkeysobject {
+  Py_ssize_t dk_refcnt;
+  Py_ssize_t dk_size;
+  dict_lookup_func dk_lookup;
+  Py_ssize_t dk_usable;
+  Py_ssize_t dk_nentries;
+  char dk_indices[];
+};
+#endif
+
+#endif
+
+#if PY_MAJOR_VERSION < 3
+#define PROVIDER HelperSDT2
+#else
+#define PROVIDER HelperSDT3
+#endif
 
 static PyObject *
 trace_callback(PyObject *self, PyObject *args)
@@ -30,28 +92,28 @@ trace_callback(PyObject *self, PyObject *args)
     case PyTrace_CALL:
 #pragma push_macro("PyTrace_CALL")
 #undef PyTrace_CALL
-	STAP_PROBE4(HelperSDT, PyTrace_CALL, module_name, key,
+	STAP_PROBE4(PROVIDER, PyTrace_CALL, module_name, key,
 		    frame_obj, arg_obj);
 #pragma pop_macro("PyTrace_CALL")
 	break;
     case PyTrace_EXCEPTION:
 #pragma push_macro("PyTrace_EXCEPTION")
 #undef PyTrace_EXCEPTION
-	STAP_PROBE4(HelperSDT, PyTrace_EXCEPTION, module_name, key,
+	STAP_PROBE4(PROVIDER, PyTrace_EXCEPTION, module_name, key,
 		    frame_obj, arg_obj);
 #pragma pop_macro("PyTrace_EXCEPTION")
 	break;
     case PyTrace_LINE:
 #pragma push_macro("PyTrace_LINE")
 #undef PyTrace_LINE
-	STAP_PROBE4(HelperSDT, PyTrace_LINE, module_name, key,
+	STAP_PROBE4(PROVIDER, PyTrace_LINE, module_name, key,
 		    frame_obj, arg_obj);
 #pragma pop_macro("PyTrace_LINE")
 	break;
     case PyTrace_RETURN:
 #pragma push_macro("PyTrace_RETURN")
 #undef PyTrace_RETURN
-	STAP_PROBE4(HelperSDT, PyTrace_RETURN, module_name, key,
+	STAP_PROBE4(PROVIDER, PyTrace_RETURN, module_name, key,
 		    frame_obj, arg_obj);
 #pragma pop_macro("PyTrace_RETURN")
 	break;
@@ -155,7 +217,7 @@ init_HelperSDT(void)
 	// reference which stap can't parse.
 	void *fptr = &PyObject_GenericGetAttr;
 	asm ("nop" : "=r"(fptr) : "r"(fptr));
-	STAP_PROBE2(HelperSDT, Init, stap_module, fptr);
+	STAP_PROBE2(PROVIDER, Init, stap_module, fptr);
     }
     return module;
 #endif

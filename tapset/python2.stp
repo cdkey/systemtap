@@ -50,78 +50,55 @@
 
 #
 # Macros to cast to various python 2 types
+# PR25841 makes this easy
 #
 
 ###########################################
-#
-# FIXME: We've got a couple of problems with @cast() here.
-#
-# 1) The first thing in the @cast module list is 'python'. On some
-#    systems, the python 2 executable is named
-#    'python2'. Systemtap's configure script finds the right name for
-#    the python 2 executable, but that information doesn't make it
-#    here. This file may need to be generated at systemtap build time
-#    (i.e. have a 'python2.stp.in' tapset file that gets turned into
-#    'python2.stp').
-#
-# 2) The 2nd and 3rd items in the @cast module list is 64-bit and
-#    32-bit versions of 'libpython2.7.so'. That is the name of the
-#    current version of python 2 library on most systems. On older
-#    systems, that version number might be different.  If we could use
-#    wildcards in @cast module paths we could work around this problem
-#    (see PR20394). To work around this issue, we'll include 2.6
-#    versions of the shared library in the @cast module list. 
-#
-###########################################
-
-@define Py2ModuleList %(
-    "python:/usr/lib64/libpython2.7.so:/usr/lib/libpython2.7.so:/usr/lib64/libpython2.6.so:/usr/lib/libpython2.6.so"
-%)
 
 @define Py2Object(object) %(
-    @cast(@object, "PyObject", @Py2ModuleList)
+    @cast(@object, "PyObject")
 %)
 @define Py2VarObject(object) %(
-    @cast(@object, "PyVarObject", @Py2ModuleList)
+    @cast(@object, "PyVarObject")
 %)
 @define Py2IntObject(object) %(
-    @cast(@object, "PyIntObject", @Py2ModuleList)
+    @cast(@object, "PyIntObject")
 %)
 @define Py2StringObject(object) %(
-    @cast(@object, "PyStringObject", @Py2ModuleList)
+    @cast(@object, "PyStringObject")
 %)
 @define Py2UnicodeObject(object) %(
-    @cast(@object, "PyUnicodeObject", @Py2ModuleList)
+    @cast(@object, "PyUnicodeObject")
 %)
 @define Py2TypeObject(object) %(
-    @cast(@object, "PyTypeObject", @Py2ModuleList)
+    @cast(@object, "PyTypeObject")
 %)
 @define Py2TupleObject(object) %(
-    @cast(@object, "PyTupleObject", @Py2ModuleList)
+    @cast(@object, "PyTupleObject")
 %)
 @define Py2ListObject(object) %(
-    @cast(@object, "PyListObject", @Py2ModuleList)
+    @cast(@object, "PyListObject")
 %)
 @define Py2DictObject(object) %(
-    @cast(@object, "PyDictObject", @Py2ModuleList)
+    @cast(@object, "PyDictObject")
 %)
 @define Py2DictEntry(object) %(
-    @cast(@object, "PyDictEntry", @Py2ModuleList)
+    @cast(@object, "PyDictEntry")
 %)
 @define Py2FrameObject(object) %(
-    @cast(@object, "PyFrameObject", @Py2ModuleList)
+    @cast(@object, "PyFrameObject")
 %)
 @define Py2CodeObject(object) %(
-    @cast(@object, "PyCodeObject", @Py2ModuleList)
+    @cast(@object, "PyCodeObject")
 %)
 @define Py2LongObject(object) %(
-    @cast(@object, "PyLongObject", @Py2ModuleList)
+    @cast(@object, "PyLongObject")
 %)
 @define Py2ClassObject(object) %(
-    @cast(@object, "PyClassObject", @Py2ModuleList)
+    @cast(@object, "PyClassObject")
 %)
 @define Py2InstanceObject(object) %(
-    @cast(@object, "PyInstanceObject", @Py2ModuleList)
+    @cast(@object, "PyInstanceObject")
 %)
 
 #
@@ -908,18 +885,16 @@ function Py2Object_GetAttr:long(object:long, attr:string)
 #
 
 /*
- * python2_print_backtrace - Print python backtrace
+ * python_print_backtrace - Print python backtrace
  *
  * Description: This function is equivalent to
- * print(python2_sprint_backtrace(frame)), except that deeper stack
+ * print(python_sprint_backtrace(frame)), except that deeper stack
  * tracing may be supported. 
- *
- * Note that users should call 'python_print_backtrace()', and the
- * translator will call the appropriate python 2 or python 3 function
- * with the correct argument.
  */
-function python2_print_backtrace:long(frame:long)
+function python_print_backtrace:long()
 {
+    if ($$$$provider != "HelperSDT2") next;
+    frame = $$$arg3;
     printf("Traceback (most recent call first):\n")
     while (frame != 0) {
 	lineno = Py2Frame_GetLineNumber(frame)
@@ -942,18 +917,16 @@ function python2_print_backtrace:long(frame:long)
 }
 
 /*
- * python2_sprint_backtrace - Get python backtrace
+ * python_sprint_backtrace - Get python backtrace
  * 
  * Description: This function returns a string containing a python
  * backtrace.  Output may be truncated as per maximum string length
  * (MAXSTRINGLEN).
- *
- * Note that users should call 'python_sprint_backtrace()', and the
- * translator will call the appropriate python 2 or python 3 function
- * with the correct argument.
  */
-function python2_sprint_backtrace:string(frame:long)
+function python_sprint_backtrace:string()
 {
+    if ($$$$provider != "HelperSDT2") next;  
+    frame = $$$arg3;
     retstr = "Traceback (most recent call first):\n"
     while (frame != 0) {
 	lineno = Py2Frame_GetLineNumber(frame)
