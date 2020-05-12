@@ -9,7 +9,8 @@ if {! [file exists "$PYTHON"]} then { untested $test; return }
 
 # To make sure the custom python module is in python's path, we'll
 # modify PYTHONPATH.
-set env(PYTHONPATH) $env(PYEXECDIR)
+set env(PYTHONPATH) $env(PYEXECDIR):$srcdir/$subdir
+verbose -log "PYTHONPATH=$env(PYTHONPATH)"
 
 #
 # In python 2.6, you have to specify the package name to run, like

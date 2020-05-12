@@ -9,7 +9,7 @@ if {! [file exists "$PYTHON3"]} then { untested $test; return }
 
 # To make sure the custom python module is in python's path, we'll
 # modify PYTHONPATH.
-set env(PYTHONPATH) $env(PY3EXECDIR)
+set env(PYTHONPATH) $env(PY3EXECDIR):$srcdir/$subdir
 verbose -log "PYTHONPATH=$env(PYTHONPATH)"
 #
 # Test python backtraces.

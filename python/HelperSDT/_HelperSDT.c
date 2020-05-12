@@ -34,6 +34,8 @@ PyStringObject _dummy_string;
 PyClassObject _dummy_class;
 PyDictEntry _dummy_dictentry;
 PyInstanceObject _dummy_instance;
+#include <intobject.h>
+PyIntObject _dummy_int;
 
 #else
 
@@ -46,7 +48,25 @@ PyBytesObject _dummy_bytes;
 PyLongObject _dummy_long;
 
 /* This is internal to libpython. */
-#if PY_MINOR_VERSION == 7  /* python 3.7 */
+#if PY_MINOR_VERSION == 6  /* python 3.6 */
+typedef Py_ssize_t (*dict_lookup_func)(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject ***value_addr,
+					 Py_ssize_t *hashpos);
+typedef struct {
+  Py_hash_t me_hash;
+  PyObject *me_key;
+  PyObject *me_value;
+} PyDictKeyEntry;
+PyDictKeyEntry _dummy_dictkeyentry;
+struct _dictkeysobject {
+  Py_ssize_t dk_refcnt;
+  Py_ssize_t dk_size;
+  dict_lookup_func dk_lookup;
+  Py_ssize_t dk_usable;
+  Py_ssize_t dk_nentries;
+  char dk_indices[];  /* char is required to avoid strict aliasing. */
+};
+
+#elif PY_MINOR_VERSION == 7  /* python 3.7 */
 typedef Py_ssize_t (*dict_lookup_func)(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
 typedef struct {
   Py_hash_t me_hash;
