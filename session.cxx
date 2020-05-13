@@ -1979,6 +1979,9 @@ systemtap_session::check_options (int argc, char * const argv [])
   // use.
   if (!client_options && modules_must_be_signed())
     {
+      if (verbose > 1)
+        clog << _("This host requires module signing.") << endl;
+      
       // Force server use to be on, if not on already.
       enable_auto_server (
 	_("The kernel on your system requires modules to be signed for loading.\n"
@@ -2784,6 +2787,7 @@ systemtap_session::modules_must_be_signed()
 {
   ifstream statm("/sys/module/module/parameters/sig_enforce");
   ifstream securelevel("/sys/kernel/security/securelevel");
+  ifstream lockdown("/sys/kernel/security/lockdown");
   char status = 'N';
 
   if (getenv("SYSTEMTAP_SIGN"))
@@ -2797,6 +2801,14 @@ systemtap_session::modules_must_be_signed()
   if (status == '1')
     return true;
 
+  string keyword;
+  while(lockdown.good()) {
+    lockdown >> keyword;
+    if (keyword == "[integrity]" ||
+        keyword == "[confidentiality]") // eek
+      return true;
+  }
+  
   return false;
 }
 
@@ -2821,7 +2833,7 @@ systemtap_session::get_mok_info()
   if (rc != 0)
     // If we're here, we know the client requires module signing, but
     // we can't get the list of MOKs. Quit.
-    throw runtime_error(_F("failed to get list of machine owner keys (MOK) fingerprints: rc %d", rc));
+    throw runtime_error(_F("Failed to get list of machine owner keys (MOK) for module signing: rc %d", rc));
 
   string line, fingerprint;
   while (! out.eof())
