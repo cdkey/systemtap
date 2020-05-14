@@ -262,6 +262,7 @@ static void insert_bkpt(struct uprobe_probept *ppt, struct task_struct *tsk)
 	long result = 0;
 	int len;
 
+
 	if (!tsk) {
 		/* No surviving tasks associated with ppt->uproc */
 		result = -ESRCH;
@@ -1037,6 +1038,7 @@ int register_uprobe(struct uprobe *u)
 	struct uprobe_task *cur_utask, *cur_utask_quiescing = NULL;
 	int ret = 0, uproc_is_new = 0;
 	bool survivors;
+
 	if (!u || !u->handler)
 		return -EINVAL;
 

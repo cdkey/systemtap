@@ -116,7 +116,8 @@ am__dirstamp = $(am__leading_dot)dirstamp
 @HAVE_DYNINST_TRUE@	dynsdt-dynutil.$(OBJEXT) \
 @HAVE_DYNINST_TRUE@	../dynsdt-util.$(OBJEXT)
 dynsdt_OBJECTS = $(am_dynsdt_OBJECTS)
-dynsdt_DEPENDENCIES =
+am__DEPENDENCIES_1 =
+@HAVE_DYNINST_TRUE@dynsdt_DEPENDENCIES = $(am__DEPENDENCIES_1)
 dynsdt_LINK = $(CXXLD) $(dynsdt_CXXFLAGS) $(CXXFLAGS) \
 	$(dynsdt_LDFLAGS) $(LDFLAGS) -o $@
 @HAVE_DYNINST_TRUE@am_stapdyn_OBJECTS = stapdyn-stapdyn.$(OBJEXT) \
@@ -126,7 +127,7 @@ dynsdt_LINK = $(CXXLD) $(dynsdt_CXXFLAGS) $(CXXFLAGS) \
 @HAVE_DYNINST_TRUE@	stapdyn-dynutil.$(OBJEXT) \
 @HAVE_DYNINST_TRUE@	../stapdyn-util.$(OBJEXT)
 stapdyn_OBJECTS = $(am_stapdyn_OBJECTS)
-stapdyn_DEPENDENCIES =
+@HAVE_DYNINST_TRUE@stapdyn_DEPENDENCIES = $(am__DEPENDENCIES_1)
 stapdyn_LINK = $(CXXLD) $(stapdyn_CXXFLAGS) $(CXXFLAGS) \
 	$(stapdyn_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
@@ -345,6 +346,8 @@ build_vendor = @build_vendor@
 builddir = @builddir@
 datadir = @datadir@
 datarootdir = @datarootdir@
+debuginfod_CFLAGS = @debuginfod_CFLAGS@
+debuginfod_LIBS = @debuginfod_LIBS@
 docdir = @docdir@
 dracutbindir = @dracutbindir@
 dracutstap = @dracutstap@
@@ -439,12 +442,14 @@ AM_LDFLAGS = @PIELDFLAGS@ @BOOST_SYSTEM_LIB@ $(am__append_2)
 
 @HAVE_DYNINST_TRUE@stapdyn_CXXFLAGS = $(AM_CXXFLAGS) @DYNINST_CXXFLAGS@
 @HAVE_DYNINST_TRUE@stapdyn_LDFLAGS = $(AM_LDFLAGS) @DYNINST_LDFLAGS@
-@HAVE_DYNINST_TRUE@stapdyn_LDADD = -ldl -ldyninstAPI -lsymtabAPI -lpthread
+@HAVE_DYNINST_TRUE@stapdyn_LDADD = -ldl -ldyninstAPI -lsymtabAPI -lpthread $(debuginfod_LIBS)
+@HAVE_DYNINST_TRUE@stapdyn_CFLAGS = $(debuginfod_CFLAGS)
 @HAVE_DYNINST_TRUE@dynsdt_SOURCES = dynsdt.cxx dynutil.cxx ../util.cxx
 @HAVE_DYNINST_TRUE@dynsdt_CPPFLAGS = $(AM_CPPFLAGS)
 @HAVE_DYNINST_TRUE@dynsdt_CXXFLAGS = $(AM_CXXFLAGS) @DYNINST_CXXFLAGS@
 @HAVE_DYNINST_TRUE@dynsdt_LDFLAGS = $(AM_LDFLAGS) @DYNINST_LDFLAGS@
-@HAVE_DYNINST_TRUE@dynsdt_LDADD = -ldl -lelf -ldyninstAPI -lsymtabAPI -lpthread
+@HAVE_DYNINST_TRUE@dynsdt_LDADD = -ldl -lelf -ldyninstAPI -lsymtabAPI -lpthread $(debuginfod_LIBS)
+@HAVE_DYNINST_TRUE@dynsdt_CFLAGS = $(debuginfod_CFLAGS)
 
 # Arrange for the top-level git_version.h to be regenerated at every "make".
 BUILT_SOURCES = git_version.stamp

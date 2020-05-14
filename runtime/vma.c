@@ -266,6 +266,7 @@ static int _stp_vma_init(void)
                 // callback should be sufficient).
                 .pid = 0,
                 .procname = NULL,
+                .build_id_len = 0,
                 .purpose = "vma tracking",
                 .callback = &_stp_vma_exec_cb,
                 .mmap_callback = &_stp_vma_mmap_cb,

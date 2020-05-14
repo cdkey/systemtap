@@ -148,7 +148,8 @@ staprun_OBJECTS = $(am_staprun_OBJECTS)
 @HAVE_NSS_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
 @HAVE_HTTP_SUPPORT_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1)
 staprun_DEPENDENCIES = libstrfloctime.a $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_3) \
+	$(am__DEPENDENCIES_4)
 staprun_LINK = $(CXXLD) $(staprun_CXXFLAGS) $(CXXFLAGS) \
 	$(staprun_LDFLAGS) $(LDFLAGS) -o $@
 am_stapsh_OBJECTS = stapsh-stapsh.$(OBJEXT)
@@ -392,6 +393,8 @@ build_vendor = @build_vendor@
 builddir = @builddir@
 datadir = @datadir@
 datarootdir = @datarootdir@
+debuginfod_CFLAGS = @debuginfod_CFLAGS@
+debuginfod_LIBS = @debuginfod_LIBS@
 docdir = @docdir@
 dracutbindir = @dracutbindir@
 dracutstap = @dracutstap@
@@ -489,11 +492,12 @@ libstrfloctime_a_SOURCES = strfloctime.c
 libstrfloctime_a_CFLAGS = $(AM_CFLAGS) -Wno-format-nonliteral
 staprun_SOURCES = staprun.c staprun_funcs.c ctl.c common.c \
 	../privilege.cxx ../util.cxx $(am__append_1)
-staprun_CFLAGS = $(AM_CFLAGS) -DSINGLE_THREADED $(am__append_2)
+staprun_CFLAGS = $(AM_CFLAGS) -DSINGLE_THREADED $(debuginfod_CFLAGS) \
+	$(am__append_2)
 staprun_CXXFLAGS = $(AM_CXXFLAGS) -DSINGLE_THREADED $(am__append_3)
 staprun_CPPFLAGS = $(AM_CPPFLAGS)
-staprun_LDADD = libstrfloctime.a $(staprun_LIBS) $(am__append_4) \
-	$(am__append_5)
+staprun_LDADD = libstrfloctime.a $(staprun_LIBS) $(debuginfod_LIBS) \
+	$(am__append_4) $(am__append_5)
 staprun_LDFLAGS = $(AM_LDFLAGS)
 stapio_SOURCES = stapio.c mainloop.c common.c ctl.c relay.c relay_old.c monitor.c
 stapio_LDADD = libstrfloctime.a -lpthread $(am__append_6)

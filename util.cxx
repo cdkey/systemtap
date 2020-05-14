@@ -44,7 +44,13 @@ extern "C" {
 #include <unistd.h>
 #include <regex.h>
 #include <stdarg.h>
+
+#ifdef HAVE_LIBDEBUGINFOD
+#include <elfutils/debuginfod.h>
+#endif
 }
+
+
 
 using namespace std;
 using namespace __gnu_cxx;
@@ -537,7 +543,56 @@ string find_executable(const string& name, const string& sysroot,
 
   struct stat st;
 
-  if (name.find('/') != string::npos) // slash in the path already?
+  if (name.find("0x") == 0)
+    {
+      // Search for executable with the given build-id.
+      if (name.size() > 4)
+        {
+          string fname = sysroot + string("/usr/lib/.build-id/");
+          fname += name.substr(2, 2) + string("/") + name.substr(4);
+
+          const char *f = fname.c_str();
+
+          if (access(f, X_OK) == 0
+              && stat(f, &st) == 0
+              && S_ISREG(st.st_mode))
+            {
+              retpath = fname;
+            }
+          else if (sysroot != ""
+                   && lstat(f, &st) == 0
+                   && S_ISLNK(st.st_mode))
+            {
+              retpath = follow_link(f, sysroot);
+            }
+
+#ifdef HAVE_LIBDEBUGINFOD
+          if (retpath == "")
+            {
+              // Query debuginfod for the executable.
+              debuginfod_client *client = debuginfod_begin();
+
+              if (client != NULL)
+                {
+                  char *p;
+                  int fd = debuginfod_find_executable(client,
+						      (const unsigned char*)(name.c_str() + 2),
+						      0, &p);
+
+                  if (fd >= 0)
+                    {
+                      retpath = p;
+                      free(p);
+                      close(fd);
+                    }
+
+                  debuginfod_end(client);
+                }
+            }
+#endif /* HAVE_LIBDEBUGINFOD */
+        }
+    }
+  else if (name.find('/') != string::npos) // slash in the path already?
     {
       retpath = sysroot + name;
 

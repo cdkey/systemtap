@@ -24,10 +24,10 @@ libstrfloctime_a_SOURCES = strfloctime.c
 libstrfloctime_a_CFLAGS = $(AM_CFLAGS) -Wno-format-nonliteral
 
 staprun_SOURCES = staprun.c staprun_funcs.c ctl.c common.c ../privilege.cxx ../util.cxx
-staprun_CFLAGS = $(AM_CFLAGS) -DSINGLE_THREADED
+staprun_CFLAGS = $(AM_CFLAGS) -DSINGLE_THREADED $(debuginfod_CFLAGS)
 staprun_CXXFLAGS = $(AM_CXXFLAGS) -DSINGLE_THREADED
 staprun_CPPFLAGS = $(AM_CPPFLAGS)
-staprun_LDADD = libstrfloctime.a $(staprun_LIBS)
+staprun_LDADD = libstrfloctime.a $(staprun_LIBS) $(debuginfod_LIBS)
 staprun_LDFLAGS =  $(AM_LDFLAGS)
 
 if HAVE_NSS

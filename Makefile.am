@@ -54,7 +54,7 @@ stap_SOURCES = main.cxx session.cxx \
         stapregex.cxx stapregex-tree.cxx stapregex-parse.cxx \
 	stapregex-dfa.cxx stringtable.cxx tapset-python.cxx
 noinst_HEADERS = sdt_types.h
-stap_LDADD = @stap_LIBS@ @sqlite3_LIBS@ @LIBINTL@ -lpthread
+stap_LDADD = @stap_LIBS@ @sqlite3_LIBS@ @LIBINTL@ -lpthread @debuginfod_LIBS@
 stap_DEPENDENCIES =
 
 if HAVE_LIBREADLINE

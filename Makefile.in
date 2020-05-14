@@ -560,6 +560,8 @@ build_vendor = @build_vendor@
 builddir = @builddir@
 datadir = @datadir@
 datarootdir = @datarootdir@
+debuginfod_CFLAGS = @debuginfod_CFLAGS@
+debuginfod_LIBS = @debuginfod_LIBS@
 docdir = @docdir@
 dracutbindir = @dracutbindir@
 dracutstap = @dracutstap@
@@ -678,9 +680,9 @@ oldinclude_HEADERS = includes/sys/sdt.h includes/sys/sdt-config.h
 @BUILD_TRANSLATOR_TRUE@	$(am__append_15) $(am__append_21)
 @BUILD_TRANSLATOR_TRUE@noinst_HEADERS = sdt_types.h
 @BUILD_TRANSLATOR_TRUE@stap_LDADD = @stap_LIBS@ @sqlite3_LIBS@ \
-@BUILD_TRANSLATOR_TRUE@	@LIBINTL@ -lpthread $(am__append_8) \
-@BUILD_TRANSLATOR_TRUE@	$(am__append_13) $(am__append_19) \
-@BUILD_TRANSLATOR_TRUE@	$(am__append_22)
+@BUILD_TRANSLATOR_TRUE@	@LIBINTL@ -lpthread @debuginfod_LIBS@ \
+@BUILD_TRANSLATOR_TRUE@	$(am__append_8) $(am__append_13) \
+@BUILD_TRANSLATOR_TRUE@	$(am__append_19) $(am__append_22)
 @BUILD_TRANSLATOR_TRUE@stap_DEPENDENCIES = 
 @BUILD_TRANSLATOR_TRUE@@BUILD_VIRT_TRUE@stapvirt_SOURCES = stapvirt.c
 @BUILD_TRANSLATOR_TRUE@@BUILD_VIRT_TRUE@stapvirt_CFLAGS =  \

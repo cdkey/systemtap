@@ -100,6 +100,9 @@ struct stap_task_finder_target {
 
 /* public: */
 	pid_t pid;
+        int build_id_len;
+        uint64_t build_id_vaddr;
+        const char *build_id;
 	const char *procname;
         const char *purpose;
 	stap_task_finder_callback callback;

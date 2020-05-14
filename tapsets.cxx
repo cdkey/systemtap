@@ -605,6 +605,9 @@ struct uprobe_derived_probe: public dwarf_derived_probe
 {
   int pid; // 0 => unrestricted
 
+  interned_string build_id_val;
+  GElf_Addr build_id_vaddr;
+
   uprobe_derived_probe (interned_string function,
                         interned_string filename,
                         int line,
@@ -697,6 +700,7 @@ struct base_query
   interned_string  module_val; // has_kernel => module_val = "kernel"
   interned_string  path;	     // executable path if module is a .so
   interned_string  plt_val;    // has_plt => plt wildcard
+  interned_string  build_id_val;
   int64_t pid_val;
 
   virtual void handle_query_module() = 0;
@@ -743,6 +747,9 @@ base_query::base_query(dwflpp & dw, literal_map_t const & params):
               // reset the pid_val in case anything weird got written into it
               pid_val = 0;
               get_string_param(params, TOK_PROCESS, module_val);
+
+              if (module_val.find("0x") == 0)
+                build_id_val = module_val.substr(2);
             }
           module_val = find_executable (module_val, sess.sysroot, sess.sysenv);
           if (!is_fully_resolved(module_val, "", sess.sysenv))
@@ -949,7 +956,6 @@ struct dwarf_query : public base_query
   bool is_fully_specified_function();
 };
 
-
 uprobe_derived_probe::uprobe_derived_probe (interned_string function,
                         interned_string filename,
                         int line,
@@ -960,9 +966,29 @@ uprobe_derived_probe::uprobe_derived_probe (interned_string function,
                         dwarf_query & q,
                         Dwarf_Die* scope_die):
     dwarf_derived_probe(function, filename, line, module, section,
-                        dwfl_addr, addr, q, scope_die), pid(q.pid_val)
-  {}
+                        dwfl_addr, addr, q, scope_die),
+    pid(q.pid_val), build_id_vaddr(0)
+  {
+    // Process parameter is given as a build-id
+    if (q.build_id_val.size() > 0)
+      {
+        const unsigned char *bits;
+        int len;
+        GElf_Addr vaddr;
 
+        len = dwfl_module_build_id(q.dw.module, &bits, &vaddr);
+        if (len > 0)
+          {
+            Dwarf_Addr reloc_vaddr = vaddr;
+
+            len = dwfl_module_relocate_address(q.dw.module, &reloc_vaddr);
+            DWFL_ASSERT ("dwfl_module_relocate_address reloc_vaddr", len >= 0);
+
+            build_id_vaddr = reloc_vaddr;
+            build_id_val = q.build_id_val;
+          }
+      }
+  }
 
 static void delete_session_module_cache (systemtap_session& s); // forward decl
 
@@ -972,6 +998,7 @@ struct dwarf_builder: public derived_probe_builder
   map <string,dwflpp*> user_dw;
   interned_string user_path;
   interned_string user_lib;
+  interned_string orig_module_name;
 
   // Holds modules to suggest functions from. NB: aggregates over
   // recursive calls to build() when deriving globby probes.
@@ -8440,6 +8467,10 @@ dwarf_builder::build(systemtap_session & sess,
       // we get the module_name out.
       else if (get_param (parameters, TOK_PROCESS, module_name))
         {
+          // Need to remember original module name when given as a build-id.
+          if (module_name.find("0x") == 0)
+            orig_module_name = module_name;
+
           if (!location->auto_path.empty())
             {
               if (!module_name.empty() && module_name[0] != '/')
@@ -9475,6 +9506,14 @@ uprobe_derived_probe_group::emit_module_utrace_decls (systemtap_session& s)
           s.op->line() << "  .purpose=\"uprobes\",";
           if (p->pid != 0)
             s.op->line() << " .pid=" << p->pid << ",";
+          if (!p->build_id_val.empty())
+            {
+              s.op->line() << " .build_id=\"" << p->build_id_val << "\",";
+              s.op->line() << " .build_id_len=" << p->build_id_val.size() << ",";
+              s.op->line() << " .build_id_vaddr=" << p->build_id_vaddr << ",";
+            }
+          else
+            s.op->line() << " .build_id_len=0,";
 
           if (p->section == "") // .statement(addr).absolute
             s.op->line() << " .callback=&stap_uprobe_process_found,";
@@ -9802,6 +9841,14 @@ uprobe_derived_probe_group::emit_module_inode_decls (systemtap_session& s)
           s.op->line() << "  .purpose=\"inode-uprobes\",";
           if (p->pid != 0)
             s.op->line() << " .pid=" << p->pid << ",";
+          if (!p->build_id_val.empty())
+            {
+              s.op->line() << " .build_id=\"" << p->build_id_val << "\",";
+              s.op->line() << " .build_id_len=" << p->build_id_val.size() << ",";
+              s.op->line() << " .build_id_vaddr=" << p->build_id_vaddr << "ULL,";
+            }
+          else
+            s.op->line() << " .build_id_len=0,";
 
           if (p->section == "") // .statement(addr).absolute  XXX?
             s.op->line() << " .callback=&stapiu_process_found,";

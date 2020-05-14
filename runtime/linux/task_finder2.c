@@ -86,6 +86,9 @@ struct stap_task_finder_target {
 
 /* public: */
 	pid_t pid;
+	int build_id_len;
+	uint64_t build_id_vaddr;
+	unsigned char *build_id;
 	const char *procname;
         const char *purpose;
 	stap_task_finder_callback callback;
@@ -262,7 +265,7 @@ stap_register_task_finder_target(struct stap_task_finder_target *new_tgt)
 	new_tgt->ops.report_syscall_exit = \
 		&__stp_utrace_task_finder_target_syscall_exit;
 
-	// Search the list for an existing entry for procname/pid.
+	// Search the list for an existing entry for procname/pid/build-id.
 	list_for_each(node, &__stp_task_finder_list) {
 		tgt = list_entry(node, struct stap_task_finder_target, list);
 		if (tgt == new_tgt) {
@@ -277,7 +280,11 @@ stap_register_task_finder_target(struct stap_task_finder_target *new_tgt)
 			/* pid-based target (a specific pid or all
 			 * pids) */
 			|| (new_tgt->pathlen == 0 && tgt->pathlen == 0
-			    && tgt->pid == new_tgt->pid))) {
+			    && tgt->pid == new_tgt->pid)
+			/* buildid-based target */
+			|| (new_tgt->build_id_len > 0
+			    && new_tgt->build_id_len == tgt->build_id_len
+			    && strcmp(new_tgt->build_id, tgt->build_id) == 0))) {
 			found_node = 1;
 			break;
 		}
@@ -620,6 +627,38 @@ __stp_call_callbacks(struct stap_task_finder_target *tgt,
 	}
 }
 
+bool
+__verify_build_id(struct task_struct *tsk, unsigned long addr,
+			  unsigned const char *build_id, int build_id_len)
+{
+#define MAX_HEXSTR_LEN 64
+	int i;
+	unsigned char tsk_build_id[MAX_HEXSTR_LEN + 1];
+
+	if (build_id_len > MAX_HEXSTR_LEN)
+		return false;
+
+	for (i = 0; i < build_id_len / 2; i++) {
+		int rc;
+		unsigned char b;
+
+		if ((rc = __access_process_vm_noflush(tsk, addr + i, &b, 1, 0)) != 1)
+			return false;
+
+		tsk_build_id[i * 2]     = "0123456789abcdef"[b >> 4];
+		tsk_build_id[i * 2 + 1] = "0123456789abcdef"[b & 0xf];
+	}
+	tsk_build_id[build_id_len] = '\0';
+
+	if (strcmp(build_id, tsk_build_id)) {
+		dbug_task(2, "target build-id not matched: [%s] != [%s]\n",
+			  build_id, tsk_build_id);
+		return false;
+	}
+
+	return true;
+}
+
 static void
 __stp_call_mmap_callbacks(struct stap_task_finder_target *tgt,
 			  struct task_struct *tsk, char *path,
@@ -838,13 +877,22 @@ __stp_utrace_attach_match_filename(struct task_struct *tsk,
 
 		tgt = list_entry(tgt_node, struct stap_task_finder_target,
 				 list);
-		// If we've got a matching procname or we're probing
-		// all threads, we've got a match.  We've got to keep
-		// matching since a single thread could match a
-		// procname and match an "all thread" probe.
+		// If we've got a matching procname or a matching build-id
+		// or we're probing all threads, we've got a match.  We've
+		// got to keep matching since a single thread could match a
+		// procname/build-id and match an "all thread" probe.
 		if (tgt == NULL)
 			continue;
-		else if (tgt->pathlen > 0
+		/* buildid-based target */
+		else if (tgt->build_id_len > 0 && tgt->procname > 0
+			 && !__verify_build_id(tsk,
+					       tgt->build_id_vaddr,
+					       tgt->build_id,
+					       tgt->build_id_len))
+		{
+			continue;
+		}
+		else if (tgt->build_id_len == 0 && tgt->pathlen > 0
 			 && (tgt->pathlen != filelen
 			     || strcmp(tgt->procname, filename) != 0))
 		{
@@ -1722,7 +1770,7 @@ stap_start_task_finder(void)
 			}
 		}
 
-		/* Check the thread's exe's path/pid against our list. */
+		/* Check the thread's exe's path/pid/build-id against our list. */
 #ifdef STAPCONF_TASK_UID
 		tsk_euid = tsk->euid;
 #else
@@ -1740,8 +1788,17 @@ stap_start_task_finder(void)
 					 struct stap_task_finder_target, list);
 			if (tgt == NULL)
 				continue;
+			/* buildid-based target */
+			else if (tgt->build_id_len > 0 && tgt->procname > 0
+				 && !__verify_build_id(tsk,
+						       tgt->build_id_vaddr,
+						       tgt->build_id,
+						       tgt->build_id_len))
+			{
+				continue;
+			}
 			/* procname-based target */
-			else if (tgt->pathlen > 0
+			else if (tgt->build_id == 0 && tgt->pathlen > 0
 				 && (tgt->pathlen != mmpathlen
 				     || strcmp(tgt->procname, mmpath) != 0))
 			{
@@ -1771,7 +1828,6 @@ stap_start_task_finder(void)
 			rc = __stp_utrace_attach(tsk, &tgt->ops, tgt,
 						 __STP_ATTACHED_TASK_EVENTS,
 						 UTRACE_STOP);
-
 			dbug_task(2, "__stp_utrace_attach() for %d returned %d", tsk->tgid,
 				  rc);
 

@@ -247,6 +247,25 @@ AC_SUBST(PIELDFLAGS)
 AC_SUBST(PIECFLAGS)
 AC_SUBST(PIECXXFLAGS)
 
+dnl Handle optional debuginfod support. If not specified by the user,
+dnl use it if present.
+AC_ARG_WITH([debuginfod],
+  AC_HELP_STRING([--with-debuginfod], [Enable debuginfo lookups with debuginfod (auto/yes/no)]),
+                 [], [with_debuginfod=auto])
+AC_MSG_CHECKING([whether to use debuginfod])
+AC_MSG_RESULT([$with_debuginfod])
+if test "x$with_debuginfod" != xno; then
+  PKG_CHECK_MODULES([debuginfod], [libdebuginfod >= 0.179],
+    [AC_DEFINE([HAVE_LIBDEBUGINFOD], [1], [Define to 1 if debuginfod is enabled.])],
+    [if test "x$with_debuginfod" = xyes; then
+       AC_MSG_ERROR(["--with-debuginfod was given, but libdebuginfod is missing or unusable."])
+     else
+       AC_MSG_WARN([libdebuginfod is missing or unusable; some features may be unavailable.])
+     fi])
+else
+  AC_MSG_WARN([debuginfod support disabled; some features may be unavailable.])
+fi
+
 dnl Handle optional sqlite support.  If enabled/disabled by the user,
 dnl do the right thing.  If not specified by the user, use it if
 dnl present.

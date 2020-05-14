@@ -20,10 +20,10 @@ man_MANS = stapbpf.8
 
 stapbpf_SOURCES = stapbpf.cxx bpfinterp.cxx libbpf.c ../util.cxx
 stapbpf_CPPFLAGS = $(AM_CPPFLAGS)
-stapbpf_CFLAGS = $(AM_CFLAGS)
+stapbpf_CFLAGS = $(AM_CFLAGS) $(debuginfod_CFLAGS)
 stapbpf_CXXFLAGS = $(AM_CXXFLAGS)
 stapbpf_LDFLAGS = $(AM_LDFLAGS)
-stapbpf_LDADD = $(stapbpf_LIBS) -lpthread
+stapbpf_LDADD = $(stapbpf_LIBS) -lpthread $(debuginfod_LIBS)
 
 BUILT_SOURCES =
 CLEANFILES =

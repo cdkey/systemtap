@@ -67,7 +67,18 @@ typedef typeof(&uprobe_get_swbp_addr) uprobe_get_swbp_addr_fn;
 #endif
 #endif
 
-/* A target is a specific file/inode that we want to probe.  */
+/* A target inode. One target may have multiple inodes associated with it
+ * in the case of buildid-based probes.  */
+struct stapiu_inode {
+	struct list_head target_inode;
+	struct inode *inode;
+
+	/* Each inode must have its own copy of all of its target's consumers.
+	 * Used with uprobe_register/unregister. */
+	struct list_head consumers; /* stapiu_consumer */
+};
+
+/* A target is a set of files/inodes that we want to probe.  */
 struct stapiu_target {
 	/* All the uprobes for this target. */
 	struct list_head consumers; /* stapiu_consumer */
@@ -81,7 +92,7 @@ struct stapiu_target {
 	struct stap_task_finder_target finder;
 
 	const char * const filename;
-	struct inode *inode;
+	struct list_head inodes; /* stapiu_inode */
 	struct mutex inode_lock;
 };
 
@@ -127,6 +138,10 @@ static DEFINE_SPINLOCK(stapiu_process_slots_lock);
 static atomic_t prehandler_hitcount = ATOMIC_INIT(0);
 static atomic_t handler_hitcount = ATOMIC_INIT(0);
 #endif
+
+bool
+__verify_build_id (struct task_struct *tsk, unsigned long addr,
+		   unsigned const char *build_id, int build_id_len);
 
 /* The stap-generated probe handler for all inode-uprobes. */
 static int
@@ -356,37 +371,41 @@ stapiu_decrement_semaphores(struct stapiu_target *targets, size_t ntargets)
 }
 
 
-/* Unregister all uprobe consumers of a target.  */
+/* Unregister all uprobe consumers of each target inode.  */
 static void
 stapiu_target_unreg(struct stapiu_target *target)
 {
-	struct stapiu_consumer *c;
+	struct stapiu_inode *ino;
 
-	if (! target->inode)
+	if (list_empty(&target->inodes))
 		return;
-	list_for_each_entry(c, &target->consumers, target_consumer) {
-		if (c->registered) {
-			dbug_uprobes("unregistering (u%sprobe) inode-offset "
-				     "%lu:%p pidx %zu\n",
-				     c->return_p ? "ret" : "",
-				     (unsigned long) target->inode->i_ino,
-				     (void*) (uintptr_t) c->offset,
-				     c->probe->index);
-			stapiu_unregister(target->inode, c);
+	list_for_each_entry(ino, &target->inodes, target_inode) {
+		struct stapiu_consumer *c;
+
+		list_for_each_entry(c, &ino->consumers, target_consumer) {
+			if (c->registered) {
+				dbug_uprobes("unregistering (u%sprobe) inode-offset "
+					     "%lu:%p pidx %zu\n",
+					     c->return_p ? "ret" : "",
+					     (unsigned long) ino->inode->i_ino,
+					     (void*) (uintptr_t) c->offset,
+					     c->probe->index);
+				stapiu_unregister(ino->inode, c);
+			}
 		}
 	}
 }
 
 
-/* Register all uprobe consumers of a target.  */
+/* Register all uprobe consumers with a target inode.  */
 static int
-stapiu_target_reg(struct stapiu_target *target, struct task_struct* task)
+stapiu_target_reg(struct stapiu_target *target, struct stapiu_inode *ino, struct task_struct* task)
 {
 	int ret = 0;
 	struct stapiu_consumer *c;
 
-	list_for_each_entry(c, &target->consumers, target_consumer) {
-		if (! c->registered) {
+	// Already checked that ino isn't registered with target.
+	list_for_each_entry(c, &ino->consumers, target_consumer) {
 			int i;
 			for (i=0; i < c->perf_counters_dim; i++) {
                             if ((c->perf_counters)[i] > -1)
@@ -396,28 +415,26 @@ stapiu_target_reg(struct stapiu_target *target, struct task_struct* task)
 				dbug_uprobes("not registering (u%sprobe) "
 					     "inode-offset %lu:%p pidx %zu\n",
 					     c->return_p ? "ret" : "",
-					     (unsigned long)
-						target->inode->i_ino,
+					     (unsigned long) ino->inode->i_ino,
 					     (void*) (uintptr_t) c->offset,
 					     c->probe->index);
 				continue;
 			}
 			dbug_uprobes("registering (u%sprobe) at inode-offset "
-				     "%lu:%p pidx %zu\n",
+				     "%lu:%p pidx %zu target filename:%s\n",
 				     c->return_p ? "ret" : "",
-				     (unsigned long) target->inode->i_ino,
+				     (unsigned long) ino->inode->i_ino,
 				     (void*) (uintptr_t) c->offset,
-				     c->probe->index);
+				     c->probe->index, target->filename);
 
-			ret = stapiu_register(target->inode, c);
+			ret = stapiu_register(ino->inode, c);
 			if (ret != 0)
 				_stp_warn("probe %s at inode-offset %lu:%p "
 					  "registration error (rc %d)",
 					  c->probe->pp,
-					  (unsigned long) target->inode->i_ino,
+					  (unsigned long) ino->inode->i_ino,
 					  (void*) (uintptr_t) c->offset,
 					  ret);
-		}
 	}
 	if (ret)
 		stapiu_target_unreg(target);
@@ -431,40 +448,39 @@ static void
 stapiu_target_refresh(struct stapiu_target *target)
 {
 	struct stapiu_consumer *c;
+	struct stapiu_inode *ino;
 
 	// go through every consumer
 	list_for_each_entry(c, &target->consumers, target_consumer) {
-
 		// should we unregister it?
-		if (c->registered && !c->probe->cond_enabled) {
-
-			dbug_uprobes("unregistering (u%sprobe) at inode-offset "
-				     "%lu:%p pidx %zu\n",
-				     c->return_p ? "ret" : "",
-				     (unsigned long) target->inode->i_ino,
-				     (void*) (uintptr_t) c->offset,
-				     c->probe->index);
-			stapiu_unregister(target->inode, c);
-
-		// should we register it?
-		} else if (!c->registered && c->probe->cond_enabled) {
-
-			dbug_uprobes("registering (u%sprobe) at inode-offset "
-				     "%lu:%p pidx %zu\n",
-				     c->return_p ? "ret" : "",
-				     (unsigned long) target->inode->i_ino,
-				     (void*) (uintptr_t) c->offset,
-				     c->probe->index);
-
-			if (stapiu_register(target->inode, c) != 0)
-				dbug_uprobes("couldn't register (u%sprobe) "
-					     "inode-offset %lu:%p pidx %zu\n",
+		if (c->registered && !c->probe->cond_enabled)
+			list_for_each_entry(ino, &target->inodes, target_inode) {
+				dbug_uprobes("unregistering (u%sprobe) at inode-offset "
+					     "%lu:%p pidx %zu\n",
 					     c->return_p ? "ret" : "",
-					     (unsigned long)
-						target->inode->i_ino,
+					     (unsigned long) ino->inode->i_ino,
 					     (void*) (uintptr_t) c->offset,
 					     c->probe->index);
-		}
+				stapiu_unregister(ino->inode, c);
+			}
+		// should we register it?
+		else if (!c->registered && c->probe->cond_enabled)
+			list_for_each_entry(ino, &target->inodes, target_inode) {
+				dbug_uprobes("registering (u%sprobe) at inode-offset "
+					     "%lu:%p pidx %zu\n",
+					     c->return_p ? "ret" : "",
+					     (unsigned long) ino->inode->i_ino,
+					     (void*) (uintptr_t) c->offset,
+					     c->probe->index);
+
+				if (stapiu_register(ino->inode, c) != 0)
+					dbug_uprobes("couldn't register (u%sprobe) "
+						     "inode-offset %lu:%p pidx %zu\n",
+						     c->return_p ? "ret" : "",
+						     (unsigned long) ino->inode->i_ino,
+						     (void*) (uintptr_t) c->offset,
+						     c->probe->index);
+			}
 	}
 }
 
@@ -475,14 +491,26 @@ stapiu_exit_targets(struct stapiu_target *targets, size_t ntargets)
 {
 	size_t i;
 	for (i = 0; i < ntargets; ++i) {
+		struct stapiu_inode *ino, *ino2;
 		struct stapiu_target *ut = &targets[i];
 
 		stapiu_target_unreg(ut);
-
 		/* NB: task_finder needs no unregister. */
-		if (ut->inode) {
-			iput(ut->inode);
-			ut->inode = NULL;
+		list_for_each_entry_safe(ino, ino2, &ut->inodes, target_inode) {
+			struct stapiu_consumer *c, *c2;
+
+			list_for_each_entry_safe(c, c2,
+						 &ino->consumers,
+						 target_consumer) {
+				list_del(&c->target_consumer);
+				_stp_kfree(c);
+			}
+
+			if (ino->inode)
+				iput(ino->inode);
+
+			list_del(&ino->target_inode);
+			_stp_kfree(ino);
 		}
 	}
 }
@@ -498,6 +526,7 @@ stapiu_init_targets(struct stapiu_target *targets, size_t ntargets)
 		struct stapiu_target *ut = &targets[i];
 		INIT_LIST_HEAD(&ut->consumers);
 		INIT_LIST_HEAD(&ut->processes);
+		INIT_LIST_HEAD(&ut->inodes);
 		rwlock_init(&ut->process_lock);
 		mutex_init(&ut->inode_lock);
 		ret = stap_register_task_finder_target(&ut->finder);
@@ -542,8 +571,7 @@ stapiu_refresh(struct stapiu_target *targets, size_t ntargets)
 		// we need to lock it to ensure probes don't get
 		// registered under our feet
 		stapiu_target_lock(target);
-
-		if (target->inode)
+		if (! list_empty(&target->inodes))
 			stapiu_target_refresh(target);
 
 		stapiu_target_unlock(target);
@@ -566,6 +594,38 @@ stapiu_exit(struct stapiu_target *targets, size_t ntargets,
 #endif
 }
 
+/* Return true when inode is already associated with target. */
+static bool
+contains_inode(struct stapiu_target* target, struct inode* inode)
+{
+	struct stapiu_inode *ino;
+
+	list_for_each_entry(ino, &target->inodes, target_inode)
+		if (ino->inode == inode)
+			return true;
+
+	return false;
+}
+
+/* Create a copy of each target consumer for ino. */
+static bool
+copy_consumers(struct stapiu_inode *ino, struct stapiu_target *target)
+{
+	struct stapiu_consumer *c;
+
+	INIT_LIST_HEAD(&ino->consumers);
+	list_for_each_entry(c, &target->consumers, target_consumer) {
+		struct stapiu_consumer *c_cpy;
+
+		c_cpy = _stp_kmalloc(sizeof(struct stapiu_consumer));
+		if (c_cpy == NULL)
+			return false;
+		memcpy(c_cpy, c, sizeof(struct stapiu_consumer));
+		list_add(&c_cpy->target_consumer, &ino->consumers);
+	}
+
+	return true;
+}
 
 /* Task-finder found a process with the target that we're interested in.
  * Grab a process slot and associate with this target, so the semaphores
@@ -583,19 +643,33 @@ stapiu_change_plus(struct stapiu_target* target, struct task_struct *task,
 	/* Check the buildid of the target (if we haven't already). We
 	 * lock the target so we don't have concurrency issues. */
 	stapiu_target_lock(target);
-	if (! target->inode) {
+	if (! contains_inode(target, inode)) {
+		struct stapiu_inode *ino;
+
 		if (! inode) {
 			rc = -EINVAL;
 			stapiu_target_unlock(target);
 			return rc;
 		}
 
+		ino = _stp_kzalloc(sizeof(struct stapiu_inode));
+		if (! ino) {
+			rc = -ENOMEM;
+			stapiu_target_unlock(target);
+			return rc;
+		}
+
 		/* Grab the inode first (to prevent TOCTTOU problems). */
-		target->inode = igrab(inode);
-		if (!target->inode) {
-			_stp_error("Couldn't get inode for file '%s'\n",
-				   target->filename);
+                ino->inode = igrab(inode);
+		if (!ino->inode) {
+			if (target->finder.build_id_len > 0)
+				_stp_error("Couldn't get inode for file with build-id '%s'\n",
+					   target->finder.build_id);
+			else
+				_stp_error("Couldn't get inode for file '%s'\n",
+					   target->filename);
 			rc = -EINVAL;
+			_stp_kfree(ino);
 			stapiu_target_unlock(target);
 			return rc;
 		}
@@ -606,22 +680,32 @@ stapiu_change_plus(struct stapiu_target* target, struct task_struct *task,
 		if ((rc = _stp_usermodule_check(task, target->filename,
 						relocation - offset))) {
 			/* Be sure to release the inode on failure. */
-			iput(target->inode);
-			target->inode = NULL;
+			iput(ino->inode);
+			_stp_kfree(ino);
 			stapiu_target_unlock(target);
 			return rc;
 		}
 
 		/* OK, we've checked the target's buildid. Now
 		 * register all its consumers. */
-		rc = stapiu_target_reg(target, task);
+		if (! copy_consumers(ino, target)) {
+			iput(ino->inode);
+			_stp_kfree(ino);
+			stapiu_target_unlock(target);
+			return -ENOMEM;
+		}
+
+		rc = stapiu_target_reg(target, ino, task);
 		if (rc) {
 			/* Be sure to release the inode on failure. */
-			iput(target->inode);
-			target->inode = NULL;
+			//iput(target->inode);
+			iput(ino->inode);
+			_stp_kfree(ino);
 			stapiu_target_unlock(target);
 			return rc;
 		}
+
+		list_add(&ino->target_inode, &target->inodes);
 	}
 	stapiu_target_unlock(target);
 
@@ -756,8 +840,9 @@ static int
 stapiu_process_found(struct stap_task_finder_target *tf_target,
 		     struct task_struct *task, int register_p, int process_p)
 {
-	struct stapiu_target *target =
-		container_of(tf_target, struct stapiu_target, finder);
+
+	struct stapiu_target *target;
+	target = container_of(tf_target, struct stapiu_target, finder);
 
 	if (!process_p)
 		return 0; /* ignore threads */
@@ -791,16 +876,16 @@ stapiu_mmap_found(struct stap_task_finder_target *tf_target,
 	struct stapiu_target *target =
 		container_of(tf_target, struct stapiu_target, finder);
 
-	/* Sanity check that the inodes match (if the target's inode
-	 * is set). Doesn't guarantee safety, but it's a start.  If
-	 * the target's inode isn't set, this is the first time we've
-	 * seen this target.
-	 */
-	if (target->inode && dentry->d_inode != target->inode)
-		return 0;
-
-	/* The file path must match too. */
-	if (!path || strcmp (path, target->filename))
+	/* The file path or build-id must match. The build-id address
+	 * is calculated using start address of this vma, the file
+	 * offset of the vma start address and the file offset of
+	 * the build-id. */
+	if ((!path || strcmp (path, target->filename))
+	    && (tf_target->build_id_len == 0
+		|| !__verify_build_id(task,
+				      addr - offset + tf_target->build_id_vaddr,
+				      tf_target->build_id,
+				      tf_target->build_id_len)))
 		return 0;
 
 	/* 1 - shared libraries' executable segments load from offset 0
