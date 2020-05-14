@@ -1795,21 +1795,23 @@ c_unparser::emit_module_init ()
       // XXX Plus, most of this code is completely static, so it probably should
       // move into the runtime, where kernel/dyninst is more easily separated.
 
+      // The systemtap_module_init() function must be run in
+      // non-atomic context, since several functions might need to
+      // sleep.
+      o->newline() << "{";
+      o->newline() << "might_sleep();";
+
+      // Now optional as the comparison of two compile-time values is vacuous:
+      //
       // Compare actual and targeted kernel releases/machines.  Sometimes
       // one may install the incorrect debuginfo or -devel RPM, and try to
       // run a probe compiled for a different version.  Catch this early,
       // just in case modversions didn't.
-      o->newline() << "{";
-      o->newline() << "#ifndef STP_NO_VERREL_CHECK";
+      o->newline() << "#ifdef STP_ENABLE_VERREL_CHECK";
       o->newline(1) << "const char* release = UTS_RELEASE;";
       o->newline() << "#ifdef STAPCONF_GENERATED_COMPILE";
       o->newline() << "const char* version = UTS_VERSION;";
       o->newline() << "#endif";
-
-      // The systemtap_module_init() function must be run in
-      // non-atomic context, since several functions might need to
-      // sleep.
-      o->newline() << "might_sleep();";
 
       // NB: This UTS_RELEASE compile-time macro directly checks only that
       // the compile-time kbuild tree matches the compile-time debuginfo/etc.
