@@ -1801,13 +1801,11 @@ c_unparser::emit_module_init ()
       o->newline() << "{";
       o->newline() << "might_sleep();";
 
-      // Now optional as the comparison of two compile-time values is vacuous:
-      //
       // Compare actual and targeted kernel releases/machines.  Sometimes
       // one may install the incorrect debuginfo or -devel RPM, and try to
       // run a probe compiled for a different version.  Catch this early,
       // just in case modversions didn't.
-      o->newline() << "#ifdef STP_ENABLE_VERREL_CHECK";
+      o->newline() << "#ifndef STP_NO_VERREL_CHECK";
       o->newline(1) << "const char* release = UTS_RELEASE;";
       o->newline() << "#ifdef STAPCONF_GENERATED_COMPILE";
       o->newline() << "const char* version = UTS_VERSION;";
@@ -1823,6 +1821,8 @@ c_unparser::emit_module_init ()
       // NB: We could compare UTS_MACHINE too, but on x86 it lies
       // (UTS_MACHINE=i386, but uname -m is i686).  Sheesh.
 
+      // Now optional as the comparison of two compile-time values is vacuous:
+      o->newline() << "#ifdef STP_FULL_VERREL_CHECK";
       o->newline() << "if (strcmp (release, "
 		   << lex_cast_qstring (session->kernel_release) << ")) {";
       o->newline(1) << "_stp_error (\"module release mismatch (%s vs %s)\", "
@@ -1831,6 +1831,7 @@ c_unparser::emit_module_init ()
 		    << ");";
       o->newline() << "rc = -EINVAL;";
       o->newline(-1) << "}";
+      o->newline() << "#endif";
 
       o->newline() << "#ifdef STAPCONF_GENERATED_COMPILE";
       o->newline() << "if (strcmp (utsname()->version, version)) {";
