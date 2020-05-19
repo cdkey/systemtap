@@ -1798,13 +1798,13 @@ c_unparser::emit_module_init ()
       // The systemtap_module_init() function must be run in
       // non-atomic context, since several functions might need to
       // sleep.
-      o->newline() << "{";
       o->newline() << "might_sleep();";
 
       // Compare actual and targeted kernel releases/machines.  Sometimes
       // one may install the incorrect debuginfo or -devel RPM, and try to
       // run a probe compiled for a different version.  Catch this early,
       // just in case modversions didn't.
+      o->newline() << "{";
       o->newline() << "#ifndef STP_NO_VERREL_CHECK";
       o->newline(1) << "const char* release = UTS_RELEASE;";
       o->newline() << "#ifdef STAPCONF_GENERATED_COMPILE";
