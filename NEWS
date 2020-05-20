@@ -36,6 +36,12 @@
   memory pages as expected. The old behavior can be restored by the
   --compatible=4.2 option on the command line.
 
+- Modules compiled with guru mode for a particular kernel version can
+  now only be loaded on kernels with exactly matching version
+  (vermagic string) instead of any kernel whose API matches according
+  to the modversions mechanism. Use -B CONFIG_MODVERSIONS=y to restore
+  the prior behaviour.
+
 * What's new in version 4.2, 2019-11-18
 
 - Initial support for multi-dimensional supports has been added to
