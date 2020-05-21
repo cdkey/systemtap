@@ -175,9 +175,9 @@ if HAVE_NSS
 stap_sign_module_SOURCES = stap-sign-module.cxx nsscommon.cxx util.cxx
 stap_sign_module_CPPFLAGS = $(AM_CPPFLAGS)
 stap_sign_module_CXXFLAGS = $(AM_CXXFLAGS) @PIECXXFLAGS@ $(nss_CFLAGS)
-stap_sign_module_CFLAGS = $(AM_CFLAGS) @PIECFLAGS@ $(nss_CFLAGS)
+stap_sign_module_CFLAGS = $(AM_CFLAGS) @PIECFLAGS@ $(nss_CFLAGS) $(debuginfod_CFLAGS)
 stap_sign_module_LDFLAGS = $(AM_LDFLAGS) @PIELDFLAGS@
-stap_sign_module_LDADD = $(nss_LIBS)
+stap_sign_module_LDADD = $(nss_LIBS) $(debuginfod_LIBS)
 if HAVE_HTTP_SUPPORT
 stap_sign_module_LDADD += $(openssl_LIBS)
 endif
@@ -185,9 +185,9 @@ endif
 stap_authorize_cert_SOURCES = stap-authorize-cert.cxx nsscommon.cxx util.cxx
 stap_authorize_cert_CPPFLAGS = $(AM_CPPFLAGS)
 stap_authorize_cert_CXXFLAGS = $(AM_CXXFLAGS) @PIECXXFLAGS@ $(nss_CFLAGS)
-stap_authorize_cert_CFLAGS = $(AM_CFLAGS) @PIECFLAGS@ $(nss_CFLAGS)
+stap_authorize_cert_CFLAGS = $(AM_CFLAGS) @PIECFLAGS@ $(nss_CFLAGS) $(debuginfod_CFLAGS)
 stap_authorize_cert_LDFLAGS = $(AM_LDFLAGS) @PIELDFLAGS@
-stap_authorize_cert_LDADD = $(nss_LIBS)
+stap_authorize_cert_LDADD = $(nss_LIBS) $(debuginfod_LIBS)
 if HAVE_HTTP_SUPPORT
 stap_authorize_cert_LDADD += $(openssl_LIBS)
 endif
@@ -195,9 +195,9 @@ endif
 if BUILD_SERVER
 stap_serverd_SOURCES = stap-serverd.cxx cscommon.cxx util.cxx privilege.cxx nsscommon.cxx cmdline.cxx
 stap_serverd_CXXFLAGS = $(AM_CXXFLAGS) @PIECXXFLAGS@ $(nss_CFLAGS)
-stap_serverd_CFLAGS = $(AM_CFLAGS) @PIECFLAGS@ $(nss_CFLAGS)
+stap_serverd_CFLAGS = $(AM_CFLAGS) @PIECFLAGS@ $(nss_CFLAGS) $(debuginfod_CFLAGS)
 stap_serverd_LDFLAGS = $(AM_LDFLAGS) @PIELDFLAGS@
-stap_serverd_LDADD = $(nss_LIBS) -lpthread
+stap_serverd_LDADD = $(nss_LIBS) -lpthread $(debuginfod_LIBS)
 if HAVE_AVAHI
 stap_serverd_CFLAGS += $(avahi_CFLAGS)
 stap_serverd_CXXFLAGS += $(avahi_CFLAGS)
@@ -210,9 +210,9 @@ endif
 
 stap_gen_cert_SOURCES = stap-gen-cert.cxx util.cxx nsscommon.cxx
 stap_gen_cert_CXXFLAGS = $(AM_CXXFLAGS) @PIECXXFLAGS@ $(nss_CFLAGS)
-stap_gen_cert_CFLAGS = $(AM_CFLAGS) @PIECFLAGS@ $(nss_CFLAGS)
+stap_gen_cert_CFLAGS = $(AM_CFLAGS) @PIECFLAGS@ $(nss_CFLAGS) $(debuginfod_CFLAGS)
 stap_gen_cert_LDFLAGS = $(AM_LDFLAGS) @PIELDFLAGS@
-stap_gen_cert_LDADD = $(nss_LIBS)
+stap_gen_cert_LDADD = $(nss_LIBS) $(debuginfod_LIBS)
 if HAVE_HTTP_SUPPORT
 stap_gen_cert_LDADD += $(openssl_LIBS)
 endif

@@ -398,8 +398,8 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-@INSTALL_PREBUILT_DOCS_FALSE@clean-local:
 @INSTALL_PREBUILT_DOCS_FALSE@uninstall-local:
+@INSTALL_PREBUILT_DOCS_FALSE@clean-local:
 @INSTALL_PREBUILT_DOCS_FALSE@install-data-hook:
 clean: clean-am
 
