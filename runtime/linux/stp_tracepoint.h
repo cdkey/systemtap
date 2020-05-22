@@ -16,7 +16,10 @@
 
 
 /* Starting in 2.6.35, at the same time NOARGS was added, the callback
- * always has a void* as the first parameter.  PR11599 */
+ * always has a void* as the first parameter.  PR11599
+ *
+ * Since NOARGS was removed in 5.7.0, this configuration is now also
+ * checked with autoconf-tracepoint-has-data.c. */
 #ifdef DECLARE_TRACE_NOARGS
 #define STAPCONF_TRACEPOINT_HAS_DATA
 #endif
