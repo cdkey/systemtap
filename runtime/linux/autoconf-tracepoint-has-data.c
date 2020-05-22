@@ -1,6 +1,8 @@
 #include <linux/tracepoint.h>
+#include <trace/events/sched.h>
 
-void baz (struct task_struct *parent, struct task_struct *child) {
+void baz (void *cb_data, struct task_struct *parent, struct task_struct *child) {
+	(void) cb_data;
 	(void) parent;
 	(void) child;
 }
