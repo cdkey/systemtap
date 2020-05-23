@@ -522,6 +522,22 @@ follow_link(const string& name, const string& sysroot)
   return retpath;
 }
 
+// Return true if str is a build-id. Build-ids are considered
+// to be strings with lengths greater than 2 and consisting
+// only of lowercase hex digits.
+bool is_build_id(const string& str)
+{
+  if (str.size() <= 2)
+    return false;
+
+  for (auto it = str.begin(); it != str.end(); ++it)
+    if (! ((*it >= '0' && *it <= '9')
+           || (*it >= 'a' && *it <= 'f')))
+      return false;
+
+  return true;
+}
+
 // Resolve an executable name to a canonical full path name, with the
 // same policy as execvp().  A program name not containing a slash
 // will be searched along the $PATH.
@@ -543,54 +559,48 @@ string find_executable(const string& name, const string& sysroot,
 
   struct stat st;
 
-  if (name.find("0x") == 0)
+  if (is_build_id(name))
     {
       // Search for executable with the given build-id.
-      if (name.size() > 4)
+      string fname = sysroot + string("/usr/lib/.build-id/");
+      fname += name.substr(0, 2) + string("/") + name.substr(2);
+
+      const char *f = fname.c_str();
+
+      if (access(f, X_OK) == 0
+          && stat(f, &st) == 0
+          && S_ISREG(st.st_mode))
         {
-          string fname = sysroot + string("/usr/lib/.build-id/");
-          fname += name.substr(2, 2) + string("/") + name.substr(4);
-
-          const char *f = fname.c_str();
-
-          if (access(f, X_OK) == 0
-              && stat(f, &st) == 0
-              && S_ISREG(st.st_mode))
-            {
-              retpath = fname;
-            }
-          else if (sysroot != ""
-                   && lstat(f, &st) == 0
-                   && S_ISLNK(st.st_mode))
-            {
-              retpath = follow_link(f, sysroot);
-            }
-
-#ifdef HAVE_LIBDEBUGINFOD
-          if (retpath == "")
-            {
-              // Query debuginfod for the executable.
-              debuginfod_client *client = debuginfod_begin();
-
-              if (client != NULL)
-                {
-                  char *p;
-                  int fd = debuginfod_find_executable(client,
-						      (const unsigned char*)(name.c_str() + 2),
-						      0, &p);
-
-                  if (fd >= 0)
-                    {
-                      retpath = p;
-                      free(p);
-                      close(fd);
-                    }
-
-                  debuginfod_end(client);
-                }
-            }
-#endif /* HAVE_LIBDEBUGINFOD */
+          retpath = fname;
         }
+      else if (sysroot != ""
+               && lstat(f, &st) == 0
+               && S_ISLNK(st.st_mode))
+        {
+          retpath = follow_link(f, sysroot);
+        }
+#ifdef HAVE_LIBDEBUGINFOD
+      if (retpath == "")
+        {
+          // Query debuginfod for the executable.
+          debuginfod_client *client = debuginfod_begin();
+
+          if (client != NULL)
+            {
+              char *p;
+              int fd = debuginfod_find_executable(client,
+                                                  (const unsigned char*)(name.c_str()),
+                                                  0, &p);
+              if (fd >= 0)
+                {
+                  retpath = p;
+                  free(p);
+                  close(fd);
+                }
+              debuginfod_end(client);
+            }
+        }
+#endif /* HAVE_LIBDEBUGINFOD */
     }
   else if (name.find('/') != string::npos) // slash in the path already?
     {

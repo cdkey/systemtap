@@ -748,8 +748,8 @@ base_query::base_query(dwflpp & dw, literal_map_t const & params):
               pid_val = 0;
               get_string_param(params, TOK_PROCESS, module_val);
 
-              if (module_val.find("0x") == 0)
-                build_id_val = module_val.substr(2);
+              if (is_build_id(module_val))
+                build_id_val = module_val;
             }
           module_val = find_executable (module_val, sess.sysroot, sess.sysenv);
           if (!is_fully_resolved(module_val, "", sess.sysenv))
@@ -998,7 +998,6 @@ struct dwarf_builder: public derived_probe_builder
   map <string,dwflpp*> user_dw;
   interned_string user_path;
   interned_string user_lib;
-  interned_string orig_module_name;
 
   // Holds modules to suggest functions from. NB: aggregates over
   // recursive calls to build() when deriving globby probes.
@@ -8467,10 +8466,6 @@ dwarf_builder::build(systemtap_session & sess,
       // we get the module_name out.
       else if (get_param (parameters, TOK_PROCESS, module_name))
         {
-          // Need to remember original module name when given as a build-id.
-          if (module_name.find("0x") == 0)
-            orig_module_name = module_name;
-
           if (!location->auto_path.empty())
             {
               if (!module_name.empty() && module_name[0] != '/')
