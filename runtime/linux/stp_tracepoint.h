@@ -21,7 +21,7 @@
  * Since NOARGS was removed in 5.7.0, this configuration is now also
  * checked with autoconf-tracepoint-has-data.c. */
 #ifdef DECLARE_TRACE_NOARGS
-#define STAPCONF_TRACEPOINT_HAS_DATA
+#define STAPCONF_TRACEPOINT_HAS_DATA 1
 #endif
 
 
