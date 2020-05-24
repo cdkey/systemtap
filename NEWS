@@ -1,5 +1,17 @@
 * What's new in version 4.3, PRERELEASE
 
+- The target of process probes may be specified by hexadecimal buildid
+  as an alternative to path names.  This makes it possible to probe a
+  variety of versions or aliases of a program, even if they are
+  running inside containers under a different path name.  Works best
+  with a debuginfod server that publishes the executables / debuginfo.
+  The following probes glibc.so 2.32-2.fc32.x86_64 from fedora running
+  anywhere on your machine.
+  
+  # export DEBUGINFOD_URLS=https://debuginfod.elfutils.org/
+  # stap -e 'probe process("7ca24d4dc3de9d62d9ad6bb25e5b70a3e57a342f")
+                   .function("*system") { log("hi") }'
+
 - Functions can now be context-sensitive, meaning that they may make
   references to $context variables and similar constructs that could
   formerly appear only inside probe handlers.  This is implemented by
