@@ -697,10 +697,10 @@ struct base_query
   bool has_library;
   bool has_plt;
   bool has_statement;
-  interned_string  module_val; // has_kernel => module_val = "kernel"
-  interned_string  path;	     // executable path if module is a .so
-  interned_string  plt_val;    // has_plt => plt wildcard
-  interned_string  build_id_val;
+  interned_string  module_val;   // has_kernel => module_val = "kernel"
+  interned_string  path;         // executable path if module is a .so
+  interned_string  plt_val;      // has_plt => plt wildcard
+  interned_string  build_id_val; // if non-empty, buildid that resulted in resolved path
   int64_t pid_val;
 
   virtual void handle_query_module() = 0;
@@ -1608,7 +1608,10 @@ dwarf_query::mount_well_formed_probe_point()
   for (auto it = base_loc->components.begin();
        it != base_loc->components.end(); ++it)
     {
-      if ((*it)->functor == TOK_PROCESS || (*it)->functor == TOK_MODULE)
+      if ((*it)->functor == TOK_PROCESS && this->build_id_val != "")
+        comps.push_back(new probe_point::component((*it)->functor,
+          new literal_string(this->build_id_val)));
+      else if ((*it)->functor == TOK_PROCESS || (*it)->functor == TOK_MODULE)
         comps.push_back(new probe_point::component((*it)->functor,
           new literal_string(has_library ? path : module)));
       else
@@ -5582,6 +5585,8 @@ dwarf_derived_probe::dwarf_derived_probe(interned_string funcname,
     comps.push_back (new probe_point::component(TOK_KERNEL));
   else if(q.has_module)
     comps.push_back (new probe_point::component(TOK_MODULE, new literal_string(module)));
+  else if(q.has_process && q.build_id_val != "") // for stap -vL process("buildid").function() etc. probes
+    comps.push_back (new probe_point::component(TOK_PROCESS, new literal_string(q.build_id_val)));
   else if(q.has_process)
     comps.push_back (new probe_point::component(TOK_PROCESS, new literal_string(module)));
   else
@@ -7675,10 +7680,10 @@ sdt_query::handle_probe_entry()
 	section = ".absolute";
 
       uprobe_derived_probe* p =
-	new uprobe_derived_probe ("", "", 0,
-				  path_remove_sysroot(sess,q.module_val),
-				  section,
-				  q.statement_num_val, reloc_addr, q, 0);
+        new uprobe_derived_probe ("", "", 0,
+                                  path_remove_sysroot(sess,q.module_val),
+                                  section,
+                                  q.statement_num_val, reloc_addr, q, 0);
       p->saveargs (arg_count);
       results.push_back (p);
     }
@@ -7970,6 +7975,8 @@ sdt_query::convert_location ()
   interned_string module = dw.module_name;
   if (has_process)
     module = path_remove_sysroot(sess, module);
+  if (build_id_val != "")
+    module = build_id_val; // prefer this one
 
   probe_point* specific_loc = new probe_point(*base_loc);
   specific_loc->well_formed = true;
