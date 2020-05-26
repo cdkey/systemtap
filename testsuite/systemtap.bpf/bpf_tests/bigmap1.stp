@@ -18,7 +18,15 @@ probe kernel.function("vfs_read") {
   bigmap_int[key1] = 1
   //bigmap_str[key2] = 1
   counter++
+  // these cause a timeout:
+  //if (counter % 64 == 0) printf("reached %d\n", counter)
   //if (counter % 256 == 0) printf("reached %d\n", counter)
+}
+
+probe timer.s(30) {
+  printf("XXX finishing early!\n")
+  // TODO: later, make this scenario a fail
+  exit()
 }
 
 probe end {
