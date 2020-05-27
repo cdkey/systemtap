@@ -2379,11 +2379,15 @@ systemtap_session::print_error (const semantic_error& se)
     }
 
   // duplicate elimination
-  if (verbose > 0 || seen_errors[se.errsrc_chain()]++ < 1)
+  if (verbose > 0 || seen_errors[se.errsrc_chain()] < 1)
     {
+      seen_errors[se.errsrc_chain()]++;
       for (const semantic_error *e = &se; e != NULL; e = e->get_chain())
-        if (verbose > 1 || seen_errors[e->errsrc]++ < 1) // dupe-eliminate chained errors too
-          cerr << build_error_msg(*e);
+        if (verbose > 1 || seen_errors[e->errsrc] < 1) // dupe-eliminate chained errors too
+          {
+            seen_errors[e->errsrc]++;
+            cerr << build_error_msg(*e);
+          }
     }
   else suppressed_errors++;
 }
