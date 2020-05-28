@@ -36,14 +36,17 @@ probe dw_syscall.clone = kernel.function("_do_fork").call !,
 		stack_size = $stack_size
 	}	
 %)
-	clone_flags = $clone_flags
-	stack_start = $stack_start
-	parent_tid_uaddr = $parent_tidptr
-	child_tid_uaddr = $child_tidptr
+        clone_flags = @choose_defined($args->flags,$clone_flags)
+        stack_start = @choose_defined($args->stack,$stack_start)
+        parent_tid_uaddr = @choose_defined($args->parent_tid,$parent_tidptr)
+        child_tid_uaddr = @choose_defined($args->child_tid,$child_tidptr)
 
 %( arch != "ia64" %?
-	argstr = sprintf("%s, %p, %p, %p", __fork_flags($clone_flags),
-	                 $stack_start, $parent_tidptr, $child_tidptr)
+	argstr = sprintf("%s, %p, %p, %p",
+                         __fork_flags(@choose_defined($args->flags,$clone_flags)),
+                         @choose_defined($args->stack,$stack_start),
+                         @choose_defined($args->parent_tid,$parent_tidptr),
+                         @choose_defined($args->child_tid,$child_tidptr))
 %:
 	if (__nr == @const("__NR_clone"))
 		argstr = sprintf("%s, %p, %p, %p", __fork_flags($clone_flags),
