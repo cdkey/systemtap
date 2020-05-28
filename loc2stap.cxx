@@ -690,6 +690,18 @@ location_context::translate (const Dwarf_Op *expr, const size_t len,
 	    }
 	    break;
 
+          case DW_OP_GNU_push_tls_address:
+            {
+              POP(addr);
+              functioncall *fc = new functioncall;
+              fc->tok = e->tok;
+              fc->function = std::string("__push_tls_address");
+              fc->synthetic = true;
+              fc->args.push_back(addr);
+	      PUSH(fc);
+            }
+            break;
+            
 	  default:
 	    DIE ("unhandled DW_OP operation");
 	    break;

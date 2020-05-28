@@ -2382,6 +2382,7 @@ systemtap_session::print_error (const semantic_error& se)
   if (verbose > 0 || seen_errors[se.errsrc_chain()] < 1)
     {
       seen_errors[se.errsrc_chain()]++;
+      cerr << build_error_msg(se);
       for (const semantic_error *e = &se; e != NULL; e = e->get_chain())
         if (verbose > 1 || seen_errors[e->errsrc] < 1) // dupe-eliminate chained errors too
           {

@@ -2941,7 +2941,8 @@ symresolution_info::visit_functioncall (functioncall* e)
   else
     {
       string sugs = levenshtein_suggest(e->function, collect_functions(), 5); // print 5 funcs
-      throw SEMANTIC_ERROR(_F("unresolved function%s",
+      throw SEMANTIC_ERROR(_F("unresolved function %s%s",
+                              string(e->function).c_str(),
                               sugs.empty() ? "" : (_(" (similar: ") + sugs + ")").c_str()),
                            e->tok);
     }
