@@ -3020,7 +3020,8 @@ symresolution_info::find_var (const string& name, int arity, const token* tok)
           {
             vardecl* v = session.globals[i];
 	    stapfile* f = tok->location.file;
-            if (!session.is_user_file(f->name) && v->tok && v->tok->location.file != f && !f->synthetic)
+            if (!session.is_user_file(f->name) && v->tok && v->tok->location.file != f && !f->synthetic
+                && session.is_user_file(v->tok->location.file->name))
               {
                 session.print_warning (_F("cross-file global variable reference to %s from",
                                           lex_cast(*v->tok).c_str()), tok);
