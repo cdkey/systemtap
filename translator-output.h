@@ -40,7 +40,15 @@ public:
   
   std::ostream& newline (int indent = 0);
   void indent (int indent = 0);
-  void assert_0_indent () { o << std::flush; assert (tablevel == 0); }
+
+  // NB: don't bother assert upon tablevel != 0.  Some pass-3 exceptions
+  // can be thrown that bypass o->indent() cleanups, which can cause
+  // these failures.
+  // At the worst, the generated C code will be uncompilable.  But that's
+  // OK, we will have printed an error message already, so -p4 won't be
+  // attempted.
+  void assert_0_indent () { o << std::flush; }
+  
   std::ostream& line();
 
   std::ostream::pos_type tellp() { return o.tellp(); }
