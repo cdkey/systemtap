@@ -35,9 +35,34 @@
 #endif
 
 /* deprecation: struct compat_*time* aliases moved to this header */
-#ifdef STAPCONF_TIME32_H
+#if defined(STAPCONF_TIME32_H)
 #include <linux/time32.h>
+/* further deprecation: struct compat_*time* aliases renamed to old_*time* */
+#elif defined(STAPCONF_TIME32_OLD_H)
+#include <linux/time32.h>
+#define compat_time_t          old_time32_t
+#define compat_timeval         old_timeval32
+#define timeval                old_timeval32             
+#define compat_timespec        old_timespec32
+#define timespec               old_timespec32             
+#define compat_itimerspec      old_itimerspec32
+#define itimerspec             old_itimerspec32
+#define ns_to_compat_timeval   ns_to_old_timeval32
+#define get_compat_itimerspec64        get_old_itimerspec32
+#define put_compat_itimerspec64        put_old_itimerspec32
+#define compat_get_timespec64  get_old_timespec32
+#define compat_put_timespec64  put_old_timespec32
+/* in kernel/time/itimer.c */             
+struct old_itimerval32 {
+       struct old_timeval32    it_interval;
+       struct old_timeval32    it_value;
+     };
+#define compat_itimerval old_itimerval32
+#define itimerval        old_itimerval32
+#define timex            old_timex32
 #endif
+
+             
   
 /*
 * Simple lookup functions for mapping values to names
@@ -162,12 +187,12 @@ function _struct_timeval_u:string(uaddr:long, n:long)
 			if (n == 2)
 				snprintf(STAP_RETVALUE, MAXSTRINGLEN,
 					 "[%ld.%06ld][%ld.%.06ld]", 
-					 tv[0].tv_sec, tv[0].tv_usec,
-					 tv[1].tv_sec, tv[1].tv_usec);
+					 (long)tv[0].tv_sec, (long)tv[0].tv_usec,
+					 (long)tv[1].tv_sec, (long)tv[1].tv_usec);
 			else
 				snprintf(STAP_RETVALUE, MAXSTRINGLEN,
-					 "[%ld.%06ld]", tv[0].tv_sec,
-					 tv[0].tv_usec);
+					 "[%ld.%06ld]", (long)tv[0].tv_sec,
+					 (long)tv[0].tv_usec);
 	   	}
 		else
 			snprintf(STAP_RETVALUE, MAXSTRINGLEN, "0x%lx",
@@ -350,7 +375,7 @@ function _struct_timespec_u:string(uaddr:long, n:long)
 					len = snprintf(ptr, MAXSTRINGLEN,
 						       "[%ld.%09ld]",
 						       (long)ts[i].tv_sec,
-						       ts[i].tv_nsec);
+						       (long)ts[i].tv_nsec);
 				ptr += len;
 				i++;
 			}
@@ -5269,7 +5294,7 @@ function _struct_timex_u:string(uaddr:long)
 			len = strlen(STAP_RETVALUE);
 			snprintf(STAP_RETVALUE + len, MAXSTRINGLEN - len,
 			         ", constant=%lu, esterror=%lu, freq=%lu, maxerror=%lu, offset=%lu, precision=%lu, status=%d, tick=%lu, tolerance=%lu}",
-			         ts.constant, ts.esterror, ts.freq, ts.maxerror, ts.offset, ts.precision, ts.status, ts.tick, ts.tolerance);
+                                 (long)ts.constant, (long)ts.esterror, (long)ts.freq, (long)ts.maxerror, (long)ts.offset, (long)ts.precision, ts.status, (long)ts.tick, (long)ts.tolerance);
 
 		}
 		else
