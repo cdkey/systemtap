@@ -99,7 +99,7 @@ set exp_out ""
 is "${test_name}: stdout" $out $exp_out
 isnt "${test_name}: exit code" $exit_code 0
 
-set stderr_pat "^semantic error: unresolved function \\(similar: \[^\\n\]*?\\): identifier 'abort' at \[^\\n\]*?\\.stp:3:5\\n"
+set stderr_pat "^semantic error: unresolved function.*\\(similar: \[^\\n\]*?\\): identifier 'abort' at \[^\\n\]*?\\.stp:3:5\\n"
 like "${test_name}: stderr" $stderr $stderr_pat "-linestop -lineanchor"
 
 # --- TEST 6 ---
