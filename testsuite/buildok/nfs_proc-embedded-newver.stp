@@ -1,0 +1,15 @@
+#! stap -p4 --compatible=4.3
+  
+probe kernel.function("do_exit") {
+        print (AF_INET() +
+               AF_INET6() +
+               get_prot_from_client(0) +
+               get_prot(0) +
+               //__nfsv4_bitmask (0,0) +
+%( systemtap_v < "2.3" %?
+               __getfh_inode (0) +
+%)
+               0)
+	print("%s%s", get_ip_from_client(0), get_ip(0))
+}
+

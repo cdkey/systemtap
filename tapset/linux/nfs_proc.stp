@@ -65,9 +65,9 @@ function NFS_PROTO:long(inode:long)
 			       @cast(nfsserver, "nfs_server", "kernel:nfs")->rpc_ops)
 }
 
-
 /* Get ip address from a rpc_clnt */
-function get_ip_from_client:long(clnt:long)
+%( systemtap_v >= "4.3" %?
+function get_ip_from_client:string(clnt:long)
 {
 	cl_xprt = @cast(clnt, "rpc_clnt", "kernel:sunrpc")->cl_xprt
 	addr = &@cast(cl_xprt, "rpc_xprt", "kernel:sunrpc")->addr
@@ -75,13 +75,29 @@ function get_ip_from_client:long(clnt:long)
 	/* In reality, 'cl_xprt->addr' is of 'sockaddr_storage' type
 	 * (since 2.6.19). But when used, you cast it to what is
 	 * inside that buffer. */
+	if (@cast(addr, "sockaddr")->sa_family
+		== @const("AF_INET")) {
+		return format_ipaddr(&@cast(addr, "sockaddr_in")->sin_addr->s_addr, @const("AF_INET"))
+	}
+	else if (@cast(addr, "sockaddr")->sa_family 
+		== @const("AF_INET6"))  {
+		return format_ipaddr(&@cast(addr, "sockaddr_in6")->sin6_addr, @const("AF_INET6"))
+	}
+	return ""	
+}
+%:
+funcion get_ip_from_client:long(clnt:long)
+{
+	cl_xprt = @cast(clnt, "rpc_clnt", "kernel:sunrpc")->cl_xprt
+        addr = &@cast(cl_xprt, "rpc_xprt", "kernel:sunrpc")->addr
 	if (@cast(addr, "sockaddr_in")->sin_family
-		!= %{ /* pure */ /* unprivileged */ AF_INET %}) {
-		/* Now consider ipv4 only */
-		return 0
+-               != %{ /* pure */ /* unprivileged */ AF_INET %}) {
+-               /* Now consider ipv4 only */
+-               return 0
 	}
 	return @cast(addr, "sockaddr_in")->sin_addr->s_addr
 }
+%)
 
 /* Get protocol types from a rpc_clnt */
 function get_prot_from_client:long(clnt:long)
@@ -91,11 +107,19 @@ function get_prot_from_client:long(clnt:long)
 }
 
 /* Get ip address from a rpc_task */
+%( systemtap_v >= "4.3" %?
+function get_ip:string(task:long)
+{
+        clnt = @cast(task, "rpc_task", "kernel:sunrpc")->tk_client
+        return get_ip_from_client(clnt)
+}
+%:
 function get_ip:long(task:long)
 {
-	clnt = @cast(task, "rpc_task", "kernel:sunrpc")->tk_client
-	return get_ip_from_client(clnt)
+        clnt = @cast(task, "rpc_task", "kernel:sunrpc")->tk_client
+        return get_ip_from_client(clnt)
 }
+%)
 
 /* Get protocol types from a rpc_task */
 function get_prot:long(task:long)

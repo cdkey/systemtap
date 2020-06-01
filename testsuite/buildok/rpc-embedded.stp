@@ -1,7 +1,7 @@
-#! stap -p4 --compatible=2.9
+#! stap -p4 --compatible=4.6
 
-probe begin {
-   print (__rpc_prot_from_protocol (0) +
+probe kernel.function("do_exit") {
+   print (//__rpc_prot_from_protocol (0) +
    	  xid_from_clnt (0) +
  	  prog_from_clnt (0) +
 	  vers_from_clnt (0) +
