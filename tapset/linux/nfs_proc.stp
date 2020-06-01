@@ -86,14 +86,14 @@ function get_ip_from_client:string(clnt:long)
 	return ""	
 }
 %:
-funcion get_ip_from_client:long(clnt:long)
+function get_ip_from_client:long(clnt:long)
 {
 	cl_xprt = @cast(clnt, "rpc_clnt", "kernel:sunrpc")->cl_xprt
         addr = &@cast(cl_xprt, "rpc_xprt", "kernel:sunrpc")->addr
 	if (@cast(addr, "sockaddr_in")->sin_family
--               != %{ /* pure */ /* unprivileged */ AF_INET %}) {
--               /* Now consider ipv4 only */
--               return 0
+		!= @const("AF_INET")) {
+               /* Now consider ipv4 only */
+               return 0
 	}
 	return @cast(addr, "sockaddr_in")->sin_addr->s_addr
 }
