@@ -41,7 +41,7 @@
 // For now, disable the task_work_queue on non-RT kernels.
 // XXX: Need to decide correct CONFIG_* to check for,
 // sticking with the more conservative option for now.
-#ifdef CONFIG_PREEMPT_RT_FULL
+#if defined(CONFIG_PREEMPT_RT_FULL) || defined(CONFIG_PREEMPT_RT)
 #define STP_UTRACE_USE_TASK_WORK_QUEUE
 #endif
 /* If STP_UTRACE_USE_TASK_WORK_QUEUE is defined, reporting work

@@ -17,7 +17,7 @@
 
 #include <linux/spinlock.h>
 
-#ifdef CONFIG_PREEMPT_RT_FULL
+#if defined(CONFIG_PREEMPT_RT_FULL) || defined(CONFIG_PREEMPT_RT)
 
 #define stp_spinlock_t raw_spinlock_t
 

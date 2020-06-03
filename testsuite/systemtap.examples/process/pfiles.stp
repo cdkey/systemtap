@@ -88,8 +88,8 @@
 
 # XXX: For the time being, mark this example as not working on PREEMPT_RT kernels:
 %{
-#ifdef CONFIG_PREEMPT_RT_FULL
-#error "pfiles.stp not supported on CONFIG_PREEMPT_RT_FULL kernels"
+#if defined(CONFIG_PREEMPT_RT_FULL) || defined(CONFIG_PREEMPT_RT)
+#error "pfiles.stp not supported on PREEMPT_RT kernels"
 #endif
 %}
 
