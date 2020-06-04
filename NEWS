@@ -2778,3 +2778,6 @@
 
 - Many minor bug fixes, performance, tapset, and error message
   improvements.
+
+- probe aliases starting with nfs.proc support IPv6 as server_ip and client_ip.
+  Also, ip are represented with string valued now.
