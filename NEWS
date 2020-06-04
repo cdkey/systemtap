@@ -1,5 +1,8 @@
 * What's new in version 4.3, PRERELEASE
 
+- probe aliases starting with nfs.proc support IPv6 as server_ip and client_ip.
+  Also, ip are represented with string valued now.
+
 - The target of process probes may be specified by hexadecimal buildid
   as an alternative to path names.  This makes it possible to probe a
   variety of versions or aliases of a program, even if they are
@@ -2778,6 +2781,3 @@
 
 - Many minor bug fixes, performance, tapset, and error message
   improvements.
-
-- probe aliases starting with nfs.proc support IPv6 as server_ip and client_ip.
-  Also, ip are represented with string valued now.
