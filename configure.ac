@@ -597,7 +597,7 @@ if test $enable_translator = yes; then
     # merged into libdw
     # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=457543
     save_LIBS="$LIBS"
-    AC_CHECK_LIB(ebl, ebl_get_elfmachine,[ebl_LIBS=-lebl],[ebl_LIBS=])
+    AC_CHECK_LIB(ebl, ebl_strtabinit,[ebl_LIBS=-lebl],[ebl_LIBS=])
     LIBS="$save_LIBS"
 
     save_LIBS="$LIBS"

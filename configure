@@ -11533,9 +11533,9 @@ if test $enable_translator = yes; then
     # merged into libdw
     # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=457543
     save_LIBS="$LIBS"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ebl_get_elfmachine in -lebl" >&5
-$as_echo_n "checking for ebl_get_elfmachine in -lebl... " >&6; }
-if ${ac_cv_lib_ebl_ebl_get_elfmachine+:} false; then :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ebl_strtabinit in -lebl" >&5
+$as_echo_n "checking for ebl_strtabinit in -lebl... " >&6; }
+if ${ac_cv_lib_ebl_ebl_strtabinit+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -11549,27 +11549,27 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char ebl_get_elfmachine ();
+char ebl_strtabinit ();
 int
 main ()
 {
-return ebl_get_elfmachine ();
+return ebl_strtabinit ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_ebl_ebl_get_elfmachine=yes
+  ac_cv_lib_ebl_ebl_strtabinit=yes
 else
-  ac_cv_lib_ebl_ebl_get_elfmachine=no
+  ac_cv_lib_ebl_ebl_strtabinit=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ebl_ebl_get_elfmachine" >&5
-$as_echo "$ac_cv_lib_ebl_ebl_get_elfmachine" >&6; }
-if test "x$ac_cv_lib_ebl_ebl_get_elfmachine" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ebl_ebl_strtabinit" >&5
+$as_echo "$ac_cv_lib_ebl_ebl_strtabinit" >&6; }
+if test "x$ac_cv_lib_ebl_ebl_strtabinit" = xyes; then :
   ebl_LIBS=-lebl
 else
   ebl_LIBS=
