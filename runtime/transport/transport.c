@@ -16,6 +16,7 @@
 
 #include "transport.h"
 #include "control.h"
+#include "../sym.h"
 #include <linux/debugfs.h>
 #include <linux/namei.h>
 #include <linux/delay.h>
@@ -215,6 +216,69 @@ static void _stp_handle_start(struct _stp_msg_start *st)
 	}
 }
 
+#if defined(CONFIG_KALLSYMS) && !defined(STAPCONF_KALLSYMS_LOOKUP_NAME_EXPORTED)
+unsigned _stp_need_kallsyms_stext;
+#endif
+
+// PR26074: Most kallsyms_lookup_name() calls are done in appropriate
+// subsystem init() functions, but a handful are done at module load
+// time:
+static int _stp_handle_kallsyms_lookups(void)
+{
+/* PR13489, missing inode-uprobes symbol-export workaround */
+#if !defined(STAPCONF_TASK_USER_REGSET_VIEW_EXPORTED) && !defined(STAPCONF_UTRACE_REGSET) /* RHEL5 era utrace */
+        kallsyms_task_user_regset_view = (void*) kallsyms_lookup_name ("task_user_regset_view");
+        /* There exist interesting kernel versions without task_user_regset_view(), like ARM before 3.0.
+           For these kernels, uprobes etc. are out of the question, but plain kernel stap works fine.
+           All we have to accomplish is have the loc2c runtime code compile.  For that, it's enough
+           to leave this pointer zero. */
+        if (kallsyms_task_user_regset_view == NULL) {
+                ;
+        }
+#endif
+#if defined(CONFIG_UPROBES) // i.e., kernel-embedded uprobes
+#if !defined(STAPCONF_UPROBE_REGISTER_EXPORTED)
+        kallsyms_uprobe_register = (void*) kallsyms_lookup_name ("uprobe_register");
+        if (kallsyms_uprobe_register == NULL) {
+                kallsyms_uprobe_register = (void*) kallsyms_lookup_name ("register_uprobe");
+        }
+        if (kallsyms_uprobe_register == NULL) {
+                _stp_error("Can't resolve uprobe_register!");
+                goto err0;
+        }
+#endif
+#if !defined(STAPCONF_UPROBE_UNREGISTER_EXPORTED)
+        kallsyms_uprobe_unregister = (void*) kallsyms_lookup_name ("uprobe_unregister");
+        if (kallsyms_uprobe_unregister == NULL) {
+                kallsyms_uprobe_unregister = (void*) kallsyms_lookup_name ("unregister_uprobe");
+        }
+        if (kallsyms_uprobe_unregister == NULL) {
+                _stp_error("Can't resolve uprobe_unregister!");
+                goto err0;
+        }
+#endif
+#if !defined(STAPCONF_UPROBE_GET_SWBP_ADDR_EXPORTED)
+        kallsyms_uprobe_get_swbp_addr = (void*) kallsyms_lookup_name ("uprobe_get_swbp_addr");
+        if (kallsyms_uprobe_get_swbp_addr == NULL) {
+                _stp_error("Can't resolve uprobe_get_swbp_addr!");
+                goto err0;
+        }
+#endif
+#endif
+#if defined(CONFIG_KALLSYMS) && !defined(STAPCONF_KALLSYMS_LOOKUP_NAME_EXPORTED)
+        {
+                uint64_t address;
+                if (_stp_need_kallsyms_stext) {
+                        address = kallsyms_lookup_name("_stext");
+                        _stp_set_stext(address);
+                        _stp_need_kallsyms_stext = 0;
+                }
+        }
+#endif
+        return 0;
+err0:
+        return -1;
+}
 
 // _stp_cleanup_and_exit: handle STP_EXIT and cleanup_module
 //
@@ -406,45 +470,30 @@ static int _stp_transport_init(void)
 #endif
 #endif
 
-/* PR13489, missing inode-uprobes symbol-export workaround */
-#if !defined(STAPCONF_TASK_USER_REGSET_VIEW_EXPORTED) && !defined(STAPCONF_UTRACE_REGSET) /* RHEL5 era utrace */
-        kallsyms_task_user_regset_view = (void*) kallsyms_lookup_name ("task_user_regset_view");
-        /* There exist interesting kernel versions without task_user_regset_view(), like ARM before 3.0.
-           For these kernels, uprobes etc. are out of the question, but plain kernel stap works fine.
-           All we have to accomplish is have the loc2c runtime code compile.  For that, it's enough
-           to leave this pointer zero. */
-        if (kallsyms_task_user_regset_view == NULL) {
-                ;
-        }
+        /* PR26074: kallsyms_lookup_name() invocations are now performed later.
+           Just in case, we should init some of the variables to NULL. */
+#if !defined(STAPCONF_TASK_USER_REGSET_VIEW_EXPORTED)
+        kallsyms_task_user_regset_view = NULL;
 #endif
 #if defined(CONFIG_UPROBES) // i.e., kernel-embedded uprobes
 #if !defined(STAPCONF_UPROBE_REGISTER_EXPORTED)
-        kallsyms_uprobe_register = (void*) kallsyms_lookup_name ("uprobe_register");
-        if (kallsyms_uprobe_register == NULL) {
-		kallsyms_uprobe_register = (void*) kallsyms_lookup_name ("register_uprobe");
-        }
-        if (kallsyms_uprobe_register == NULL) {
-                printk(KERN_ERR "%s can't resolve uprobe_register!", THIS_MODULE->name);
-                goto err0;
-        }
+        kallsyms_uprobe_register = NULL;
 #endif
 #if !defined(STAPCONF_UPROBE_UNREGISTER_EXPORTED)
-        kallsyms_uprobe_unregister = (void*) kallsyms_lookup_name ("uprobe_unregister");
-        if (kallsyms_uprobe_unregister == NULL) {
-		kallsyms_uprobe_unregister = (void*) kallsyms_lookup_name ("unregister_uprobe");
-        }
-        if (kallsyms_uprobe_unregister == NULL) {
-                printk(KERN_ERR "%s can't resolve uprobe_unregister!", THIS_MODULE->name);
-                goto err0;
-        }
+        kallsyms_uprobe_unregister = NULL;
 #endif
 #if !defined(STAPCONF_UPROBE_GET_SWBP_ADDR_EXPORTED)
-        kallsyms_uprobe_get_swbp_addr = (void*) kallsyms_lookup_name ("uprobe_get_swbp_addr");
-        if (kallsyms_uprobe_get_swbp_addr == NULL) {
-                printk(KERN_ERR "%s can't resolve uprobe_get_swbp_addr!", THIS_MODULE->name);
-                goto err0;
-        }
+        kallsyms_uprobe_get_swbp_addr = NULL;
 #endif
+#endif
+#if !defined(STAPCONF_KALLSYMS_LOOKUP_NAME_EXPORTED)
+        _stp_kallsyms_lookup_name = NULL;
+#endif
+#if defined(STAPCONF_KALLSYMS_ON_EACH_SYMBOL) && !defined(STAPCONF_KALLSYMS_ON_EACH_SYMBOL_EXPORTED)
+        _stp_kallsyms_on_each_symbol = NULL;
+#endif
+#if defined(CONFIG_KALLSYMS) && !defined(STAPCONF_KALLSYMS_LOOKUP_NAME_EXPORTED)
+        _stp_need_kallsyms_stext = 0;
 #endif
 
 	if (_stp_bufsize) {

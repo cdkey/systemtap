@@ -62,7 +62,11 @@ enum
 	    into the module).  */
 	STP_READY,
 	/** Send by staprun at startup to notify module of where the kernel
-	    (_stext) and all other modules are loaded.  */
+	    (_stext) and all other modules are loaded.
+
+            PR26074: Also used to pass addresses of some unexported
+            kernel functions, most notably kallsyms_lookup_name (which
+            is used to retrieve yet other unexported functions). */
         STP_RELOCATION,
 	/** Never used.  deprecated STP_TRANSPORT_VERSION == 1 **/
 	STP_BUF_INFO,

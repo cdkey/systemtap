@@ -16,6 +16,27 @@
 #error "Need CONFIG_KPROBES!"
 #endif
 
+// PR26074: if kallsyms_on_each_symbol() is not exported we try to get it via relocations.
+// Need to define the runtime.h variable here to check if it's defined from kprobes.c.
+// (This code would go in a header if it were used anywhere else.)
+//
+// PR11514: kallsyms_on_each_symbol() should not be used on PPC64.
+#ifndef CONFIG_PPC64
+#define STAPCONF_KALLSYMS_ON_EACH_SYMBOL
+#if !defined(STAPCONF_KALLSYMS_ON_EACH_SYMBOL_EXPORTED)
+extern void *_stp_kallsyms_on_each_symbol;
+#endif
+#endif
+
+#if defined(STAPCONF_KALLSYMS_ON_EACH_SYMBOL) && defined(STAPCONF_KALLSYMS_ON_EACH_SYMBOL_EXPORTED)
+#define USE_KALLSYMS_ON_EACH_SYMBOL (1)
+#elif defined(STAPCONF_KALLSYMS_ON_EACH_SYMBOL)
+// XXX May not be available; if available, is passed through relocation:
+#define USE_KALLSYMS_ON_EACH_SYMBOL (_stp_kallsyms_on_each_symbol != NULL)
+#else
+#define USE_KALLSYMS_ON_EACH_SYMBOL (0)
+#endif
+
 #include <linux/kprobes.h>
 #include <linux/module.h>
 
@@ -136,15 +157,14 @@ stapkp_prepare_kprobe(struct stap_kprobe_probe *skp)
       kp->addr = (void *) addr;
    }
    else {
-#ifdef STAPCONF_KALLSYMS_ON_EACH_SYMBOL
       // If we're doing symbolic name + offset probing (that gets
       // converted to an address), it doesn't really matter if the
       // symbol is in a module and the module isn't loaded right
       // now. The registration will fail, but will get tried again
       // when the module is loaded.
-      if (kp->addr == 0)
+      if (USE_KALLSYMS_ON_EACH_SYMBOL && kp->addr == 0)
 	 return 1;
-#else
+
       // If we don't have kallsyms_on_each_symbol(), we'll use
       // symbol_name+offset probing and let
       // register_kprobe()/register_kretprobe() call
@@ -170,7 +190,6 @@ stapkp_prepare_kprobe(struct stap_kprobe_probe *skp)
       kp->symbol_name = (typeof(kp->symbol_name))skp->symbol_name;
 #endif
       kp->offset = skp->offset;
-#endif
    }
 
    kp->pre_handler = &enter_kprobe_probe;
@@ -247,10 +266,8 @@ stapkp_prepare_kretprobe(struct stap_kprobe_probe *skp)
       krp->kp.addr = (void *) addr;
    }
    else {
-#ifdef STAPCONF_KALLSYMS_ON_EACH_SYMBOL
-      if (krp->kp.addr == 0)
+      if (USE_KALLSYMS_ON_EACH_SYMBOL && krp->kp.addr == 0)
 	 return 1;
-#else
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,11,0)
       if (krp->kp.symbol_name == NULL)
 	 krp->kp.symbol_name = kstrdup(skp->symbol_name, STP_ALLOC_FLAGS);
@@ -258,7 +275,6 @@ stapkp_prepare_kretprobe(struct stap_kprobe_probe *skp)
       krp->kp.symbol_name = (typeof(krp->kp.symbol_name))skp->symbol_name;
 #endif
       krp->kp.offset = skp->offset;
-#endif
    }
 
    if (skp->maxactive_p)
@@ -641,7 +657,6 @@ stapkp_refresh_probe(struct stap_kprobe_probe *skp)
 #endif /* LINUX_VERSION_CODE >= 2.6.30 */
 
 
-#ifdef STAPCONF_KALLSYMS_ON_EACH_SYMBOL
 struct stapkp_symbol_data {
    struct stap_kprobe_probe *probes;
    size_t nprobes;			/* number of probes in "probes" */
@@ -699,7 +714,6 @@ stapkp_symbol_callback(void *data, const char *name,
    }
    return 0;
 }
-#endif
 
 
 static int
@@ -708,34 +722,34 @@ stapkp_init(struct stap_kprobe_probe *probes,
 {
    size_t i;
 
-#ifdef STAPCONF_KALLSYMS_ON_EACH_SYMBOL
-   // If we have any symbol_name+offset probes, we need to try to
-   // convert those into address-based probes.
-   size_t probe_max = 0;
-   for (i = 0; i < nprobes; i++) {
-      struct stap_kprobe_probe *skp = &probes[i];
+   if (USE_KALLSYMS_ON_EACH_SYMBOL) {
+     // If we have any symbol_name+offset probes, we need to try to
+     // convert those into address-based probes.
+     size_t probe_max = 0;
+     for (i = 0; i < nprobes; i++) {
+       struct stap_kprobe_probe *skp = &probes[i];
 
-      if (! skp->symbol_name)
+       if (! skp->symbol_name)
 	 continue;
-      ++probe_max;
+       ++probe_max;
+     }
+     if (probe_max > 0) {
+       // Here we're going to try to convert any symbol_name+offset
+       // probes into address probes.
+       struct stapkp_symbol_data sd;
+       dbug_stapkp("looking up %lu probes\n", probe_max);
+       sd.probes = probes;
+       sd.nprobes = nprobes;
+       sd.probe_max = probe_max;
+       sd.modname = NULL;
+       mutex_lock(&module_mutex);
+       preempt_disable();
+       kallsyms_on_each_symbol(stapkp_symbol_callback, &sd);
+       preempt_enable();
+       mutex_unlock(&module_mutex);
+       dbug_stapkp("found %lu probes\n", sd.probe_max);
+     }
    }
-   if (probe_max > 0) {
-      // Here we're going to try to convert any symbol_name+offset
-      // probes into address probes.
-      struct stapkp_symbol_data sd;
-      dbug_stapkp("looking up %lu probes\n", probe_max);
-      sd.probes = probes;
-      sd.nprobes = nprobes;
-      sd.probe_max = probe_max;
-      sd.modname = NULL;
-      mutex_lock(&module_mutex);
-      preempt_disable();
-      kallsyms_on_each_symbol(stapkp_symbol_callback, &sd);
-      preempt_enable();
-      mutex_unlock(&module_mutex);
-      dbug_stapkp("found %lu probes\n", sd.probe_max);
-   }
-#endif
 
    for (i = 0; i < nprobes; i++) {
       struct stap_kprobe_probe *skp = &probes[i];
@@ -775,10 +789,10 @@ stapkp_refresh(const char *modname,
 
    dbug_stapkp("refresh %lu probes with module %s\n", nprobes, modname ?: "?");
 
-#ifdef STAPCONF_KALLSYMS_ON_EACH_SYMBOL
-   if (modname) {
-      size_t probe_max = 0;
-      for (i = 0; i < nprobes; i++) {
+   if (USE_KALLSYMS_ON_EACH_SYMBOL) {
+     if (modname) {
+       size_t probe_max = 0;
+       for (i = 0; i < nprobes; i++) {
 	 struct stap_kprobe_probe *skp = &probes[i];
 
 	 // If this probe is in the same module that is being
@@ -788,9 +802,9 @@ stapkp_refresh(const char *modname,
 	 // address-based probes.
 	 if (skp->module && strcmp(modname, skp->module) == 0
 	     && skp->symbol_name && skp->registered_p == 0)
-	    ++probe_max;
-      }
-      if (probe_max > 0) {
+           ++probe_max;
+       }
+       if (probe_max > 0) {
 	 struct stapkp_symbol_data sd;
 	 sd.probes = probes;
 	 sd.nprobes = nprobes;
@@ -801,9 +815,9 @@ stapkp_refresh(const char *modname,
 	 kallsyms_on_each_symbol(stapkp_symbol_callback, &sd);
 	 preempt_enable();
 	 mutex_unlock(&module_mutex);
-      }
+       }
+     }
    }
-#endif
 
    for (i = 0; i < nprobes; i++) {
 

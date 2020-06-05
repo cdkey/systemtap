@@ -39,6 +39,7 @@ static void _stp_transport_fs_close(void);
 static void _stp_attach(void);
 static void _stp_detach(void);
 static void _stp_handle_start(struct _stp_msg_start *st);
+static int _stp_handle_kallsyms_lookups(void);
 
 static uid_t _stp_uid;
 static gid_t _stp_gid;

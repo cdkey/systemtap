@@ -141,6 +141,13 @@ extern const unsigned _stp_num_modules;
 /* load address, fixup by transport symbols _stp_do_relocation */
 extern unsigned long _stp_kretprobe_trampoline;
 
+#if defined(CONFIG_KALLSYMS) && !defined(STAPCONF_KALLSYMS_LOOKUP_NAME_EXPORTED)
+// PR26074: Signals that we still need to look up _stext and add it to
+// _stp_kretprobe_trampoline.
+extern unsigned _stp_need_kallsyms_stext;
+static void _stp_set_stext(uint64_t address);
+#endif
+
 static unsigned long _stp_kmodule_relocate (const char *module,
 					    const char *section,
 					    unsigned long offset);

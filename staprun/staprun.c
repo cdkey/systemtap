@@ -571,6 +571,10 @@ err:
    modules such as ourselves, but instead the upstream community
    continually shrinks its module-facing interfaces, including this
    stuff, even when users exist.
+
+   PR26074: as of kernel 5.7+ / commit 0bd476e6c671 and under further
+   protest, we must also send the address of kallsyms_lookup_name and
+   kallsyms_for_each_symbol.
 */
 
 
@@ -615,6 +619,9 @@ int send_relocation_kernel ()
     }
   else
     {
+      int found_stext = 0;
+      int found_kallsyms_lookup_name = 0;
+      int found_kallsyms_on_each_symbol = 0;
       int done_with_kallsyms = 0;
       char *line = NULL;
       size_t linesz = 0;
@@ -625,9 +632,10 @@ int send_relocation_kernel ()
             {
               unsigned long long address;
 	      int pos = -1;
-	      if (sscanf (line, "%llx %*c %n", &address, &pos) == 1
-		  && pos != -1
-		  && linesize - pos == sizeof KERNEL_RELOC_SYMBOL
+              if (sscanf (line, "%llx %*c %n", &address, &pos) != 1
+                  || pos == -1)
+                continue; // no symbols here
+	      if (linesize - pos == sizeof KERNEL_RELOC_SYMBOL
 		  && !strcmp(line + pos, KERNEL_RELOC_SYMBOL "\n"))
                 {
                   /* NB: even on ppc, we use the _stext relocation name. */
@@ -635,15 +643,41 @@ int send_relocation_kernel ()
 		  if (rc != 0)
 		    break;
 
-                  /* We need nothing more from the kernel. */
-                  done_with_kallsyms=1;
+                  found_stext=1;
+                }
+              else if (linesize - pos == sizeof "kallsyms_lookup_name"
+                       && !strcmp(line + pos, "kallsyms_lookup_name" "\n"))
+                {
+                  rc = send_a_relocation ("kernel", "kallsyms_lookup_name", address);
+		  if (rc != 0) // non fatal, follows perror()
+                    dbug(1, "Relocation was kallsyms_lookup_name=%llx\n", address);
+
+                  found_kallsyms_lookup_name = 1;
+                }
+              else if (linesize - pos == sizeof "kallsyms_on_each_symbol"
+                       && !strcmp(line + pos, "kallsyms_on_each_symbol" "\n"))
+                {
+                  rc = send_a_relocation ("kernel", "kallsyms_on_each_symbol", address);
+		  if (rc != 0) // non fatal, follows perror()
+                    dbug(1, "Relocation was reloc kallsyms_on_each_symbol=%llx\n", address);
+
+                  found_kallsyms_on_each_symbol = 1;
                 }
             }
+          done_with_kallsyms = found_stext
+            && found_kallsyms_lookup_name
+            && found_kallsyms_on_each_symbol;
         }
       free (line);
       fclose (kallsyms);
-      if (!done_with_kallsyms)
-	return rc;
+
+      /* PR26074: Arguably, failure to find the kallsyms_* symbols may
+       * not be a fatal error. The fallback kallsyms_lookup_name()
+       * function in sym.c then returns 0, but it's barely conceivable
+       * some modules never call it. */
+      /* if (!done_with_kallsyms) */
+      if (!found_stext)
+        return rc;
 
       /* detect note section, send flag if there
        * NB: address=2 represents existed note, the real one in _stp_module

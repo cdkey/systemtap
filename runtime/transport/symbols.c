@@ -30,6 +30,17 @@ struct _stp13_msg_relocation {
         uint64_t address;
 };
 
+static void _stp_set_stext(uint64_t address)
+{
+        if (address == 0)
+                _stp_warn("No load address found _stext.  Kernel probes and addresses may not be available.");
+        else
+                dbug_sym(1, "found kernel _stext load address: 0x%lx\n",
+                         (unsigned long) address);
+        if (_stp_kretprobe_trampoline != (unsigned long) -1)
+                _stp_kretprobe_trampoline += (unsigned long) address;
+}
+
 static void _stp_do_relocation(const char __user *buf, size_t count)
 {
   static struct _stp_msg_relocation msg; /* by protocol, never concurrently used */
@@ -64,17 +75,37 @@ static void _stp_do_relocation(const char __user *buf, size_t count)
   if (!strcmp ("kernel", msg.module)
       && !strcmp ("_stext", msg.reloc)) {
 #ifdef CONFIG_KALLSYMS
+          // PR14555, PR26074: kptr_restrict=2 may hide _stext from
+          // staprun. We fall back by calling kallsyms_lookup_name,
+          // but this may need to be done later once
+          // kallsyms_lookup_name has been passed via relocation:
+#if !defined(STAPCONF_KALLSYMS_LOOKUP_NAME_EXPORTED)
+          if (msg.address == 0)
+                  _stp_need_kallsyms_stext = 1;
+          else
+                  _stp_set_stext(msg.address);
+#else
           if (msg.address == 0)
                   msg.address = kallsyms_lookup_name("_stext");
+          _stp_set_stext(msg.address);
 #endif
-          if (msg.address == 0)
-                  _stp_warn("No load address found _stext.  Kernel probes and addresses may not be available.");
-          else
-                  dbug_sym(1, "found kernel _stext load address: 0x%lx\n",
-                           (unsigned long) msg.address);
-          if (_stp_kretprobe_trampoline != (unsigned long) -1)
-                  _stp_kretprobe_trampoline += (unsigned long) msg.address;
+#else
+          _stp_set_stext(msg.address);
+#endif
   }
+
+#if !defined(STAPCONF_KALLSYMS_LOOKUP_NAME_EXPORTED)
+  if (!strcmp ("kernel", msg.module)
+      && !strcmp ("kallsyms_lookup_name", msg.reloc)) {
+          _stp_kallsyms_lookup_name = (void *) msg.address;
+  }
+#endif
+#if defined(STAPCONF_KALLSYMS_ON_EACH_SYMBOL) && !defined(STAPCONF_KALLSYMS_ON_EACH_SYMBOL_EXPORTED)
+  if (!strcmp ("kernel", msg.module)
+      && !strcmp ("kallsyms_on_each_symbol", msg.reloc)) {
+          _stp_kallsyms_on_each_symbol = (void *) msg.address;
+  }
+#endif
 
   _stp_kmodule_update_address(msg.module, msg.reloc, msg.address);
 }

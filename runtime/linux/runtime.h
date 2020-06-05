@@ -178,6 +178,20 @@ static struct
 #endif
 #endif
 
+// PR26074: Obtain kallsyms_*() addresses from relocations,
+// call via wrapper in runtime/sym.c:
+#if !defined(STAPCONF_KALLSYMS_LOOKUP_NAME_EXPORTED)
+static void *_stp_kallsyms_lookup_name;
+#endif
+// PR11514: kallsyms_on_each_symbol() should not be used on PPC64.
+#ifndef CONFIG_PPC64
+#define STAPCONF_KALLSYMS_ON_EACH_SYMBOL
+#if !defined(STAPCONF_KALLSYMS_ON_EACH_SYMBOL_EXPORTED)
+// XXX Should not be static, since it is linked into kprobes.c.
+static void *_stp_kallsyms_on_each_symbol;
+#endif
+#endif
+
 // PR13489, inode-uprobes sometimes lacks the necessary SYMBOL_EXPORT's.
 #if !defined(STAPCONF_TASK_USER_REGSET_VIEW_EXPORTED)
 static void *kallsyms_task_user_regset_view;

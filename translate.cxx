@@ -1800,6 +1800,12 @@ c_unparser::emit_module_init ()
       // sleep.
       o->newline() << "might_sleep();";
 
+      // PR26074: kallsyms lookups that need to happen potentially
+      // *after* getting relocations, in order to have
+      // access to kallsyms_lookup_name():
+      o->newline() << "rc = _stp_handle_kallsyms_lookups();";
+      o->newline() << "if (rc) goto out;";
+
       // Compare actual and targeted kernel releases/machines.  Sometimes
       // one may install the incorrect debuginfo or -devel RPM, and try to
       // run a probe compiled for a different version.  Catch this early,

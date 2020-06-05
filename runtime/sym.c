@@ -1102,17 +1102,52 @@ static void _stp_kmodule_update_address(const char* module,
 }
 
 
-#ifndef STAPCONF_KALLSYMS
+#if !defined(STAPCONF_KALLSYMS_LOOKUP_NAME_EXPORTED)
+#define KALLSYMS_H_INCLUDED
+#include <linux/kallsyms.h>
+typedef typeof(&kallsyms_lookup_name) kallsyms_lookup_name_fn;
+
+// XXX Will be linked in place of the kernel's kallsyms_lookup_name:
 unsigned long kallsyms_lookup_name (const char *name)
 {
-        /* NB: PR14804: don't use _stp_error here.  It's called too
-           early for the actual message buffer goo to be allocated. */
-        /* Don't even printk.  A user can't do anything about it. */
+        /* First, try to use a kallsyms_lookup_name address passed to us
+           through the relocation mechanism. */
+        if (_stp_kallsyms_lookup_name != NULL)
+                return (* (kallsyms_lookup_name_fn)_stp_kallsyms_lookup_name)(name);
+
+        /* NB: PR14804: definitely don't use _stp_error here.  It's called
+           too early for the actual message buffer goo to be allocated. */
+        /* Don't even printk.  A user can't do anything about it, and some
+           callers may want to retry at a later point when the relocation
+           might be available. */
         /* printk (KERN_ERR "kallsyms_lookup_name unavailable for %s\n", name); */
         return 0;
 }
 #endif
 
+#if defined(STAPCONF_KALLSYMS_ON_EACH_SYMBOL) && !defined(STAPCONF_KALLSYMS_ON_EACH_SYMBOL_EXPORTED)
+#ifndef KALLSYMS_H_INCLUDED
+#include <linux/kallsyms.h>
+#endif
+typedef typeof(&kallsyms_on_each_symbol) kallsyms_on_each_symbol_fn;
+
+// XXX Will be linked in place of the kernel's kallsyms_on_each_symbol:
+int kallsyms_on_each_symbol(int (*fn)(void *, const char *, struct module *,
+				      unsigned long),
+                            void *data)
+{
+        /* First, try to use a kallsyms_lookup_name address passed to us
+           through the relocation mechanism. */
+        if (_stp_kallsyms_on_each_symbol != NULL)
+                return (* (kallsyms_on_each_symbol_fn)_stp_kallsyms_on_each_symbol)(fn, data);
+
+        /* Next, give up and signal a BUG. We should have detected
+           that this function is not available and used a different
+           mechanism! */
+        _stp_error("BUG: attempting to use unavailable kallsyms_on_each_symbol!!\n");
+        return 0;
+}
+#endif
 
 
 #endif /* _STP_SYM_C_ */

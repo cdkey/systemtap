@@ -399,7 +399,8 @@ compile_pass (systemtap_session& s)
   output_autoconf(s, o, cs, "autoconf-ring_buffer-flags.c", "STAPCONF_RING_BUFFER_FLAGS", NULL);
   output_autoconf(s, o, cs, "autoconf-ring_buffer_lost_events.c", "STAPCONF_RING_BUFFER_LOST_EVENTS", NULL);
   output_autoconf(s, o, cs, "autoconf-ring_buffer_read_prepare.c", "STAPCONF_RING_BUFFER_READ_PREPARE", NULL);
-  output_autoconf(s, o, cs, "autoconf-kallsyms-on-each-symbol.c", "STAPCONF_KALLSYMS_ON_EACH_SYMBOL", NULL);
+  output_exportconf(s, o2, "kallsyms_on_each_symbol", "STAPCONF_KALLSYMS_ON_EACH_SYMBOL_EXPORTED");
+
   output_autoconf(s, o, cs, "autoconf-walk-stack.c", "STAPCONF_WALK_STACK", NULL);
   output_autoconf(s, o, cs, "autoconf-stacktrace_ops-warning.c",
                   "STAPCONF_STACKTRACE_OPS_WARNING", NULL);
@@ -471,7 +472,7 @@ compile_pass (systemtap_session& s)
   output_exportconf(s, o2, "__lock_task_sighand", "STAPCONF___LOCK_TASK_SIGHAND_EXPORTED");
 
   output_autoconf(s, o, cs, "autoconf-pagefault_disable.c", "STAPCONF_PAGEFAULT_DISABLE", NULL);
-  output_exportconf(s, o2, "kallsyms_lookup_name", "STAPCONF_KALLSYMS");
+  output_exportconf(s, o2, "kallsyms_lookup_name", "STAPCONF_KALLSYMS_LOOKUP_NAME_EXPORTED");
   output_autoconf(s, o, cs, "autoconf-uidgid.c", "STAPCONF_LINUX_UIDGID_H", NULL);
   output_exportconf(s, o2, "sigset_from_compat", "STAPCONF_SIGSET_FROM_COMPAT_EXPORTED");
   output_exportconf(s, o2, "vzalloc", "STAPCONF_VZALLOC");
