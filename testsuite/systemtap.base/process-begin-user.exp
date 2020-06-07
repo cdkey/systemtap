@@ -1,0 +1,97 @@
+set test "process-begin-user"
+set testpath "$srcdir/$subdir"
+
+if {! [installtest_p]} { untested $test; return }
+if {! [uretprobes_p]} { untested $test; return }
+
+# --- TEST 1 ---
+
+set subtest1 "TEST 1: register() in probe process.begin"
+
+set res [target_compile ${testpath}/${test}_1.c ./a.out executable \
+    "additional_flags=-O additional_flags=-g"]
+if {$res ne ""} {
+    verbose "target_compile failed: $res" 2
+    fail "$test: $subtest1: unable to compile ${test}_1.c"
+} else {
+    if {! [process_template_file "$srcdir/$subdir/${test}_1.stp" \
+                                 "./${test}_1.stp" "./a.out" nm_err]} {
+        fail "$test: $subtest1: $nm_err"
+    } else {
+        foreach runtime [get_runtime_list] {
+            if {$runtime eq ""} {
+                set runtime "kernel"
+            }
+            set test_name "$test: $subtest1 ($runtime)"
+            set cmd "stap --runtime=$runtime -c ./a.out './${test}_1.stp'"
+            set exit_code [run_cmd_2way $cmd out stderr]
+            set out_pat "\\Arip: 0x\[1-9a-f\]\[0-9a-f\]*\\nsame uaddr\\n\\Z"
+            like "${test_name}: stdout" $out $out_pat "-lineanchor"
+            is "${test_name}: exit code" $exit_code 0
+            if {$stderr ne ""} {
+                send_log "stderr:\n$stderr"
+            }
+        }
+    }
+}
+
+# --- TEST 2 ---
+
+set subtest2 "TEST 2: register() in probe process.end"
+
+set res [target_compile ${testpath}/${test}_1.c ./a.out executable \
+    "additional_flags=-O additional_flags=-g"]
+if {$res ne ""} {
+    verbose "target_compile failed: $res" 2
+    fail "$test: $subtest2: unable to compile ${test}_1.c"
+} else {
+    if {! [process_template_file "$srcdir/$subdir/${test}_2.stp" \
+                                 "./${test}_2.stp" "./a.out" nm_err]} {
+        fail "$test: $subtest2: $nm_err"
+    } else {
+        foreach runtime [get_runtime_list] {
+            if {$runtime eq ""} {
+                set runtime "kernel"
+            }
+            set test_name "$test: $subtest2 ($runtime)"
+            set cmd "stap --runtime=$runtime -c ./a.out './${test}_2.stp'"
+            set exit_code [run_cmd_2way $cmd out stderr]
+            set exp_out ""
+            is "${test_name}: stdout" $out $exp_out
+            isnt "${test_name}: exit code" $exit_code 0
+            set stderr_pat "ERROR: cannot access CPU registers in this context"
+            like "${test_name}: stderr" $stderr $stderr_pat "-linestop"
+        }
+    }
+}
+
+# --- TEST 3 ---
+
+set subtest3 "TEST 3: @var() in probe process.begin (with vma tracker)"
+
+set res [target_compile ${testpath}/${test}_3.c ./a.out executable \
+    "additional_flags=-O additional_flags=-g additional_flags=-pie additional_flags=-fpic"]
+if {$res ne ""} {
+    verbose "target_compile failed: $res" 2
+    fail "$test: $subtest3: unable to compile ${test}_3.c"
+} else {
+    if {! [process_template_file "$srcdir/$subdir/${test}_3.stp" \
+                                 "./${test}_3.stp" "./a.out" nm_err]} {
+        fail "$test: $subtest3: $nm_err"
+    } else {
+        foreach runtime [get_runtime_list] {
+            if {$runtime eq ""} {
+                set runtime "kernel"
+            }
+            set test_name "$test: $subtest3 ($runtime)"
+            set cmd "stap --runtime=$runtime -c ./a.out './${test}_3.stp'"
+            set exit_code [run_cmd_2way $cmd out stderr]
+            set exp_out "a: 32\n"
+            is "${test_name}: stdout" $out $exp_out
+            is "${test_name}: exit code" $exit_code 0
+            if {$stderr ne ""} {
+                send_log "stderr:\n$stderr"
+            }
+        }
+    }
+}

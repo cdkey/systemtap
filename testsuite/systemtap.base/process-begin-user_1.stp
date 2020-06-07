@@ -1,0 +1,8 @@
+probe process("$^PWD/a.out").begin {
+    printf("rip: 0x%x\n", register("rip"));
+    if (register("rip") != uaddr()) {
+        printf("different uaddr: 0x%x\n", uaddr())
+    } else {
+        printf("same uaddr\n");
+    }
+}

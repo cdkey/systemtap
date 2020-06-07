@@ -138,3 +138,86 @@ proc nok { test_name result } {
     pass "${test_name}: sould NOT be ok: $result"
     return 1
 }
+
+# process_template_file TEMPLATE_FILE OUT_FILE BIN_FILE ERR_VAR
+# Processes the template file specified by the TEMPLATE_FILE argument,
+# expands special macro variables in the template file, and genetates the final
+# .stp file specified by the OUT_FILE argument.
+# The following macro variables are supported:
+# * $^PWD for the current working directory
+# * $^ADDR_NAME for the hex address (without the 0x prefix) for the symbol
+#   named NAME by inspecting the binary target program file BIN_FILE via the
+#   nm utility.
+# Returns 1 when all macro variables are expanded successfully; 0 otherwise.
+# In case of error, the error message will be returned in the variable with
+# the name specified by the 4th argument.
+
+proc process_template_file { template_file out_file bin_file err_var } {
+    upvar 1 $err_var err
+
+    set in [open $template_file r]
+    set src [read $in]
+    close $in
+
+    set cwd [pwd]
+    regsub -all -- {\$\^PWD\y} $src $cwd src
+
+    set matches [regexp -all -inline -- {\$\^ADDR_([_a-zA-Z]\w*)} $src]
+
+    set nsyms 0
+    if {[llength $matches] > 0} {
+        array set names {}
+        foreach {match, name} $matches {
+            if {! [info exists names($name)]} {
+                incr nsyms
+                set names($name) 1
+            }
+        }
+
+        set nm_fh [open "| nm --defined-only ./a.out" r]
+        set hits 0
+        while {[gets $nm_fh line] >= 0} {
+            if {[regexp -- {^\s*([0-9a-f]+)\s+[DT]\s+([_a-zA-Z]\w*)\s*$} $line \
+                    match addr name]} {
+                if {! [info exists names($name)]} {
+                    continue
+                }
+                unset names($name)
+                send_log "found symbol '$name' at addr $addr in the nm output\n"
+                regsub -all -- "\\$\\^ADDR_$name\\y" $src $addr src
+                if {[incr hits] == $nsyms} {
+                    break
+                }
+            }
+        }
+
+        if {[catch {close $nm_fh} nm_err] != 0} {
+            global errorCode
+            if {[lindex $errorCode 0] eq "CHILDSTATUS"} {
+                if {[lindex $errorCode 2] != 0} {
+                    set err "failed to run nm: $nm_err"
+                    return 0
+                }
+            }
+        }
+
+        if {$hits < $nsyms} {
+            set unmatched_names [array names names]
+            if {[llength $unmatched_names] == 1} {
+                set sym [lindex $unmatched_names 0]
+                set err "symbol '$sym' not found in binary file $bin_file"
+                return 0
+            }
+
+            set sym_list [join [lmap e [array names names] { expr {"'$e'"} }] ", "]
+            set err "symbols $sym_list not found in binary file $bin_file"
+            return 0
+        }
+    }
+
+    set out [open $out_file w+]
+    puts -nonewline $out $src
+    close $out
+
+    return 1
+}

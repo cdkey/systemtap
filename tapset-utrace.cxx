@@ -869,6 +869,11 @@ utrace_derived_probe_group::emit_module_linux_decls (systemtap_session& s)
                                      "p->probe",
 				     "stp_probe_type_utrace");
 
+      // make sure tapset funcs like register() work in probe process.begin
+      // and etc.
+      s.op->newline() << "c->uregs = _stp_current_pt_regs();";
+      s.op->newline() << "c->user_mode_p = 1;";
+
       // call probe function
       s.op->newline() << "dbug_task(2, \"calling UDPF probe function\");";
       s.op->newline() << "(*p->probe->ph) (c);";

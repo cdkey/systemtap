@@ -1,0 +1,4 @@
+probe process("$^PWD/a.out").begin {
+    //printf("&a: %d\n", &@var("a", "$^PWD/a.out"));
+    printf("a: %d\n", @var("a", "$^PWD/a.out"));
+}
