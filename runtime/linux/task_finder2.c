@@ -1342,16 +1342,20 @@ __stp_tf_quiesce_worker(struct task_work *work)
 
 	__stp_tf_handler_start();
 
-	/* Call the callbacks.  Assume that if the thread is a
-	 * thread group leader, it is a process. */
-	__stp_call_callbacks(tgt, current, 1, (current->pid == current->tgid));
- 
+	/* NB make sure we run mmap callbacks before other callbacks
+	 * like 'probe process.begin' handlers so that the vma tracker
+	 * is already initialized in the latter contexts */
+
 	/* If this is just a thread other than the thread group
 	 * leader, don't bother inform map callback clients about its
 	 * memory map, since they will simply duplicate each other. */
 	if (tgt->mmap_events == 1 && current->tgid == current->pid) {
 	    __stp_call_mmap_callbacks_for_task(tgt, current);
 	}
+
+	/* Call the callbacks.  Assume that if the thread is a
+	 * thread group leader, it is a process. */
+	__stp_call_callbacks(tgt, current, 1, (current->pid == current->tgid));
 
 	__stp_tf_handler_end();
 
