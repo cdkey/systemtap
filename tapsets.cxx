@@ -9506,17 +9506,10 @@ uprobe_derived_probe_group::emit_module_utrace_decls (systemtap_session& s)
           // only the same fields as we're about to emit.
           s.op->line() << " .finder={";
           s.op->line() << "  .purpose=\"uprobes\",";
+	  
           if (p->pid != 0)
             s.op->line() << " .pid=" << p->pid << ",";
-          if (!p->build_id_val.empty())
-            {
-              s.op->line() << " .build_id=\"" << p->build_id_val << "\",";
-              s.op->line() << " .build_id_len=" << p->build_id_val.size() << ",";
-              s.op->line() << " .build_id_vaddr=" << p->build_id_vaddr << ",";
-            }
-          else
-            s.op->line() << " .build_id_len=0,";
-
+	  
           if (p->section == "") // .statement(addr).absolute
             s.op->line() << " .callback=&stap_uprobe_process_found,";
           else if (p->section == ".absolute") // proxy for ET_EXEC -> exec()'d program
@@ -9526,6 +9519,7 @@ uprobe_derived_probe_group::emit_module_utrace_decls (systemtap_session& s)
             }
 	  else if (p->section != ".absolute") // ET_DYN
             {
+	      // XXX: process("buildid").library("buildid") not supported?
 	      if (p->has_library)
 	        s.op->line() << " .procname=\"" << p->path << "\", ";
               s.op->line() << " .mmap_callback=&stap_uprobe_mmap_found, ";
@@ -9823,58 +9817,6 @@ uprobe_derived_probe_group::emit_module_inode_decls (systemtap_session& s)
   s.op->newline(-1) << "}";
   s.op->assert_0_indent();
 
-  // Index of all the modules for which we need inodes.
-  map<string, unsigned> module_index;
-  unsigned module_index_ctr = 0;
-
-  // Discover and declare targets for each unique path.
-  s.op->newline() << "static struct stapiu_target "
-                  << "stap_inode_uprobe_targets[] = {";
-  s.op->indent(1);
-  for (unsigned i=0; i<probes.size(); i++)
-    {
-      uprobe_derived_probe *p = probes[i];
-      const string key = make_pbm_key(p);
-      if (module_index.find (key) == module_index.end())
-        {
-          module_index[key] = module_index_ctr++;
-          s.op->newline() << "{";
-          s.op->line() << " .finder={";
-          s.op->line() << "  .purpose=\"inode-uprobes\",";
-          if (p->pid != 0)
-            s.op->line() << " .pid=" << p->pid << ",";
-          if (!p->build_id_val.empty())
-            {
-              s.op->line() << " .build_id=\"" << p->build_id_val << "\",";
-              s.op->line() << " .build_id_len=" << p->build_id_val.size() << ",";
-              s.op->line() << " .build_id_vaddr=" << p->build_id_vaddr << "ULL,";
-            }
-          else
-            s.op->line() << " .build_id_len=0,";
-
-          if (p->section == "") // .statement(addr).absolute  XXX?
-            s.op->line() << " .callback=&stapiu_process_found,";
-          else if (p->section == ".absolute") // proxy for ET_EXEC -> exec()'d program
-            {
-              s.op->line() << " .procname=" << lex_cast_qstring(p->module) << ",";
-              s.op->line() << " .callback=&stapiu_process_found,";
-            }
-          else if (p->section != ".absolute") // ET_DYN
-            {
-              if (p->has_library)
-                s.op->line() << " .procname=\"" << p->path << "\", ";
-              s.op->line() << " .mmap_callback=&stapiu_mmap_found, ";
-              s.op->line() << " .munmap_callback=&stapiu_munmap_found, ";
-              s.op->line() << " .callback=&stapiu_process_munmap,";
-            }
-          s.op->line() << " },";
-          s.op->line() << " .filename=" << lex_cast_qstring(p->module) << ",";
-          s.op->line() << " },";
-        }
-    }
-  s.op->newline(-1) << "};";
-  s.op->assert_0_indent();
-
   // Declare the actual probes.
   unsigned pci;
   for (pci=0; pci<probes.size(); pci++)
@@ -9882,6 +9824,9 @@ uprobe_derived_probe_group::emit_module_inode_decls (systemtap_session& s)
       // List of perf counters used by each probe
       // This list is an index into struct stap_perf_probe,
       uprobe_derived_probe *p = probes[pci];
+      if (p->perf_counter_refs.size() == 0)
+	continue;
+
       s.op->newline() << "long perf_counters_" + lex_cast(pci) + "[] = {";
       for (auto pcii = p->perf_counter_refs.begin();
 	   pcii != p->perf_counter_refs.end(); pcii++)
@@ -9903,11 +9848,65 @@ uprobe_derived_probe_group::emit_module_inode_decls (systemtap_session& s)
   for (unsigned i=0; i<probes.size(); i++)
     {
       uprobe_derived_probe *p = probes[i];
-      unsigned index = module_index[make_pbm_key(p)];
+
       s.op->newline() << "{";
       if (p->has_return)
         s.op->line() << " .return_p=1,";
-      s.op->line() << " .target=&stap_inode_uprobe_targets[" << index << "],";
+
+      // emit the task_finder info for this uprobe
+      // This will be duplicated amongst multiple uprobes for the same file,
+      // so there will be some iteration within task-finder.
+      s.op->line() << " .finder={";
+      s.op->line() << "  .purpose=\"inode-uprobes\",";
+      
+      if (p->pid != 0)
+	s.op->line() << " .pid=" << p->pid << ",";
+      
+      if (p->section == "" ||         // .statement(addr).absolute  XXX?
+	  p->section == ".absolute")  // ET_EXEC
+	{
+	  s.op->line() << " .callback=&stapiu_process_found,";
+	  if (!p->build_id_val.empty())
+	    {
+	      s.op->line() << " .build_id=\"" << p->build_id_val << "\",";
+	      s.op->line() << " .build_id_len=" << p->build_id_val.size() << ",";
+	      s.op->line() << " .build_id_vaddr=" << p->build_id_vaddr << "ULL,";
+	    }
+	  else
+	    {
+	      s.op->line() << " .build_id_len=0,";
+	      s.op->line() << " .procname=" << lex_cast_qstring(p->module) << ",";
+	    }
+	}
+      else if (p->section != ".absolute") // ET_DYN
+	{
+	  // XXX: process("buildid1").library("buildid2") probably not quite right yet
+	  
+	  s.op->line() << " .mmap_callback=&stapiu_mmap_found, ";
+	  s.op->line() << " .munmap_callback=&stapiu_munmap_found, ";
+	  s.op->line() << " .callback=&stapiu_process_munmap,";
+	}
+      s.op->line() << " },"; // finished with the task-finder object
+
+      // for shared library probing, we need to configure the stapiu_consumer
+      // rather than (just) the stapiu_consumer.finder (which deals with
+      // tasks only).
+      if (p->section != "" && p->section != ".absolute") // shared library or similar
+	{
+	  if (p->build_id_val.empty())
+	    s.op->line() << " .solib_pathname=" << lex_cast_qstring(p->module) << ",";
+	  else
+	    {
+	      s.op->line() << " .solib_build_id=\"" << p->build_id_val << "\",";
+	      s.op->line() << " .solib_build_id_len=" << p->build_id_val.size() << ",";
+	      s.op->line() << " .solib_build_id_vaddr=" << p->build_id_vaddr << ",";
+	    }
+	}
+
+      // add the _stp_modules[].name key
+      s.op->line() << " .module_name=" << lex_cast_qstring(p->module) << ",";      
+      
+      // add the per-uprobe addresses
       s.op->line() << " .offset=(loff_t)0x" << hex << p->addr << dec << "ULL,";
       if (p->sdt_semaphore_addr)
         s.op->line() << " .sdt_sem_offset=(loff_t)0x"
@@ -9940,8 +9939,6 @@ uprobe_derived_probe_group::emit_module_inode_init (systemtap_session& s)
   // to NULL.
   s.op->newline() << "probe_point = NULL;";
   s.op->newline() << "rc = stapiu_init ("
-                  << "stap_inode_uprobe_targets, "
-                  << "ARRAY_SIZE(stap_inode_uprobe_targets), "
                   << "stap_inode_uprobe_consumers, "
                   << "ARRAY_SIZE(stap_inode_uprobe_consumers));";
 }
@@ -9953,8 +9950,8 @@ uprobe_derived_probe_group::emit_module_inode_refresh (systemtap_session& s)
   if (probes.empty()) return;
   s.op->newline() << "/* ---- inode uprobes ---- */";
   s.op->newline() << "stapiu_refresh ("
-                  << "stap_inode_uprobe_targets, "
-                  << "ARRAY_SIZE(stap_inode_uprobe_targets));";
+                  << "stap_inode_uprobe_consumers, "
+                  << "ARRAY_SIZE(stap_inode_uprobe_consumers));";
 }
 
 
@@ -9964,8 +9961,6 @@ uprobe_derived_probe_group::emit_module_inode_exit (systemtap_session& s)
   if (probes.empty()) return;
   s.op->newline() << "/* ---- inode uprobes ---- */";
   s.op->newline() << "stapiu_exit ("
-                  << "stap_inode_uprobe_targets, "
-                  << "ARRAY_SIZE(stap_inode_uprobe_targets), "
                   << "stap_inode_uprobe_consumers, "
                   << "ARRAY_SIZE(stap_inode_uprobe_consumers));";
 }
