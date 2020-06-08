@@ -1,5 +1,8 @@
 * What's new in version 4.3, PRERELEASE
 
+- tapset functions for reading CPU registers and primitives involved with the
+  process memory maps work in 'probe process.begin'.
+
 - probe aliases starting with nfs.proc support IPv6 as server_ip and client_ip.
   Also, ip are represented with string valued now.
 

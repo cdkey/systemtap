@@ -1412,17 +1412,20 @@ __stp_utrace_task_finder_target_quiesce(enum utrace_resume_action action,
 		_stp_error("utrace_set_events returned error %d on pid %d",
 			   rc, (int)tsk->pid);
 
+	/* NB make sure we run mmap callbacks before other callbacks
+	 * like 'probe process.begin' handlers so that the vma tracker
+	 * is already initialized in the latter contexts */
 
-	/* Call the callbacks.  Assume that if the thread is a
-	 * thread group leader, it is a process. */
-	__stp_call_callbacks(tgt, tsk, 1, (tsk->pid == tsk->tgid));
- 
 	/* If this is just a thread other than the thread group leader,
            don't bother inform map callback clients about its memory map,
            since they will simply duplicate each other. */
 	if (tgt->mmap_events == 1 && tsk->tgid == tsk->pid) {
 		__stp_call_mmap_callbacks_for_task(tgt, tsk);
 	}
+
+	/* Call the callbacks.  Assume that if the thread is a
+	 * thread group leader, it is a process. */
+	__stp_call_callbacks(tgt, tsk, 1, (tsk->pid == tsk->tgid));
 
 	__stp_tf_handler_end();
 	return UTRACE_RESUME;

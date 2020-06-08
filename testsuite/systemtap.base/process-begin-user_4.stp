@@ -1,0 +1,5 @@
+probe process.begin {
+    if (&@var("a", "$^PWD/a.out") != 0) {
+        printf("a: %d\n", @var("a", "$^PWD/a.out"));
+    }
+}

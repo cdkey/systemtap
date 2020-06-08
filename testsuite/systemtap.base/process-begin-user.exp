@@ -39,6 +39,9 @@ if {$res ne ""} {
 
 set subtest2 "TEST 2: register() in probe process.end"
 
+# NB This test case is expected to fail on CentOS 6 on which registers are
+# actually usable in the prcoess.end probe.
+
 set res [target_compile ${testpath}/${test}_1.c ./a.out executable \
     "additional_flags=-O additional_flags=-g"]
 if {$res ne ""} {
@@ -67,7 +70,7 @@ if {$res ne ""} {
 
 # --- TEST 3 ---
 
-set subtest3 "TEST 3: @var() in probe process.begin (with vma tracker)"
+set subtest3 "TEST 3: @var() in probe process(PATH).begin (with vma tracker)"
 
 set res [target_compile ${testpath}/${test}_3.c ./a.out executable \
     "additional_flags=-O additional_flags=-g additional_flags=-pie additional_flags=-fpic"]
@@ -85,6 +88,37 @@ if {$res ne ""} {
             }
             set test_name "$test: $subtest3 ($runtime)"
             set cmd "stap --runtime=$runtime -c ./a.out './${test}_3.stp'"
+            set exit_code [run_cmd_2way $cmd out stderr]
+            set exp_out "a: 32\n"
+            is "${test_name}: stdout" $out $exp_out
+            is "${test_name}: exit code" $exit_code 0
+            if {$stderr ne ""} {
+                send_log "stderr:\n$stderr"
+            }
+        }
+    }
+}
+
+# --- TEST 4 ---
+
+set subtest4 "TEST 4: @var() in probe process.begin (with vma tracker)"
+
+set res [target_compile ${testpath}/${test}_3.c ./a.out executable \
+    "additional_flags=-O additional_flags=-g additional_flags=-pie additional_flags=-fpic"]
+if {$res ne ""} {
+    verbose "target_compile failed: $res" 2
+    fail "$test: $subtest4: unable to compile ${test}_3.c"
+} else {
+    if {! [process_template_file "$srcdir/$subdir/${test}_4.stp" \
+                                 "./${test}_4.stp" "./a.out" nm_err]} {
+        fail "$test: $subtest4: $nm_err"
+    } else {
+        foreach runtime [get_runtime_list] {
+            if {$runtime eq ""} {
+                set runtime "kernel"
+            }
+            set test_name "$test: $subtest4 ($runtime)"
+            set cmd "stap --runtime=$runtime -c ./a.out './${test}_4.stp'"
             set exit_code [run_cmd_2way $cmd out stderr]
             set exp_out "a: 32\n"
             is "${test_name}: stdout" $out $exp_out
