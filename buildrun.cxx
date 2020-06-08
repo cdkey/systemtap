@@ -241,10 +241,8 @@ compile_dyninst (systemtap_session& s)
   if (s.architecture == "i386")
     cmd.push_back("-march=i586");
 
-  // Need this for scripts where tautologies pass through to generated
-  // code.  XXX: but this is gcc-version-dependent
-  cmd.push_back("-Wno-tautological-compare");
-  
+  cmd.push_back("-Wno-pragmas");
+
   for (size_t i = 0; i < s.c_macros.size(); ++i)
     cmd.push_back("-D" + s.c_macros[i]);
 
@@ -566,11 +564,13 @@ compile_pass (systemtap_session& s)
   o << "EXTRA_CFLAGS += $(call cc-option,-fno-ipa-icf)" << endl;
 
   // Assumes linux 2.6 kbuild
-  o << "EXTRA_CFLAGS += -Wno-unused $(call cc-option,-Wno-tautological-compare) " << WERROR
-    << endl;
+  o << "EXTRA_CFLAGS += -Wno-unused " << WERROR << endl;
   #if CHECK_POINTER_ARITH_PR5947
   o << "EXTRA_CFLAGS += -Wpointer-arith" << endl;
   #endif
+
+  // Accept extra diagnostic-suppression pragmas etc.
+  o << "EXTRA_CFLAGS += -Wno-pragmas" << endl;
 
   // PR25845: Recent gcc (seen on 9.3.1) warns fairly common 32-bit pointer-conversions:
   o << "EXTRA_CFLAGS += $(call cc-option,-Wno-pointer-to-int-cast)" << endl;

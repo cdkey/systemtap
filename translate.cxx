@@ -7929,6 +7929,9 @@ translate_pass (systemtap_session& s)
 		      << major << ", " << minor << ")";
       s.op->newline() << "#endif";
 
+      // Some of our generated C code can trigger this harmless diagnostic.
+      s.op->newline() << "#pragma GCC diagnostic ignored \"-Wtautological-compare\"";
+
       recursion_info ri (s);
 
       // NB: we start our traversal from the s.functions[] rather than the probes.
