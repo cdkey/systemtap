@@ -134,13 +134,33 @@ probe ns_capable = kprobe.function("ns_capable")
   cap = 1 << int_arg(2)
 }
 
+#bool ns_capable_noaudit(struct user_namespace *ns, int cap)
+probe ns_capable_noaudit = kprobe.function("ns_capable_noaudit")
+{
+  cap = 1 << int_arg(2)
+}
+
+#bool ns_capable_setid(struct user_namespace *ns, int cap)
+probe ns_capable_setid = kprobe.function("ns_capable_setid")
+{
+  cap = 1 << int_arg(2)
+}
+
 # bool capable(int cap)
 probe capable = kprobe.function("capable")
 {
   cap = 1 << int_arg(1)
 }
 
-probe ns_capable !, capable
+#bool file_ns_capable(const struct file *file, struct user_namespace *ns,
+#		     int cap)
+probe file_ns_capable = kprobe.function("file_ns_capable")
+{
+  cap = 1 << int_arg(3)
+}
+
+probe ns_capable?, ns_capable_noaudit?, ns_capable_setid?,
+      capable?, file_ns_capable?
 {
   if ((cap & badcaps) && child_of_target(task_current()))
     cap_use[tid()] |= cap
