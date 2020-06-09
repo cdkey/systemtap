@@ -28,6 +28,9 @@ struct _stp_buffer {
 };
 
 static struct file_operations _stp_ctl_fops_cmd;
+#ifdef STAPCONF_PROC_OPS
+static struct proc_ops _stp_ctl_proc_ops_cmd;
+#endif
 
 static int _stp_ctl_send(int type, void *data, unsigned len);
 static int _stp_ctl_send_notify(int type, void *data, unsigned len);

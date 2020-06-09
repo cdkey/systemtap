@@ -52,11 +52,18 @@ static ssize_t _stp_proc_write(struct file *file, const char __user *buf, size_t
 	return count;
 }
 
+#ifdef STAPCONF_PROC_OPS
+static struct proc_ops _stp_proc_fops = {
+	.proc_read = _stp_proc_read,
+	.proc_write = _stp_proc_write,
+};
+#else
 static struct file_operations _stp_proc_fops = {
 	.owner = THIS_MODULE,
 	.read = _stp_proc_read,
 	.write = _stp_proc_write,
 };
+#endif
 #endif /* STP_BULKMODE */
 
 inline static int _stp_ctl_write_fs(int type, void *data, unsigned len)
@@ -119,7 +126,11 @@ static int _stp_register_ctl_channel_fs(void)
 			goto err1;
 		de->uid = _stp_uid;
 		de->gid = _stp_gid;
+#ifdef STAPCONF_PROC_OPS
+                de->proc_ops = &_stp_proc_fops;
+#else
 		de->proc_fops = &_stp_proc_fops;
+#endif
 		de->data = _stp_kmalloc(sizeof(int));
 		if (de->data == NULL) {
 			remove_proc_entry(buf, _stp_proc_root);
@@ -136,7 +147,11 @@ static int _stp_register_ctl_channel_fs(void)
 		goto err1;
 	de->uid = _stp_uid;
 	de->gid = _stp_gid;
+#ifdef STAPCONF_PROC_OPS
+        de->proc_ops = &_stp_ctl_proc_ops_cmd;
+#else
 	de->proc_fops = &_stp_ctl_fops_cmd;
+#endif
 
 	return 0;
 

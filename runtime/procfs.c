@@ -187,9 +187,13 @@ static struct proc_dir_entry *_stp_procfs_lookup(const char *dir, struct proc_di
 
 
 static int _stp_create_procfs(const char *path,
-			      const struct file_operations *fops, int perm,
-			      void *data) 
-{  
+#ifdef STAPCONF_PROC_OPS
+                              const struct proc_ops *fops,
+#else
+                              const struct file_operations *fops,
+#endif
+                              int perm, void *data)
+{
 	const char *p; char *next;
 	struct proc_dir_entry *last_dir, *de;
 

@@ -180,6 +180,15 @@ out:
 	return len;
 }
 
+#ifdef STAPCONF_PROC_OPS
+static struct proc_ops _stp_proc_fops = {
+	.proc_open		= _stp_proc_open_file,
+	.proc_read		= _stp_proc_read_file,
+	.proc_write		= _stp_proc_write_file,
+	.proc_lseek		= generic_file_llseek,
+	.proc_release	= _stp_proc_release_file,
+};
+#else
 static struct file_operations _stp_proc_fops = {
 	.owner		= THIS_MODULE,
 	.open		= _stp_proc_open_file,
@@ -188,5 +197,6 @@ static struct file_operations _stp_proc_fops = {
 	.llseek		= generic_file_llseek,
 	.release	= _stp_proc_release_file,
 };
+#endif
 
 #endif /* _STP_PROCFS_PROBES_C_ */

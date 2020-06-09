@@ -713,6 +713,15 @@ static struct file_operations _stp_ctl_fops_cmd = {
 	.release = _stp_ctl_close_cmd,
 	.poll = _stp_ctl_poll_cmd
 };
+#ifdef STAPCONF_PROC_OPS
+static struct proc_ops _stp_ctl_proc_ops_cmd = {
+	.proc_read = _stp_ctl_read_cmd,
+	.proc_write = _stp_ctl_write_cmd,
+	.proc_open = _stp_ctl_open_cmd,
+	.proc_release = _stp_ctl_close_cmd,
+	.proc_poll = _stp_ctl_poll_cmd
+};
+#endif
 
 static int _stp_register_ctl_channel(void)
 {

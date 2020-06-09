@@ -419,6 +419,7 @@ compile_pass (systemtap_session& s)
   output_exportconf(s, o2, "vfs_path_lookup", "STAPCONF_VFS_PATH_LOOKUP");
   output_exportconf(s, o2, "kern_path", "STAPCONF_KERN_PATH");
   output_exportconf(s, o2, "proc_create_data", "STAPCONF_PROC_CREATE_DATA");
+  output_autoconf(s, o, cs, "autoconf-proc_ops.c", "STAPCONF_PROC_OPS", NULL);
   output_exportconf(s, o2, "PDE_DATA", "STAPCONF_PDE_DATA");
   output_autoconf(s, o, cs, "autoconf-module-sect-attrs.c", "STAPCONF_MODULE_SECT_ATTRS", NULL);
 
