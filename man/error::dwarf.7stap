@@ -51,6 +51,18 @@ CFLAGS, and/or try rerunning systemtap with
 .hy
 
 .TP
+linux kbuild damaging debuginfo quality
+An upstream kernel commit #2062afb4f804a put
+\%-fno-var-tracking-assignments into KCFLAGS, dramatically reducing
+debuginfo quality, which can cause debuginfo failures. The simplest
+fix is to \fBerase, excise, nay, eradicate\fP this line from the top
+level linux Makefile:
+
+.SAMPLE
+KBUILD_CFLAGS += [...] -fno-var-tracking-assignments [...]
+.ESAMPLE
+
+.TP
 function inlining
 Even modern gcc sometimes has problems with parameters for inlined functions.
 It may be necessary to change the script to probe at a slightly different place.
