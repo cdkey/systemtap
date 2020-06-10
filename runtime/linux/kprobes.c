@@ -164,32 +164,33 @@ stapkp_prepare_kprobe(struct stap_kprobe_probe *skp)
       // when the module is loaded.
       if (USE_KALLSYMS_ON_EACH_SYMBOL && kp->addr == 0)
 	 return 1;
-
-      // If we don't have kallsyms_on_each_symbol(), we'll use
-      // symbol_name+offset probing and let
-      // register_kprobe()/register_kretprobe() call
-      // kallsyms_lookup_name() for us. However, on kernels < 3.11,
-      // module_kallsyms_lookup_name() (called from
-      // kallsyms_lookup_name()) has a bug where it modifies its
-      // argument. So, for those kernels we'll workaround the bug by
-      // duplicating the string (so we go from read-only memory in the
-      // initialized struct data to read-write allocated memory). The
-      // memory gets freed when the probe is unregistered.
-      //
-      // This bug was fixed in kernel 3.11+ by the following commit:
-      //
-      //   commit 4f6de4d51f4a3ab06a85e91e708cc89a513ef30c
-      //      Author: Mathias Krause <minipli@googlemail.com>
-      //      Date:   Tue Jul 2 15:35:11 2013 +0930
-      //
-      //      module: don't modify argument of module_kallsyms_lookup_name()
+      else if (!USE_KALLSYMS_ON_EACH_SYMBOL) {
+        // If we don't have kallsyms_on_each_symbol(), we'll use
+        // symbol_name+offset probing and let
+        // register_kprobe()/register_kretprobe() call
+        // kallsyms_lookup_name() for us. However, on kernels < 3.11,
+        // module_kallsyms_lookup_name() (called from
+        // kallsyms_lookup_name()) has a bug where it modifies its
+        // argument. So, for those kernels we'll workaround the bug by
+        // duplicating the string (so we go from read-only memory in the
+        // initialized struct data to read-write allocated memory). The
+        // memory gets freed when the probe is unregistered.
+        //
+        // This bug was fixed in kernel 3.11+ by the following commit:
+        //
+        //   commit 4f6de4d51f4a3ab06a85e91e708cc89a513ef30c
+        //      Author: Mathias Krause <minipli@googlemail.com>
+        //      Date:   Tue Jul 2 15:35:11 2013 +0930
+        //
+        //      module: don't modify argument of module_kallsyms_lookup_name()
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,11,0)
-      if (kp->symbol_name == NULL)
-	 kp->symbol_name = kstrdup(skp->symbol_name, STP_ALLOC_FLAGS);
+        if (kp->symbol_name == NULL)
+          kp->symbol_name = kstrdup(skp->symbol_name, STP_ALLOC_FLAGS);
 #else
-      kp->symbol_name = (typeof(kp->symbol_name))skp->symbol_name;
+        kp->symbol_name = (typeof(kp->symbol_name))skp->symbol_name;
 #endif
-      kp->offset = skp->offset;
+        kp->offset = skp->offset;
+      }
    }
 
    kp->pre_handler = &enter_kprobe_probe;
@@ -268,13 +269,15 @@ stapkp_prepare_kretprobe(struct stap_kprobe_probe *skp)
    else {
       if (USE_KALLSYMS_ON_EACH_SYMBOL && krp->kp.addr == 0)
 	 return 1;
+      else if (!USE_KALLSYMS_ON_EACH_SYMBOL) {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,11,0)
-      if (krp->kp.symbol_name == NULL)
-	 krp->kp.symbol_name = kstrdup(skp->symbol_name, STP_ALLOC_FLAGS);
+        if (krp->kp.symbol_name == NULL)
+          krp->kp.symbol_name = kstrdup(skp->symbol_name, STP_ALLOC_FLAGS);
 #else
-      krp->kp.symbol_name = (typeof(krp->kp.symbol_name))skp->symbol_name;
+        krp->kp.symbol_name = (typeof(krp->kp.symbol_name))skp->symbol_name;
 #endif
-      krp->kp.offset = skp->offset;
+        krp->kp.offset = skp->offset;
+      }
    }
 
    if (skp->maxactive_p)
