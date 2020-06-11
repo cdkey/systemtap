@@ -1614,8 +1614,6 @@ bpf_unparser::visit_embeddedcode (embeddedcode *s)
           // case that error is called outside a try-catch statement.
           block* error_block = this_prog.new_block();
 
-          // NB: catch_block will be nullptr if the error was called outside 
-          // try and catch statements.
           // Since it is known at compile time as to whether the error is 
           // called inside a try-catch block or not, a jump to the correct
           // procedure can be emitted.
