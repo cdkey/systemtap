@@ -88,6 +88,34 @@ probe begin {
     printf("mode - All Pids\n\n")
 }
 
+function print_old_format:long ()
+{
+  printf("Command                 Pid     Alloc      Free  F_fault    F_cow F_kunmap F_uunmap\n")
+  printf("-------                 ---     -----      ----  -------    ----- -------- --------\n")
+
+  foreach (pid+ in allocation) {
+      printf("%-16s %10d %9d %9d %8d %8d %8d %8d\n",
+	     command[pid], pid,
+	     @count(allocation[pid]), @count(free[pid]),
+	     @count(file_fault[pid]), @count(file_cow[pid]),
+	     @count(file_kunmap[pid]), @count(file_uunmap[pid]))
+  }
+}
+
+function print_new_format:long ()
+{
+  printf("Command                 Pid     Alloc      Free CacheAdd CacheDel\n")
+  printf("-------                 ---     -----      ---- -------- --------\n")
+
+  foreach (pid+ in allocation) {
+      printf("%-16s %10d %9d %9d %8d %8d\n",
+	     command[pid], pid,
+	     @count(allocation[pid]), @count(free[pid]),
+	     @count(file_page_cache_add[pid]),
+	     @count(file_page_cache_delete[pid]))
+  }
+}
+
 probe end {
   printf("Terminating data collection\n")
 
@@ -96,34 +124,9 @@ probe end {
   # mm_filemap_userunmap) or the new set of filemap tracepoints
   # (mm_filemap_add_to_page_cache,
   # mm_filemap_delete_from_page_cache). Print out the set that got
-  # hits. 
-  if (@count(old_set_hits)) {
-    printf("%-16s %6s %9s %9s %8s %8s %8s %8s\n",
-	   "Command", "Pid", "Alloc", "Free",
-	   "F_fault", "F_cow", "F_kunmap", "F_uunmap")
-    printf("%-16s %6s %9s %9s %8s %8s %8s %8s\n",
-	   "-------", "---", "-----", "----",
-	   "-------", "-----", "--------", "--------")
-  }
-  else {
-    printf("%-16s %6s %9s %9s %8s %8s\n",
-	   "Command", "Pid", "Alloc", "Free", "CacheAdd", "CacheDel")
-    printf("%-16s %6s %9s %9s %8s %8s\n",
-	   "-------", "---", "-----", "----", "--------", "--------")
-  }
-
-  foreach (pid in allocation-) {
-    if (@count(old_set_hits))
-      printf("%-16s %6d %9d %9d %8d %8d %8d %8d\n",
-	     command[pid], pid,
-	     @count(allocation[pid]), @count(free[pid]),
-	     @count(file_fault[pid]), @count(file_cow[pid]),
-	     @count(file_kunmap[pid]), @count(file_uunmap[pid]))
-    else
-      printf("%-16s %6d %9d %9d %8d %8d\n",
-	     command[pid], pid,
-	     @count(allocation[pid]), @count(free[pid]),
-	     @count(file_page_cache_add[pid]),
-	     @count(file_page_cache_delete[pid]))
-  }
+  # hits.
+  if (@count(old_set_hits))
+    print_old_format()
+  else
+    print_new_format()
 }
