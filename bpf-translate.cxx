@@ -1616,13 +1616,11 @@ bpf_unparser::visit_embeddedcode (embeddedcode *s)
 
           // NB: catch_block will be nullptr if the error was called outside 
           // try and catch statements.
-          block* catch_block = catch_jump.back();
-
           // Since it is known at compile time as to whether the error is 
           // called inside a try-catch block or not, a jump to the correct
           // procedure can be emitted.
           if (!catch_jump.empty())
-            emit_jmp(catch_block);
+            emit_jmp(catch_jump.back());
           else
             emit_jmp(error_block); 
 
