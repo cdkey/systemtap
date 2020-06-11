@@ -366,9 +366,10 @@ static void
 stapiu_consumer_unreg(struct stapiu_consumer *c)
 {
   struct stapiu_instance *inst, *in2;
+  struct stapiu_process *p, *tmp;  
 
-  mutex_lock(& c->consumer_lock);
-
+  // no need for locking protection; by the time this cleanup
+  // is triggered, no further list modifying ops can also go
   list_for_each_entry_safe(inst, in2, &c->instance_list_head, instance_list) {
     if (inst->registered_p)
       stapiu_unregister(inst, c);
@@ -378,7 +379,12 @@ stapiu_consumer_unreg(struct stapiu_consumer *c)
     _stp_kfree(inst);
   }
 
-  mutex_unlock(& c->consumer_lock);
+  // NB: it's hypothetically possible for the same process to show up
+  // multiple times in the list.  Don't break after the first.
+  list_for_each_entry_safe(p, tmp, &c->process_list_head, process_list) {
+    list_del(&p->process_list);
+    _stp_kfree (p);
+  }
 }
 
 
@@ -614,33 +620,36 @@ static int
 stapiu_change_minus(struct stapiu_consumer* c, struct task_struct *task,
 		    unsigned long relocation, unsigned long length)
 {
-  struct stapiu_process *p, *tmp;
-
   dbug_uprobes("notified for inode-offset departure u%sprobe "
 	       "pidx %zu target procname:%s buildid:%s\n",
 	       c->return_p ? "ret" : "",
 	       c->probe->index,
 	       ((char*)c->finder.procname ?: (char*)""),
 	       ((char*)c->finder.build_id ?: (char*)""));
+  
+  // We don't need do anything really.
+  // A process going away means:
+  // - its uprobes will no longer fire: no problem, the uprobe inode
+  //   is shared and persistent
+  // - its sdt semaphores (if any) will be nonzero: no problem, the
+  //   process is dying anyway
+  // - the stapiu_consumer's process_list linked list will have a record
+  //   of the dead process: well, not great, it'll be cleaned up eventually,
+  //   and cleaning it up NOW is tricky - need some spin lock to protect the list,
+  //   but not out sleepy mutex:
+  //
+  // [ 1955.410237]  ? stapiu_change_minus+0x38/0xf0 [stap_54a723c01c50d972590a5c901516849_15522]
+  // [ 1955.411583]  __mutex_lock+0x35/0x820
+  // [ 1955.416858]  ? _raw_spin_unlock+0x1f/0x30
+  // [ 1955.419649]  ? utrace_control+0xbe/0x2d0 [stap_54a723c01c50d972590a5c901516849_15522]
+  // [ 1955.421702]  stapiu_change_minus+0x38/0xf0 [stap_54a723c01c50d972590a5c901516849_15522]
+  // [ 1955.425147]  ? __stp_utrace_task_finder_target_exec+0x74/0xc0 [stap_54a723c01c50d972590a5c901516849_15522]
+  // [ 1955.429773]  ? utrace_report_exec+0xdb/0x140 [stap_54a723c01c50d972590a5c901516849_15522]
+  // [ 1955.431398]  ? __do_execve_file+0xa05/0xb30
+  // [ 1955.432923]  ? do_execve+0x27/0x30
+  // [ 1955.436334]  ? __x64_sys_execve+0x27/0x30
+  // [ 1955.437700]  ? do_syscall_64+0x5c/0xa0
 
-  /* NB: we aren't unregistering uprobes and releasing the
-   * inode here.  The registration is system-wide, based on
-   * inode, not process based.  Similarly, any perfctr setup
-   * is automatically torn down. */
-  
-  mutex_lock(&c->consumer_lock);
-  
-  // NB: it's hypothetically possible for the same process to show up
-  // multiple times in the list.  Don't break after the first.
-  list_for_each_entry_safe(p, tmp, &c->process_list_head, process_list) {
-    if (p->tgid == task->tgid && (relocation <= p->relocation &&
-				  p->relocation < relocation+length)) {
-      list_del(&p->process_list);
-      _stp_kfree (p);
-    }
-  }
-  
-  mutex_unlock(&c->consumer_lock);
   return 0;
 }
 
