@@ -1226,6 +1226,9 @@ done
 
 # PRERELEASE
 %changelog
+* Thu Jun 11 2020 Frank Ch. Eigler <fche@redhat.com> - 4.3-1
+- Upstream release.
+
 * Mon Nov 18 2019 Sagar Patel <sapatel@redhat.com> - 4.2-1
 - Upstream release.
 

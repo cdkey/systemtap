@@ -234,7 +234,7 @@ void parse_args(int argc, char **argv)
 		case 'V':
                         /* PRERELEASE */
                         printf(_("Systemtap module loader/runner (version %s, %s)\n"
-                              "Copyright (C) 2005-2019 Red Hat, Inc. and others\n"
+                              "Copyright (C) 2005-2020 Red Hat, Inc. and others\n"
                               "This is free software; see the source for copying conditions.\n"),
                             VERSION, STAP_EXTENDED_VERSION);
                         _exit(0);

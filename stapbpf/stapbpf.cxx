@@ -2115,7 +2115,7 @@ main(int argc, char **argv)
 
       case 'V':
         printf("Systemtap BPF loader/runner (version %s, %s)\n"
-	       "Copyright (C) 2016-2019 Red Hat, Inc. and others\n" // PRERELEASE
+	       "Copyright (C) 2016-2020 Red Hat, Inc. and others\n" // PRERELEASE
                "This is free software; "
 	       "see the source for copying conditions.\n",
 	       VERSION, STAP_EXTENDED_VERSION);
