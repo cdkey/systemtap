@@ -79,7 +79,7 @@ function ctime:string(epochsecs:long)
 
     long days, rem;
 #if defined(STAPCONF_TIME32_OLD_H)
-    compat_time_t lcltime;
+    old_time32_t lcltime;
 #else  
     time_t lcltime;
 #endif
