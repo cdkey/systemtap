@@ -47,14 +47,11 @@ probe begin {
 
 probe end, error {
   printf("Terminating data collection\n")
-  printf("%-16s %6s %10s %10s %10s %10s %11s\n",
-         "", "", "Pdflush", "Pdflush", "Kupdate", "Kupdate", "Pgout")
-  printf("%-16s %6s %10s %10s %10s %10s %11s\n",
-         "Command", "Pid", "count", "sum", "count", "sum", "count")
-  printf("%-16s %6s %10s %10s %10s %10s %11s\n",
-         "-------", "---", "-------", "-------", "-------", "-------", "-----")
-  foreach (pid in command-)
-    printf("%-16s %6d %10d %10d %10d %10d %11d\n",
+  printf("                               Pdflush    Pdflush    Kupdate    Kupdate       Pgout\n")
+  printf("Command                 Pid      count        sum      count        sum       count\n")
+  printf("-------                 ---    -------    -------    -------    -------       -----\n")
+  foreach (pid+ in command)
+    printf("%-16s %10d %10d %10d %10d %10d %11d\n",
            command[pid], pid,
            @count(bgwriteout[pid]),
            (@count(bgwriteout[pid]) ? @sum(bgwriteout[pid]) : 0),
