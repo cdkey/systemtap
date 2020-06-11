@@ -2,12 +2,12 @@
 .\"     Title: probe::tty.open
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: TTY Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::TTY\&.OPEN" "3stap" "November 2019" "SystemTap Tapset Reference" "TTY Tapset"
+.TH "PROBE::TTY\&.OPEN" "3stap" "June 2020" "SystemTap Tapset Reference" "TTY Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,9 @@ tty\&.open
 .fi
 .SH "VALUES"
 .PP
-\fIinode_number\fR
+\fIfile_name\fR
 .RS 4
-the inode number
-.RE
-.PP
-\fIfile_mode\fR
-.RS 4
-the file mode
+the file name
 .RE
 .PP
 \fIinode_flags\fR
@@ -51,14 +46,19 @@ the file mode
 the inode flags
 .RE
 .PP
+\fIinode_number\fR
+.RS 4
+the inode number
+.RE
+.PP
 \fIfile_flags\fR
 .RS 4
 the file flags
 .RE
 .PP
-\fIfile_name\fR
+\fIfile_mode\fR
 .RS 4
-the file name
+the file mode
 .RE
 .PP
 \fIinode_state\fR

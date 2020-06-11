@@ -2,12 +2,12 @@
 .\"     Title: function::kernel_short
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: String and data retrieving functions Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::KERNEL_SHO" "3stap" "November 2019" "SystemTap Tapset Reference" "String and data retrieving fun"
+.TH "FUNCTION::KERNEL_SHO" "3stap" "June 2020" "SystemTap Tapset Reference" "String and data retrieving fun"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

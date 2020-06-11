@@ -2,12 +2,12 @@
 .\"     Title: probe::socket.aio_write.return
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Socket Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SOCKET\&.AIO_" "3stap" "November 2019" "SystemTap Tapset Reference" "Socket Tapset"
+.TH "PROBE::SOCKET\&.AIO_" "3stap" "June 2020" "SystemTap Tapset Reference" "Socket Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,19 +36,19 @@ socket\&.aio_write\&.return
 .fi
 .SH "VALUES"
 .PP
-\fIprotocol\fR
-.RS 4
-Protocol value
-.RE
-.PP
-\fIsuccess\fR
-.RS 4
-Was receive successful? (1 = yes, 0 = no)
-.RE
-.PP
 \fIstate\fR
 .RS 4
 Socket state value
+.RE
+.PP
+\fIfamily\fR
+.RS 4
+Protocol family value
+.RE
+.PP
+\fIname\fR
+.RS 4
+Name of this probe
 .RE
 .PP
 \fIsize\fR
@@ -61,19 +61,19 @@ Size of message received (in bytes) or error code if success = 0
 Socket type value
 .RE
 .PP
+\fIprotocol\fR
+.RS 4
+Protocol value
+.RE
+.PP
 \fIflags\fR
 .RS 4
 Socket flags value
 .RE
 .PP
-\fIname\fR
+\fIsuccess\fR
 .RS 4
-Name of this probe
-.RE
-.PP
-\fIfamily\fR
-.RS 4
-Protocol family value
+Was receive successful? (1 = yes, 0 = no)
 .RE
 .SH "CONTEXT"
 .PP

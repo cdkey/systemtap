@@ -2,12 +2,12 @@
 .\"     Title: function::errno_str
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Errno Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::ERRNO_STR" "3stap" "November 2019" "SystemTap Tapset Reference" "Errno Tapset"
+.TH "FUNCTION::ERRNO_STR" "3stap" "June 2020" "SystemTap Tapset Reference" "Errno Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

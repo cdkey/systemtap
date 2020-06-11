@@ -2,12 +2,12 @@
 .\"     Title: function::set_user_int
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: String and data writing functions Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::SET_USER_I" "3stap" "November 2019" "SystemTap Tapset Reference" "String and data writing functi"
+.TH "FUNCTION::SET_USER_I" "3stap" "June 2020" "SystemTap Tapset Reference" "String and data writing functi"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

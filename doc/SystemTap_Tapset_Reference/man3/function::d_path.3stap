@@ -2,12 +2,12 @@
 .\"     Title: function::d_path
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Directory-entry (dentry) Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::D_PATH" "3stap" "November 2019" "SystemTap Tapset Reference" "Directory-entry (dentry) Tapse"
+.TH "FUNCTION::D_PATH" "3stap" "June 2020" "SystemTap Tapset Reference" "Directory-entry (dentry) Tapse"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

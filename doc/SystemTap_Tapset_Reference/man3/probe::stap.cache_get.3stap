@@ -2,12 +2,12 @@
 .\"     Title: probe::stap.cache_get
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: SystemTap Translator Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::STAP\&.CACHE_" "3stap" "November 2019" "SystemTap Tapset Reference" "SystemTap Translator Tapset"
+.TH "PROBE::STAP\&.CACHE_" "3stap" "June 2020" "SystemTap Tapset Reference" "SystemTap Translator Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,14 @@ stap\&.cache_get
 .fi
 .SH "VALUES"
 .PP
-\fImodule_path\fR
-.RS 4
-the path of the \&.ko kernel module file
-.RE
-.PP
 \fIsource_path\fR
 .RS 4
 the path of the \&.c source file
+.RE
+.PP
+\fImodule_path\fR
+.RS 4
+the path of the \&.ko kernel module file
 .RE
 .SH "DESCRIPTION"
 .PP

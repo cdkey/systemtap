@@ -2,12 +2,12 @@
 .\"     Title: probe::netdev.open
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Networking Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NETDEV\&.OPEN" "3stap" "November 2019" "SystemTap Tapset Reference" "Networking Tapset"
+.TH "PROBE::NETDEV\&.OPEN" "3stap" "June 2020" "SystemTap Tapset Reference" "Networking Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

@@ -2,12 +2,12 @@
 .\"     Title: function::qs_run
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Queue Statistics Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::QS_RUN" "3stap" "November 2019" "SystemTap Tapset Reference" "Queue Statistics Tapset"
+.TH "FUNCTION::QS_RUN" "3stap" "June 2020" "SystemTap Tapset Reference" "Queue Statistics Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

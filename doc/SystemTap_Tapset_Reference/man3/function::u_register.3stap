@@ -2,12 +2,12 @@
 .\"     Title: function::u_register
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Context Functions
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::U_REGISTER" "3stap" "November 2019" "SystemTap Tapset Reference" "Context Functions"
+.TH "FUNCTION::U_REGISTER" "3stap" "June 2020" "SystemTap Tapset Reference" "Context Functions"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

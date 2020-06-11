@@ -1,0 +1,44 @@
+'\" t
+.\"     Title: function::dump_stack
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: June 2020
+.\"    Manual: Logging Tapset
+.\"    Source: SystemTap Tapset Reference
+.\"  Language: English
+.\"
+.TH "FUNCTION::DUMP_STACK" "3stap" "June 2020" "SystemTap Tapset Reference" "Logging Tapset"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+function::dump_stack \- Send the kernel backtrace to the kernel trace buffer
+.SH "SYNOPSIS"
+.sp
+.nf
+    dump_stack()
+.fi
+.SH "ARGUMENTS"
+.PP
+None
+.SH "DESCRIPTION"
+.PP
+Print the current kernel backtrace to the kernel trace buffer\&. not be safely called from all kernel probe contexts, so is restricted to guru mode only\&. Under the hood, it calls the kernel C API function dump_stack directly\&.
+.SH SEE ALSO\n 
+.IR tapset::logging (3stap)

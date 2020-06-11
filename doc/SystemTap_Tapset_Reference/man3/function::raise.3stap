@@ -2,12 +2,12 @@
 .\"     Title: function::raise
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Guru tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::RAISE" "3stap" "November 2019" "SystemTap Tapset Reference" "Guru tapsets"
+.TH "FUNCTION::RAISE" "3stap" "June 2020" "SystemTap Tapset Reference" "Guru tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

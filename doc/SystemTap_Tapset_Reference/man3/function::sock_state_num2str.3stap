@@ -2,12 +2,12 @@
 .\"     Title: function::sock_state_num2str
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Socket Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::SOCK_STATE" "3stap" "November 2019" "SystemTap Tapset Reference" "Socket Tapset"
+.TH "FUNCTION::SOCK_STATE" "3stap" "June 2020" "SystemTap Tapset Reference" "Socket Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

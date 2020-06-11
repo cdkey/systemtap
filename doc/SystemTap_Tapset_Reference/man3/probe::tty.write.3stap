@@ -2,12 +2,12 @@
 .\"     Title: probe::tty.write
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: TTY Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::TTY\&.WRITE" "3stap" "November 2019" "SystemTap Tapset Reference" "TTY Tapset"
+.TH "PROBE::TTY\&.WRITE" "3stap" "June 2020" "SystemTap Tapset Reference" "TTY Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,9 +36,9 @@ tty\&.write
 .fi
 .SH "VALUES"
 .PP
-\fIbuffer\fR
+\fInr\fR
 .RS 4
-the buffer that will be written
+The amount of characters
 .RE
 .PP
 \fIfile_name\fR
@@ -46,9 +46,9 @@ the buffer that will be written
 the file name lreated to the tty
 .RE
 .PP
-\fInr\fR
+\fIbuffer\fR
 .RS 4
-The amount of characters
+the buffer that will be written
 .RE
 .PP
 \fIdriver_name\fR

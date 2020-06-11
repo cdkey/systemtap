@@ -2,12 +2,12 @@
 .\"     Title: function::pages_to_string
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Memory Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::PAGES_TO_S" "3stap" "November 2019" "SystemTap Tapset Reference" "Memory Tapset"
+.TH "FUNCTION::PAGES_TO_S" "3stap" "June 2020" "SystemTap Tapset Reference" "Memory Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

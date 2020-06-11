@@ -2,12 +2,12 @@
 .\"     Title: probe::netdev.change_rx_flag
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Networking Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NETDEV\&.CHAN" "3stap" "November 2019" "SystemTap Tapset Reference" "Networking Tapset"
+.TH "PROBE::NETDEV\&.CHAN" "3stap" "June 2020" "SystemTap Tapset Reference" "Networking Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,14 @@ netdev\&.change_rx_flag
 .fi
 .SH "VALUES"
 .PP
-\fIdev_name\fR
-.RS 4
-The device that will be changed
-.RE
-.PP
 \fIflags\fR
 .RS 4
 The new flags
+.RE
+.PP
+\fIdev_name\fR
+.RS 4
+The device that will be changed
 .RE
 .SH SEE ALSO\n 
 .IR tapset::networking (3stap)

@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.fop.flush
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.FOP\&.F" "3stap" "November 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.FOP\&.F" "3stap" "June 2020" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,9 +36,9 @@ nfs\&.fop\&.flush
 .fi
 .SH "VALUES"
 .PP
-\fImode\fR
+\fIndirty\fR
 .RS 4
-file mode
+number of dirty page
 .RE
 .PP
 \fIino\fR
@@ -46,9 +46,9 @@ file mode
 inode number
 .RE
 .PP
-\fIndirty\fR
+\fImode\fR
 .RS 4
-number of dirty page
+file mode
 .RE
 .PP
 \fIdev\fR

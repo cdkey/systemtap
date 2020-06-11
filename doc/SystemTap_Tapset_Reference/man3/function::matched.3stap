@@ -2,12 +2,12 @@
 .\"     Title: function::matched
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: A collection of standard string functions
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::MATCHED" "3stap" "November 2019" "SystemTap Tapset Reference" "A collection of standard strin"
+.TH "FUNCTION::MATCHED" "3stap" "June 2020" "SystemTap Tapset Reference" "A collection of standard strin"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

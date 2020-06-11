@@ -2,12 +2,12 @@
 .\"     Title: function::addr_to_node
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Memory Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::ADDR_TO_NO" "3stap" "November 2019" "SystemTap Tapset Reference" "Memory Tapset"
+.TH "FUNCTION::ADDR_TO_NO" "3stap" "June 2020" "SystemTap Tapset Reference" "Memory Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

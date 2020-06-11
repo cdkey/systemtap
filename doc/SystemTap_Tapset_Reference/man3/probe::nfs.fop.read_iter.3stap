@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.fop.read_iter
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.FOP\&.R" "3stap" "November 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.FOP\&.R" "3stap" "June 2020" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,9 +36,9 @@ nfs\&.fop\&.read_iter
 .fi
 .SH "VALUES"
 .PP
-\fIino\fR
+\fIfile_name\fR
 .RS 4
-inode number
+file name
 .RE
 .PP
 \fIattrtimeo\fR
@@ -51,9 +51,14 @@ how long the cached information is assumed to be valid\&. We need to revalidate 
 when we started read\-caching this inode
 .RE
 .PP
-\fIcache_valid\fR
+\fIino\fR
 .RS 4
-cache related bit mask flag
+inode number
+.RE
+.PP
+\fIparent_name\fR
+.RS 4
+parent dir name
 .RE
 .PP
 \fIpos\fR
@@ -61,24 +66,19 @@ cache related bit mask flag
 current position of file
 .RE
 .PP
-\fIdev\fR
-.RS 4
-device identifier
-.RE
-.PP
-\fIfile_name\fR
-.RS 4
-file name
-.RE
-.PP
 \fIcount\fR
 .RS 4
 read bytes
 .RE
 .PP
-\fIparent_name\fR
+\fIcache_valid\fR
 .RS 4
-parent dir name
+cache related bit mask flag
+.RE
+.PP
+\fIdev\fR
+.RS 4
+device identifier
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfs (3stap)

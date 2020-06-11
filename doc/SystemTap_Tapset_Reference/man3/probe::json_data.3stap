@@ -2,12 +2,12 @@
 .\"     Title: probe::json_data
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: JSON Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::JSON_DATA" "3stap" "November 2019" "SystemTap Tapset Reference" "JSON Tapset"
+.TH "PROBE::JSON_DATA" "3stap" "June 2020" "SystemTap Tapset Reference" "JSON Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

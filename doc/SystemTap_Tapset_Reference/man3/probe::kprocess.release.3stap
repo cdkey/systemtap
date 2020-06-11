@@ -2,12 +2,12 @@
 .\"     Title: probe::kprocess.release
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Kernel Process Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::KPROCESS\&.RE" "3stap" "November 2019" "SystemTap Tapset Reference" "Kernel Process Tapset"
+.TH "PROBE::KPROCESS\&.RE" "3stap" "June 2020" "SystemTap Tapset Reference" "Kernel Process Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,9 +36,11 @@ kprocess\&.release
 .fi
 .SH "VALUES"
 .PP
-\fIreleased_tid\fR
+\fIpid\fR
 .RS 4
-TID of the task being released
+Same as
+\fIreleased_pid\fR
+for compatibility (deprecated)
 .RE
 .PP
 \fIreleased_pid\fR
@@ -46,11 +48,9 @@ TID of the task being released
 PID of the process being released
 .RE
 .PP
-\fIpid\fR
+\fIreleased_tid\fR
 .RS 4
-Same as
-\fIreleased_pid\fR
-for compatibility (deprecated)
+TID of the task being released
 .RE
 .PP
 \fItask\fR

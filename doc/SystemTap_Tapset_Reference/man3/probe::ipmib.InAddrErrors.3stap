@@ -2,12 +2,12 @@
 .\"     Title: probe::ipmib.InAddrErrors
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: SNMP Information Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::IPMIB\&.INADD" "3stap" "November 2019" "SystemTap Tapset Reference" "SNMP Information Tapset"
+.TH "PROBE::IPMIB\&.INADD" "3stap" "June 2020" "SystemTap Tapset Reference" "SNMP Information Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,14 @@ ipmib\&.InAddrErrors
 .fi
 .SH "VALUES"
 .PP
-\fIskb\fR
-.RS 4
-pointer to the struct sk_buff being acted on
-.RE
-.PP
 \fIop\fR
 .RS 4
 value to be added to the counter (default value of 1)
+.RE
+.PP
+\fIskb\fR
+.RS 4
+pointer to the struct sk_buff being acted on
 .RE
 .SH "DESCRIPTION"
 .PP

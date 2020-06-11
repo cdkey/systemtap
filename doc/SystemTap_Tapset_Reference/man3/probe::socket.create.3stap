@@ -2,12 +2,12 @@
 .\"     Title: probe::socket.create
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Socket Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SOCKET\&.CREA" "3stap" "November 2019" "SystemTap Tapset Reference" "Socket Tapset"
+.TH "PROBE::SOCKET\&.CREA" "3stap" "June 2020" "SystemTap Tapset Reference" "Socket Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -41,14 +41,14 @@ socket\&.create
 Socket type value
 .RE
 .PP
-\fIrequester\fR
-.RS 4
-Requested by user process or the kernel (1 = kernel, 0 = user)
-.RE
-.PP
 \fIprotocol\fR
 .RS 4
 Protocol value
+.RE
+.PP
+\fIrequester\fR
+.RS 4
+Requested by user process or the kernel (1 = kernel, 0 = user)
 .RE
 .PP
 \fIname\fR

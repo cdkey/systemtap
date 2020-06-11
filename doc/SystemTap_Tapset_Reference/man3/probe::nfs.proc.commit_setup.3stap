@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.proc.commit_setup
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.PROC\&." "3stap" "November 2019" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.PROC\&." "3stap" "June 2020" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,14 @@ nfs\&.proc\&.commit_setup
 .fi
 .SH "VALUES"
 .PP
+\fIbitmask0\fR
+.RS 4
+V4 bitmask representing the set of attributes supported on this filesystem
+.RE
+.PP
 \fIoffset\fR
 .RS 4
 the file offset
-.RE
-.PP
-\fIversion\fR
-.RS 4
-NFS version
 .RE
 .PP
 \fIprot\fR
@@ -51,14 +51,14 @@ NFS version
 transfer protocol
 .RE
 .PP
+\fIversion\fR
+.RS 4
+NFS version
+.RE
+.PP
 \fIserver_ip\fR
 .RS 4
 IP address of server
-.RE
-.PP
-\fIbitmask0\fR
-.RS 4
-V4 bitmask representing the set of attributes supported on this filesystem
 .RE
 .PP
 \fIsize\fR

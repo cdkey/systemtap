@@ -2,12 +2,12 @@
 .\"     Title: function::qsq_blocked
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Queue Statistics Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::QSQ_BLOCKE" "3stap" "November 2019" "SystemTap Tapset Reference" "Queue Statistics Tapset"
+.TH "FUNCTION::QSQ_BLOCKE" "3stap" "June 2020" "SystemTap Tapset Reference" "Queue Statistics Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

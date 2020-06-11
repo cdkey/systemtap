@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::LOGGING 3stap "November 2019" "SystemTap Tapset Reference"
+.TH TAPSET::LOGGING 3stap "June 2020" "SystemTap Tapset Reference"
 .SH NAME
 tapset::logging \- systemtap logging tapset
  
@@ -77,6 +77,14 @@ Send a message to the kernel trace buffer
 See 
 .IR function::printk (3stap)
  for details.
+.P
+.TP
+.B dump_stack 
+Send the kernel backtrace to the kernel trace buffer
+.IP
+See 
+.IR function::dump_stack (3stap)
+ for details.
 
 .SH SEE ALSO
 .BR
@@ -95,6 +103,8 @@ See
 .IR \%function::ftrace (3stap),
 .BR
 .IR \%function::printk (3stap),
+.BR
+.IR \%function::dump_stack (3stap),
 .BR
 .IR \%stap (1),
 .IR \%stapprobes (3stap)

@@ -2,12 +2,12 @@
 .\"     Title: probe::linuxmib.TCPMemoryPressures
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: SNMP Information Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::LINUXMIB\&.TC" "3stap" "November 2019" "SystemTap Tapset Reference" "SNMP Information Tapset"
+.TH "PROBE::LINUXMIB\&.TC" "3stap" "June 2020" "SystemTap Tapset Reference" "SNMP Information Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

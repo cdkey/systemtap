@@ -2,12 +2,12 @@
 .\"     Title: probe::netfilter.arp.forward
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Networking Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NETFILTER\&.A" "3stap" "November 2019" "SystemTap Tapset Reference" "Networking Tapset"
+.TH "PROBE::NETFILTER\&.A" "3stap" "June 2020" "SystemTap Tapset Reference" "Networking Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,25 +36,64 @@ netfilter\&.arp\&.forward
 .fi
 .SH "VALUES"
 .PP
-\fIar_sip\fR
-.RS 4
-Ethernet+IP only (ar_pro==0x800): source IP address
-.RE
-.PP
-\fIpf\fR
-.RS 4
-Protocol family \-\- always
-\(lqarp\(rq
-.RE
-.PP
 \fIindev_name\fR
 .RS 4
 Name of network device packet was received on (if known)
 .RE
 .PP
-\fIar_data\fR
+\fIar_pln\fR
 .RS 4
-Address of ARP packet data region (after the header)
+Length of protocol address
+.RE
+.PP
+\fIoutdev_name\fR
+.RS 4
+Name of network device packet will be routed to (if known)
+.RE
+.PP
+\fIarphdr\fR
+.RS 4
+Address of ARP header
+.RE
+.PP
+\fIar_sip\fR
+.RS 4
+Ethernet+IP only (ar_pro==0x800): source IP address
+.RE
+.PP
+\fIoutdev\fR
+.RS 4
+Address of net_device representing output device, 0 if unknown
+.RE
+.PP
+\fInf_stolen\fR
+.RS 4
+Constant used to signify a \*(Aqstolen\*(Aq verdict
+.RE
+.PP
+\fIdata_str\fR
+.RS 4
+A string representing the packet buffer contents
+.RE
+.PP
+\fInf_drop\fR
+.RS 4
+Constant used to signify a \*(Aqdrop\*(Aq verdict
+.RE
+.PP
+\fIdata_hex\fR
+.RS 4
+A hexadecimal string representing the packet buffer contents
+.RE
+.PP
+\fIar_op\fR
+.RS 4
+ARP opcode (command)
+.RE
+.PP
+\fIlength\fR
+.RS 4
+The length of the packet buffer contents, in bytes
 .RE
 .PP
 \fIar_tip\fR
@@ -67,39 +106,9 @@ Ethernet+IP only (ar_pro==0x800): target IP address
 Format of protocol address
 .RE
 .PP
-\fIindev\fR
-.RS 4
-Address of net_device representing input device, 0 if unknown
-.RE
-.PP
-\fInf_stolen\fR
-.RS 4
-Constant used to signify a \*(Aqstolen\*(Aq verdict
-.RE
-.PP
-\fIoutdev\fR
-.RS 4
-Address of net_device representing output device, 0 if unknown
-.RE
-.PP
 \fInf_stop\fR
 .RS 4
 Constant used to signify a \*(Aqstop\*(Aq verdict
-.RE
-.PP
-\fInf_accept\fR
-.RS 4
-Constant used to signify an \*(Aqaccept\*(Aq verdict
-.RE
-.PP
-\fIlength\fR
-.RS 4
-The length of the packet buffer contents, in bytes
-.RE
-.PP
-\fInf_queue\fR
-.RS 4
-Constant used to signify a \*(Aqqueue\*(Aq verdict
 .RE
 .PP
 \fInf_repeat\fR
@@ -107,9 +116,14 @@ Constant used to signify a \*(Aqqueue\*(Aq verdict
 Constant used to signify a \*(Aqrepeat\*(Aq verdict
 .RE
 .PP
-\fIar_hln\fR
+\fIar_tha\fR
 .RS 4
-Length of hardware address
+Ethernet+IP only (ar_pro==0x800): target hardware (MAC) address
+.RE
+.PP
+\fIar_data\fR
+.RS 4
+Address of ARP packet data region (after the header)
 .RE
 .PP
 \fIar_hrd\fR
@@ -117,39 +131,20 @@ Length of hardware address
 Format of hardware address
 .RE
 .PP
-\fIar_op\fR
+\fIpf\fR
 .RS 4
-ARP opcode (command)
+Protocol family \-\- always
+\(lqarp\(rq
 .RE
 .PP
-\fIdata_hex\fR
+\fIar_hln\fR
 .RS 4
-A hexadecimal string representing the packet buffer contents
+Length of hardware address
 .RE
 .PP
-\fIoutdev_name\fR
+\fIindev\fR
 .RS 4
-Name of network device packet will be routed to (if known)
-.RE
-.PP
-\fIdata_str\fR
-.RS 4
-A string representing the packet buffer contents
-.RE
-.PP
-\fIarphdr\fR
-.RS 4
-Address of ARP header
-.RE
-.PP
-\fIar_tha\fR
-.RS 4
-Ethernet+IP only (ar_pro==0x800): target hardware (MAC) address
-.RE
-.PP
-\fIar_pln\fR
-.RS 4
-Length of protocol address
+Address of net_device representing input device, 0 if unknown
 .RE
 .PP
 \fIar_sha\fR
@@ -157,9 +152,14 @@ Length of protocol address
 Ethernet+IP only (ar_pro==0x800): source hardware (MAC) address
 .RE
 .PP
-\fInf_drop\fR
+\fInf_accept\fR
 .RS 4
-Constant used to signify a \*(Aqdrop\*(Aq verdict
+Constant used to signify an \*(Aqaccept\*(Aq verdict
+.RE
+.PP
+\fInf_queue\fR
+.RS 4
+Constant used to signify a \*(Aqqueue\*(Aq verdict
 .RE
 .SH SEE ALSO\n 
 .IR tapset::netfilter (3stap)

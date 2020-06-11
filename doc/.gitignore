@@ -1,3 +1,5 @@
+*.gls
+*.ilg
 *.aux
 *.glo
 *.idx

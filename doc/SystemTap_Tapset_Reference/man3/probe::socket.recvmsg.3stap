@@ -2,12 +2,12 @@
 .\"     Title: probe::socket.recvmsg
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Socket Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SOCKET\&.RECV" "3stap" "November 2019" "SystemTap Tapset Reference" "Socket Tapset"
+.TH "PROBE::SOCKET\&.RECV" "3stap" "June 2020" "SystemTap Tapset Reference" "Socket Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,9 +36,9 @@ socket\&.recvmsg
 .fi
 .SH "VALUES"
 .PP
-\fIstate\fR
+\fIflags\fR
 .RS 4
-Socket state value
+Socket flags value
 .RE
 .PP
 \fIprotocol\fR
@@ -56,9 +56,9 @@ Socket type value
 Message size in bytes
 .RE
 .PP
-\fIflags\fR
+\fIname\fR
 .RS 4
-Socket flags value
+Name of this probe
 .RE
 .PP
 \fIfamily\fR
@@ -66,9 +66,9 @@ Socket flags value
 Protocol family value
 .RE
 .PP
-\fIname\fR
+\fIstate\fR
 .RS 4
-Name of this probe
+Socket state value
 .RE
 .SH "CONTEXT"
 .PP

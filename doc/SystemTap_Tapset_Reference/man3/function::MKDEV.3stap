@@ -2,12 +2,12 @@
 .\"     Title: function::MKDEV
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Device Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::MKDEV" "3stap" "November 2019" "SystemTap Tapset Reference" "Device Tapset"
+.TH "FUNCTION::MKDEV" "3stap" "June 2020" "SystemTap Tapset Reference" "Device Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

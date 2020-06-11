@@ -2,12 +2,12 @@
 .\"     Title: probe::vm.write_shared
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Memory Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::VM\&.WRITE_SH" "3stap" "November 2019" "SystemTap Tapset Reference" "Memory Tapset"
+.TH "PROBE::VM\&.WRITE_SH" "3stap" "June 2020" "SystemTap Tapset Reference" "Memory Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,14 @@ vm\&.write_shared
 .fi
 .SH "VALUES"
 .PP
-\fIaddress\fR
-.RS 4
-the address of the shared write
-.RE
-.PP
 \fIname\fR
 .RS 4
 name of the probe point
+.RE
+.PP
+\fIaddress\fR
+.RS 4
+the address of the shared write
 .RE
 .SH "CONTEXT"
 .PP

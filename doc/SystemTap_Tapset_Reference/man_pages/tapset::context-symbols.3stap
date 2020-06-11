@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::CONTEXT-SYMBOLS 3stap "November 2019" "SystemTap Tapset Reference"
+.TH TAPSET::CONTEXT-SYMBOLS 3stap "June 2020" "SystemTap Tapset Reference"
 .SH NAME
 tapset::context-symbols \- systemtap context-symbols tapset
  

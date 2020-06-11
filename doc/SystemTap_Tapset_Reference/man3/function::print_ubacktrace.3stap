@@ -2,12 +2,12 @@
 .\"     Title: function::print_ubacktrace
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Context Functions
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::PRINT_UBAC" "3stap" "November 2019" "SystemTap Tapset Reference" "Context Functions"
+.TH "FUNCTION::PRINT_UBAC" "3stap" "June 2020" "SystemTap Tapset Reference" "Context Functions"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -42,17 +42,17 @@ function::print_ubacktrace \- Print stack back trace for current user\-space tas
 .PP
 \fIpc\fR
 .RS 4
-\-\- undescribed \-\-
+override PC
 .RE
 .PP
 \fIsp\fR
 .RS 4
-\-\- undescribed \-\-
+override SP
 .RE
 .PP
 \fIfp\fR
 .RS 4
-\-\- undescribed \-\-
+override FP
 .RE
 .SH "DESCRIPTION"
 .PP
@@ -62,6 +62,8 @@ function::print_ubacktrace \- Print stack back trace for current user\-space tas
 \fBprint_backtrace\fR
 for kernel backtrace\&.
 .PP
+Equivalent to
+\fBprint_ubacktrace\fR, but it performs the backtrace using the pc, sp, and fp provided\&. Useful
 .SH "NOTE"
 .PP
 To get (full) backtraces for user space applications and shared shared libraries not mentioned in the current script run stap with \-d /path/to/exe\-or\-so and/or add \-\-ldd to load all needed unwind data\&.

@@ -2,12 +2,12 @@
 .\"     Title: probe::signal.check_ignored
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2019
+.\"      Date: June 2020
 .\"    Manual: Signal Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SIGNAL\&.CHEC" "3stap" "November 2019" "SystemTap Tapset Reference" "Signal Tapset"
+.TH "PROBE::SIGNAL\&.CHEC" "3stap" "June 2020" "SystemTap Tapset Reference" "Signal Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,6 +36,11 @@ signal\&.check_ignored
 .fi
 .SH "VALUES"
 .PP
+\fIsig_name\fR
+.RS 4
+A string representation of the signal
+.RE
+.PP
 \fIpid_name\fR
 .RS 4
 Name of the process receiving the signal
@@ -44,11 +49,6 @@ Name of the process receiving the signal
 \fIsig_pid\fR
 .RS 4
 The PID of the process receiving the signal
-.RE
-.PP
-\fIsig_name\fR
-.RS 4
-A string representation of the signal
 .RE
 .PP
 \fIsig\fR
