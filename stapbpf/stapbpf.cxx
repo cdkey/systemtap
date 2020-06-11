@@ -2168,14 +2168,19 @@ main(int argc, char **argv)
   signal(SIGINT, (sighandler_t)sigint);
   signal(SIGTERM, (sighandler_t)sigint);
 
-  // PR22330: Listen for perf_events:
-  std::thread(perf_event_loop, pthread_self()).detach();
+  // PR26109: Only continue startup if begin probes did not exit.
+  bool perf_ioc_enabled = false;
+  if (!get_exit_status()) { // may already be set by begin probe
+    // PR22330: Listen for perf_events:
+    std::thread(perf_event_loop, pthread_self()).detach();
 
-  // Spawn all procfs threads.
-  procfs_spawn(&uctx);
+    // Spawn all procfs threads.
+    procfs_spawn(&uctx);
 
-  // Now that the begin probe has run and the perf_event listener is active, enable the kprobes.
-  ioctl(group_fd, PERF_EVENT_IOC_ENABLE, 0);
+    // Now that the begin probe has run and the perf_event listener is active, enable the kprobes.
+    ioctl(group_fd, PERF_EVENT_IOC_ENABLE, 0);
+    perf_ioc_enabled = true;
+  }
 
   // Wait for STP_EXIT message:
   while (!get_exit_status()) {
@@ -2183,7 +2188,8 @@ main(int argc, char **argv)
   }
 
   // Disable the kprobes before deregistering and running exit probes.
-  ioctl(group_fd, PERF_EVENT_IOC_DISABLE, 0);
+  if (perf_ioc_enabled)
+    ioctl(group_fd, PERF_EVENT_IOC_DISABLE, 0);
   close(group_fd);
 
   // Unregister all probes.
