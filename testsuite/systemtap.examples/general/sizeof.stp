@@ -7,9 +7,11 @@
 #          sizeof.stp TYPENAME </usr/include/someheader.h>
 
 probe oneshot {
-  println("type ", @1, 
-          %( $# > 1 %? " in ", @2, %)   /* module or header file name */
-          " byte-size: ",
-          %( $# > 1 %? @cast_module_sizeof(@2, @1) %: @cast_sizeof(@1) %)
-          )
+  %( $# > 1 %?
+     printf("type %s in %s byte-size: %d\n", @1, @2,
+	    @cast_module_sizeof(@2, @1))
+  %:
+     printf("type %s byte-size: %d\n", @1,
+	    @cast_sizeof(@1))
+  %)
 }
