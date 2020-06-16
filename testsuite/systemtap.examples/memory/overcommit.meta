@@ -11,3 +11,5 @@ scope: system-wide
 description: The overcommit.stp script prints a line each time the kernel refuses a memory allocation request from a process because of /proc/sys/vm/overcommit* limits.
 test_check: stap -p4 overcommit.stp
 test_installcheck: stap overcommit.stp -T 1
+test_check_bpf: stap --bpf -p4 overcommit.stp
+test_installcheck_bpf: stap --bpf overcommit.stp -T 1
