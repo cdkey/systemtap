@@ -290,7 +290,9 @@ static int _stp_vma_init(void)
 /* Get rid of the vma tracker (memory). */
 static void _stp_vma_done(void)
 {
-#if defined(CONFIG_UTRACE)
+/* NB HAVE_TASK_FINDER already includes the case of CONFIG_UTRACE.
+ * See runtime/linux/runtime.h for more details. See also PR26123 */
+#ifdef HAVE_TASK_FINDER
 	stap_destroy_vma_map();
 #endif
 }
