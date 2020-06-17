@@ -63,8 +63,8 @@ probe __vfs_read = kprobe.function("__vfs_read")
 {
 	# Skip the call if new_sync_read() wouldn't be called.
 	file = pointer_arg(1)
-	if (!file || @cast(file, "file")->f_op->read
-	    || !@cast(file, "file")->f_op->read_iter)
+	if (!file || @cast(file, "file", "kernel")->f_op->read
+	    || !@cast(file, "file", "kernel")->f_op->read_iter)
 		next
 }
 
@@ -75,8 +75,8 @@ probe __vfs_write = kprobe.function("__vfs_write")
 {
 	# Skip the call if new_sync_write() wouldn't be called.
 	file = pointer_arg(1)
-	if (!file || @cast(file, "file")->f_op->write
-	    || !@cast(file, "file")->f_op->write_iter)
+	if (!file || @cast(file, "file", "kernel")->f_op->write
+	    || !@cast(file, "file", "kernel")->f_op->write_iter)
 		next
 }
 
@@ -102,8 +102,8 @@ probe __vfs_read.return = kprobe.function("__vfs_read").return
 {
 	# Skip the call if new_sync_read() wouldn't be called.
 	file = @entry(pointer_arg(1))
-	if (!file || @cast(file, "file")->f_op->read
-	    || !@cast(file, "file")->f_op->read_iter)
+	if (!file || @cast(file, "file", "kernel")->f_op->read
+	    || !@cast(file, "file", "kernel")->f_op->read_iter)
 		next
 }
 
@@ -115,8 +115,8 @@ probe __vfs_write.return = kprobe.function("__vfs_write")
 {
 	# Skip the call if new_sync_write() wouldn't be called.
 	file = pointer_arg(1)
-	if (!file || @cast(file, "file")->f_op->write
-	    || !@cast(file, "file")->f_op->write_iter)
+	if (!file || @cast(file, "file", "kernel")->f_op->write
+	    || !@cast(file, "file", "kernel")->f_op->write_iter)
 		next
 }
 
