@@ -48,7 +48,7 @@ alloc_literal_str(program &p, insn_inserter &ins, value *s)
   tmp_space += 4 - tmp_space % 4; // write aligned words to avoid verifier error
   p.use_tmp_space(tmp_space);
 
-  if (tmp_space + str_bytes > MAX_BPF_STACK)
+  if (tmp_space + str_bytes > MAX_BPF_STACK(p.target))
     throw std::runtime_error("string allocation failed due to lack of room on stack");
 
   tmp_space += str_bytes;
@@ -825,7 +825,7 @@ spill(unsigned reg, unsigned num_spills, program &p)
   if (off % BPF_REG_SIZE)
     off += BPF_REG_SIZE - off % BPF_REG_SIZE;
 
-  if (off > MAX_BPF_STACK)
+  if (off > MAX_BPF_STACK(p.target))
     throw std::runtime_error(
 	    _("register allocation failed due to insufficent BPF stack size"));
 

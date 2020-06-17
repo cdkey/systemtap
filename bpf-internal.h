@@ -53,9 +53,12 @@ enum bpf_target {
 
 // Constants for BPF code generation.
 // TODO: BPF_MAX{STRING,FORMAT}LEN,BPF_MAXMAPENTRIES,BPF_MAXSPRINTFLEN should be user-configurable.
-// TODO: MAX_BPF_STACK and BPF_REG_SIZE should vary depending on bpf_target.
 
-#define MAX_BPF_STACK 512
+#define MAX_BPF_KERNEL_STACK 512
+// PR24758: 64k ought to be enough for anyone
+#define MAX_BPF_USER_STACK 65536
+#define MAX_BPF_STACK(target) (((target) == target_kernel_bpf) ? \
+                               MAX_BPF_KERNEL_STACK : MAX_BPF_USER_STACK)
 #define BPF_REG_SIZE 8
 
 #define BPF_MAXSTRINGLEN 64
@@ -93,6 +96,7 @@ enum bpf_target {
 
 // Will print out bpf assembly before and after optimization:
 //#define DEBUG_CODEGEN
+// TODO: DEBUG_CODEGEN should be configured dynamically e.g. as -DDEBUG_BPF_CODEGEN
 
 typedef unsigned short regno;
 static const regno max_regno = BPF_MAXINSNS;
@@ -350,7 +354,7 @@ struct program
   {
     if (max_tmp_space < bytes)
       max_tmp_space = bytes;
-    assert(max_tmp_space <= MAX_BPF_STACK);
+    assert(max_tmp_space <= MAX_BPF_STACK(target));
   }
 
   void mk_ld(insn_inserter &ins, int sz, value *dest, value *base, int off);

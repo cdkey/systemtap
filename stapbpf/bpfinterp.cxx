@@ -733,7 +733,7 @@ bpf_interpret(size_t ninsns, const struct bpf_insn insns[],
               bpf_transport_context *ctx)
 {
   uint64_t result = 0; // return value
-  uint64_t stack[512 / 8];
+  uint64_t stack[65536 / 8]; // see MAX_BPF_USER_STACK in bpf-internal.h
   uint64_t regs[MAX_BPF_REG];
   memset(regs, 0x0, sizeof(uint64_t) * MAX_BPF_REG);
   const struct bpf_insn *i = insns;
