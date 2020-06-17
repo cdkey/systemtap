@@ -6,6 +6,5 @@ description: This traces read() and write() syscalls, producing a histogram summ
 scope: system-wide
 usage: ./rwtime-nd.stp [execname]
 arg_1: Optional process name to match
-test_support: stap -p4 rwtime-nd.stp
 test_check: stap -p4 rwtime-nd.stp
 test_installcheck: stap rwtime-nd.stp -T 1
