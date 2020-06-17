@@ -12,6 +12,6 @@ probe oneshot {
 	    @cast_module_sizeof(@2, @1))
   %:
      printf("type %s byte-size: %d\n", @1,
-	    @cast_sizeof(@1))
+	    @cast_module_sizeof("kernel", @1))
   %)
 }
