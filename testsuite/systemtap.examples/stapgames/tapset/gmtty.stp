@@ -10,12 +10,12 @@ global GM_tty_ws_row, GM_tty_ws_col, GM_tty_name
 # Initialize current TTY -- must be called from begin
 function game_tty_init:long ()
 {
-	tty = @cast(task_current(), "task_struct")->signal->tty
+	tty = @cast(task_current(), "task_struct", "kernel")->signal->tty
 	if (tty) {
-		namep = @cast(tty,"tty_struct")->name
+		namep = @cast(tty,"tty_struct", "kernel")->name
 		GM_tty_name = kernel_string(namep)
-		GM_tty_ws_col = @cast(tty, "tty_struct")->winsize->ws_col
-		GM_tty_ws_row = @cast(tty, "tty_struct")->winsize->ws_row
+		GM_tty_ws_col = @cast(tty, "tty_struct", "kernel")->winsize->ws_col
+		GM_tty_ws_row = @cast(tty, "tty_struct", "kernel")->winsize->ws_row
 	}
 	return tty
 }
