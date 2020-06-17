@@ -110,7 +110,7 @@ proc stapbpf_run { TEST_NAME OUTPUT_STR options args } {
         eof { set rc $eof_start  }
     }
   # again for good measure with KILL after 3s
-  kill -INT -$mypid 3
+  kill -KILL -$mypid 3
   catch close
   wait
   return $rc
