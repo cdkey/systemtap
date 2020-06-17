@@ -143,7 +143,8 @@ struct stapiu_consumer {
   struct list_head instance_list_head; // the resulting uprobe instances for this consumer
 
   struct list_head process_list_head; // the processes for this consumer
-
+  spinlock_t process_list_lock; // protect list; used briefly from even atomic contexts
+        
   // List of perf counters used by each probe
   // This list is an index into struct stap_perf_probe,
   long perf_counters_dim;
@@ -174,16 +175,19 @@ stapiu_probe_prehandler (struct uprobe_consumer *inst, struct pt_regs *regs)
 
       // First find the related process, set by stapiu_change_plus.
       // NB: This is a linear search performed for every probe hit!
-      // This could be an algorithmic problem if the list gets large, but
-      // we'll wait until this is demonstratedly a hotspot before optimizing.
-      mutex_lock(&c->consumer_lock);
+      // This could be an algorithmic problem if the list gets large,
+      // but we'll wait until this is demonstratedly a hotspot before
+      // optimizing.  NB: on rhel7 sometimes we're invoked from atomic
+      // context, so must be careful to use the spinlock, not the
+      // mutex.
+      spin_lock(&c->process_list_lock);
       list_for_each_entry(p, &c->process_list_head, process_list) {
 	if (p->tgid == current->tgid) {
 	  process = p;
 	  break;
 	}
       }
-      mutex_unlock(&c->consumer_lock);
+      spin_unlock(&c->process_list_lock);
       if (!process) {
 #ifdef UPROBE_HANDLER_REMOVE
 	/* Once we're past the starting phase, we can be sure that any
@@ -344,7 +348,7 @@ static void
 stapiu_decrement_semaphores(struct stapiu_consumer *consumers, size_t nconsumers)
 {
   size_t i;
-  /* NB: no stapiu_process_slots_lock needed, as the task_finder engine is
+  /* NB: no process_list_lock use needed as the task_finder engine is
    * already stopped by now, so no one else will mess with us.  We need
    * to be sleepable for access_process_vm.  */
   for (i = 0; i < nconsumers; ++i) {
@@ -433,7 +437,8 @@ stapiu_init(struct stapiu_consumer *consumers, size_t nconsumers)
     INIT_LIST_HEAD(&c->instance_list_head);
     INIT_LIST_HEAD(&c->process_list_head);
     mutex_init(&c->consumer_lock);
-
+    spin_lock_init(&c->process_list_lock);
+    
     dbug_uprobes("registering task-finder for procname:%s buildid:%s\n",
 		 ((char*)c->finder.procname ?: (char*)""),
 		 ((char*)c->finder.build_id ?: (char*)""));
@@ -560,7 +565,9 @@ stapiu_change_plus(struct stapiu_consumer* c, struct task_struct *task,
    * calls us in this case with relocation=offset=0, so
    * we don't have to worry about it.  */
   p->base = relocation - offset;
+  spin_lock (&c->process_list_lock);
   list_add(&p->process_list, &c->process_list_head);
+  spin_unlock (&c->process_list_lock);
 
   rc = 0;
   mutex_unlock(&c->consumer_lock);
@@ -587,28 +594,40 @@ stapiu_change_semaphore_plus(struct stapiu_consumer* c, struct task_struct *task
 {
   int rc = 0;
   struct stapiu_process *p;
+  int any_found;
   
   if (! c->sdt_sem_offset) // nothing to do
     return 0;
 
-  /* NB: no lock after this point, as we need to be sleepable for
-   * get/put_user semaphore action.  The given process should be frozen
-   * while we're busy, so it's not an issue.
-   */
-
-  mutex_lock(&c->consumer_lock);
-
+  // NB: we mustn't hold a lock while changing the task memory,
+  // but we need a lock to protect the process_list from concurrent
+  // add/delete.  So hold a spinlock during iteration until the first
+  // hit, then unlock & process.  NB: We could in principle have multiple
+  // instances of the same process in the list (e.g., if the process
+  // somehow maps in the same solib multiple times).  We can't easily
+  // both iterate this list (in a spinlock-protected safe way), and
+  // relax the spinlock enough to do a safe stapiu_write_task_semaphore()
+  // call within the loop.  So we will hit only the copy in our list.
+  any_found = 0;
+  spin_lock(&c->process_list_lock);
   /* Look through all the consumer's processes and increment semaphores.  */
   list_for_each_entry(p, &c->process_list_head, process_list) {
     unsigned long addr = p->base + c->sdt_sem_offset;
     if (addr >= relocation && addr < relocation + length) {
-      int rc2 = stapiu_write_task_semaphore(task, addr, +1);
+      int rc2;
+      // unlock list and process write for this entry
+      spin_unlock(&c->process_list_lock);
+      any_found=1;
+      rc2 = stapiu_write_task_semaphore(task, addr, +1);
       if (!rc)
-	rc = rc2;
+        rc = rc2;
+      break; // exit list_for_each loop
     }
   }
-
-  mutex_unlock(&c->consumer_lock);
+  if (! any_found)
+    spin_unlock(&c->process_list_lock);
+  else
+    ; // already unlocked
 
   return rc;
 }
@@ -635,8 +654,9 @@ stapiu_change_minus(struct stapiu_consumer* c, struct task_struct *task,
   //   process is dying anyway
   // - the stapiu_consumer's process_list linked list will have a record
   //   of the dead process: well, not great, it'll be cleaned up eventually,
-  //   and cleaning it up NOW is tricky - need some spin lock to protect the list,
-  //   but not out sleepy mutex:
+  //   and cleaning it up NOW is tricky - we could use the process_list_lock
+  //   to protect the list (as done in stapiu_change_semaphore_plus),
+  //   but not our sleepy mutex:
   //
   // [ 1955.410237]  ? stapiu_change_minus+0x38/0xf0 [stap_54a723c01c50d972590a5c901516849_15522]
   // [ 1955.411583]  __mutex_lock+0x35/0x820
