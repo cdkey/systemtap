@@ -9,7 +9,7 @@ probe syscall.ioctl {
   ioctl_requests[execname()] <<< 1
   try {
     # Dig down through the task struct to find the actual function handling ioctl.
-    ioctl_func_address = @cast(task_current(), "struct task_struct")->files->fdt->fd[fd]->f_op->unlocked_ioctl
+    ioctl_func_address = @cast(task_current(), "struct task_struct", "kernel")->files->fdt->fd[fd]->f_op->unlocked_ioctl
     if (ioctl_func_address)
       ioctl_func[execname(), ioctl_func_address] <<< 1
   } catch {

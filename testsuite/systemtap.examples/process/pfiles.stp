@@ -787,9 +787,9 @@ function print_unix_socket(sock) {
 		strlen(peername) > 0 ? peername . "\n" : "")
         try { # skip line in case of null pointers
 	printf("        peercred pid: %d\n",
-            @defined(@cast(sock, "socket")->sk->sk_peer_pid) ?
-	    @cast(sock, "socket")->sk->sk_peer_pid->numbers[0]->nr :
-	    @cast(sock, "socket")->sk->sk_peercred->pid ); } catch { }
+            @defined(@cast(sock, "socket", "kernel")->sk->sk_peer_pid) ?
+	    @cast(sock, "socket", "kernel")->sk->sk_peer_pid->numbers[0]->nr :
+	    @cast(sock, "socket", "kernel")->sk->sk_peercred->pid ); } catch { }
 }
 
 function print_ipv4_socket(sock) {
