@@ -18,8 +18,8 @@ probe kernel.trace("timer_expire_entry")
     period[$timer] <<< elapsed
     funct[$timer] = $timer->function
     data[$timer] = @defined($timer->data) ? $timer->data : 0
-    proc_info[$timer] = @defined($timer->data) ? 0 : @container_of($timer, "struct process_timer", timer)->task
-    delayed_work_info[$timer] = @defined($timer->data) ? 0 : & @container_of($timer, "struct delayed_work", timer)
+    proc_info[$timer] = @defined($timer->data) ? 0 : @module_container_of($timer, "kernel", "struct process_timer", timer)->task
+    delayed_work_info[$timer] = @defined($timer->data) ? 0 : & @module_container_of($timer, "kernel", "struct delayed_work", timer)
   }
   last_expire[$timer] = new_expire
 }
