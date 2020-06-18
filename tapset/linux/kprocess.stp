@@ -26,13 +26,21 @@
  *  Fires whenever a new process is successfully created, either as a result of
  *  fork (or one of its syscall variants), or a new kernel thread.
  */
-probe kprocess.create = kernel.function("copy_process").return {
+probe tp_kprocess.create = kernel.trace("sched:sched_process_fork") {
+    task = $child
+    if (_IS_ERR(task)) next
+    new_pid = task_pid(task)
+    new_tid = task_tid(task)
+}
+
+probe dw_kprocess.create = kernel.function("copy_process").return {
     task = $return
     if (_IS_ERR(task)) next
     new_pid = task_pid(task)
     new_tid = task_tid(task)
 }
 
+probe kprocess.create = tp_kprocess.create!, dw_kprocess.create {}
 
 /**
  * probe kprocess.start - Starting new process
