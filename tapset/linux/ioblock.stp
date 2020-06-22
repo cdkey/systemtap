@@ -107,12 +107,12 @@ function bio_rw_str(rw:long)
 @__private30 function __bio_start_sect:long(bio:long)
 {
     try {
-	if (@defined(@cast(bio, "bio")->bi_dev)) {
-	    return @cast(bio, "bio")->bi_bdev->bd_part->start_sect
+	if (@defined(@cast(bio, "bio", "kernel")->bi_dev)) {
+	    return @cast(bio, "bio", "kernel")->bi_bdev->bd_part->start_sect
 	}
-	else if (@defined(@cast(bio, "bio")->bi_disk)) {
- 	    return disk_get_part_start_sect(@cast(bio, "bio")->bi_disk,
-					    @cast(bio, "bio")->bi_partno)
+	else if (@defined(@cast(bio, "bio", "kernel")->bi_disk)) {
+	    return disk_get_part_start_sect(@cast(bio, "bio", "kernel")->bi_disk,
+					    @cast(bio, "bio", "kernel")->bi_partno)
 	}
     } catch {
         return -1
@@ -122,12 +122,12 @@ function bio_rw_str(rw:long)
 /* returns the block device name */
 @__private30 function __bio_devname:string(bio:long)
 {
-    if (@defined(@cast(bio, "bio")->bi_bdev)) {
-	return bdevname(@cast(bio, "bio")->bi_bdev)
+    if (@defined(@cast(bio, "bio", "kernel")->bi_bdev)) {
+	return bdevname(@cast(bio, "bio", "kernel")->bi_bdev)
     }
     else {
-	return disk_name(@cast(bio, "bio")->bi_disk,
-			 @cast(bio, "bio")->bi_partno)
+	return disk_name(@cast(bio, "bio", "kernel")->bi_disk,
+			 @cast(bio, "bio", "kernel")->bi_partno)
     }
 }
 

@@ -28,7 +28,7 @@
 
 @__private30 function __dentry_IS_ROOT:long(dentry:long)
 {
-        return (@cast(dentry, "dentry")->d_parent == dentry)
+        return (@cast(dentry, "dentry", "kernel")->d_parent == dentry)
 }
 
 
@@ -61,7 +61,7 @@
  */
 function d_name:string(dentry:long)
 {
-        s = & @cast(dentry, "dentry")->d_name;
+        s = & @cast(dentry, "dentry", "kernel")->d_name;
         return kernel_string_n(s->name, s->len);
 }
 
@@ -70,8 +70,8 @@ function d_name:string(dentry:long)
 {
         /* i_dentry is an hlist_head on 3.6+, or a list_head before that.  */
         d_alias = @choose_defined(
-                        @cast(inode, "struct inode")->i_dentry->first,
-                        @cast(inode, "struct inode")->i_dentry->next)
+                        @cast(inode, "struct inode", "kernel")->i_dentry->first,
+                        @cast(inode, "struct inode", "kernel")->i_dentry->next)
 
 	if (@type_member_defined("struct dentry", d_alias)) {
         	return & @container_of(d_alias, "struct dentry", d_alias)
@@ -86,8 +86,8 @@ function d_name:string(dentry:long)
 {
         /* s_mounts was added in kernel 3.6, commit b3d9b7a3c.  */
         if (@type_member_defined("struct super_block", s_mounts)) {
-                mnt_ns = @cast(task_current(), "struct task_struct")->nsproxy->mnt_ns
-                sb = @cast(inode, "struct inode")->i_sb
+                mnt_ns = @cast(task_current(), "struct task_struct", "kernel<linux/sched.h>")->nsproxy->mnt_ns
+                sb = @cast(inode, "struct inode", "kernel")->i_sb
 
                 /* Look for the mount which matches the current namespace */
                 head = &sb->s_mounts
@@ -141,7 +141,7 @@ function reverse_path_walk:string(dentry:long)
 {
         while(1) {
                 name = __dentry_prepend(dentry, name);
-                dentry = @cast(dentry, "dentry")->d_parent;
+                dentry = @cast(dentry, "dentry", "kernel")->d_parent;
                 if (__dentry_IS_ROOT(dentry))
                         return name;
         }
@@ -209,8 +209,8 @@ function task_dentry_path:string(task:long,dentry:long,vfsmnt:long)
 	 * dentry == vfsmnt->mnt_root.  In that case, we'll just go
 	 * ahead and handle them normally.
 	 */
-	dentry = & @cast(dentry, "dentry")
-	vfsmnt = & @cast(vfsmnt, "vfsmount")
+	dentry = & @cast(dentry, "dentry", "kernel")
+	vfsmnt = & @cast(vfsmnt, "vfsmount", "kernel")
 
 	if (@type_member_defined("dentry", d_op->d_dname)
 	    && dentry->d_op && dentry->d_op->d_dname
@@ -230,7 +230,7 @@ function task_dentry_path:string(task:long,dentry:long,vfsmnt:long)
 			return sprintf("ANON_INODE:%s", d_name(dentry))
 		}
 		else if (vfsmnt->mnt_sb->s_magic == @const("NSFS_MAGIC")) {
-			ns_ops = &@cast(dentry->d_fsdata, "proc_ns_operations")
+			ns_ops = &@cast(dentry->d_fsdata, "proc_ns_operations", "kernel")
 			return sprintf("%s:[%lu]", kernel_string(ns_ops->name),
 				       dentry->d_inode->i_ino)
 		}
@@ -239,16 +239,16 @@ function task_dentry_path:string(task:long,dentry:long,vfsmnt:long)
 
 	# Handle old-school vs. new-school fs_structs.
 	if (@type_member_defined("fs_struct", rootmnt)) {
-		root_dentry = & @cast(task, "task_struct")->fs->root
-		root_vfsmnt = & @cast(task, "task_struct")->fs->rootmnt
+		root_dentry = & @cast(task, "task_struct", "kernel")->fs->root
+		root_vfsmnt = & @cast(task, "task_struct", "kernel")->fs->rootmnt
 	}
 	else {
-		root_dentry = @cast(task, "task_struct")->fs->root->dentry
-		root_vfsmnt = @cast(task, "task_struct")->fs->root->mnt
+		root_dentry = @cast(task, "task_struct", "kernel")->fs->root->dentry
+		root_vfsmnt = @cast(task, "task_struct", "kernel")->fs->root->mnt
 	}
 
 	if (@type_member_defined("mount", mnt_parent)) {
-		mnt = &@cast(real_mount(vfsmnt), "mount")
+		mnt = &@cast(real_mount(vfsmnt), "mount", "kernel")
 		if (mnt == 0)
 			return "<unknown>"
 	}
@@ -305,10 +305,10 @@ function task_dentry_path:string(task:long,dentry:long,vfsmnt:long)
  */
 function d_path:string(nd:long)
 {
-	dentry = @choose_defined(@cast(nd,"nameidata")->path->dentry,
-			         @cast(nd,"nameidata")->dentry)
-	vfsmnt = @choose_defined(@cast(nd,"nameidata")->path->mnt,
-			         @cast(nd,"nameidata")->mnt)
+	dentry = @choose_defined(@cast(nd,"nameidata", "kernel")->path->dentry,
+			         @cast(nd,"nameidata", "kernel")->dentry)
+	vfsmnt = @choose_defined(@cast(nd,"nameidata", "kernel")->path->mnt,
+			         @cast(nd,"nameidata", "kernel")->mnt)
 
 	return sprintf("%s/", task_dentry_path(task_current(), dentry, vfsmnt))
 }
@@ -353,8 +353,8 @@ function fullpath_struct_path:string(path:long)
 function fullpath_struct_file:string(task:long, file:long)
 {
   return task_dentry_path(task,
-			  @choose_defined(@cast(file, "file")->f_path->dentry,
-					  @cast(file, "file")->f_dentry),
-			  @choose_defined(@cast(file, "file")->f_path->mnt,
-					  @cast(file, "file")->f_vfsmnt))
+			  @choose_defined(@cast(file, "file", "kernel")->f_path->dentry,
+					  @cast(file, "file", "kernel")->f_dentry),
+			  @choose_defined(@cast(file, "file", "kernel")->f_path->mnt,
+					  @cast(file, "file", "kernel")->f_vfsmnt))
 }
