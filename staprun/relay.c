@@ -194,6 +194,8 @@ static void *reader_thread(void *data)
                         int wbytes = rc;
                         char *wbuf = buf;
 
+                        dbug(3, "cpu %d: read %d bytes of data\n", cpu, rc);
+
 			/* Switching file */
 			pthread_mutex_lock(&mutex[cpu]);
 			if ((fsize_max && ((wsize + rc) > fsize_max)) ||

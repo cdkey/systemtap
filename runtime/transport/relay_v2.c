@@ -269,12 +269,60 @@ static void _stp_transport_data_fs_start(void)
 
 static void _stp_transport_data_fs_stop(void)
 {
+
 	if (atomic_read (&_stp_relay_data.transport_state) == STP_TRANSPORT_RUNNING) {
 		atomic_set (&_stp_relay_data.transport_state, STP_TRANSPORT_STOPPED);
 		del_timer_sync(&_stp_relay_data.timer);
 		dbug_trans(0, "flushing...\n");
-		if (_stp_relay_data.rchan)
-			relay_flush(_stp_relay_data.rchan);
+		if (_stp_relay_data.rchan) {
+			struct rchan_buf *buf;
+
+			/* NB we cannot call relay_flush() directly here since
+			 * we need to do inode locking ourselves.
+			 */
+
+#ifdef STP_BULKMODE
+			unsigned int i;
+			struct rchan *rchan = _stp_relay_data.rchan;
+
+			for_each_possible_cpu(i) {
+				buf = _stp_get_rchan_subbuf(rchan->buf, i);
+				if (buf) {
+					struct inode *inode = buf->dentry->d_inode;
+
+					/* NB we are in the syscall context which
+					 * allows sleeping. The following inode
+					 * locking might sleep. See PR26131. */
+					_stp_lock_inode(inode);
+
+					/* NB we intentionally avoids calling
+					 * our own __stp_relay_switch_subbuf()
+					 * since here we can sleep. */
+					relay_switch_subbuf(buf, 0);
+
+					_stp_unlock_inode(inode);
+				}
+			}
+#else  /* !STP_BULKMODE */
+			buf = _stp_get_rchan_subbuf(_stp_relay_data.rchan->buf, 0);
+
+			if (buf != NULL) {
+				struct inode *inode = buf->dentry->d_inode;
+
+				/* NB we are in the syscall context which allows
+				 * sleeping. The following inode locking might
+				 * sleep. See PR26131. */
+				_stp_lock_inode(inode);
+
+				/* NB we intentionally avoids calling
+				 * our own __stp_relay_switch_subbuf()
+				 * since here we can sleep. */
+				relay_switch_subbuf(buf, 0);
+
+				_stp_unlock_inode(inode);
+			}
+#endif
+		}
 	}
 }
 
@@ -403,7 +451,12 @@ _stp_data_write_reserve(size_t size_request, void **entry)
 		return -EINVAL;
 
 	buf = _stp_get_rchan_subbuf(_stp_relay_data.rchan->buf,
-				    smp_processor_id());
+#ifdef STP_BULKMODE
+				    smp_processor_id()
+#else
+				    0
+#endif
+				    );
 	if (unlikely(buf->offset + size_request > buf->chan->subbuf_size)) {
 		size_request = __stp_relay_switch_subbuf(buf, size_request);
 		if (!size_request)
@@ -425,4 +478,63 @@ static int _stp_data_write_commit(void *entry)
 {
 	/* Nothing to do here. */
 	return 0;
+}
+
+static noinline int _stp_transport_trylock_relay_inode(void)
+{
+	unsigned i;
+	struct rchan_buf *buf;
+	struct inode *inode;
+#ifdef DEBUG_TRANS
+	cycles_t begin;
+#endif
+
+	buf = _stp_get_rchan_subbuf(_stp_relay_data.rchan->buf,
+#ifdef STP_BULKMODE
+				    smp_processor_id()
+#else
+				    0
+#endif
+				    );
+	if (buf == NULL)
+		return 0;
+
+	inode = buf->dentry->d_inode;
+
+#ifdef DEBUG_TRANS
+	begin = get_cycles();
+#endif
+
+	/* NB this bounded spinlock is needed for stream mode. it is observed
+	 * that almost all of the iterations needed are less than 50K iterations
+	 * or about 300K cycles.
+	 */
+	for (i = 0; i < 50 * 1000; i++) {
+		if (_stp_trylock_inode(inode)) {
+			dbug_trans(3, "got inode lock: i=%u: cycles: %llu", i,
+				   get_cycles() - begin);
+			return 1;
+		}
+	}
+
+	dbug_trans(0, "failed to get inode lock: i=%u: cycles: %llu", i,
+		   get_cycles() - begin);
+	return 0;
+}
+
+static void _stp_transport_unlock_relay_inode(void)
+{
+	struct rchan_buf *buf;
+
+	buf = _stp_get_rchan_subbuf(_stp_relay_data.rchan->buf,
+#ifdef STP_BULKMODE
+				    smp_processor_id()
+#else
+				    0
+#endif
+				    );
+	if (buf == NULL)
+		return;
+
+	_stp_unlock_inode(buf->dentry->d_inode);
 }

@@ -186,3 +186,14 @@ static int _stp_data_write_commit(void *entry)
 	/* Nothing to do here. */
 	return 0;
 }
+
+static int _stp_transport_trylock_relay_inode(void)
+{
+	/* Nothing to do here. */
+	return 1;
+}
+
+static void _stp_transport_unlock_relay_inode(void)
+{
+	/* Nothing to do here. */
+}

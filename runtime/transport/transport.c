@@ -46,6 +46,10 @@ static int _stp_probes_started = 0;
  * transport state flag is atomic. */
 static atomic_t _stp_transport_state = ATOMIC_INIT(_STP_TS_UNINITIALIZED);
 
+static inline int _stp_trylock_inode(struct inode *inode);
+static inline void _stp_lock_inode(struct inode *inode);
+static inline void _stp_unlock_inode(struct inode *inode);
+
 #ifndef STP_CTL_TIMER_INTERVAL
 /* ctl timer interval in jiffies (default 20 ms) */
 #define STP_CTL_TIMER_INTERVAL		((HZ+49)/50)
@@ -544,6 +548,23 @@ err1:
 	_stp_transport_fs_close();
 err0:
 	return -1;
+}
+
+/* returns 1 when the lock is successfully acquired, 0 otherwise. */
+static inline int _stp_trylock_inode(struct inode *inode)
+{
+#ifdef STAPCONF_INODE_RWSEM
+	return inode_trylock(inode);
+#else
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
+	return mutex_trylock(&inode->i_mutex);
+#else
+	/* NB down_trylock() uses a different convention where 0 means
+	 * the lock is successfully acquired.
+	 */
+	return !down_trylock(&inode->i_sem);
+#endif
+#endif
 }
 
 static inline void _stp_lock_inode(struct inode *inode)

@@ -827,3 +827,14 @@ static void _stp_transport_data_fs_overwrite(int overwrite)
 	dbug_trans(0, "setting ovewrite to %d\n", overwrite);
 	_stp_relay_data.overwrite_flag = overwrite;
 }
+
+static int _stp_transport_trylock_relay_inode(void)
+{
+	/* Nothing to do here. */
+	return 1;
+}
+
+static void _stp_transport_unlock_relay_inode(void)
+{
+	/* Nothing to do here. */
+}

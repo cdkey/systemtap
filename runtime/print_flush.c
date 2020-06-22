@@ -37,7 +37,19 @@ void stp_print_flush(_stp_pbuf *pb)
 #ifdef STP_BULKMODE
 #ifdef NO_PERCPU_HEADERS
 	{
+		struct context* __restrict__ c = NULL;
 		char *bufp = pb->buf;
+		int inode_locked;
+
+		c = _stp_runtime_entryfn_get_context();
+
+		if (!(inode_locked = _stp_transport_trylock_relay_inode())) {
+			atomic_inc (&_stp_transport_failures);
+#ifndef STP_TRANSPORT_RISKY
+			_stp_runtime_entryfn_put_context(c);
+			return;
+#endif
+		}
 
 		while (len > 0) {
 			size_t bytes_reserved;
@@ -55,15 +67,32 @@ void stp_print_flush(_stp_pbuf *pb)
 				break;
 			}
 		}
+
+		if (inode_locked)
+			_stp_transport_unlock_relay_inode();
+
+		_stp_runtime_entryfn_put_context(c);
 	}
 
 #else  /* !NO_PERCPU_HEADERS */
 
 	{
+		struct context* __restrict__ c = NULL;
 		char *bufp = pb->buf;
 		struct _stp_trace t = {	.sequence = _stp_seq_inc(),
 					.pdu_len = len};
 		size_t bytes_reserved;
+		int inode_locked;
+
+		c = _stp_runtime_entryfn_get_context();
+
+		if (!(inode_locked = _stp_transport_trylock_relay_inode())) {
+			atomic_inc (&_stp_transport_failures);
+#ifndef STP_TRANSPORT_RISKY
+			_stp_runtime_entryfn_put_context(c);
+			return;
+#endif
+		}
 
 		bytes_reserved = _stp_data_write_reserve(sizeof(struct _stp_trace), &entry);
 		if (likely(entry && bytes_reserved > 0)) {
@@ -73,7 +102,7 @@ void stp_print_flush(_stp_pbuf *pb)
 		}
 		else {
 			atomic_inc(&_stp_transport_failures);
-			return;
+			goto done;
 		}
 
 		while (len > 0) {
@@ -90,6 +119,13 @@ void stp_print_flush(_stp_pbuf *pb)
 				break;
 			}
 		}
+
+	done:
+
+		if (inode_locked)
+			_stp_transport_unlock_relay_inode();
+
+		_stp_runtime_entryfn_put_context(c);
 	}
 #endif /* !NO_PERCPU_HEADERS */
 
@@ -110,6 +146,7 @@ void stp_print_flush(_stp_pbuf *pb)
 		unsigned long flags;
 		struct context* __restrict__ c = NULL;
 		char *bufp = pb->buf;
+		int inode_locked;
 
 		/* Prevent probe reentrancy on _stp_print_lock.
 		 *
@@ -128,6 +165,15 @@ void stp_print_flush(_stp_pbuf *pb)
                  * algorithm.
 		 */
 		c = _stp_runtime_entryfn_get_context();
+
+		if (!(inode_locked = _stp_transport_trylock_relay_inode())) {
+			atomic_inc (&_stp_transport_failures);
+#ifndef STP_TRANSPORT_RISKY
+			dbug_trans(0, "discarding %zu bytes of data\n", len);
+			_stp_runtime_entryfn_put_context(c);
+			return;
+#endif
+		}
 
 		dbug_trans(1, "calling _stp_data_write...\n");
 		stp_spin_lock_irqsave(&_stp_print_lock, flags);
@@ -148,6 +194,10 @@ void stp_print_flush(_stp_pbuf *pb)
 			}
 		}
 		stp_spin_unlock_irqrestore(&_stp_print_lock, flags);
+
+		if (inode_locked)
+			_stp_transport_unlock_relay_inode();
+
 		_stp_runtime_entryfn_put_context(c);
 	}
 #endif /* STP_TRANSPORT_VERSION != 1 */
