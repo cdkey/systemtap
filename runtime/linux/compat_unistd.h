@@ -1873,8 +1873,10 @@
 #define __NR_compat_chown32		__NR_chown32
 #define __NR_compat_chroot		__NR_chroot
 #define __NR_compat_clock_adjtime	__NR_clock_adjtime
+#if !(defined(__aarch64__) && LINUX_VERSION_CODE >= KERNEL_VERSION(5,3,0))
 #define __NR_compat_clock_getres	__NR_clock_getres
 #define __NR_compat_clock_gettime	__NR_clock_gettime
+#endif
 #define __NR_compat_clock_nanosleep	__NR_clock_nanosleep
 #define __NR_compat_clock_settime	__NR_clock_settime
 #define __NR_compat_clone		__NR_clone
@@ -1955,7 +1957,9 @@
 #define __NR_compat_getrusage		__NR_getrusage
 #define __NR_compat_getsid		__NR_getsid
 #define __NR_compat_gettid		__NR_gettid
+#if !(defined(__aarch64__) && LINUX_VERSION_CODE >= KERNEL_VERSION(5,3,0))
 #define __NR_compat_gettimeofday	__NR_gettimeofday
+#endif
 #define __NR_compat_getuid		__NR_getuid
 #define __NR_compat_getuid32		__NR_getuid32
 #define __NR_compat_getxattr		__NR_getxattr
