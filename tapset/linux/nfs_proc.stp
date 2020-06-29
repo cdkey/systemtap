@@ -77,11 +77,11 @@ function get_ip_from_client:string(clnt:long)
 	 * inside that buffer. */
 	if (@cast(addr, "sockaddr")->sa_family
 		== @const("AF_INET")) {
-		return format_ipaddr(&@cast(addr, "sockaddr_in")->sin_addr->s_addr, @const("AF_INET"))
+		return format_ipaddr(&@cast(addr, "sockaddr_in", "kernel:sunrpc")->sin_addr->s_addr, @const("AF_INET"))
 	}
 	else if (@cast(addr, "sockaddr")->sa_family 
 		== @const("AF_INET6"))  {
-		return format_ipaddr(&@cast(addr, "sockaddr_in6")->sin6_addr, @const("AF_INET6"))
+		return format_ipaddr(&@cast(addr, "sockaddr_in6", "kernel:sunrpc")->sin6_addr, @const("AF_INET6"))
 	}
 	return ""	
 }
@@ -90,12 +90,12 @@ function get_ip_from_client:long(clnt:long)
 {
 	cl_xprt = @cast(clnt, "rpc_clnt", "kernel:sunrpc")->cl_xprt
         addr = &@cast(cl_xprt, "rpc_xprt", "kernel:sunrpc")->addr
-	if (@cast(addr, "sockaddr_in")->sin_family
+	if (@cast(addr, "sockaddr_in", "kernel:sunrpc")->sin_family
 		!= @const("AF_INET")) {
                /* Now consider ipv4 only */
                return 0
 	}
-	return @cast(addr, "sockaddr_in")->sin_addr->s_addr
+	return @cast(addr, "sockaddr_in", "kernel:sunrpc")->sin_addr->s_addr
 }
 %)
 
@@ -758,7 +758,11 @@ probe _nfs.proc2.missing_read_setup = never
 {
 	inode = 0
 	client = 0
+%( systemtap_v >= "4.3" %?
+	server_ip = "0"
+%:
 	server_ip = 0
+%)
 	prot = 0
 
 	count = 0
