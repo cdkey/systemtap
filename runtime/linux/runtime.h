@@ -28,7 +28,7 @@
 #include <linux/hardirq.h>
 #include <asm/uaccess.h>
 #include <linux/kallsyms.h>
-#include <linux/vermagic.h>
+#include <generated/utsrelease.h>
 #include <linux/utsname.h>
 #include <linux/version.h>
 #include <linux/compat.h>
