@@ -6,6 +6,7 @@
 #include <linux/list.h>
 #include <linux/binfmts.h>
 #include <linux/mount.h>
+#include "stap_mmap_lock.h"
 #ifndef STAPCONF_TASK_UID
 #include <linux/cred.h>
 #endif
@@ -737,7 +738,7 @@ __stp_call_mmap_callbacks_with_addr(struct stap_task_finder_target *tgt,
 
 	// The down_read() function can sleep, so we'll call
 	// down_read_trylock() instead, which can fail.
-	if (! down_read_trylock(&mm->mmap_sem))
+	if (! mmap_read_trylock(mm))
 		return;
 	vma = __stp_find_file_based_vma(mm, addr);
 	if (vma) {
@@ -755,7 +756,7 @@ __stp_call_mmap_callbacks_with_addr(struct stap_task_finder_target *tgt,
 		// Allocate space for a path
 		mmpath_buf = _stp_kmalloc(PATH_MAX);
 		if (mmpath_buf == NULL) {
-			up_read(&mm->mmap_sem);
+                        mmap_read_unlock(mm);
 			_stp_error("Unable to allocate space for path");
 			return;
 		}
@@ -782,7 +783,7 @@ __stp_call_mmap_callbacks_with_addr(struct stap_task_finder_target *tgt,
 	// At this point, we're done with the vma (assuming we found
 	// one).  We can't hold the 'mmap_sem' semaphore while making
 	// callbacks.
-	up_read(&mm->mmap_sem);
+        mmap_read_unlock(mm);
 		
 	if (mmpath)
 		__stp_call_mmap_callbacks(tgt, tsk, mmpath, dentry, addr,
@@ -1227,7 +1228,7 @@ __stp_call_mmap_callbacks_for_task(struct stap_task_finder_target *tgt,
 
 	// The down_read() function can sleep, so we'll call
 	// down_read_trylock() instead, which can fail.
-	if (! down_read_trylock(&mm->mmap_sem)) {
+	if (! mmap_read_trylock(mm)) {
 		_stp_kfree(mmpath_buf);
 		return;
 	}
@@ -1281,7 +1282,7 @@ __stp_call_mmap_callbacks_for_task(struct stap_task_finder_target *tgt,
 	// At this point, we're done with the vmas (assuming we found
 	// any).  We can't hold the 'mmap_sem' semaphore while making
 	// callbacks.
-	up_read(&mm->mmap_sem);
+        mmap_read_unlock(mm);
 
 	if (vma_cache) {
 		int i;

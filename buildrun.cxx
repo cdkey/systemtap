@@ -506,6 +506,8 @@ compile_pass (systemtap_session& s)
 		  "STAPCONF_LINUX_SCHED_HEADERS", NULL);
   output_autoconf(s, o, cs, "autoconf-stack-trace-save-regs.c",
 		  "STAPCONF_STACK_TRACE_SAVE_REGS", NULL);
+  output_autoconf(s, o, cs, "autoconf-mmap_lock.c",
+		  "STAPCONF_MMAP_LOCK", NULL);
 
   // used by runtime/linux/netfilter.c
   output_exportconf(s, o2, "nf_register_hook", "STAPCONF_NF_REGISTER_HOOK");

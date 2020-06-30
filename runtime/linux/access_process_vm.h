@@ -3,6 +3,7 @@
  * some distros export it on some architectures.  To workaround this inconsistency,
  * we copied and pasted it here.  Fortunately, everything it calls is exported.
  */
+#include "stap_mmap_lock.h"
 #include <linux/sched.h>
 #if defined(STAPCONF_LINUX_SCHED_HEADERS)
 #include <linux/sched/mm.h>
@@ -29,7 +30,7 @@ __access_process_vm_ (struct task_struct *tsk, unsigned long addr, void *buf,
   if (!mm)
     return 0;
 
-  down_read (&mm->mmap_sem);
+  mmap_read_lock (mm);
   /* ignore errors, just check how much was successfully transferred */
   while (len)
     {
@@ -84,7 +85,7 @@ __access_process_vm_ (struct task_struct *tsk, unsigned long addr, void *buf,
       buf += bytes;
       addr += bytes;
     }
-  up_read (&mm->mmap_sem);
+  mmap_read_unlock(mm);
   mmput (mm);
 
   return buf - old_buf;
