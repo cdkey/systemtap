@@ -28,7 +28,11 @@
 #include <linux/hardirq.h>
 #include <asm/uaccess.h>
 #include <linux/kallsyms.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,17,0)
 #include <generated/utsrelease.h>
+#else
+#include <linux/vermagic.h>
+#endif
 #include <linux/utsname.h>
 #include <linux/version.h>
 #include <linux/compat.h>
