@@ -228,8 +228,8 @@ function user_string_n_warn:string (addr:long, n:long, warn_msg:string)
 		// NB: using error_buffer to get local space for the warning, but we're
 		// not aborting, so leave last_error alone.
 		snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
-				"user string copy fault 0x%ld at %lx [man error::fault]", rc,
-				(void *) (uintptr_t) STAP_ARG_addr);
+				"user string copy fault %ld at 0x%lx [man error::fault]", rc,
+				(uintptr_t) STAP_ARG_addr);
 		_stp_warn(CONTEXT->error_buffer);
 		strlcpy (STAP_RETVALUE, STAP_ARG_warn_msg, MAXSTRINGLEN);
 	} else

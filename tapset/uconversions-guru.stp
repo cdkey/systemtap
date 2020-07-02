@@ -13,7 +13,7 @@ function set_user_string (addr:long, val:string) %{ /* guru */
   if (0) {
 deref_fault: /* branched to from store_deref_string() */
     snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
-        "user string copy fault at 0x%p [man error::fault]", (void *) (uintptr_t) STAP_ARG_addr);
+        "user string copy fault at 0x%lx [man error::fault]", (uintptr_t) STAP_ARG_addr);
     CONTEXT->last_error = CONTEXT->error_buffer;
   }
 %}
@@ -35,7 +35,7 @@ function set_user_string_n (addr:long, n:long, val:string) %{ /* guru */
   if (0) {
 deref_fault: /* branched to from store_deref_string() */
     snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
-        "user string copy fault at 0x%p [man error::fault]", (void *) (uintptr_t) STAP_ARG_addr);
+        "user string copy fault at 0x%lx [man error::fault]", (uintptr_t) STAP_ARG_addr);
     CONTEXT->last_error = CONTEXT->error_buffer;
   }
 %}
