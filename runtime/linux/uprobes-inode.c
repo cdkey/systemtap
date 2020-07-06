@@ -172,6 +172,7 @@ stapiu_probe_prehandler (struct uprobe_consumer *inst, struct pt_regs *regs)
   if (_stp_target) // need we filter by pid at all?
     {
       struct stapiu_process *p, *process = NULL;
+      unsigned long flags;
 
       // First find the related process, set by stapiu_change_plus.
       // NB: This is a linear search performed for every probe hit!
@@ -180,14 +181,14 @@ stapiu_probe_prehandler (struct uprobe_consumer *inst, struct pt_regs *regs)
       // optimizing.  NB: on rhel7 sometimes we're invoked from atomic
       // context, so must be careful to use the spinlock, not the
       // mutex.
-      spin_lock(&c->process_list_lock);
+      spin_lock_irqsave(&c->process_list_lock, flags);
       list_for_each_entry(p, &c->process_list_head, process_list) {
 	if (p->tgid == current->tgid) {
 	  process = p;
 	  break;
 	}
       }
-      spin_unlock(&c->process_list_lock);
+      spin_unlock_irqrestore(&c->process_list_lock, flags);
       if (!process) {
 #ifdef UPROBE_HANDLER_REMOVE
 	/* Once we're past the starting phase, we can be sure that any
@@ -398,7 +399,7 @@ static void
 stapiu_consumer_refresh(struct stapiu_consumer *c)
 {
   struct stapiu_instance *inst;
-
+  
   mutex_lock(& c->consumer_lock);
 
   list_for_each_entry(inst, &c->instance_list_head, instance_list) {
@@ -420,7 +421,10 @@ stapiu_exit(struct stapiu_consumer *consumers, size_t nconsumers)
   stapiu_decrement_semaphores(consumers, nconsumers);
   for (i = 0; i < nconsumers; ++i) {
     struct stapiu_consumer *c = &consumers[i];
+    // protect against conceivable stapiu_refresh() at same time
+    mutex_lock(& c->consumer_lock);
     stapiu_consumer_unreg(c);
+    mutex_unlock(& c->consumer_lock);
     /* NB: task_finder needs no unregister. */
   }
 }
@@ -480,6 +484,7 @@ stapiu_change_plus(struct stapiu_consumer* c, struct task_struct *task,
   struct stapiu_instance *inst = NULL;
   struct stapiu_process *p;
   int j;
+  unsigned long flags;
 
   if (! inode) {
       rc = -EINVAL;
@@ -565,9 +570,9 @@ stapiu_change_plus(struct stapiu_consumer* c, struct task_struct *task,
    * calls us in this case with relocation=offset=0, so
    * we don't have to worry about it.  */
   p->base = relocation - offset;
-  spin_lock (&c->process_list_lock);
+  spin_lock_irqsave (&c->process_list_lock, flags);
   list_add(&p->process_list, &c->process_list_head);
-  spin_unlock (&c->process_list_lock);
+  spin_unlock_irqrestore (&c->process_list_lock, flags);
 
   rc = 0;
   mutex_unlock(&c->consumer_lock);
@@ -595,6 +600,7 @@ stapiu_change_semaphore_plus(struct stapiu_consumer* c, struct task_struct *task
   int rc = 0;
   struct stapiu_process *p;
   int any_found;
+  unsigned long flags;
   
   if (! c->sdt_sem_offset) // nothing to do
     return 0;
@@ -609,14 +615,14 @@ stapiu_change_semaphore_plus(struct stapiu_consumer* c, struct task_struct *task
   // relax the spinlock enough to do a safe stapiu_write_task_semaphore()
   // call within the loop.  So we will hit only the copy in our list.
   any_found = 0;
-  spin_lock(&c->process_list_lock);
+  spin_lock_irqsave(&c->process_list_lock, flags);
   /* Look through all the consumer's processes and increment semaphores.  */
   list_for_each_entry(p, &c->process_list_head, process_list) {
     unsigned long addr = p->base + c->sdt_sem_offset;
     if (addr >= relocation && addr < relocation + length) {
       int rc2;
       // unlock list and process write for this entry
-      spin_unlock(&c->process_list_lock);
+      spin_unlock_irqrestore(&c->process_list_lock, flags);
       any_found=1;
       rc2 = stapiu_write_task_semaphore(task, addr, +1);
       if (!rc)
@@ -625,7 +631,7 @@ stapiu_change_semaphore_plus(struct stapiu_consumer* c, struct task_struct *task
     }
   }
   if (! any_found)
-    spin_unlock(&c->process_list_lock);
+    spin_unlock_irqrestore(&c->process_list_lock, flags);
   else
     ; // already unlocked
 

@@ -2144,19 +2144,13 @@ c_unparser::emit_module_refresh ()
     o->newline() << "mutex_lock(&module_refresh_mutex);";
 
   /* If we're not in STARTING/RUNNING state, don't try doing any work.
-     PR16766 */
+     PR16766.  We don't want to run refresh ops during e.g. STOPPING,
+     so as to possibly activate uprobes near shutdown. */
   o->newline() << "state = atomic_read (session_state());";
-  o->newline() << "if (state != STAP_SESSION_RUNNING && state != STAP_SESSION_STARTING && state != STAP_SESSION_ERROR) {";
-  // cannot _stp_warn etc. since we're not in probe context
-  o->newline(1) << "#if defined(__KERNEL__)";
-  o->newline() << "if (state != STAP_SESSION_STOPPING)";
-  o->newline(1) << "printk (KERN_ERR \"stap module notifier triggered in unexpected state %d\\n\", state);";
-  o->indent(-1);
-  o->newline() << "#endif";
-
+  o->newline() << "if (state != STAP_SESSION_RUNNING && state != STAP_SESSION_STARTING) {";
+  o->newline(1);
   if (!session->runtime_usermode_p())
     o->newline() << "mutex_unlock(&module_refresh_mutex);";
-
   o->newline() << "return;";
   o->newline(-1) << "}";
 
