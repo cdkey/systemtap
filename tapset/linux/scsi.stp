@@ -179,8 +179,8 @@ probe scsi.iocompleted
 
 function timer_pending:long(timer:long)
 {
-	return (@choose_defined(@cast(timer, "timer_list")->entry->next,
-				@cast(timer, "timer_list")->base) != 0)
+	return (@choose_defined(@cast(timer, "timer_list", "kernel")->entry->next,
+				@cast(timer, "timer_list", "kernel")->base) != 0)
 }
 
 function scsi_timer_pending:long(cmd:long)

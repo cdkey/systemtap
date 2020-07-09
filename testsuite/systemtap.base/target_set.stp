@@ -19,13 +19,13 @@ probe begin
 probe syscall.nanosleep
 {
     if (target_set_pid(pid())
-	&& user_long(&@cast(req_uaddr, "struct timespec")->tv_sec) == $1)
+	&& user_long(&@cast(req_uaddr, "struct timespec", "kernel")->tv_sec) == $1)
 	target_set_report()
 }
 probe syscall.compat_nanosleep ?
 {
     if (target_set_pid(pid())
-	&& user_long(&@cast(req_uaddr, "struct compat_timespec")->tv_sec) == $1)
+	&& user_long(&@cast(req_uaddr, "struct compat_timespec", "kernel")->tv_sec) == $1)
 	target_set_report()
 }
 

@@ -12,16 +12,16 @@ global i = 1
 # pretty-printing with @cast
 probe begin {
     t = task_current()
-    log(@cast(t, "task_struct")$)
-    log(@cast(t, "task_struct")$$)
-    log(@cast(t, "task_struct")->fs$)
-    log(@cast(t, "task_struct")->fs$$)
-    log(@cast(t, "task_struct")->comm$)
-    log(@cast(t, "task_struct")->comm$$)
-    log(@cast(t, "task_struct")->comm[0]$)
-    log(@cast(t, "task_struct")->comm[0]$$)
-    log(@cast(t, "task_struct")->comm[i]$)
-    log(@cast(t, "task_struct")->comm[i]$$)
+    log(@cast(t, "task_struct", "kernel")$)
+    log(@cast(t, "task_struct", "kernel")$$)
+    log(@cast(t, "task_struct", "kernel")->fs$)
+    log(@cast(t, "task_struct", "kernel")->fs$$)
+    log(@cast(t, "task_struct", "kernel")->comm$)
+    log(@cast(t, "task_struct", "kernel")->comm$$)
+    log(@cast(t, "task_struct", "kernel")->comm[0]$)
+    log(@cast(t, "task_struct", "kernel")->comm[0]$$)
+    log(@cast(t, "task_struct", "kernel")->comm[i]$)
+    log(@cast(t, "task_struct", "kernel")->comm[i]$$)
 }
 
 # pretty-printing in dwarf kernel context

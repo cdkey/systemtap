@@ -69,7 +69,7 @@
 
 /* A function that returns the device name given the net_device struct */
 function get_netdev_name:string (addr:long) {
-	return kernel_string(@cast(addr, "net_device")->name)
+	return kernel_string(@cast(addr, "net_device", "kernel")->name)
 }
 
 /**

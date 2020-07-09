@@ -11,8 +11,8 @@ function check:long(ack:long, urg:long) {
   ptr = get_ptr()
 
   /* set the bits with cast */
-  @cast(ptr, "tcphdr")->ack = ack
-  @cast(ptr, "tcphdr")->urg = urg
+  @cast(ptr, "tcphdr", "kernel")->ack = ack
+  @cast(ptr, "tcphdr", "kernel")->urg = urg
 
   /* check that reading with embedded-C is ok */
   real_ack = get_ack()
@@ -20,8 +20,8 @@ function check:long(ack:long, urg:long) {
   errors = (ack != real_ack) + (urg != real_urg)
 
   /* check that reading with a cast is ok */
-  cast_ack = @cast(ptr, "tcphdr")->ack
-  cast_urg = @cast(ptr, "tcphdr")->urg
+  cast_ack = @cast(ptr, "tcphdr", "kernel")->ack
+  cast_urg = @cast(ptr, "tcphdr", "kernel")->urg
   errors += (ack != cast_ack) + (urg != cast_urg)
 
   if (errors)

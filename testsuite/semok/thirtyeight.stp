@@ -7,4 +7,4 @@
 probe kernel.function("do_sys_open") { println(@defined($mode) ? 1 : $nosuchvar) }
 probe kernel.trace("sched_switch")? { println(@defined($next->pid) ? 1 : $nosuchvar) }
 probe procfs.write { println(@defined($value) ? 1 : $nosuchvar) }
-probe begin { println(@defined(@cast(0, "task_struct")->pid) ? 1 : $nosuchvar) }
+probe begin { println(@defined(@cast(0, "task_struct", "kernel")->pid) ? 1 : $nosuchvar) }
