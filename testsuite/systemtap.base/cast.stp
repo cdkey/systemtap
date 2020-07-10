@@ -4,7 +4,7 @@ probe begin
 
     // Compare PIDs
     pid = pid()
-    cast_pid = @cast(curr, "task_struct")->tgid
+    cast_pid = @cast(curr, "task_struct", "kernel")->tgid
     if (pid == cast_pid)
         println("PID OK")
     else
@@ -18,7 +18,7 @@ probe begin
         printf("PID2 %d != %d\n", pid, cast_pid)
 
     // Compare PIDs with an array access (PR11556)
-    cast_pid = @cast(curr, "task_struct")[0]->tgid
+    cast_pid = @cast(curr, "task_struct", "kernel")[0]->tgid
     if (pid == cast_pid)
         println("PID3 OK")
     else
@@ -26,16 +26,16 @@ probe begin
 
     // Compare execnames
     name = execname()
-    cast_name = kernel_string(@cast(curr, "task_struct")->comm)
+    cast_name = kernel_string(@cast(curr, "task_struct", "kernel")->comm)
     if (name == cast_name)
         println("execname OK")
     else
         printf("execname \"%s\" != \"%s\"\n", name, cast_name)
 
     // Compare usage counter values through a struct address
-    usage = @cast(curr, "task_struct")->usage->counter
-    pusage = & @cast(curr, "task_struct")->usage
-    cast_usage = @cast(pusage, "atomic_t")->counter
+    usage = @cast(curr, "task_struct", "kernel")->usage->counter
+    pusage = & @cast(curr, "task_struct", "kernel")->usage
+    cast_usage = @cast(pusage, "atomic_t", "kernel")->counter
     if (usage == cast_usage)
         println("usage OK")
     else
