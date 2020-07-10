@@ -2214,7 +2214,7 @@ query_dwarf_func (Dwarf_Die * func, dwarf_query * q)
   string decl_file = dwarf_decl_file(func)?:"";
   
   if (q->sess.verbose>4)
-    clog << _F("querying dwarf func in file %s count %lu (func dieoffset: %#" PRIx64 ")\n",
+    clog << _F("querying dwarf func in file %s count %zu (func dieoffset: %#" PRIx64 ")\n",
                decl_file.c_str(),
                q->filtered_srcfiles.count(decl_file),
                dwarf_dieoffset(func));
