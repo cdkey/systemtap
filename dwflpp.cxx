@@ -2331,6 +2331,8 @@ dwflpp::collect_srcfiles_matching (string const & pattern,
   for (size_t i = 0; i < nfiles; ++i)
     {
       char const * fname = dwarf_filesrc (srcfiles, i, NULL, NULL);
+      if (strcmp (fname, "???") == 0) // elfutils represents index=0 null_file this way sometimes
+        continue;
       if (fnmatch (pattern.c_str(), fname, 0) == 0 ||
           fnmatch (prefixed_pattern.c_str(), fname, 0) == 0)
         {

@@ -2095,6 +2095,12 @@ query_srcfile_line (Dwarf_Addr addr, int lineno, dwarf_query * q)
   auto bfis = q->filtered_all();
   for (auto i = bfis.begin(); i != bfis.end(); ++i)
     {
+      if (q->sess.verbose>3)
+        clog << _F("checking DIE (dieoffset: %#" PRIx64 ") "
+                   "against scope address %#" PRIx64 "\n",
+                   dwarf_dieoffset(& i->die),
+                   addr);
+
       if (q->dw.die_has_pc (i->die, addr))
         {
           if (q->sess.verbose>3)
@@ -2181,7 +2187,13 @@ query_dwarf_inline_instance (Dwarf_Die * die, dwarf_query * q)
           // make sure that this inline hasn't already
           // been matched from a different CU
           if (q->inline_dupes.insert(inl).second)
-            q->filtered_inlines.push_back(inl);
+            {
+              if (q->sess.verbose>3)
+                clog << _F("added to filtered_inlines (dieoffset: %#" PRIx64 ")\n",
+                           dwarf_dieoffset(&inl.die));
+              
+              q->filtered_inlines.push_back(inl);
+            }
         }
       return DWARF_CB_OK;
     }
@@ -2199,8 +2211,17 @@ query_dwarf_func (Dwarf_Die * func, dwarf_query * q)
 
   // weed out functions whose decl_file isn't one of
   // the source files that we actually care about
+  string decl_file = dwarf_decl_file(func)?:"";
+  
+  if (q->sess.verbose>4)
+    clog << _F("querying dwarf func in file %s count %lu (func dieoffset: %#" PRIx64 ")\n",
+               decl_file.c_str(),
+               q->filtered_srcfiles.count(decl_file),
+               dwarf_dieoffset(func));
+
   if (q->spec_type != function_alone &&
-      q->filtered_srcfiles.count(dwarf_decl_file(func)?:"") == 0)
+      decl_file != "" && // do not skip decl_file-free DIEs; could be artificial/LTO?
+      q->filtered_srcfiles.count(decl_file) == 0)
     return DWARF_CB_OK;
 
   try
@@ -2268,6 +2289,10 @@ query_dwarf_func (Dwarf_Die * func, dwarf_query * q)
                                "%s at %p\n", name, (void*)entrypc);
                   return DWARF_CB_OK;
                 }
+
+              if (q->sess.verbose>3)
+                clog << _F("added to filtered_functions (dieoffset: %#" PRIx64 ")\n",
+                           dwarf_dieoffset(&func.die));
 
               q->filtered_functions.push_back (func);
             }

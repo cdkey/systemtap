@@ -1,0 +1,15 @@
+set test "openmp-stmt"
+
+set test_flags "additional_flags=-g additional_flags=-fopenmp additional_flags=-O2"
+set res [target_compile $srcdir/$subdir/$test.c $test.exe executable "$test_flags"]
+
+set count 0
+spawn stap -L "process(\"$test.exe\").statement(\"*@*:*\")"
+expect {
+    -re {^process[^\r\n]*\r\n} { incr count; exp_continue }
+    timeout { }
+    eof { }
+}
+verbose -log "$count statements found"
+
+if { $count > 1} then { pass $test } else { fail $test $count }
