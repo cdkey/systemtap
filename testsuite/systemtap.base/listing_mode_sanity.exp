@@ -110,6 +110,11 @@ if {[catch {exec stap -l \$1.function(@2) kernel vfs_read -e {probe begin {}} 2>
    return
 }
 
+# The following checks are quite costly - require minutes of CPU time
+# and gigabytes of RAM ... so we don't do it on a small machine.
+set kb_avail [lindex [exec grep MemAvailable /proc/meminfo] 1]
+if {$kb_avail < 6000000} then { return }
+
 # Checks that -vvv -l/-L ** doesn't crash anything (RHBZ1065757)
 if {[catch {exec stap -vvv -l \*\* 2>/dev/null}]} {
    fail "$test (stap -l ** exited badly)"
