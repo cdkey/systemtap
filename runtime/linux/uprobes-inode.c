@@ -575,12 +575,10 @@ stapiu_change_plus(struct stapiu_consumer* c, struct task_struct *task,
   spin_unlock_irqrestore (&c->process_list_lock, flags);
 
   rc = 0;
-  mutex_unlock(&c->consumer_lock);
-  
   // Register actual uprobe if cond_enabled right now
   if (c->probe->cond_enabled)
     (void) stapiu_register(inst, c);
-  goto out;
+  goto out1;
 
  out2:
   _stp_kfree(inst);
