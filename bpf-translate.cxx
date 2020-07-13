@@ -4956,6 +4956,10 @@ translate_bpf_pass (systemtap_session& s)
             }
         }
 
+      if (s.utrace_derived_probes)
+        warn_for_bpf(s, s.utrace_derived_probes, "utrace probe");
+      // XXX PR26234: need to warn about other probe groups....
+
       output_kernel_version(eo, s.kernel_base_release);
       output_license(eo);
       output_stapbpf_script_name(eo, escaped_literal_string(s.script_basename()));

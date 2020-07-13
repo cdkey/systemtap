@@ -45,6 +45,8 @@ struct hrtimer_derived_probe_group;
 struct timer_derived_probe_group;
 struct tracepoint_derived_probe_group;
 
+struct utrace_derived_probe_group;
+
 typedef std::vector<std::pair<derived_probe *, std::string> >
   sort_for_bpf_probe_arg_vector;
 
@@ -67,6 +69,11 @@ bool sort_for_bpf(systemtap_session& s,
 bool sort_for_bpf(systemtap_session& s,
 		  uprobe_derived_probe_group *u,
                   sort_for_bpf_probe_arg_vector &v);
+
+// PR26234: Warn that a derived probe group is not supported on BPF:
+void warn_for_bpf(systemtap_session& s,
+                  utrace_derived_probe_group *dpg,
+                  const std::string& kind); // '<kind>' will be ignored
 
 void register_tapset_been(systemtap_session& sess);
 void register_tapset_itrace(systemtap_session& sess);
