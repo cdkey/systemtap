@@ -58,10 +58,10 @@ class _HeaderCreator(object):
                           (this_provider, this_probe, this_probe)
         semaphores_def += '#endif\n'
         semaphores_def += '#if defined STAP_SDT_V1 || defined STAP_SDT_V2 \n'
-        semaphores_def += "__extension__ unsigned short %s_%s_semaphore __attribute__ ((unused)) __attribute__ ((section (\".probes\")));\n" % \
+        semaphores_def += "__extension__ unsigned short %s_%s_semaphore __attribute__ ((used)) __attribute__ ((section (\".probes\")));\n" % \
             (this_provider, this_probe)
         semaphores_def += '#else\n'
-        semaphores_def += "__extension__ unsigned short %s_%s_semaphore __attribute__ ((unused)) __attribute__ ((section (\".probes\"))) __attribute__ ((visibility (\"hidden\")));\n" % \
+        semaphores_def += "__extension__ unsigned short %s_%s_semaphore __attribute__ ((used)) __attribute__ ((section (\".probes\"))) __attribute__ ((visibility (\"hidden\")));\n" % \
             (this_provider, this_probe)
         semaphores_def += '#endif\n'
         return semaphores_def
@@ -102,7 +102,7 @@ class _HeaderCreator(object):
                       (this_probe_canon, this_provider, this_probe))
         probe_def += ('#endif\n')
         # NB: unsigned short is fixed in ABI
-        probe_def += ("__extension__ extern unsigned short %s_%s_semaphore __attribute__ ((unused)) __attribute__ ((section (\".probes\")));\n" % \
+        probe_def += ("__extension__ extern unsigned short %s_%s_semaphore __attribute__ ((used)) __attribute__ ((section (\".probes\")));\n" % \
                       (this_provider, this_probe))
         probe_def += (define_str + stap_str + "\n\n")
         return probe_def
