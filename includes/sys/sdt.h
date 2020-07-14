@@ -257,7 +257,9 @@ __extension__ extern unsigned long long __sdt_unsp;
   _SDT_ASM_1(.endif)
 
 #if defined _SDT_HAS_SEMAPHORES
-#define _SDT_SEMAPHORE(p,n) _SDT_ASM_1(		_SDT_ASM_ADDR p##_##n##_semaphore)
+#define _SDT_SEMAPHORE(p,n) \
+	_SDT_ASM_1(.global p##_##n##_semaphore) \
+	_SDT_ASM_1(		_SDT_ASM_ADDR p##_##n##_semaphore)
 #else
 #define _SDT_SEMAPHORE(p,n) _SDT_ASM_1(		_SDT_ASM_ADDR 0)
 #endif
