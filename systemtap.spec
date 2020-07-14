@@ -48,7 +48,8 @@
 
 %if 0%{?fedora} >= 18 || 0%{?rhel} >= 6
    %define initdir %{_initddir}
-%else # RHEL5 doesn't know _initddir
+%else
+   # RHEL5 doesn't know _initddir
    %define initdir %{_initrddir}
 %endif
 
@@ -58,7 +59,8 @@
    %else
       %if 0%{?rhel} >= 6
          %define udevrulesdir /lib/udev/rules.d
-      %else # RHEL5
+      %else
+         # RHEL5
          %define udevrulesdir /etc/udev/rules.d
       %endif
    %endif
