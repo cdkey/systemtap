@@ -137,6 +137,8 @@ am__DEPENDENCIES_1 =
 @HAVE_MONITOR_LIBS_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) \
 @HAVE_MONITOR_LIBS_TRUE@	$(am__DEPENDENCIES_1)
 stapio_DEPENDENCIES = libstrfloctime.a $(am__DEPENDENCIES_2)
+stapio_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(stapio_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am__dirstamp = $(am__leading_dot)dirstamp
 @HAVE_NSS_TRUE@am__objects_1 = staprun-modverify.$(OBJEXT) \
 @HAVE_NSS_TRUE@	../staprun-nsscommon.$(OBJEXT)
@@ -498,9 +500,10 @@ staprun_CXXFLAGS = $(AM_CXXFLAGS) -DSINGLE_THREADED $(am__append_3)
 staprun_CPPFLAGS = $(AM_CPPFLAGS)
 staprun_LDADD = libstrfloctime.a $(staprun_LIBS) $(debuginfod_LIBS) \
 	$(am__append_4) $(am__append_5)
-staprun_LDFLAGS = $(AM_LDFLAGS)
+staprun_LDFLAGS = $(AM_LDFLAGS) -Wl,--whole-archive,libstrfloctime.a,--no-whole-archive
 stapio_SOURCES = stapio.c mainloop.c common.c ctl.c relay.c relay_old.c monitor.c
 stapio_LDADD = libstrfloctime.a -lpthread $(am__append_6)
+stapio_LDFLAGS = -Wl,--whole-archive,libstrfloctime.a,--no-whole-archive
 man_MANS = staprun.8
 stap_merge_SOURCES = stap_merge.c
 stap_merge_CFLAGS = $(AM_CFLAGS)
@@ -649,7 +652,7 @@ stap-merge$(EXEEXT): $(stap_merge_OBJECTS) $(stap_merge_DEPENDENCIES) $(EXTRA_st
 
 stapio$(EXEEXT): $(stapio_OBJECTS) $(stapio_DEPENDENCIES) $(EXTRA_stapio_DEPENDENCIES) 
 	@rm -f stapio$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(stapio_OBJECTS) $(stapio_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(stapio_LINK) $(stapio_OBJECTS) $(stapio_LDADD) $(LIBS)
 ../$(am__dirstamp):
 	@$(MKDIR_P) ..
 	@: > ../$(am__dirstamp)

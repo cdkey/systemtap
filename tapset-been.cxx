@@ -7,6 +7,7 @@
 // Public License (GPL); either version 2, or (at your option) any
 // later version.
 
+#include "config.h"
 #include "session.h"
 #include "tapsets.h"
 #include "translate.h"

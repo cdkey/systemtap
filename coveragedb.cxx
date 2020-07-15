@@ -6,9 +6,9 @@
 // Public License (GPL); either version 2, or (at your option) any
 // later version.
 
+#include "config.h"
 #include "parse.h"
 #include "coveragedb.h"
-#include "config.h"
 #include "elaborate.h"
 #include "tapsets.h"
 #include "session.h"

@@ -28,7 +28,7 @@ staprun_CFLAGS = $(AM_CFLAGS) -DSINGLE_THREADED $(debuginfod_CFLAGS)
 staprun_CXXFLAGS = $(AM_CXXFLAGS) -DSINGLE_THREADED
 staprun_CPPFLAGS = $(AM_CPPFLAGS)
 staprun_LDADD = libstrfloctime.a $(staprun_LIBS) $(debuginfod_LIBS)
-staprun_LDFLAGS =  $(AM_LDFLAGS)
+staprun_LDFLAGS =  $(AM_LDFLAGS) -Wl,--whole-archive,libstrfloctime.a,--no-whole-archive
 
 if HAVE_NSS
 staprun_SOURCES += modverify.c ../nsscommon.cxx
@@ -42,7 +42,8 @@ staprun_LDADD += $(openssl_LIBS)
 endif
 
 stapio_SOURCES = stapio.c mainloop.c common.c ctl.c relay.c relay_old.c monitor.c
-stapio_LDADD = libstrfloctime.a -lpthread
+stapio_LDADD =  libstrfloctime.a -lpthread
+stapio_LDFLAGS =  -Wl,--whole-archive,libstrfloctime.a,--no-whole-archive
 
 if HAVE_MONITOR_LIBS
 stapio_LDADD += $(jsonc_LIBS) -lpanel $(ncurses_LIBS)
