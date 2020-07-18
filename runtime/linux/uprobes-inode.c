@@ -190,6 +190,10 @@ stapiu_probe_prehandler (struct uprobe_consumer *inst, struct pt_regs *regs)
       }
       spin_unlock_irqrestore(&c->process_list_lock, flags);
       if (!process) {
+        /* We know that we're in -c/-x mode, but this process is not
+           in the process hierarchy, so the uprobe should be ignored
+           and future hits prevented.  PR15278
+        */
 #ifdef UPROBE_HANDLER_REMOVE
 	/* Once we're past the starting phase, we can be sure that any
 	 * processes which are executing code in a mapping have already
@@ -242,8 +246,8 @@ stapiu_register (struct stapiu_instance* inst, struct stapiu_consumer* c)
 	       (unsigned long) inst->inode->i_ino,
 	       (void*) (uintptr_t) c->offset,
 	       c->probe->index,
-	       ((char*)c->finder.procname ?: (char*)""),
-	       ((char*)c->finder.build_id ?: (char*)""));
+	       ((char*)c->finder.procname ?: ((char*)c->solib_pathname ?: "")),
+               ((char*)c->finder.build_id ?: ((char*)c->solib_build_id ?: "")));
 
   if (!c->return_p) {
     inst->kconsumer.handler = stapiu_probe_prehandler;
@@ -444,8 +448,8 @@ stapiu_init(struct stapiu_consumer *consumers, size_t nconsumers)
     spin_lock_init(&c->process_list_lock);
     
     dbug_uprobes("registering task-finder for procname:%s buildid:%s\n",
-		 ((char*)c->finder.procname ?: (char*)""),
-		 ((char*)c->finder.build_id ?: (char*)""));
+                 ((char*)c->finder.procname ?: ""),
+                 ((char*)c->finder.build_id ?: ""));
 
     ret = stap_register_task_finder_target(&c->finder);
     if (ret != 0) {
@@ -499,22 +503,22 @@ stapiu_change_plus(struct stapiu_consumer* c, struct task_struct *task,
   if (rc)
     goto out;
 
-  dbug_uprobes("notified for inode-offset u%sprobe "
+  dbug_uprobes("notified for inode-offset arrival u%sprobe "
 	       "%lu:%p pidx %zu target procname:%s buildid:%s\n",
 	       c->return_p ? "ret" : "",
 	       (unsigned long) inode->i_ino,
 	       (void*) (uintptr_t) c->offset,
 	       c->probe->index,
-	       ((char*)c->finder.procname ?: (char*)""),
-	       ((char*)c->finder.build_id ?: (char*)""));
+	       ((char*)c->finder.procname ?: ((char*)c->solib_pathname ?: "")),
+               ((char*)c->finder.build_id ?: ((char*)c->solib_build_id ?: "")));
 
   /* Check the buildid of the target (if we haven't already). We
    * lock the target so we don't have concurrency issues. */
   mutex_lock(&c->consumer_lock);
 
-  // Check if we already have an instance for this inode, as though we
-  // were called twice by task-finder mishap, or (hypothetically) the
-  // shlib was mmapped twice.
+  // Check if we already have an instance for this inode.  This is normal:
+  // if a different process maps the same solib, or forks into the same
+  // executable.  In this case, we must not re-register the same uprobe.
   list_for_each_entry(i, &c->instance_list_head, instance_list) {
     if (i->inode == inode) {
       inst = i;
@@ -522,28 +526,33 @@ stapiu_change_plus(struct stapiu_consumer* c, struct task_struct *task,
     }
   }
 
-  if (inst) { // wouldn't expect a re-notification
-    if (inst->registered_p != c->probe->cond_enabled)
-      // ... this should not happen
-      ;
-    goto out1;
+  if (!inst) { // new instance; need new uprobe etc.
+    // Normal case: need a new one.
+    inst = _stp_kzalloc(sizeof(struct stapiu_instance));
+    if (! inst) {
+      rc = -ENOMEM;
+      goto out1;
+    }
+
+    inst->sconsumer = c; // back link essential; that's how we go from uprobe *handler callback
+          
+    /* Grab the inode first (to prevent TOCTTOU problems). */
+    inst->inode = igrab(inode);
+    if (!inst->inode) {
+      rc = -EINVAL;
+      goto out2;
+    }
+  
+    // Add the inode/instance to the list
+    list_add(&inst->instance_list, &c->instance_list_head);
+
+    // Register the actual uprobe if cond_enabled already
+    if (c->probe->cond_enabled)
+      (void) stapiu_register(inst, c);
   }
 
-  // Normal case: need a new one.
-  inst = _stp_kzalloc(sizeof(struct stapiu_instance));
-  if (! inst) {
-    rc = -ENOMEM;
-    goto out1;
-  }
-
-  inst->sconsumer = c; // back link essential; that's how we go from uprobe *handler callback
-
-  /* Grab the inode first (to prevent TOCTTOU problems). */
-  inst->inode = igrab(inode);
-  if (!inst->inode) {
-    rc = -EINVAL;
-    goto out2;
-  }
+  // ... but we may have to do per-process work anyway: perfctr
+  // initialization and sdt.h semaphore manipulation!
   
   // Perform perfctr registration if required
   for (j=0; j < c->perf_counters_dim; j++) {
@@ -551,12 +560,10 @@ stapiu_change_plus(struct stapiu_consumer* c, struct task_struct *task,
       (void) _stp_perf_read_init ((c->perf_counters)[j], task);
   }
 
-  // Add the inode/instance to the list
-  list_add(&inst->instance_list, &c->instance_list_head);
-
   // Associate this consumer with this process.  If we encounter
   // resource problems here, we don't really have to undo the uprobe
-  // registrations etc. already in effect.
+  // registrations etc. already in effect.  It may break correct
+  // tracking of process hierarchy in -c/-x operation, but too bad.
   p = _stp_kzalloc(sizeof(struct stapiu_process));
   if (! p) {
     rc = -ENOMEM;
@@ -573,11 +580,10 @@ stapiu_change_plus(struct stapiu_consumer* c, struct task_struct *task,
   spin_lock_irqsave (&c->process_list_lock, flags);
   list_add(&p->process_list, &c->process_list_head);
   spin_unlock_irqrestore (&c->process_list_lock, flags);
-
+  // NB: actual semaphore value bumping is done later
+  
   rc = 0;
   // Register actual uprobe if cond_enabled right now
-  if (c->probe->cond_enabled)
-    (void) stapiu_register(inst, c);
   goto out1;
 
  out2:
@@ -617,11 +623,21 @@ stapiu_change_semaphore_plus(struct stapiu_consumer* c, struct task_struct *task
   /* Look through all the consumer's processes and increment semaphores.  */
   list_for_each_entry(p, &c->process_list_head, process_list) {
     unsigned long addr = p->base + c->sdt_sem_offset;
+    if (p->tgid != task->tgid) // skip other processes in the list
+      continue;
     if (addr >= relocation && addr < relocation + length) {
       int rc2;
       // unlock list and process write for this entry
       spin_unlock_irqrestore(&c->process_list_lock, flags);
       any_found=1;
+
+      dbug_uprobes("incrementing semaphore (u%sprobe) pid %ld "
+                   "pidx %zu address %lx\n",
+                   c->return_p ? "ret" : "",
+                   (long) task->tgid,
+                   c->probe->index,
+                   (unsigned long) addr);
+
       rc2 = stapiu_write_task_semaphore(task, addr, +1);
       if (!rc)
         rc = rc2;
@@ -641,15 +657,8 @@ stapiu_change_semaphore_plus(struct stapiu_consumer* c, struct task_struct *task
  * about the semaphores, so we can just release the process slot.  */
 static int
 stapiu_change_minus(struct stapiu_consumer* c, struct task_struct *task,
-		    unsigned long relocation, unsigned long length)
+		    unsigned long addr, unsigned long length)
 {
-  dbug_uprobes("notified for inode-offset departure u%sprobe "
-	       "pidx %zu target procname:%s buildid:%s\n",
-	       c->return_p ? "ret" : "",
-	       c->probe->index,
-	       ((char*)c->finder.procname ?: (char*)""),
-	       ((char*)c->finder.build_id ?: (char*)""));
-  
   // We don't need do anything really.
   // A process going away means:
   // - its uprobes will no longer fire: no problem, the uprobe inode
@@ -673,6 +682,36 @@ stapiu_change_minus(struct stapiu_consumer* c, struct task_struct *task,
   // [ 1955.432923]  ? do_execve+0x27/0x30
   // [ 1955.436334]  ? __x64_sys_execve+0x27/0x30
   // [ 1955.437700]  ? do_syscall_64+0x5c/0xa0
+
+  // But as an optimization - to avoid having them build up indefinitely,
+  // and make semaphore operations go slowly, we will nuke matching entries anyway.
+  unsigned long flags;
+  struct stapiu_process *p, *tmp;
+  unsigned nmatch=0;
+  
+  spin_lock_irqsave(&c->process_list_lock, flags);
+  list_for_each_entry_safe(p, tmp, &c->process_list_head, process_list) {
+    // we nuke by matching semaphore address (where ..._semaphore_plus wrote)
+    // against the address range being unmapped
+    unsigned long semaddr = p->base + c->sdt_sem_offset;
+    if (p->tgid != task->tgid) // skip other processes in the list
+      continue;
+    if (semaddr >= addr && semaddr < addr + length) {
+      list_del(&p->process_list);
+      _stp_kfree (p);
+      nmatch ++;
+    }
+  }
+  spin_unlock_irqrestore(&c->process_list_lock, flags);
+
+  if (nmatch > 0)
+    dbug_uprobes("notified for inode-offset departure u%sprobe "
+                 "pidx %zu matches:%u procname:%s buildid:%s\n",
+                 c->return_p ? "ret" : "",
+                 c->probe->index,
+                 nmatch,
+                 ((char*)c->finder.procname ?: ((char*)c->solib_pathname ?: "")),
+                 ((char*)c->finder.build_id ?: ((char*)c->solib_build_id ?: "")));
 
   return 0;
 }
