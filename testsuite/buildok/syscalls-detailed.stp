@@ -1,4 +1,4 @@
-#! stap -Wvvvvp4
+#! stap -Wvvp4
 
 probe syscall.accept
 {
