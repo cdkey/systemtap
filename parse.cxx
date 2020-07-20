@@ -2118,6 +2118,18 @@ parser::parse_probe (vector<probe *> & probe_ret,
       p->tok = t0;
       p->locations = locations;
       p->body = parse_stmt_block ();
+
+      // Check for combined definition of prologue and epilogue
+      const token* t = peek ();
+      if (t && t->content == ",")
+        {
+          if (epilogue_alias)
+	    throw PARSE_ERROR (_("Combined prologue and epilogue cannot be defined with '+='"));
+
+          swallow ();
+          p->body2 = parse_stmt_block ();
+        }
+
       p->privileged = privileged;
       p->systemtap_v_conditional = systemtap_v_seen;
       alias_ret.push_back (p);

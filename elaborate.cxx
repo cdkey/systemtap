@@ -923,6 +923,8 @@ alias_expansion_builder::build_with_suffix(systemtap_session & sess,
 
   if (alias->epilogue_style)
     n->body = new block (use->body, alias->body);
+  else if (alias->body2)
+    n->body = new block (alias->body, use->body, alias->body2);
   else
     n->body = new block (alias->body, use->body);
 

@@ -729,6 +729,7 @@ struct block: public statement
   void visit (visitor* u);
   block () {}
   block (statement* car, statement* cdr);
+  block (statement* car, statement* cdr1, statement* cdr2);
   virtual ~block () {}
 };
 
@@ -921,6 +922,7 @@ struct probe_alias: public probe
   std::vector<probe_point*> alias_names;
   virtual void printsig (std::ostream &o) const;
   bool epilogue_style;
+  statement* body2; // Used when an alias contains both a prologue and an epilogue
 };
 
 

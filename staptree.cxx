@@ -1248,6 +1248,13 @@ block::block (statement* car, statement* cdr)
   this->tok = car->tok;
 }
 
+block::block (statement* car, statement* cdr1, statement* cdr2)
+{
+  statements.push_back(car);
+  statements.push_back(cdr1);
+  statements.push_back(cdr2);
+  this->tok = car->tok;
+}
 
 
 void try_block::print (ostream& o) const
@@ -1504,7 +1511,7 @@ string probe_point::str (bool print_extras) const
 
 
 probe_alias::probe_alias(std::vector<probe_point*> const & aliases):
-  probe (), alias_names (aliases), epilogue_style(false)
+  probe (), alias_names (aliases), epilogue_style(false), body2(0)
 {
 }
 
