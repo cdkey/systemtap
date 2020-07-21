@@ -76,6 +76,10 @@ public:
   void emit_module_decls (systemtap_session& ) { }
   void emit_module_init (systemtap_session& ) { }
   void emit_module_exit (systemtap_session& ) { }
+
+  friend void warn_for_bpf(systemtap_session& s,
+                           python_derived_probe_group *dpg,
+                           const std::string& kind);
 };
 
 
@@ -217,6 +221,30 @@ python_derived_probe_group::enroll (python_derived_probe* p)
   }
   else
     throw SEMANTIC_ERROR(_F("Unknown python version: %d", p->python_version));
+}
+
+
+// PR26234: Not supported by stapbpf.
+void
+warn_for_bpf(systemtap_session& s, python_derived_probe_group *dpg,
+             const std::string& kind)
+{
+  for (auto iter = dpg->python2_probes.begin();
+       iter != dpg->python2_probes.end();
+       iter++)
+    {
+      s.print_warning(_F("%s will be ignored by bpf backend",
+                         kind.c_str()),
+                      (*iter)->tok);
+    }
+  for (auto iter = dpg->python3_probes.begin();
+       iter != dpg->python3_probes.end();
+       iter++)
+    {
+      s.print_warning(_F("%s will be ignored by bpf backend",
+                         kind.c_str()),
+                      (*iter)->tok);
+    }
 }
 
 

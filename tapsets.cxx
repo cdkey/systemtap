@@ -10554,6 +10554,10 @@ public:
   void emit_module_decls (systemtap_session& s);
   void emit_module_init (systemtap_session& s);
   void emit_module_exit (systemtap_session& s);
+
+  friend void warn_for_bpf(systemtap_session& s,
+                           hwbkpt_derived_probe_group *dpg,
+                           const std::string& kind);
 };
 
 hwbkpt_derived_probe::hwbkpt_derived_probe (probe *base,
@@ -10802,6 +10806,21 @@ hwbkpt_derived_probe_group::emit_module_exit (systemtap_session& s)
   s.op->newline() << "skp->registered_p = 0;";
   s.op->newline(-1) << "}";
 }
+
+
+// PR26234: Not supported by stapbpf.
+void
+warn_for_bpf(systemtap_session& s, hwbkpt_derived_probe_group *hpg,
+             const std::string& kind)
+{
+  for (unsigned int i = 0; i < hpg->hwbkpt_probes.size(); i++)
+    {
+      s.print_warning(_F("%s will be ignored by bpf backend",
+                         kind.c_str()),
+                      hpg->hwbkpt_probes[i]->tok);
+    }
+}
+
 
 struct hwbkpt_builder: public derived_probe_builder
 {

@@ -64,6 +64,10 @@ public:
   void emit_module_decls (systemtap_session& s);
   void emit_module_init (systemtap_session& s);
   void emit_module_exit (systemtap_session& s);
+
+  friend void warn_for_bpf(systemtap_session& s,
+                           itrace_derived_probe_group *dpg,
+                           const std::string& kind);
 };
 
 
@@ -302,6 +306,46 @@ itrace_derived_probe_group::emit_module_exit (systemtap_session& s)
   s.op->newline() << "/* ---- itrace probes ---- */";
   s.op->newline() << "cleanup_usr_itrace();";
 }
+
+
+// PR26234: Not supported by stapbpf.
+void
+warn_for_bpf(systemtap_session& s,
+             itrace_derived_probe_group *dpg,
+             const std::string& kind)
+{
+  if (! dpg->probes_by_path.empty())
+    {
+      for (itrace_derived_probe_group::p_b_path_iterator it
+             = dpg->probes_by_path.begin();
+	   it != dpg->probes_by_path.end(); it++)
+        {
+	  for (unsigned i = 0; i < it->second.size(); i++)
+	    {
+	      itrace_derived_probe *p = it->second[i];
+              s.print_warning(_F("%s will be ignored by bpf backend",
+                                 kind.c_str()),
+                              p->tok);
+	    }
+	}
+    }
+  if (! dpg->probes_by_pid.empty())
+    {
+      for (itrace_derived_probe_group::p_b_pid_iterator it
+             = dpg->probes_by_pid.begin();
+	   it != dpg->probes_by_pid.end(); it++)
+        {
+	  for (unsigned i = 0; i < it->second.size(); i++)
+	    {
+	      itrace_derived_probe *p = it->second[i];
+              s.print_warning(_F("%s will be ignored by bpf backend",
+                                 kind.c_str()),
+                              p->tok);
+	    }
+	}
+    }
+}
+
 
 void
 register_tapset_itrace(systemtap_session& s)

@@ -4956,9 +4956,26 @@ translate_bpf_pass (systemtap_session& s)
             }
         }
 
+      // PR26234: would like to support process.{begin,end} probes,
+      // but BPF doesn't give any clear way to probe the same context....
       if (s.utrace_derived_probes)
         warn_for_bpf(s, s.utrace_derived_probes, "utrace probe");
+
       // XXX PR26234: need to warn about other probe groups....
+      if (s.hwbkpt_derived_probes)
+        warn_for_bpf(s, s.hwbkpt_derived_probes, "hardware breakpoint probe");
+      if (s.itrace_derived_probes)
+        warn_for_bpf(s, s.itrace_derived_probes, "process.insn probe");
+      if (s.netfilter_derived_probes)
+        warn_for_bpf(s, s.netfilter_derived_probes, "netfilter probe");
+      if (s.profile_derived_probes)
+        warn_for_bpf(s, s.profile_derived_probes, "timer.profile probe");
+      if (s.mark_derived_probes)
+        warn_for_bpf(s, s.mark_derived_probes, "static marker probe");
+      if (s.python_derived_probes)
+        warn_for_bpf(s, s.python_derived_probes, "python probe");
+      // s.task_finder_derived_probes -- synthetic
+      // s.dynprobe_derived_probes -- synthetic, dyninst only
 
       output_kernel_version(eo, s.kernel_base_release);
       output_license(eo);

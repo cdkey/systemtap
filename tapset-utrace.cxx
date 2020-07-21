@@ -71,10 +71,6 @@ struct utrace_derived_probe: public derived_probe
 
 struct utrace_derived_probe_group: public generic_dpg<utrace_derived_probe>
 {
-  friend void warn_for_bpf(systemtap_session& s,
-                           utrace_derived_probe_group *upg,
-                           const std::string& kind);
-
 private:
   map<string, vector<utrace_derived_probe*> > probes_by_path;
   typedef map<string, vector<utrace_derived_probe*> >::iterator p_b_path_iterator;
@@ -103,6 +99,10 @@ public:
   void emit_module_decls (systemtap_session& s);
   void emit_module_init (systemtap_session& s);
   void emit_module_exit (systemtap_session& s);
+
+  friend void warn_for_bpf(systemtap_session& s,
+                           utrace_derived_probe_group *upg,
+                           const std::string& kind);
 };
 
 
@@ -1253,35 +1253,6 @@ utrace_derived_probe_group::emit_module_dyninst_init (systemtap_session& s)
   s.op->newline() << "/* this section left intentionally blank */";
 }
 
-// PR26234: Not supported by BPF.
-void
-warn_for_bpf(systemtap_session& s, utrace_derived_probe_group *upg,
-             const std::string& kind)
-{
-  for (utrace_derived_probe_group::p_b_path_iterator it
-         = upg->probes_by_path.begin();
-       it != upg->probes_by_path.end(); it++)
-    {
-      for (unsigned i = 0; i < it->second.size(); i++)
-        {
-          s.print_warning(_F("%s will be ignored by bpf backend",
-                             kind.c_str()),
-                          it->second[i]->tok);
-        }
-    }
-  for (utrace_derived_probe_group::p_b_pid_iterator it
-         = upg->probes_by_pid.begin();
-       it != upg->probes_by_pid.end(); it++)
-    {
-      for (unsigned i = 0; i < it->second.size(); i++)
-        {
-          s.print_warning(_F("%s will be ignored by bpf backend",
-                             kind.c_str()),
-                          it->second[i]->tok);
-        }
-    }
-}
-
 
 void
 utrace_derived_probe_group::emit_module_init (systemtap_session& s)
@@ -1330,6 +1301,42 @@ utrace_derived_probe_group::emit_module_exit (systemtap_session& s)
     emit_module_dyninst_exit (s);
   else
     emit_module_linux_exit(s);
+}
+
+
+// PR26234: Not supported by stapbpf.
+void
+warn_for_bpf(systemtap_session& s, utrace_derived_probe_group *upg,
+             const std::string& kind)
+{
+  if (! upg->probes_by_path.empty())
+    {
+      for (utrace_derived_probe_group::p_b_path_iterator it
+             = upg->probes_by_path.begin();
+           it != upg->probes_by_path.end(); it++)
+        {
+          for (unsigned i = 0; i < it->second.size(); i++)
+            {
+              s.print_warning(_F("%s will be ignored by bpf backend",
+                                 kind.c_str()),
+                              it->second[i]->tok);
+            }
+        }
+    }
+  if (! upg->probes_by_pid.empty())
+    {
+      for (utrace_derived_probe_group::p_b_pid_iterator it
+             = upg->probes_by_pid.begin();
+           it != upg->probes_by_pid.end(); it++)
+        {
+          for (unsigned i = 0; i < it->second.size(); i++)
+            {
+              s.print_warning(_F("%s will be ignored by bpf backend",
+                                 kind.c_str()),
+                              it->second[i]->tok);
+            }
+        }
+    }
 }
 
 

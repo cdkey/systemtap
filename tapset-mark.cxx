@@ -69,6 +69,10 @@ public:
   void emit_module_decls (systemtap_session& s);
   void emit_module_init (systemtap_session& s);
   void emit_module_exit (systemtap_session& s);
+
+  friend void warn_for_bpf(systemtap_session& s,
+                  mark_derived_probe_group *dpg,
+                  const std::string& kind);
 };
 
 
@@ -557,6 +561,21 @@ mark_derived_probe_group::emit_module_exit (systemtap_session& s)
   s.op->newline(1) << "struct stap_marker_probe *smp = &stap_marker_probes[i];";
   s.op->newline() << "marker_probe_unregister(smp->name, enter_marker_probe, smp);";
   s.op->newline(-1) << "}"; // for loop
+}
+
+
+// PR26234: Not supported by stapbpf.
+void
+warn_for_bpf(systemtap_session& s,
+             mark_derived_probe_group *dpg,
+             const std::string& kind)
+{
+  for (unsigned i=0; i<dpg->probes.size(); i++)
+    {
+      s.print_warning(_F("%s will be ignored by bpf backend",
+                         kind.c_str()),
+                      dpg->probes[i]->tok);
+    }
 }
 
 
