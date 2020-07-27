@@ -1,0 +1,214 @@
+set test "sdt_buildid"
+
+set pbtype_flags {{additional_flags=-g} {} {}}
+set fail_count 0
+
+# Compile a C program to use as the user-space probing target
+set stap_path $env(SYSTEMTAP_PATH)/stap
+set sup_dpath "[pwd]/sdt_buildid_.d"
+set sup_hpath "[pwd]/sdt_buildid_.h"
+set sup_opath "[pwd]/sdt_buildid_.o"
+
+# Run dtrace
+if {[installtest_p]} {
+    set dtrace $env(SYSTEMTAP_PATH)/dtrace
+} else {
+    set dtrace ../dtrace
+}
+
+verbose -log "$dtrace --types -h -s $srcdir/$subdir/sdt_buildid_.d"
+if {[catch {exec $dtrace --types -h -s \
+                $srcdir/$subdir/sdt_buildid_.d} res]} {
+    verbose -log "unable to run $dtrace: $res"
+}
+verbose -log "$dtrace --types -G -s $srcdir/$subdir/sdt_buildid_.d"
+if {[catch {exec $dtrace --types -G -s \
+                $srcdir/$subdir/sdt_buildid_.d} res]} {
+    verbose -log "unable to run $dtrace: $res"
+}
+if {[file exists $sup_hpath] && [file exists $sup_opath]} then {
+    pass "$test dtrace"
+} else {
+    incr fail_count
+    fail "$test dtrace"
+    return
+}
+    
+set sup_flags [sdt_includes]
+set sup_flags "$sup_flags additional_flags=-Wall"
+set sup_flags "$sup_flags additional_flags=-Werror"
+set sup_flags "$sup_flags additional_flags=$sup_opath"
+set sup_flags "$sup_flags additional_flags=-I."
+set sup_exepath "[pwd]/sdt_buildid.x"
+
+set res [target_compile $srcdir/$subdir/sdt_buildid.c $sup_exepath \
+             executable $sup_flags]
+if { $res != "" } {
+    incr fail_count
+    verbose "target_compile failed: $res" 2
+    fail "$test compiling"
+    return
+} else {
+    pass "$test compiling"
+}
+
+
+set sup41_flags "$sup_flags additional_flags=-shared"
+set sup41_flags "$sup41_flags additional_flags=-fPIC"
+set sup41_flags "$sup41_flags additional_flags=-DNO_MAIN"
+set sup_sopath "[pwd]/libsdt_buildid.so"
+set sup_exe2path "[pwd]/sdt_buildid_shared.x"
+set res0 [target_compile $srcdir/$subdir/sdt_buildid.c $sup_sopath \
+		  executable $sup41_flags ]
+set sup42_flags "additional_flags=-Wl,-rpath,[pwd]"
+set sup42_flags "$sup42_flags additional_flags=-L[pwd] additional_flags=-lsdt_buildid"
+set sup42_flags "$sup42_flags additional_flags=-DONLY_MAIN"
+set res [target_compile $srcdir/$subdir/sdt_buildid.c $sup_exe2path \
+             executable $sup42_flags ]
+if { $res0 != "" || $res != "" } {
+    incr fail_count
+    verbose "target_compile failed: $res0 $res" 2
+    fail "$test compiling -shared"
+    return
+} else {
+    pass "$test compiling -shared"
+}
+
+catch { exec eu-readelf -n $sup_exepath | grep Build.ID | awk "{print \$NF}" } bid1
+catch { exec eu-readelf -n $sup_sopath | grep Build.ID | awk "{print \$NF}" } bidso
+catch { exec eu-readelf -n $sup_exe2path | grep Build.ID | awk "{print \$NF}" } bid2
+verbose -log "buildid: $sup_exepath $bid1"
+verbose -log "buildid: $sup_sopath $bidso"
+verbose -log "buildid: $sup_exe2path $bid2"
+# though we won't use the $bid2
+
+if {![installtest_p]} {
+    untested $test
+    return
+}
+
+# To test via build-id, we need a debuginfod server to scan the testsuite build
+# directory.
+
+
+if [catch {exec /usr/bin/which debuginfod} debuginfod] then {
+    untested "$test debuginfod"
+} else {
+    set port [expr {10000 + int(rand()*10000)}]
+    spawn $debuginfod -p $port -d :memory: -F .
+    set debuginfod_pid [exp_pid $spawn_id]
+    # give it time to scan the build directory
+    sleep 10
+    # XXX: we could expect some verbose traffic
+    set env(DEBUGINFOD_URLS) "http://localhost:$port $env(DEBUGINFOD_URLS)"
+    verbose -log "started debuginfod on port $port"
+
+    set subtest "$test debuginfod buildid-exe buildid-solib"
+    spawn $stap_path $srcdir/$subdir/sdt_buildid.stp $bid1 $bidso
+    set ok 0
+    expect {
+        -timeout 240
+        -re {^Count [0-9]*[02468][^\r\n]*\r\n} { incr ok; exec $sup_exepath; exp_continue }
+        -re {^Count [0-9]*[13579][^\r\n]*\r\n} { incr ok; exec $sup_exe2path; exp_continue }
+        eof { }
+        timeout { }
+    }
+    catch {close}; catch {wait}
+    if {$ok > 6} then { pass $subtest } else { fail $subtest }
+
+    set subtest "$test debuginfod buildid-exe path-solib"
+    spawn $stap_path $srcdir/$subdir/sdt_buildid.stp $bid1 $sup_sopath
+    set ok 0
+    expect {
+        -timeout 240
+        -re {^Count [0-9]*[02468][^\r\n]*\r\n} { incr ok; exec $sup_exepath; exp_continue }
+        -re {^Count [0-9]*[13579][^\r\n]*\r\n} { incr ok; exec $sup_exe2path; exp_continue }
+        eof { }
+        timeout { }
+    }
+    catch {close}; catch {wait}
+    if {$ok > 6} then { pass $subtest } else { fail $subtest }
+
+    set subtest "$test debuginfod path-exe buildid-solib"
+    spawn $stap_path $srcdir/$subdir/sdt_buildid.stp $sup_exepath $bidso
+    set ok 0
+    expect {
+        -timeout 240
+        -re {^Count [0-9]*[02468][^\r\n]*\r\n} { incr ok; exec $sup_exepath; exp_continue }
+        -re {^Count [0-9]*[13579][^\r\n]*\r\n} { incr ok; exec $sup_exe2path; exp_continue }
+        eof { }
+        timeout { }
+    }
+    catch {close}; catch {wait}
+    if {$ok > 6} then { pass $subtest } else { fail $subtest }
+
+    set subtest "$test debuginfod buildid-solib"
+    spawn $stap_path $srcdir/$subdir/sdt_buildid.stp $bidso
+    set ok 0
+    expect {
+        -timeout 240
+        -re {^Count [0-9]*[02468][^\r\n]*\r\n} { incr ok; exec $sup_exe2path; exp_continue }
+        -re {^Count [0-9]*[13579][^\r\n]*\r\n} { incr ok; exec $sup_exe2path; exp_continue }
+        eof { }
+        timeout { }
+    }
+    catch {close}; catch {wait}
+    if {$ok > 6} then { pass $subtest } else { fail $subtest }
+
+    set subtest "$test debuginfod buildid-exe"
+    spawn $stap_path $srcdir/$subdir/sdt_buildid.stp $bid1
+    set ok 0
+    expect {
+        -timeout 240
+        -re {^Count [0-9]*[02468][^\r\n]*\r\n} { incr ok; exec $sup_exepath; exp_continue }
+        -re {^Count [0-9]*[13579][^\r\n]*\r\n} { incr ok; exec $sup_exepath; exp_continue }
+        eof { }
+        timeout { }
+    }
+    catch {close}; catch {wait}
+    if {$ok > 6} then { pass $subtest } else { fail $subtest }
+
+    kill -INT $debuginfod_pid
+}
+
+
+set subtest "$test non-buildid both"
+spawn $stap_path $srcdir/$subdir/sdt_buildid.stp $sup_exepath $sup_sopath
+set ok 0
+expect {
+    -timeout 240
+    -re {^Count [0-9]*[02468][^\r\n]*\r\n} { incr ok; exec $sup_exepath; exp_continue }
+    -re {^Count [0-9]*[13579][^\r\n]*\r\n} { incr ok; exec $sup_exe2path; exp_continue }
+    eof { }
+    timeout { }
+}
+catch {close}; catch {wait}
+if {$ok > 6} then { pass $subtest } else { fail $subtest }
+
+set subtest "$test non-buildid exe"
+spawn $stap_path $srcdir/$subdir/sdt_buildid.stp $sup_exepath
+set ok 0
+expect {
+    -timeout 240
+    -re {^Count [0-9]*[02468][^\r\n]*\r\n} { incr ok; exec $sup_exepath; exp_continue }
+    -re {^Count [0-9]*[13579][^\r\n]*\r\n} { incr ok; exec $sup_exepath; exp_continue }
+    eof { }
+    timeout { }
+}
+catch {close}; catch {wait}
+if {$ok > 6} then { pass $subtest } else { fail $subtest }
+
+set subtest "$test non-buildid solib"
+spawn $stap_path $srcdir/$subdir/sdt_buildid.stp $sup_sopath
+set ok 0
+expect {
+    -timeout 240
+    -re {^Count [0-9]*[02468][^\r\n]*\r\n} { incr ok; exec $sup_exe2path; exp_continue }
+    -re {^Count [0-9]*[13579][^\r\n]*\r\n} { incr ok; exec $sup_exe2path; exp_continue }
+    eof { }
+    timeout { }
+}
+catch {close}; catch {wait}
+if {$ok > 6} then { pass $subtest } else { fail $subtest }
+
+return

@@ -1,0 +1,19 @@
+global count
+
+function trace () {
+  printf ("Count %d [%d] %s %s\n", count++, pid(), $$name, pp())
+}
+
+probe process(@1).mark("test_probe_0") { trace() }
+%( $# > 1 %? probe process(@2).mark("test_probe_0") { trace() } %)
+
+probe begin
+{
+  printf ("Count %d\n", count++)
+}
+
+probe timer.s(1) // exit quickly after enough marks fire
+{
+  if (count > 10) exit()
+}
+
