@@ -76,7 +76,7 @@ struct stapiu_instance {
   struct list_head instance_list;   // to find other instances e.g. during shutdown
 
   struct uprobe_consumer kconsumer; // the kernel-side struct for uprobe callbacks etc.
-  struct inode *inode;              // XXX: refcount?
+  struct inode *inode;              // refcounted
   unsigned registered_p:1;          // whether the this kconsumer is registered (= armed, live)
 
   struct stapiu_consumer *sconsumer; // whose instance are we
@@ -86,10 +86,14 @@ struct stapiu_instance {
 /* A snippet to record the per-process vm where a particular
    executable/solib was mapped.  Used for sdt semaphore setting, and
    for identifying processes of our interest (vs. disinterest) for
-   uprobe hits.  This object is owned by a stapiu_consumer. */
+   uprobe hits.  This object is owned by a stapiu_consumer.  We use
+   the same inode* as the stapiu_instance, and have the same lifespan,
+   so don't bother separately refcount it. 
+*/
 struct stapiu_process {
   struct list_head process_list;    // to find other processes
 
+  struct inode *inode;              // the inode* for solib or executable
   unsigned long relocation;         // the mmap'ed .text address
   unsigned long base;               // the address to apply sdt offsets against
   pid_t tgid;                       // pid
@@ -392,6 +396,7 @@ stapiu_consumer_unreg(struct stapiu_consumer *c)
   // multiple times in the list.  Don't break after the first.
   list_for_each_entry_safe(p, tmp, &c->process_list_head, process_list) {
     list_del(&p->process_list);
+    // no refcount used for the inode field
     _stp_kfree (p);
   }
 }
@@ -498,6 +503,8 @@ stapiu_change_plus(struct stapiu_consumer* c, struct task_struct *task,
   /* Do the buildid check.  NB: on F29+, offset may not equal
      0 for LOADable "R E" segments, because the read-only .note.*
      stuff may have been loaded earlier, separately.  PR23890. */
+  // NB: this is not really necessary for buildid-based probes,
+  // which had this verified already.
   rc = _stp_usermodule_check(task, c->module_name,
 			     relocation - offset);
   if (rc)
@@ -527,7 +534,6 @@ stapiu_change_plus(struct stapiu_consumer* c, struct task_struct *task,
   }
 
   if (!inst) { // new instance; need new uprobe etc.
-    // Normal case: need a new one.
     inst = _stp_kzalloc(sizeof(struct stapiu_instance));
     if (! inst) {
       rc = -ENOMEM;
@@ -560,30 +566,9 @@ stapiu_change_plus(struct stapiu_consumer* c, struct task_struct *task,
       (void) _stp_perf_read_init ((c->perf_counters)[j], task);
   }
 
-  // Associate this consumer with this process.  If we encounter
-  // resource problems here, we don't really have to undo the uprobe
-  // registrations etc. already in effect.  It may break correct
-  // tracking of process hierarchy in -c/-x operation, but too bad.
-  p = _stp_kzalloc(sizeof(struct stapiu_process));
-  if (! p) {
-    rc = -ENOMEM;
-    goto out1;
-  }
-  p->tgid = task->tgid;
-  p->relocation = relocation;
-  /* The base is used for relocating semaphores.  If the
-   * probe is in an ET_EXEC binary, then that offset
-   * already is a real address.  But stapiu_process_found
-   * calls us in this case with relocation=offset=0, so
-   * we don't have to worry about it.  */
-  p->base = relocation - offset;
-  spin_lock_irqsave (&c->process_list_lock, flags);
-  list_add(&p->process_list, &c->process_list_head);
-  spin_unlock_irqrestore (&c->process_list_lock, flags);
-  // NB: actual semaphore value bumping is done later
+  // NB: process_list[] already extended up in stapiu_mmap_found().
   
   rc = 0;
-  // Register actual uprobe if cond_enabled right now
   goto out1;
 
  out2:
@@ -599,7 +584,7 @@ stapiu_change_plus(struct stapiu_consumer* c, struct task_struct *task,
  * Increment the semaphore now.  */
 static int
 stapiu_change_semaphore_plus(struct stapiu_consumer* c, struct task_struct *task,
-			     unsigned long relocation, unsigned long length)
+			     unsigned long relocation, struct inode* inode)
 {
   int rc = 0;
   struct stapiu_process *p;
@@ -609,6 +594,13 @@ stapiu_change_semaphore_plus(struct stapiu_consumer* c, struct task_struct *task
   if (! c->sdt_sem_offset) // nothing to do
     return 0;
 
+  dbug_uprobes("considering semaphore (u%sprobe) pid %ld inode 0x%lx"
+               "pidx %zu\n",
+               c->return_p ? "ret" : "",
+               (long) task->tgid,
+               (unsigned long) inode,
+               c->probe->index);
+  
   // NB: we mustn't hold a lock while changing the task memory,
   // but we need a lock to protect the process_list from concurrent
   // add/delete.  So hold a spinlock during iteration until the first
@@ -617,32 +609,31 @@ stapiu_change_semaphore_plus(struct stapiu_consumer* c, struct task_struct *task
   // somehow maps in the same solib multiple times).  We can't easily
   // both iterate this list (in a spinlock-protected safe way), and
   // relax the spinlock enough to do a safe stapiu_write_task_semaphore()
-  // call within the loop.  So we will hit only the copy in our list.
+  // call within the loop.  So we will hit only the first copy in our list.
   any_found = 0;
   spin_lock_irqsave(&c->process_list_lock, flags);
   /* Look through all the consumer's processes and increment semaphores.  */
   list_for_each_entry(p, &c->process_list_head, process_list) {
     unsigned long addr = p->base + c->sdt_sem_offset;
-    if (p->tgid != task->tgid) // skip other processes in the list
-      continue;
-    if (addr >= relocation && addr < relocation + length) {
-      int rc2;
-      // unlock list and process write for this entry
-      spin_unlock_irqrestore(&c->process_list_lock, flags);
-      any_found=1;
+    int rc2;
+    if (p->tgid != task->tgid) continue; // skip other processes in the list
+    if (p->inode != inode) continue; // skip other inodes
 
-      dbug_uprobes("incrementing semaphore (u%sprobe) pid %ld "
-                   "pidx %zu address %lx\n",
-                   c->return_p ? "ret" : "",
-                   (long) task->tgid,
-                   c->probe->index,
-                   (unsigned long) addr);
+    // unlock list and process write for this entry
+    spin_unlock_irqrestore(&c->process_list_lock, flags);
+    any_found=1;
 
-      rc2 = stapiu_write_task_semaphore(task, addr, +1);
-      if (!rc)
-        rc = rc2;
-      break; // exit list_for_each loop
-    }
+    dbug_uprobes("incrementing semaphore (u%sprobe) pid %ld "
+                 "pidx %zu address 0x%lx\n",
+                 c->return_p ? "ret" : "",
+                 (long) task->tgid,
+                 c->probe->index,
+                 (unsigned long) addr);
+
+    rc2 = stapiu_write_task_semaphore(task, addr, +1);
+    if (!rc)
+            rc = rc2;
+    break; // exit list_for_each loop
   }
   if (! any_found)
     spin_unlock_irqrestore(&c->process_list_lock, flags);
@@ -755,17 +746,41 @@ stapiu_process_found(struct stap_task_finder_target *tf_target,
   
   if (!process_p)
     return 0; /* ignore threads */
-  
+
+  dbug_uprobes("process_found pid=%ld f.p=%s f.b=%s c.p=%s c.b=%s\n",
+               (long)task->tgid,
+	       ((char*)c->finder.procname ?: ""),
+               ((char*)c->finder.build_id ?: ""),
+	       ((char*)c->solib_pathname ?: ""),
+               ((char*)c->solib_build_id ?: ""));
+
   /* ET_EXEC events are like shlib events, but with 0 relocation bases */
   if (register_p) {
     int rc = -EINVAL;
     struct inode *inode = stapiu_get_task_inode(task);
     
     if (inode) {
-      rc = stapiu_change_plus(c, task, 0, TASK_SIZE,
-			      0, 0, inode);
-      stapiu_change_semaphore_plus(c, task, 0,
-				   TASK_SIZE);
+      // Add a stapiu_process record to the consumer, so that
+      // the semaphore increment logic will accept this task.
+      struct stapiu_process* p;
+      unsigned long flags;
+      p = _stp_kzalloc(sizeof(struct stapiu_process));
+      if (p) {
+        p->tgid = task->tgid;
+        p->relocation = 0;
+        p->inode = inode;
+        p->base = 0;
+        spin_lock_irqsave (&c->process_list_lock, flags);
+        list_add(&p->process_list, &c->process_list_head);
+        spin_unlock_irqrestore (&c->process_list_lock, flags);
+      } else {
+         _stp_warn("out of memory tracking executable in process %ld\n",
+                   (long) task->tgid);
+      }
+            
+      rc = stapiu_change_plus(c, task, 0, TASK_SIZE, 0, 0, inode);
+      
+      stapiu_change_semaphore_plus(c, task, 0, inode);
     }
     return rc;
   } else
@@ -776,6 +791,8 @@ stapiu_process_found(struct stap_task_finder_target *tf_target,
 bool
 __verify_build_id (struct task_struct *tsk, unsigned long addr,
 		   unsigned const char *build_id, int build_id_len);
+// defined in task_finder2.c
+
 
 
 /* The task_finder_mmap_callback.  These callbacks are NOT
@@ -791,28 +808,119 @@ stapiu_mmap_found(struct stap_task_finder_target *tf_target,
   struct stapiu_consumer *c =
     container_of(tf_target, struct stapiu_consumer, finder);
   int rc = 0;
+  struct stapiu_process* p;
+  int known_mapping_p;
+  unsigned long flags;
 
-  /* The file path or build-id must match. The build-id address
-   * is calculated using start address of this vma, the file
-   * offset of the vma start address and the file offset of
-   * the build-id. */
-  if (c->solib_pathname && path && strcmp (path, c->solib_pathname))
-    return 0;
-  if (c->solib_build_id_len > 0 && !__verify_build_id(task,
-						      addr - offset + c->solib_build_id_vaddr,
-						      c->solib_build_id,
-						      c->solib_build_id_len))
-    return 0;
+  /*
+  We need to verify that this file/mmap corresponds to the given stapiu_consumer.
+  One could compare (inode) file name, but that won't work with buildid-based
+  uprobes.  For those, one cannot just
+ 
+  __verify_build_id(... addr - offset + c->solib_build_id_vaddr ...)
+ 
+  because dlopen()ing a shared library involves multiple mmaps, including
+  some at repeating/offset addresses.  See glibc _dl_map_segments() in various
+  versions.  So by the fourth call (!) on modern glibc's, we get a VM_WRITE-able
+  data segment mapped, but that's at a load/mapping address that is offset by a
+  page from the base (file offset=0) mapping.
+
+  e.g. on Fedora 32 / glibc 2.31, with testsuite/libsdt_buildid.so:
+
+  Program Headers:
+  Type           Offset   VirtAddr           PhysAddr           FileSiz  MemSiz   Flg Align
+  LOAD           0x000000 0x0000000000000000 0x0000000000000000 0x0004b8 0x0004b8 R   0x1000
+  LOAD           0x001000 0x0000000000001000 0x0000000000001000 0x000161 0x000161 R E 0x1000
+  LOAD           0x002000 0x0000000000002000 0x0000000000002000 0x0000cc 0x0000cc R   0x1000
+  LOAD           0x002df8 0x0000000000003df8 0x0000000000003df8 0x000232 0x000238 RW  0x1000
+  DYNAMIC        0x002e10 0x0000000000003e10 0x0000000000003e10 0x0001d0 0x0001d0 RW  0x8
+
+  strace:
+  openat(AT_FDCWD, ".../libsdt_buildid.so", O_RDONLY|O_CLOEXEC) = 3
+  mmap(NULL, 16432, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x148c764ac000
+  mmap(0x148c764ad000, 4096, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1000) = 0x148c764ad000
+  mmap(0x148c764ae000, 4096, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x2000) = 0x148c764ae000
+  mmap(0x148c764af000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x2000) = 0x148c764af000
+
+  Note how the virtual mapping for the fourth mmap (also) maps file-offset 0x2000 at
+  vm offset 0x3000.
+
+  So what we do is rely on the name/buildid validation tests being run
+  -earlier- in the dlopen/mmap sequence to validate near-future
+  mmap()s.  We search the c->process_list[] for a mapping that already
+  overlaps the new range, and if so, consider it validated ... whether
+  for the solib_pathname or the solib_build_id case.
+
+  This is complicated for startup-time traversal of processes/mmaps,
+  where it seems sometimes we get notifications out of temporal sequence.
+  */
   
-  /* 1 - shared libraries' executable segments load from offset 0
-   *   - ld.so convention offset != 0 is now allowed
-   *     so stap_uprobe_change_plus can set a semaphore,
-   *     i.e. a static extern, in a shared object
-   * 2 - the shared library we're interested in
-   * 3 - mapping should be executable or writeable (for
-   *     semaphore in .so)
-   *     NB: or both, on kernels that lack noexec mapping
-   */
+  known_mapping_p = 0;
+  spin_lock_irqsave(&c->process_list_lock, flags);
+  list_for_each_entry(p, &c->process_list_head, process_list) {
+    if (p->tgid != task->tgid) continue;
+    if (p->inode != dentry->d_inode) continue;
+    known_mapping_p = 1;
+    break;
+  }
+  spin_unlock_irqrestore(&c->process_list_lock, flags);
+
+
+  // Check if this mapping (solib) is of interest: whether we expect
+  // it by buildid or name.
+  
+  if (! known_mapping_p) {
+    /* The file path or build-id must match. The build-id address
+     * is calculated using start address of this vma, the file
+     * offset of the vma start address and the file offset of
+     * the build-id. */
+    if (c->solib_pathname && path && strcmp (path, c->solib_pathname))
+      return 0;
+    if (c->solib_build_id_len > 0 && !__verify_build_id(task,
+  						        addr - offset + c->solib_build_id_vaddr,
+  						        c->solib_build_id,
+						        c->solib_build_id_len))
+      return 0;
+  }
+
+  // If we made it this far, we have an interesting solib.
+
+  dbug_uprobes("mmap_found pid=%ld path=%s addr=0x%lx length=%lu offset=%lu flags=0x%lx known=%d\n",
+               (long) task->tgid, path, addr, length, offset, vm_flags, known_mapping_p);
+  
+  if (! known_mapping_p) {
+    // OK, let's add it.  The first mapping should be a VM_READ mapping
+    // of the entire solib file, which will also serve as the apprx.
+    // outer bounds of the repeatedly-mapped segments.
+
+#if 0
+    // Consider an assumption about the dlopen/mmap sequence
+    // If it comes out of sequence, we could get length/base wrong in the stored
+    // stapiu_process, which could lead us to miscalculate semaphore addresses.
+    //
+    // However, this has been observed on task-finder initial-enumeration case,
+    // (sdt_misc.exp, where a solib test is already running when stap starts).
+    if (offset != 0)
+      return 0;
+#endif
+    
+    // Associate this consumer with this process.  If we encounter
+    // resource problems here, we don't really have to undo the uprobe
+    // registrations etc. already in effect.  It may break correct
+    // tracking of process hierarchy in -c/-x operation, but too bad.
+    p = _stp_kzalloc(sizeof(struct stapiu_process));
+    if (p) {
+      p->tgid = task->tgid;
+      p->relocation = addr;
+      p->inode = dentry->d_inode;
+      p->base = addr-offset; // ... in case caught this during the second mmap
+      spin_lock_irqsave (&c->process_list_lock, flags);
+      list_add(&p->process_list, &c->process_list_head);
+      spin_unlock_irqrestore (&c->process_list_lock, flags);
+    } else
+      _stp_warn("out of memory tracking solib %s in process %ld\n",
+                path, (long) task->tgid);
+  }
 
   /* Check non-writable, executable sections for probes. */
   if ((vm_flags & VM_EXEC) && !(vm_flags & VM_WRITE))
@@ -827,7 +935,7 @@ stapiu_mmap_found(struct stap_task_finder_target *tf_target,
    */
 
   if ((rc == 0) && (vm_flags & VM_WRITE))
-    rc = stapiu_change_semaphore_plus(c, task, addr, length);
+    rc = stapiu_change_semaphore_plus(c, task, addr, dentry->d_inode);
 
   return rc;
 }

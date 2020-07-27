@@ -652,8 +652,8 @@ __verify_build_id(struct task_struct *tsk, unsigned long addr,
 	tsk_build_id[build_id_len] = '\0';
 
 	if (strcmp(build_id, tsk_build_id)) {
-		dbug_task(2, "target build-id not matched: [%s] != [%s]\n",
-			  build_id, tsk_build_id);
+		dbug_task(2, "target build-id not matched: [%s] @ 0x%lx != [%s]\n",
+			  build_id, addr, tsk_build_id);
 		return false;
 	}
 
@@ -884,16 +884,9 @@ __stp_utrace_attach_match_filename(struct task_struct *tsk,
 		// procname/build-id and match an "all thread" probe.
 		if (tgt == NULL)
 			continue;
-		/* buildid-based target */
-		else if (tgt->build_id_len > 0 && tgt->procname > 0
-			 && !__verify_build_id(tsk,
-					       tgt->build_id_vaddr,
-					       tgt->build_id,
-					       tgt->build_id_len))
-		{
-			continue;
-		}
-		else if (tgt->build_id_len == 0 && tgt->pathlen > 0
+                /* buildid-based target ... gets checked in __stp_tf_quiesce_worker */
+                /* procname-based target */
+		else if (tgt->pathlen > 0
 			 && (tgt->pathlen != filelen
 			     || strcmp(tgt->procname, filename) != 0))
 		{
@@ -1341,6 +1334,34 @@ __stp_tf_quiesce_worker(struct task_work *work)
 		return;
 	}
 
+        /* If we had a build-id based executable probe (so we have a
+         * tgt->build_id) set, we could not check it back in
+         * __stp_utrace_attach_* because we can't do sleepy
+         * access_process_vm() calls from there.  BUt now that we're
+         * in process context, quiesced, finally we can check.  If we
+         * were build-id based, and the build-id does not match, then
+         * we UTRACE_DETACH from this process and skip the callbacks.
+         *
+         * XXX: For processes that do match, we redo this check every
+         * time this callbacks is encountered somehow.  That's
+         * probably unnecessary.
+         */
+        if (tgt->build_id_len > 0) {
+                int ok = __verify_build_id(current,
+                                           tgt->build_id_vaddr,
+                                           tgt->build_id,
+                                           tgt->build_id_len);
+
+                dbug_task(2, "verified buildid-target process pid=%ld ok=%d\n",
+                          (long) current->tgid, ok);
+                if (!ok) {
+                        // stap_utrace_detach (current, & tgt->ops);
+                        /* Remember that this task_work_func is finished. */
+                        stp_task_work_func_done();
+                        return;
+                }
+        } 
+        
 	__stp_tf_handler_start();
 
 	/* NB make sure we run mmap callbacks before other callbacks
@@ -1434,6 +1455,21 @@ __stp_utrace_task_finder_target_quiesce(u32 action,
 		}
 	}
 	else {
+                /* Like in __stp_tf_quiesce_worker(), verify build-id now if belated. */
+                if (tgt->build_id_len > 0) {
+                        int ok = __verify_build_id(current,
+                                                   tgt->build_id_vaddr,
+                                                   tgt->build_id,
+                                                   tgt->build_id_len);
+                        
+                        dbug_task(2, "verified2 buildid-target process pid=%ld ok=%d\n",
+                                  (long) current->tgid, ok);
+                        if (!ok) {
+                                __stp_tf_handler_end();
+                                return UTRACE_RESUME; // NB: not _DETACH; that interferes with other engines
+                        }
+                } 
+                
 		/* NB make sure we run mmap callbacks before other callbacks
 		 * like 'probe process.begin' handlers so that the vma tracker
 		 * is already initialized in the latter contexts */
@@ -1797,15 +1833,7 @@ stap_start_task_finder(void)
 					 struct stap_task_finder_target, list);
 			if (tgt == NULL)
 				continue;
-			/* buildid-based target */
-			else if (tgt->build_id_len > 0 && tgt->procname > 0
-				 && !__verify_build_id(tsk,
-						       tgt->build_id_vaddr,
-						       tgt->build_id,
-						       tgt->build_id_len))
-			{
-				continue;
-			}
+			/* buildid-based target ... gets checked in __stp_tf_quiesce_worker */
 			/* procname-based target */
 			else if (tgt->build_id == 0 && tgt->pathlen > 0
 				 && (tgt->pathlen != mmpathlen

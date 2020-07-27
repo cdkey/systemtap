@@ -713,9 +713,10 @@ static int _stp_build_id_check (struct _stp_module *m,
 	  // NB: It is normal for different binaries with the same file path
 	  // coexist in the same system via chroot or namespaces, therefore
 	  // we make sure below is really a warning.
-          _stp_warn ("Build-id mismatch [man warning::buildid]: \"%s\" address "
+          _stp_warn ("Build-id mismatch [man warning::buildid]: \"%s\" pid %ld address "
 		     "%#lx, expected %s actual %s\n",
-                     m->path, notes_addr, hexstring_theory, hexstring_practice);
+                     m->path, (long) tsk->tgid,
+                     notes_addr, hexstring_theory, hexstring_practice);
       return 1;
   }
   
