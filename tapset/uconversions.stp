@@ -126,7 +126,7 @@ function user_string_n:string (addr:long, n:long)
 			strlcpy(STAP_RETVALUE, "<unknown>", MAXSTRINGLEN);
 			snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
 				"user string copy fault %ld at 0x%lx [man error::fault]", rc,
-				(uintptr_t) STAP_ARG_addr);
+				(unsigned long) (uintptr_t) STAP_ARG_addr);
 			CONTEXT->last_error = CONTEXT->error_buffer;
 		} else
 			STAP_RETVALUE[len - 1] = '\0';
@@ -229,7 +229,7 @@ function user_string_n_warn:string (addr:long, n:long, warn_msg:string)
 		// not aborting, so leave last_error alone.
 		snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
 				"user string copy fault %ld at 0x%lx [man error::fault]", rc,
-				(uintptr_t) STAP_ARG_addr);
+                                (unsigned long) (uintptr_t) STAP_ARG_addr);
 		_stp_warn(CONTEXT->error_buffer);
 		strlcpy (STAP_RETVALUE, STAP_ARG_warn_msg, MAXSTRINGLEN);
 	} else
@@ -335,7 +335,7 @@ function user_string_n_quoted:string (addr:long, inlen:long, outlen:long)
 			else
 #endif
 				snprintf(STAP_RETVALUE, MAXSTRINGLEN, "0x%lx",
-					 (uintptr_t)STAP_ARG_addr);
+					 (unsigned long) (uintptr_t)STAP_ARG_addr);
 #endif
 		}
 	}
@@ -366,7 +366,8 @@ function user_string_utf32:string (addr:long) %{ /* pure */ /* myproc-unprivileg
     if ((rc = _stp_convert_utf32(destination, len, c32)) <= 0) {
       if (rc < 0) {
         snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
-                  "invalid UTF-32 character U+%X at 0x%lx", c32, (uintptr_t) source);
+                  "invalid UTF-32 character U+%X at 0x%lx", c32,
+		  (unsigned long) (uintptr_t) source);
         CONTEXT->last_error = CONTEXT->error_buffer;
       }
       break;
@@ -379,7 +380,8 @@ function user_string_utf32:string (addr:long) %{ /* pure */ /* myproc-unprivileg
   if (0) {
 deref_fault: /* branched to from deref_string() */
     snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
-              "user string copy fault at 0x%lx [man error::fault]", (uintptr_t) source);
+              "user string copy fault at 0x%lx [man error::fault]",
+	      (unsigned long) (uintptr_t) source);
     CONTEXT->last_error = CONTEXT->error_buffer;
   }
 %}
@@ -447,7 +449,8 @@ function user_string_utf16:string (addr:long) %{ /* pure */ /* myproc-unprivileg
     if ((rc = _stp_convert_utf32(destination, len, c32)) <= 0) {
       if (rc < 0) {
         snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
-                  "invalid UTF-16 character U+%X at 0x%lx", c32, source);
+                  "invalid UTF-16 character U+%X at 0x%lx", c32,
+		  (unsigned long) (uintptr_t) source);
         CONTEXT->last_error = CONTEXT->error_buffer;
       }
       break;
@@ -460,7 +463,8 @@ function user_string_utf16:string (addr:long) %{ /* pure */ /* myproc-unprivileg
   if (0) {
 deref_fault: /* branched to from deref_string() */
     snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
-              "user string copy fault at 0x%lx [man error::fault]", (uintptr_t) source);
+              "user string copy fault at 0x%lx [man error::fault]",
+	      (unsigned long) (uintptr_t) source);
     CONTEXT->last_error = CONTEXT->error_buffer;
   }
 %}
@@ -532,7 +536,7 @@ function user_char_warn:long (addr:long) {
 	try {
 		return user_char_error(addr)
 	} catch {
-		warn(sprintf("user char copy fault %p [man error::fault]",
+		warn(sprintf("user char copy fault at %p [man error::fault]",
 			     addr))
 		return 0
 	}

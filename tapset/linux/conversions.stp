@@ -26,7 +26,8 @@ deref_fault: /* branched to from deref_string() */
      * really odd in the following error message. Setting a format
      * width of '1' fixes this. */
     snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
-        "kernel string copy fault at 0x%p [man error::fault]", (void *) (uintptr_t) STAP_ARG_addr);
+        "kernel string copy fault at 0x%lx [man error::fault]", (void *)
+	(unsigned long) (uintptr_t) STAP_ARG_addr);
     CONTEXT->last_error = CONTEXT->error_buffer;
   }
 %}
@@ -67,7 +68,8 @@ function kernel_string_quoted:string (addr:long)
                        (char *)(uintptr_t)STAP_ARG_addr,
                        MAXSTRINGLEN, MAXSTRINGLEN, 1, 0, 0);
   if (STAP_ARG_addr == 0 || rc < 0)
-    snprintf(STAP_RETVALUE, MAXSTRINGLEN, "%p", (void *)(uintptr_t)STAP_ARG_addr);
+    snprintf(STAP_RETVALUE, MAXSTRINGLEN, "0x%lx",
+		    (unsigned long)(uintptr_t)STAP_ARG_addr);
 %}
 
 /**
@@ -86,7 +88,8 @@ function kernel_string_n:string (addr:long, n:long) %{ /* pure */
   if (0) {
 deref_fault: /* branched to from deref_string() */
     snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
-        "kernel string copy fault at 0x%p [man error::fault]", (void *) (uintptr_t) STAP_ARG_addr);
+        "kernel string copy fault at 0x%lx [man error::fault]",
+	(unsigned long) (uintptr_t) STAP_ARG_addr);
     CONTEXT->last_error = CONTEXT->error_buffer;
   }
 %}
@@ -110,7 +113,8 @@ function kernel_string_utf32:string (addr:long) %{ /* pure */
     if ((rc = _stp_convert_utf32(destination, len, c32)) <= 0) {
       if (rc < 0) {
         snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
-            "invalid UTF-32 character U+%X at 0x%p", c32, source);
+            "invalid UTF-32 character U+%X at 0x%lx", c32,
+	    (unsigned long) (uintptr_t) source);
         CONTEXT->last_error = CONTEXT->error_buffer;
       }
       break;
@@ -123,7 +127,8 @@ function kernel_string_utf32:string (addr:long) %{ /* pure */
   if (0) {
 deref_fault: /* branched to from deref_string() */
     snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
-              "kernel string copy fault at 0x%p [man error::fault]", source);
+              "kernel string copy fault at 0x%lx [man error::fault]",
+	      (unsigned long) (uintptr_t) source);
     CONTEXT->last_error = CONTEXT->error_buffer;
   }
 %}
@@ -189,7 +194,8 @@ function kernel_string_utf16:string (addr:long) %{ /* pure */
     if ((rc = _stp_convert_utf32(destination, len, c32)) <= 0) {
       if (rc < 0) {
         snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
-                  "invalid UTF-16 character U+%X at 0x%p", c32, source);
+                  "invalid UTF-16 character U+%X at 0x%lx", c32,
+		  (unsigned long) (uintptr_t) source);
         CONTEXT->last_error = CONTEXT->error_buffer;
       }
       break;
@@ -202,7 +208,8 @@ function kernel_string_utf16:string (addr:long) %{ /* pure */
   if (0) {
 deref_fault: /* branched to from deref_string() */
     snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
-              "kernel string copy fault at 0x%p [man error::fault]", source);
+              "kernel string copy fault at 0x%lx [man error::fault]",
+	      (unsigned long) (uintptr_t) source);
     CONTEXT->last_error = CONTEXT->error_buffer;
   }
 %}
@@ -249,7 +256,8 @@ function kernel_long:long (addr:long) %{ /* pure */
   if (0) {
 deref_fault: /* branched to from kread() */
     snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
-        "kernel long copy fault at 0x%p [man error::fault]", (void *) (uintptr_t) STAP_ARG_addr);
+        "kernel long copy fault at 0x%lx [man error::fault]",
+	(unsigned long) (uintptr_t) STAP_ARG_addr);
     CONTEXT->last_error = CONTEXT->error_buffer;
   }
 %}
@@ -267,7 +275,8 @@ function kernel_int:long (addr:long) %{ /* pure */
   if (0) {
 deref_fault: /* branched to from kread() */
     snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
-        "kernel int copy fault at 0x%p [man error::fault]", (void *) (uintptr_t) STAP_ARG_addr);
+        "kernel int copy fault at 0x%lx [man error::fault]",
+	(unsigned long) (uintptr_t) STAP_ARG_addr);
     CONTEXT->last_error = CONTEXT->error_buffer;
   }
 %}
@@ -285,7 +294,8 @@ function kernel_short:long (addr:long) %{ /* pure */
   if (0) {
 deref_fault: /* branched to from kread() */
     snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
-        "kernel short copy fault at 0x%p [man error::fault]", (void *) (uintptr_t) STAP_ARG_addr);
+        "kernel short copy fault at 0x%lx [man error::fault]",
+	(unsigned long) (uintptr_t) STAP_ARG_addr);
     CONTEXT->last_error = CONTEXT->error_buffer;
   }
 %}
@@ -303,7 +313,8 @@ function kernel_char:long (addr:long) %{ /* pure */
   if (0) {
 deref_fault: /* branched to from kread() */
     snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
-        "kernel char copy fault at 0x%p [man error::fault]", (void *) (uintptr_t) STAP_ARG_addr);
+        "kernel char copy fault at 0x%lx [man error::fault]",
+	(unsigned long) (uintptr_t) STAP_ARG_addr);
     CONTEXT->last_error = CONTEXT->error_buffer;
   }
 %}
@@ -322,7 +333,8 @@ function kernel_pointer:long (addr:long) %{ /* pure */
   if (0) {
 deref_fault: /* branched to from kread() */
     snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
-        "kernel pointer copy fault at 0x%p [man error::fault]", (void *) (uintptr_t) STAP_ARG_addr);
+        "kernel pointer copy fault at 0x%lx [man error::fault]",
+	(unsigned long) (uintptr_t) STAP_ARG_addr);
     CONTEXT->last_error = CONTEXT->error_buffer;
   }
 %}
