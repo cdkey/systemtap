@@ -47,7 +47,7 @@ static int64_t determine_java_type(JNIEnv *env, jobject _arg, _Bool *need_free)
 {
   if ((*env)->IsSameObject(env, _arg, NULL)) {
     *need_free = 1;
-    return (int64_t) strdup("(null)"); /* need a real string to avoid user_string_warn getting upset */
+    return (int64_t) (uintptr_t) strdup("(null)"); /* need a real string to avoid user_string_warn getting upset */
   }
 
   jclass class_arg = (*env)->GetObjectClass(env, _arg);
@@ -87,7 +87,7 @@ static int64_t determine_java_type(JNIEnv *env, jobject _arg, _Bool *need_free)
   (*env)->ExceptionClear(env);
   /* Not a simple numeric scalar. Caller must free(). */
   *need_free = true;
-  return (int64_t) get_java_tostring(env, _arg);
+  return (int64_t) (uintptr_t) get_java_tostring(env, _arg);
 }
 
 static char *alloc_sargs(int64_t *sargs, _Bool *sfree, JNIEnv *env,
@@ -106,7 +106,7 @@ static void free_sargs(char *rulename, int64_t *sargs, _Bool *sfree, int num)
   int i;
   for (i = 0;i < num; i++)
     if (sfree[i])
-      free((void *) sargs[i]);
+      free((void *) (uintptr_t) sargs[i]);
   free(rulename);
 }
 
