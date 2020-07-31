@@ -1,7 +1,7 @@
 /* -*- linux-c -*-
  * symbols.c - stp symbol and module functions
  *
- * Copyright (C) Red Hat Inc, 2006-2015
+ * Copyright (C) Red Hat Inc, 2006-2020
  *
  * This file is part of systemtap, and is free software.  You can
  * redistribute it and/or modify it under the terms of the GNU General
@@ -112,10 +112,117 @@ static void _stp_do_relocation(const char __user *buf, size_t count)
 
 
 
+/* Module section attributes tell us where module sections are/were
+   loaded intoi kernel memory.  In the kernel APIs, these have gone
+   through enough change over the years, that we roll our own now.
+ */
+struct stap_module_sect_attr
+{
+        const char* name;
+        unsigned long address;
+};
+
+struct stap_module_sect_attrs
+{
+        unsigned nsections;
+        struct stap_module_sect_attr *sections;
+};
+
+
+// Allocates & fills in as->nsections and as->attrs[].  Addresses may be 0L
+// if addresses unknown or invalid.  Free with put_() function below.  Do not
+// keep alive any longer than target module's notifier callback, as section
+// names (in attrs[]) are considered static.  In case of error, mod->nsections
+// may be zero and/or mod->sections[i].address may be zero.
+void get_module_sect_attrs(struct module* mod,
+                           struct stap_module_sect_attrs* as);
+
+void put_module_sect_attrs(struct stap_module_sect_attrs* as)
+{
+        _stp_kfree(as->sections);
+}
+
+
+#if defined(STAPCONF_KERNEL_READ_FILE_FROM_PATH)
+/* PR26307.  We used to dig around the kernel module_attribute
+   structure to extract modules' section addresses ... then the kernel
+   hid the needed headers, so a goofy hack was put in place instead.
+   As of kernel 5.8-rc5, the hack doesn't work any more, so switch to
+   a different method: using kernel_read_file_from_path() (linux 4.6+)
+   to get at the same data, but as exposed to sysfs. */
+
+static unsigned long
+read_sect_sysfs(const char* module, const char *section)
+{
+        char *pathname = __getname(); // PATH_MAX sized
+        int rc;
+        unsigned long addr = 0;
+        void *buffer = NULL;
+        loff_t size;
+        
+        if (pathname == 0)
+                goto out;
+        rc = snprintf(pathname, PATH_MAX, "/sys/module/%s/sections/%s", module, section);
+        if (rc >= PATH_MAX)
+                goto out1;
+        rc = kernel_read_file_from_path(pathname, &buffer, &size, 64 /* max. bytes expected */,
+                                        READING_UNKNOWN);
+        if (rc <= 0)
+                goto out1;
+        rc = kstrtoul(buffer, 0, &addr);
+        if (rc != 0) // parse error?
+                addr = 0L;
+        vfree (buffer);
+out1:
+        __putname(pathname);
+out:
+        dbug_sym(2, "module %s section %s address 0x%lu\n",
+                 module, section, addr);
+        
+        return addr;
+}
+                                     
+
+void get_module_sect_attrs(struct module* mod,
+                           struct stap_module_sect_attrs* as)
+{
+        unsigned i;
+        
+        // Guess at the maximal set of sections we're likely to encounter
+        // as relevant for probing, $context var setting, unwinding; more welcome.
+        // It's not easy to say "all" because we can't enumerate them
+        const char* key_sections[] = { ".init", ".text", ".eh_frame",
+                                       ".text.unlikely", ".data", ".rodata",
+                                       ".symtab" };
+        as->nsections = sizeof(key_sections)/sizeof(key_sections[0]);
+        as->sections = _stp_kzalloc(as->nsections * sizeof(struct stap_module_sect_attr));
+        if (as->sections == 0) {
+                goto out1;
+        }
+
+        for (i=0; i<as->nsections; i++) {
+                as->sections[i].name = key_sections[i];
+                as->sections[i].address = read_sect_sysfs(mod->name, key_sections[i]);
+        }
+        
+        goto out;
+
+out1:
+        as->nsections = 0; // prevent later kfrees run amok
+out:
+        return;
+}
+
+#else
+
 #if !defined(STAPCONF_MODULE_SECT_ATTRS) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
 /* It would be nice if it were (still) in a header we could get to,
    like include/linux/module.h, but commit a58730c42 moved them into
-   kernel/module.c. */
+   kernel/module.c.  NB: this became obsolete/dangerous as of linux 5.8! */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,8,0)
+#error "obsolete" /* otherwise kernel BUG:s easily triggered, PR26307 */
+#endif
+
 struct module_sect_attr
 {
         struct module_attribute mattr;
@@ -132,7 +239,7 @@ struct module_sect_attrs
 #endif
 
 
-#if defined(CONFIG_KALLSYMS) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,11)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,11)
 static unsigned _stp_module_nsections (struct module_sect_attrs *attrs)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
@@ -150,29 +257,50 @@ static unsigned _stp_module_nsections (struct module_sect_attrs *attrs)
 #endif
 
 
+void get_module_sect_attrs(struct module* mod,
+                           struct stap_module_sect_attrs* as)
+{
+        unsigned i;
+        struct module_sect_attrs* attrs = mod->sect_attrs;
+        
+        as->nsections = _stp_module_nsections (attrs);
+        as->sections = _stp_kzalloc(as->nsections * sizeof(struct stap_module_sect_attr));
+        if (as->sections == 0) {
+                goto out1;
+        }
+
+        for (i=0; i<as->nsections; i++) {
+                as->sections[i].name = attrs->attrs[i].name;
+                as->sections[i].address = attrs->attrs[i].address;
+        }
+        
+        goto out;
+
+out1:
+        as->nsections = 0; // prevent later kfrees run amok
+out:
+        return;
+}
+#endif  /* STAPCONF_KERNEL_READ_FILE_FROM_PATH */
+
+
+
 static int _stp_module_notifier (struct notifier_block * nb,
                                  unsigned long val, void *data)
 {
         struct module *mod = data;
-        struct module_sect_attrs *attrs;
-        unsigned i, nsections;
-
-        (void) attrs;
-        (void) i;
-        (void) nsections;
-
         if (!mod) { // so as to avoid null pointer checks later
                 WARN_ON (!mod);
                 return NOTIFY_DONE;
         }
 
-        dbug_sym(1, "module notify %lu %s attrs %p\n",
-                 val, mod->name, mod->sect_attrs);
+        dbug_sym(1, "module notify %lu %s\n",
+                 val, mod->name);
 
         /* Prior to 2.6.11, struct module contained a module_sections
            attribute vector rather than module_sect_attrs.  Prior to
            2.6.19, module_sect_attrs lacked a number-of-sections
-           field.  Past 3.8, MODULE_STATE_COMING is sent too early to
+           field.  Past 3.8, MODULE_STATE_COMING is sent too late to
            let us probe module init functions.
 
            Without CONFIG_KALLSYMS, we don't get any of the
@@ -213,21 +341,21 @@ static int _stp_module_notifier (struct notifier_block * nb,
                    of its section addresses, as though staprun sent us
                    a bunch of STP_RELOCATE messages.  Now ... where
                    did the fishie go? */
+                
+                struct stap_module_sect_attrs attrs;
+                unsigned i, nsections;
+                get_module_sect_attrs (mod, &attrs);
 
-                attrs = mod->sect_attrs;
-                dbug_sym(1, "module_sect_attrs: %p\n", attrs);
-                if (attrs == NULL) // until add_sect_attrs(), may be zero
-                        return NOTIFY_DONE; // remain ignorant
-
-                nsections = _stp_module_nsections(attrs);
-                for (i=0; i<nsections; i++) {
+                for (i=0; i<attrs.nsections; i++) {
                         int init_p = (strstr(attrs->attrs[i].name, "init.") != NULL);
                         int init_gone_p = (val == MODULE_STATE_LIVE); // likely already unloaded
 
                         _stp_kmodule_update_address(mod->name,
-                                                    attrs->attrs[i].name,
+                                                    attrs->attrs[i]->name,
                                                     ((init_p && init_gone_p) ? 0 : attrs->attrs[i].address));
                 }
+
+                put_module_sect_attrs (&attrs);
 
                 /* Verify build-id. */
                 if (_stp_kmodule_check (mod->name))
@@ -263,28 +391,32 @@ static int _stp_module_update_self (void)
 
 	bool found_eh_frame = false;
 	struct module *mod = THIS_MODULE;
-	struct module_sect_attrs *attrs = mod->sect_attrs;
-	unsigned i, nsections = _stp_module_nsections(attrs);
-
+        struct stap_module_sect_attrs attrs;
+        int rc;
+        unsigned i;
+        
 	/* We've already been inserted at this point, so the path variable will
 	 * still be unique.  */
 	_stp_module_self.name = mod->name;
 	_stp_module_self.path = mod->name;
 
-	for (i=0; i<nsections; i++) {
-		struct module_sect_attr *attr = &attrs->attrs[i];
-		if (!attr->name)
-			continue;
+        get_module_sect_attrs (mod, &attrs);
 
-		if(!strcmp(".note.gnu.build-id",attr->name)) {
-			_stp_module_self.notes_sect = attr->address;
+	for (i=0; i<attrs.nsections; i++) {
+                const char* aname = attrs.sections[i].name;
+                unsigned long address = attrs.sections[i].address;
+                
+                if (! aname)
+                        continue;
+		if(!strcmp(".note.gnu.build-id",aname)) {
+			_stp_module_self.notes_sect = address;
 		}
-		else if (!strcmp(".eh_frame", attr->name)) {
-			_stp_module_self.eh_frame = (void*)attr->address;
+		else if (!strcmp(".eh_frame", aname)) {
+			_stp_module_self.eh_frame = (void*)address;
 			_stp_module_self.eh_frame_len = 0;
 			found_eh_frame = true;
 		}
-		else if (!strcmp(".symtab", attr->name)) {
+		else if (!strcmp(".symtab", aname)) {
 #ifdef STAPCONF_MOD_KALLSYMS
 			struct mod_kallsyms *kallsyms;
 
@@ -292,18 +424,18 @@ static int _stp_module_update_self (void)
 			kallsyms = rcu_dereference_sched(mod->kallsyms);
 			rcu_read_unlock_sched();
 
-			if (attr->address == (unsigned long) kallsyms->symtab)
+			if (address == (unsigned long) kallsyms->symtab)
 				_stp_module_self.sections[0].size =
 					kallsyms->num_symtab * sizeof(kallsyms->symtab[0]);
 #else
-			if (attr->address == (unsigned long) mod->symtab)
+			if (address == (unsigned long) mod->symtab)
 				_stp_module_self.sections[0].size =
 					mod->num_symtab * sizeof(mod->symtab[0]);
 #endif
-			_stp_module_self.sections[0].static_addr = attr->address;
+			_stp_module_self.sections[0].static_addr = address;
 		}
-		else if (!strcmp(".text", attr->name)) {
-			_stp_module_self.sections[1].static_addr = attr->address;
+		else if (!strcmp(".text", aname)) {
+			_stp_module_self.sections[1].static_addr = address;
 #ifdef STAPCONF_MODULE_LAYOUT
 			_stp_module_self.sections[1].size = mod->core_layout.text_size;
 #elif defined(STAPCONF_GRSECURITY)
@@ -319,8 +451,8 @@ static int _stp_module_update_self (void)
 		 * the position of the next closest section.  (if any!)  */
 		const unsigned long base = (unsigned long) _stp_module_self.eh_frame;
 		unsigned long maxlen = 0, len = 0;
-		for (i=0; i<nsections; i++) {
-			unsigned long address = attrs->attrs[i].address;
+		for (i=0; i<attrs.nsections; i++) {
+			unsigned long address = attrs.sections[i].address;
 			if (base < address && (maxlen == 0 || address < base + maxlen))
 				maxlen = address - base;
 		}
@@ -339,6 +471,8 @@ static int _stp_module_update_self (void)
 		_stp_module_self.eh_frame_len = len;
 	}
 
+        put_module_sect_attrs (&attrs);
+        
 #endif /* defined(CONFIG_KALLSYMS) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,11) */
 #endif /* (defined(STP_USE_DWARF_UNWINDER) && defined(STP_NEED_UNWIND_DATA))
           || defined(STP_NEED_LINE_DATA) */
