@@ -347,12 +347,12 @@ static int _stp_module_notifier (struct notifier_block * nb,
                 get_module_sect_attrs (mod, &attrs);
 
                 for (i=0; i<attrs.nsections; i++) {
-                        int init_p = (strstr(attrs->attrs[i].name, "init.") != NULL);
+                        int init_p = (strstr(attrs.sections[i].name, "init.") != NULL);
                         int init_gone_p = (val == MODULE_STATE_LIVE); // likely already unloaded
 
                         _stp_kmodule_update_address(mod->name,
-                                                    attrs->attrs[i]->name,
-                                                    ((init_p && init_gone_p) ? 0 : attrs->attrs[i].address));
+                                                    attrs.sections[i]->name,
+                                                    ((init_p && init_gone_p) ? 0 : attrs.sections[i].address));
                 }
 
                 put_module_sect_attrs (&attrs);
