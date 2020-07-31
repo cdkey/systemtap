@@ -351,7 +351,7 @@ static int _stp_module_notifier (struct notifier_block * nb,
                         int init_gone_p = (val == MODULE_STATE_LIVE); // likely already unloaded
 
                         _stp_kmodule_update_address(mod->name,
-                                                    attrs.sections[i]->name,
+                                                    attrs.sections[i].name,
                                                     ((init_p && init_gone_p) ? 0 : attrs.sections[i].address));
                 }
 
