@@ -1,5 +1,5 @@
 // systemtap compile-server web api server header 
-// Copyright (C) 2017-2018 Red Hat Inc.
+// Copyright (C) 2017-2020 Red Hat Inc.
 //
 // This file is part of systemtap, and is free software.  You can
 // redistribute it and/or modify it under the terms of the GNU General
@@ -94,7 +94,7 @@ private:
     // FIXME: should this be a map?
     vector<tuple<string, request_handler *>> request_handlers;
 
-    static int access_handler_shim(void *cls,
+    static MHD_Result access_handler_shim(void *cls,
 				   struct MHD_Connection *connection,
 				   const char *url,
 				   const char *method,
@@ -103,7 +103,7 @@ private:
 				   size_t *upload_data_size,
 				   void **con_cls);
 
-    int access_handler(struct MHD_Connection *connection,
+    MHD_Result access_handler(struct MHD_Connection *connection,
 		       const char *url,
 		       const char *method,
 		       const char *version,
@@ -121,7 +121,7 @@ private:
 				   void **con_cls,
 				   enum MHD_RequestTerminationCode toe);
 
-    int queue_response(const response &response, MHD_Connection *connection);
+    MHD_Result queue_response(const response &response, MHD_Connection *connection);
 };
 
 #endif /* __SERVER_H__ */

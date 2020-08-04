@@ -1,5 +1,5 @@
 // systemtap compile-server web api server
-// Copyright (C) 2017-2018 Red Hat Inc.
+// Copyright (C) 2017-2020 Red Hat Inc.
 //
 // This file is part of systemtap, and is free software.  You can
 // redistribute it and/or modify it under the terms of the GNU General
@@ -30,7 +30,7 @@ extern "C"
 
 using namespace std;
 
-static int
+static MHD_Result
 get_key_values(void *cls, enum MHD_ValueKind /*kind*/,
 	       const char *key, const char *value)
 {
@@ -115,7 +115,7 @@ struct upload_file_info
 
 struct connection_info
 {
-    static int
+    static MHD_Result
     postdataiterator_shim(void *cls,
 			  enum MHD_ValueKind kind,
 			  const char *key,
@@ -126,7 +126,7 @@ struct connection_info
 			  uint64_t off,
 			  size_t size);
 
-    int postdataiterator(enum MHD_ValueKind kind,
+    MHD_Result postdataiterator(enum MHD_ValueKind kind,
 			 const char *key,
 			 const char *filename,
 			 const char *content_type,
@@ -184,7 +184,7 @@ connection_info::post_files_cleanup()
     post_files.clear();
 }
 
-int
+MHD_Result
 connection_info::postdataiterator_shim(void *cls,
 				       enum MHD_ValueKind kind,
 				       const char *key,
@@ -203,7 +203,7 @@ connection_info::postdataiterator_shim(void *cls,
 				      transfer_encoding, data, off, size);
 }
 
-int
+MHD_Result
 connection_info::postdataiterator(enum MHD_ValueKind kind,
 				  const char *key,
 				  const char *filename,
@@ -382,7 +382,7 @@ server::add_request_handler(const string &url_path_re, request_handler &handler)
     request_handlers.push_back(make_tuple(url_path_re, &handler));
 }
 
-int
+MHD_Result
 server::access_handler_shim(void *cls,
 			    struct MHD_Connection *connection,
 			    const char *url,
@@ -410,7 +410,7 @@ enum class request_method
 };
 
 
-int
+MHD_Result
 server::access_handler(struct MHD_Connection *connection,
 		       const char *url,
 		       const char *method,
@@ -530,7 +530,7 @@ server::access_handler(struct MHD_Connection *connection,
     }
 }
 
-int
+MHD_Result
 server::queue_response(const response &response, MHD_Connection *connection)
 {
     struct MHD_Response *mhd_response;
@@ -567,7 +567,7 @@ server::queue_response(const response &response, MHD_Connection *connection)
 			    response.content_type.c_str());
 
 //    MHD_add_response_header(mhd_response, MHD_HTTP_HEADER_SERVER, server_identifier_.c_str());
-    int ret = MHD_queue_response(connection, response.status_code,
+    MHD_Result ret = MHD_queue_response(connection, response.status_code,
 				 mhd_response);
     MHD_destroy_response (mhd_response);
     return ret;
