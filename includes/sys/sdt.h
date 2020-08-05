@@ -64,8 +64,16 @@
 # define _SDT_DEPAREN_11(a,b,c,d,e,f,g,h,i,j,k)		a b c d e f g h i j k
 # define _SDT_DEPAREN_12(a,b,c,d,e,f,g,h,i,j,k,l)	a b c d e f g h i j k l
 #else
+#if defined _SDT_HAS_SEMAPHORES
+#define _SDT_NOTE_SEMAPHORE_USE(provider, name) \
+  __asm__ __volatile__ ("" :: "m" (provider##_##name##_semaphore));
+#else
+#define _SDT_NOTE_SEMAPHORE_USE(provider, name)
+#endif
+
 # define _SDT_PROBE(provider, name, n, arglist) \
   do {									    \
+    _SDT_NOTE_SEMAPHORE_USE(provider, name); \
     __asm__ __volatile__ (_SDT_ASM_BODY(provider, name, _SDT_ASM_ARGS, (n)) \
 			  :: _SDT_ASM_OPERANDS_##n arglist);		    \
     __asm__ __volatile__ (_SDT_ASM_BASE);				    \
@@ -258,7 +266,6 @@ __extension__ extern unsigned long long __sdt_unsp;
 
 #if defined _SDT_HAS_SEMAPHORES
 #define _SDT_SEMAPHORE(p,n) \
-	_SDT_ASM_1(.global p##_##n##_semaphore) \
 	_SDT_ASM_1(		_SDT_ASM_ADDR p##_##n##_semaphore)
 #else
 #define _SDT_SEMAPHORE(p,n) _SDT_ASM_1(		_SDT_ASM_ADDR 0)
