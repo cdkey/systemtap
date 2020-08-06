@@ -30,7 +30,7 @@ extern "C"
 
 using namespace std;
 
-static MHD_Result
+static MHD_RESULT
 get_key_values(void *cls, enum MHD_ValueKind /*kind*/,
 	       const char *key, const char *value)
 {
@@ -115,7 +115,7 @@ struct upload_file_info
 
 struct connection_info
 {
-    static MHD_Result
+    static MHD_RESULT
     postdataiterator_shim(void *cls,
 			  enum MHD_ValueKind kind,
 			  const char *key,
@@ -126,7 +126,7 @@ struct connection_info
 			  uint64_t off,
 			  size_t size);
 
-    MHD_Result postdataiterator(enum MHD_ValueKind kind,
+    MHD_RESULT postdataiterator(enum MHD_ValueKind kind,
 			 const char *key,
 			 const char *filename,
 			 const char *content_type,
@@ -184,7 +184,7 @@ connection_info::post_files_cleanup()
     post_files.clear();
 }
 
-MHD_Result
+MHD_RESULT
 connection_info::postdataiterator_shim(void *cls,
 				       enum MHD_ValueKind kind,
 				       const char *key,
@@ -203,7 +203,7 @@ connection_info::postdataiterator_shim(void *cls,
 				      transfer_encoding, data, off, size);
 }
 
-MHD_Result
+MHD_RESULT
 connection_info::postdataiterator(enum MHD_ValueKind kind,
 				  const char *key,
 				  const char *filename,
@@ -382,7 +382,7 @@ server::add_request_handler(const string &url_path_re, request_handler &handler)
     request_handlers.push_back(make_tuple(url_path_re, &handler));
 }
 
-MHD_Result
+MHD_RESULT
 server::access_handler_shim(void *cls,
 			    struct MHD_Connection *connection,
 			    const char *url,
@@ -410,7 +410,7 @@ enum class request_method
 };
 
 
-MHD_Result
+MHD_RESULT
 server::access_handler(struct MHD_Connection *connection,
 		       const char *url,
 		       const char *method,
@@ -530,7 +530,7 @@ server::access_handler(struct MHD_Connection *connection,
     }
 }
 
-MHD_Result
+MHD_RESULT
 server::queue_response(const response &response, MHD_Connection *connection)
 {
     struct MHD_Response *mhd_response;
@@ -567,7 +567,7 @@ server::queue_response(const response &response, MHD_Connection *connection)
 			    response.content_type.c_str());
 
 //    MHD_add_response_header(mhd_response, MHD_HTTP_HEADER_SERVER, server_identifier_.c_str());
-    MHD_Result ret = MHD_queue_response(connection, response.status_code,
+    MHD_RESULT ret = MHD_queue_response(connection, response.status_code,
 				 mhd_response);
     MHD_destroy_response (mhd_response);
     return ret;

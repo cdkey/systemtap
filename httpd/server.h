@@ -21,6 +21,13 @@ extern "C"
 #include <microhttpd.h>
 }
 
+#if MHD_VERSION >= 0x00097002
+// libmicrohttpd 0.9.71 broke API
+#define MHD_RESULT enum MHD_Result
+#else
+#define MHD_RESULT int
+#endif
+  
 using namespace std;
 
 struct response
@@ -94,7 +101,7 @@ private:
     // FIXME: should this be a map?
     vector<tuple<string, request_handler *>> request_handlers;
 
-    static MHD_Result access_handler_shim(void *cls,
+    static MHD_RESULT access_handler_shim(void *cls,
 				   struct MHD_Connection *connection,
 				   const char *url,
 				   const char *method,
@@ -103,7 +110,7 @@ private:
 				   size_t *upload_data_size,
 				   void **con_cls);
 
-    MHD_Result access_handler(struct MHD_Connection *connection,
+    MHD_RESULT access_handler(struct MHD_Connection *connection,
 		       const char *url,
 		       const char *method,
 		       const char *version,
@@ -121,7 +128,7 @@ private:
 				   void **con_cls,
 				   enum MHD_RequestTerminationCode toe);
 
-    MHD_Result queue_response(const response &response, MHD_Connection *connection);
+    MHD_RESULT queue_response(const response &response, MHD_Connection *connection);
 };
 
 #endif /* __SERVER_H__ */
