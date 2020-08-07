@@ -76,6 +76,12 @@ probe __nd2_syscall.epoll_create1 = kprobe.function(@arch_syscall_prefix "sys_ep
 		name = "epoll_create1";
 		argstr = _epoll_create1_flag_str(flags);
 	}
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(flags))
+	  set_int_arg(1, flags)
+%)
 }
 probe __nd2_syscall.epoll_create = kprobe.function(@arch_syscall_prefix "sys_epoll_create") ?
 {
@@ -84,6 +90,12 @@ probe __nd2_syscall.epoll_create = kprobe.function(@arch_syscall_prefix "sys_epo
 	size = int_arg(1)
 	flags = 0
 	argstr = sprint(size)
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(size))
+	  set_int_arg(1, size)
+%)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -104,6 +116,12 @@ probe __tp_syscall.epoll_create1 = kernel.trace("sys_enter")
 		name = "epoll_create1";
 		argstr = _epoll_create1_flag_str(flags);
 	}
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(flags))
+	  set_int_arg(1, flags)
+%)
 }
 probe __tp_syscall.epoll_create = kernel.trace("sys_enter")
 {
@@ -113,6 +131,12 @@ probe __tp_syscall.epoll_create = kernel.trace("sys_enter")
 	size = int_arg(1)
 	flags = 0
 	argstr = sprint(size)
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(size))
+	  set_int_arg(1, size)
+%)
 }
 
 probe nd_syscall.epoll_create.return = nd1_syscall.epoll_create.return!, nd2_syscall.epoll_create.return!, tp_syscall.epoll_create.return

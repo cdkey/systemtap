@@ -1,5 +1,5 @@
 # access _____________________________________________________
-# long sys_access(const char __user * filename, int mode)
+# long sys_access(const char __user * pathname, int mode)
 
 @define _SYSCALL_ACCESS_NAME
 %(
@@ -14,9 +14,20 @@
 @define _SYSCALL_ACCESS_REGARGS
 %(
 	pathname = user_string_quoted(pointer_arg(1))
+	pathname_unquoted = user_string_nofault(pointer_arg(1))
 	mode = int_arg(2)
 	mode_str = _access_mode_str(mode)
 %)
+
+@define _SYSCALL_ACCESS_REGARGS_STORE
+%(
+        if (@probewrite(pathname_unquoted))
+          set_user_string_arg(pointer_arg(1), pathname_unquoted)
+
+	if (@probewrite(mode))
+	  set_int_arg(2, mode)
+%)
+
 
 probe syscall.access = dw_syscall.access !, nd_syscall.access ? {}
 probe syscall.access.return = dw_syscall.access.return !, nd_syscall.access.return ? {}
@@ -57,6 +68,9 @@ probe nd2_syscall.access = kprobe.function(@arch_syscall_prefix "sys_access") ?
 	@_SYSCALL_ACCESS_NAME
 	@_SYSCALL_ACCESS_REGARGS
 	@_SYSCALL_ACCESS_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_ACCESS_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -67,6 +81,9 @@ probe tp_syscall.access = kernel.trace("sys_enter")
 	@_SYSCALL_ACCESS_NAME
 	@_SYSCALL_ACCESS_REGARGS
 	@_SYSCALL_ACCESS_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_ACCESS_REGARGS_STORE %)
 }
 
 probe nd_syscall.access.return = nd1_syscall.access.return!, nd2_syscall.access.return!, tp_syscall.access.return

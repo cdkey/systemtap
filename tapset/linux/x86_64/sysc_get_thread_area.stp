@@ -21,6 +21,12 @@
 	u_info_str = _struct_user_desc_u(u_info_uaddr)
 %)
 
+@define _SYSCALL_GET_THREAD_AREA_REGARGS_STORE
+%(
+        if (@probewrite(u_info_uaddr))
+          set_pointer_arg(1, u_info_uaddr)
+%)
+
 probe syscall.get_thread_area = dw_syscall.get_thread_area !,
                                 nd_syscall.get_thread_area ? {}
 probe syscall.get_thread_area.return = dw_syscall.get_thread_area.return !,
@@ -66,6 +72,9 @@ probe nd2_syscall.get_thread_area =
 	@_SYSCALL_GET_THREAD_AREA_NAME
 	@_SYSCALL_GET_THREAD_AREA_REGARGS
 	@_SYSCALL_GET_THREAD_AREA_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_GET_THREAD_AREA_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -76,6 +85,9 @@ probe tp_syscall.get_thread_area = kernel.trace("sys_enter")
 	@_SYSCALL_GET_THREAD_AREA_NAME
 	@_SYSCALL_GET_THREAD_AREA_REGARGS
 	@_SYSCALL_GET_THREAD_AREA_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_GET_THREAD_AREA_REGARGS_STORE %)
 }
 
 probe nd_syscall.get_thread_area.return = nd1_syscall.get_thread_area.return!, nd2_syscall.get_thread_area.return!, tp_syscall.get_thread_area.return

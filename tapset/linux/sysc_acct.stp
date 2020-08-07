@@ -14,7 +14,15 @@
 @define _SYSCALL_ACCT_REGARGS
 %(
 	filename = user_string_quoted(pointer_arg(1))
+	filename_unquoted = user_string_nofault(pointer_arg(1))
 %)
+
+@define _SYSCALL_ACCT_REGARGS_STORE
+%(
+        if (@probewrite(filename_unquoted))
+          set_user_string_arg(pointer_arg(1), filename_unquoted)
+%)
+
 
 probe syscall.acct = dw_syscall.acct !, nd_syscall.acct ? {}
 probe syscall.acct.return = dw_syscall.acct.return !, nd_syscall.acct.return ? {}
@@ -53,6 +61,9 @@ probe nd2_syscall.acct = kprobe.function(@arch_syscall_prefix "sys_acct") ?
 	@_SYSCALL_ACCT_NAME
 	@_SYSCALL_ACCT_REGARGS
 	@_SYSCALL_ACCT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_ACCT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -63,6 +74,9 @@ probe tp_syscall.acct = kernel.trace("sys_enter")
 	@_SYSCALL_ACCT_NAME
 	@_SYSCALL_ACCT_REGARGS
 	@_SYSCALL_ACCT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_ACCT_REGARGS_STORE %)
 }
 
 probe nd_syscall.acct.return = nd1_syscall.acct.return!, nd2_syscall.acct.return!, tp_syscall.acct.return

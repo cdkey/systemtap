@@ -17,6 +17,15 @@
 	size = ulong_arg(2)
 %)
 
+@define _SYSCALL_GETCWD_REGARGS_STORE
+%(
+        if (@probewrite(buf_uaddr))
+          set_pointer_arg(1, buf_uaddr)
+
+	if (@probewrite(size))
+	  set_ulong_arg(2, size)
+%)
+
 probe syscall.getcwd = dw_syscall.getcwd !, nd_syscall.getcwd ? {}
 probe syscall.getcwd.return = dw_syscall.getcwd.return !, nd_syscall.getcwd.return ? {}
 
@@ -56,6 +65,9 @@ probe nd2_syscall.getcwd = kprobe.function(@arch_syscall_prefix "sys_getcwd") ?
 	@_SYSCALL_GETCWD_NAME
 	@_SYSCALL_GETCWD_REGARGS
 	@_SYSCALL_GETCWD_ARGSTR
+},
+{
+        @_SYSCALL_GETCWD_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -66,6 +78,9 @@ probe tp_syscall.getcwd = kernel.trace("sys_enter")
 	@_SYSCALL_GETCWD_NAME
 	@_SYSCALL_GETCWD_REGARGS
 	@_SYSCALL_GETCWD_ARGSTR
+},
+{
+        @_SYSCALL_GETCWD_REGARGS_STORE
 }
 
 probe nd_syscall.getcwd.return = nd1_syscall.getcwd.return!, nd2_syscall.getcwd.return!, tp_syscall.getcwd.return

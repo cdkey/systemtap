@@ -21,7 +21,23 @@
 	dirfd_str = _dfd_str(dirfd)
 	filename_uaddr = pointer_arg(2)
 	filename = user_string_quoted(filename_uaddr)
+	filename_unquoted = user_string_nofault(pointer_arg(2))
 	tvp_uaddr = pointer_arg(3)
+%)
+
+@define _SYSCALL_FUTIMESAT_REGARGS_STORE
+%(
+        if (@probewrite(dirfd))
+          set_int_arg(1, dirfd)
+
+	if (@probewrite(filename_uaddr))
+	  set_pointer_arg(2, filename_uaddr)
+
+	if (@probewrite(filename_unquoted))
+	  set_user_string_arg(pointer_arg(2), filename_unquoted)
+
+	if (@probewrite(tvp_uaddr))
+	  set_pointer_arg(3, tvp_uaddr)
 %)
 
 probe syscall.futimesat = dw_syscall.futimesat !, nd_syscall.futimesat ? {}
@@ -97,6 +113,9 @@ probe nd2_syscall.futimesat = kprobe.function(@arch_syscall_prefix "sys_futimesa
 	@_SYSCALL_FUTIMESAT_REGARGS
 	tvp_str = _struct_timeval_u(tvp_uaddr, 2)
 	@_SYSCALL_FUTIMESAT_ARGSTR
+},
+{
+        @_SYSCALL_FUTIMESAT_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -108,6 +127,9 @@ probe tp_syscall.futimesat = kernel.trace("sys_enter")
 	@_SYSCALL_FUTIMESAT_REGARGS
 	tvp_str = _struct_timeval_u(tvp_uaddr, 2)
 	@_SYSCALL_FUTIMESAT_ARGSTR
+},
+{
+        @_SYSCALL_FUTIMESAT_REGARGS_STORE
 }
 
 probe nd_syscall.futimesat.return = nd1_syscall.futimesat.return!, nd2_syscall.futimesat.return!, tp_syscall.futimesat.return
@@ -157,6 +179,9 @@ probe nd2_syscall.compat_futimesat = kprobe.function(@arch_syscall_prefix "compa
 	@_SYSCALL_FUTIMESAT_REGARGS
 	tvp_str = _struct_compat_timeval_u(tvp_uaddr, 2)
 	@_SYSCALL_FUTIMESAT_ARGSTR
+},
+{
+        @_SYSCALL_FUTIMESAT_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -168,6 +193,9 @@ probe tp_syscall.compat_futimesat = kernel.trace("sys_enter")
 	@_SYSCALL_FUTIMESAT_REGARGS
 	tvp_str = _struct_compat_timeval_u(tvp_uaddr, 2)
 	@_SYSCALL_FUTIMESAT_ARGSTR
+},
+{
+        @_SYSCALL_FUTIMESAT_REGARGS_STORE
 }
 
 probe nd_syscall.compat_futimesat.return = nd1_syscall.compat_futimesat.return!, nd2_syscall.compat_futimesat.return!, tp_syscall.compat_futimesat.return

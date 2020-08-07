@@ -19,6 +19,18 @@
 	flags_str = _msync_flag_str(flags)
 %)
 
+@define _SYSCALL_MSYNC_REGARGS_STORE
+%(
+        if (@probewrite(start))
+          set_ulong_arg(1, start)
+
+	if (@probewrite(length))
+	  set_ulong_arg(2, length)
+
+	if (@probewrite(flags))
+	  set_int_arg(3, flags)
+%)
+
 probe syscall.msync = dw_syscall.msync !, nd_syscall.msync ? {}
 probe syscall.msync.return = dw_syscall.msync.return !,
                              nd_syscall.msync.return ? {}
@@ -60,6 +72,9 @@ probe nd2_syscall.msync = kprobe.function(@arch_syscall_prefix "sys_msync") ?
 	@_SYSCALL_MSYNC_NAME
 	@_SYSCALL_MSYNC_REGARGS
 	@_SYSCALL_MSYNC_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MSYNC_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -70,6 +85,9 @@ probe tp_syscall.msync = kernel.trace("sys_enter")
 	@_SYSCALL_MSYNC_NAME
 	@_SYSCALL_MSYNC_REGARGS
 	@_SYSCALL_MSYNC_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MSYNC_REGARGS_STORE %)
 }
 
 probe nd_syscall.msync.return = nd1_syscall.msync.return!, nd2_syscall.msync.return!, tp_syscall.msync.return

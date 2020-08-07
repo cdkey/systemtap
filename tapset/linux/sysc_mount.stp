@@ -24,11 +24,34 @@
 @define _SYSCALL_MOUNT_REGARGS
 %(
 	source = user_string_quoted(pointer_arg(1))
+	source_unquoted = user_string_nofault(pointer_arg(1))
 	target = user_string_quoted(pointer_arg(2))
+	target_unquoted = user_string_nofault(pointer_arg(2))
 	filesystemtype = user_string_quoted(pointer_arg(3))
+	filesystemtype_unquoted = user_string_nofault(pointer_arg(3))
 	mountflags = ulong_arg(4)
 	mountflags_str = _mountflags_str(mountflags)
 	data = user_string_n_quoted(pointer_arg(5), syscall_string_trunc)
+	data_unquoted = user_string_n_nofault(pointer_arg(5), syscall_string_trunc)
+
+%)
+
+@define _SYSCALL_MOUNT_REGARGS_STORE
+%(
+        if (@probewrite(source_unquoted))
+          set_user_string_arg(pointer_arg(1), source_unquoted)
+
+	if (@probewrite(target_unquoted))
+	  set_user_string_arg(pointer_arg(2), target_unquoted)
+
+	if (@probewrite(filesystemtype_unquoted))
+	  set_user_string_arg(pointer_arg(3), filesystemtype_unquoted)
+
+	if (@probewrite(mountflags))
+	  set_ulong_arg(4, mountflags)
+
+	if (@probewrite(data_unquoted))
+	  set_user_string_arg(pointer_arg(5), data_unquoted)
 %)
 
 probe syscall.mount = dw_syscall.mount !, nd_syscall.mount ? {}
@@ -77,6 +100,9 @@ probe nd2_syscall.mount = kprobe.function(@arch_syscall_prefix "sys_mount") ?,
 	@_SYSCALL_MOUNT_NAME
 	@_SYSCALL_MOUNT_REGARGS
 	@_SYSCALL_MOUNT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MOUNT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -87,6 +113,9 @@ probe tp_syscall.mount = kernel.trace("sys_enter")
 	@_SYSCALL_MOUNT_NAME
 	@_SYSCALL_MOUNT_REGARGS
 	@_SYSCALL_MOUNT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MOUNT_REGARGS_STORE %)
 }
 
 probe nd_syscall.mount.return = nd1_syscall.mount.return!, nd2_syscall.mount.return!, tp_syscall.mount.return

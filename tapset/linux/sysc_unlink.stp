@@ -16,6 +16,16 @@
 %(
 	pathname_uaddr = pointer_arg(1)
 	pathname = user_string_quoted(pathname_uaddr)
+	pathname_unquoted = user_string_nofault(pointer_arg(1))
+%)
+
+@define _SYSCALL_UNLINK_REGARGS_STORE
+%(
+        if (@probewrite(pathname_uaddr))
+          set_pointer_arg(1, pathname_uaddr)
+
+	if (@probewrite(pathname_unquoted))
+	  set_user_string_arg(pointer_arg(1), pathname_unquoted)
 %)
 
 probe syscall.unlink = dw_syscall.unlink !, nd_syscall.unlink ? {}
@@ -57,6 +67,9 @@ probe nd2_syscall.unlink = kprobe.function(@arch_syscall_prefix "sys_unlink") ?
 	@_SYSCALL_UNLINK_NAME
 	@_SYSCALL_UNLINK_REGARGS
 	@_SYSCALL_UNLINK_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UNLINK_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -67,6 +80,9 @@ probe tp_syscall.unlink = kernel.trace("sys_enter")
 	@_SYSCALL_UNLINK_NAME
 	@_SYSCALL_UNLINK_REGARGS
 	@_SYSCALL_UNLINK_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UNLINK_REGARGS_STORE %)
 }
 
 probe nd_syscall.unlink.return = nd1_syscall.unlink.return!, nd2_syscall.unlink.return!, tp_syscall.unlink.return

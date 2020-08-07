@@ -14,8 +14,18 @@
 @define _SYSCALL_MEMFD_CREATE_REGARGS
 %(
 	uname = user_string_quoted(pointer_arg(1))
+	uname_unquoted = user_string_nofault(pointer_arg(1))
 	flags = uint_arg(2)
 	flags_str = _mfd_flags_str(uint_arg(2))
+%)
+
+@define _SYSCALL_MEMFD_CREATE_REGARGS_STORE
+%(
+        if (@probewrite(uname_unquoted))
+          set_user_string_arg(pointer_arg(1), uname_unquoted)
+
+	if (@probewrite(flags))
+	  set_uint_arg(2, flags)
 %)
 
 probe syscall.memfd_create = dw_syscall.memfd_create !, nd_syscall.memfd_create ? {}
@@ -57,6 +67,9 @@ probe nd2_syscall.memfd_create = kprobe.function(@arch_syscall_prefix "sys_memfd
 	@_SYSCALL_MEMFD_CREATE_NAME
 	@_SYSCALL_MEMFD_CREATE_REGARGS
 	@_SYSCALL_MEMFD_CREATE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MEMFD_CREATE_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -67,6 +80,9 @@ probe tp_syscall.memfd_create = kernel.trace("sys_enter")
 	@_SYSCALL_MEMFD_CREATE_NAME
 	@_SYSCALL_MEMFD_CREATE_REGARGS
 	@_SYSCALL_MEMFD_CREATE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MEMFD_CREATE_REGARGS_STORE %)
 }
 
 probe nd_syscall.memfd_create.return = nd1_syscall.memfd_create.return!, nd2_syscall.memfd_create.return!, tp_syscall.memfd_create.return

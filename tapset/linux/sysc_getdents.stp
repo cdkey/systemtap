@@ -31,6 +31,18 @@
 	count = uint_arg(3)
 %)
 
+@define _SYSCALL_GETDENTS_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(dirp_uaddr))
+	  set_pointer_arg(2, dirp_uaddr)
+
+	if (@probewrite(count))
+	  set_uint_arg(3, count)
+%)
+
 probe syscall.getdents = dw_syscall.getdents !, nd_syscall.getdents ? {}
 probe syscall.getdents.return = dw_syscall.getdents.return !,
                                 nd_syscall.getdents.return ? {}
@@ -95,6 +107,9 @@ probe nd2_syscall.getdents = kprobe.function(@arch_syscall_prefix "sys_getdents"
 	@_SYSCALL_GETDENTS_NAME
 	@_SYSCALL_GETDENTS_REGARGS
 	@_SYSCALL_GETDENTS_ARGSTR
+},
+{
+        @_SYSCALL_GETDENTS_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -104,6 +119,9 @@ probe tp_syscall.getdents = __tp_syscall.getdents, __tp_syscall.getdents64
 	@_SYSCALL_GETDENTS_NAME
 	@_SYSCALL_GETDENTS_REGARGS
 	@_SYSCALL_GETDENTS_ARGSTR
+},
+{
+        @_SYSCALL_GETDENTS_REGARGS_STORE
 }
 probe __tp_syscall.getdents = kernel.trace("sys_enter")
 {

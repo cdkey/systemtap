@@ -14,9 +14,22 @@
 @define _SYSCALL_GETRANDOM_REGARGS
 %(
 	buf = user_string_quoted(pointer_arg(1))
+	buf_unquoted = user_string_nofault(pointer_arg(1))
 	count = ulong_arg(2)
 	flags = uint_arg(3)
 	flags_str = _getrandom_flags_str(uint_arg(3))
+%)
+
+@define _SYSCALL_GETRANDOM_REGARGS_STORE
+%(
+        if (@probewrite(buf_unquoted))
+          set_user_string_arg(pointer_arg(1), buf_unquoted)
+
+	if (@probewrite(count))
+	  set_ulong_arg(2, count)
+
+	if (@probewrite(flags))
+	  set_uint_arg(3, flags)
 %)
 
 probe syscall.getrandom = dw_syscall.getrandom !, nd_syscall.getrandom ? {}
@@ -60,6 +73,9 @@ probe nd2_syscall.getrandom = kprobe.function(@arch_syscall_prefix "sys_getrando
 	@_SYSCALL_GETRANDOM_NAME
 	@_SYSCALL_GETRANDOM_REGARGS
 	@_SYSCALL_GETRANDOM_ARGSTR
+},
+{
+        @_SYSCALL_GETRANDOM_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -70,6 +86,9 @@ probe tp_syscall.getrandom = kernel.trace("sys_enter")
 	@_SYSCALL_GETRANDOM_NAME
 	@_SYSCALL_GETRANDOM_REGARGS
 	@_SYSCALL_GETRANDOM_ARGSTR
+},
+{
+        @_SYSCALL_GETRANDOM_REGARGS_STORE
 }
 
 probe nd_syscall.getrandom.return = nd1_syscall.getrandom.return!, nd2_syscall.getrandom.return!, tp_syscall.getrandom.return

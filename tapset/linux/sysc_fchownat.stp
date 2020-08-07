@@ -19,10 +19,29 @@
 	dirfd = int_arg(1)
 	dirfd_str = _dfd_str(dirfd)
 	pathname = user_string_quoted(pointer_arg(2))
+	pathname_unquoted = user_string_nofault(pointer_arg(2))
 	owner = __int32(uint_arg(3))
 	group = __int32(uint_arg(4))
 	flags = int_arg(5)
 	flags_str = _at_flag_str(flags)
+%)
+
+@define _SYSCALL_FCHOWNAT_REGARGS_STORE
+%(
+        if (@probewrite(dirfd))
+          set_int_arg(1, dirfd)
+
+	if (@probewrite(pathname_unquoted))
+	  set_user_string_arg(pointer_arg(2), pathname_unquoted)
+
+	if (@probewrite(owner))
+	  set_uint_arg(3, __int32(owner))
+
+	if (@probewrite(group))
+	  set_uint_arg(4, __int32(group))
+
+	if (@probewrite(flags))
+	  set_int_arg(5, flags)
 %)
 
 probe syscall.fchownat = dw_syscall.fchownat !, nd_syscall.fchownat ? {}
@@ -74,6 +93,9 @@ probe nd2_syscall.fchownat = kprobe.function(@arch_syscall_prefix "sys_fchownat"
 	@_SYSCALL_FCHOWNAT_NAME
 	@_SYSCALL_FCHOWNAT_REGARGS
 	@_SYSCALL_FCHOWNAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_FCHOWNAT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -84,6 +106,9 @@ probe tp_syscall.fchownat = kernel.trace("sys_enter")
 	@_SYSCALL_FCHOWNAT_NAME
 	@_SYSCALL_FCHOWNAT_REGARGS
 	@_SYSCALL_FCHOWNAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_FCHOWNAT_REGARGS_STORE %)
 }
 
 probe nd_syscall.fchownat.return = nd1_syscall.fchownat.return!, nd2_syscall.fchownat.return!, tp_syscall.fchownat.return

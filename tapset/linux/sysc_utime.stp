@@ -16,15 +16,29 @@
 %(
 	filename_uaddr = pointer_arg(1)
 	filename = user_string_quoted(filename_uaddr)
+	filename_unquoted = user_string_nofault(pointer_arg(1))
 	buf_uaddr = pointer_arg(2)
 	actime = _struct_utimbuf_actime(buf_uaddr)
 	modtime = _struct_utimbuf_modtime(buf_uaddr)
+%)
+
+@define _SYSCALL_UTIME_REGARGS_STORE
+%(
+        if (@probewrite(filename_uaddr))
+          set_pointer_arg(1, filename_uaddr)
+
+	if (@probewrite(filename_unquoted))
+	  set_user_string_arg(pointer_arg(1), filename_unquoted)
+
+	if (@probewrite(buf_uaddr))
+	  set_pointer_arg(2, buf_uaddr)
 %)
 
 @define _SYSCALL_COMPAT_UTIME_REGARGS
 %(
 	filename_uaddr = pointer_arg(1)
 	filename = user_string_quoted(filename_uaddr)
+	filename_unquoted = user_string_nofault(pointer_arg(1))
 	buf_uaddr = pointer_arg(2)
 	actime = _struct_compat_utimbuf_actime(buf_uaddr)
 	modtime = _struct_compat_utimbuf_modtime(buf_uaddr)
@@ -73,6 +87,9 @@ probe nd2_syscall.utime = kprobe.function(@arch_syscall_prefix "sys_utime") ?
 	@_SYSCALL_UTIME_NAME
 	@_SYSCALL_UTIME_REGARGS
 	@_SYSCALL_UTIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UTIME_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -83,6 +100,9 @@ probe tp_syscall.utime = kernel.trace("sys_enter")
 	@_SYSCALL_UTIME_NAME
 	@_SYSCALL_UTIME_REGARGS
 	@_SYSCALL_UTIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UTIME_REGARGS_STORE %)
 }
 
 probe nd_syscall.utime.return = nd1_syscall.utime.return!, nd2_syscall.utime.return!, tp_syscall.utime.return
@@ -155,6 +175,9 @@ probe nd2_syscall.compat_utime = kprobe.function(@arch_syscall_prefix "compat_sy
 	@_SYSCALL_UTIME_NAME
 	@_SYSCALL_COMPAT_UTIME_REGARGS
 	@_SYSCALL_UTIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UTIME_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -165,6 +188,9 @@ probe tp_syscall.compat_utime = kernel.trace("sys_enter")
 	@_SYSCALL_UTIME_NAME
 	@_SYSCALL_COMPAT_UTIME_REGARGS
 	@_SYSCALL_UTIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UTIME_REGARGS_STORE %)
 }
 
 probe nd_syscall.compat_utime.return = nd1_syscall.compat_utime.return!, nd2_syscall.compat_utime.return!, tp_syscall.compat_utime.return

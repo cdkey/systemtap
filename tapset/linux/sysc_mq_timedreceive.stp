@@ -29,6 +29,21 @@
 	abs_timeout_uaddr = pointer_arg(5)
 %)
 
+@define _SYSCALL_MQ_TIMEDRECEIVE_REGARGS_STORE
+%(
+        if (@probewrite(mqdes))
+          set_int_arg(1, mqdes)
+
+	if (@probewrite(msg_ptr_uaddr))
+	  set_pointer_arg(2, msg_ptr_uaddr)
+
+	if (@probewrite(msg_prio_uaddr))
+	  set_pointer_arg(4, msg_prio_uaddr)
+
+	if (@probewrite(abs_timeout_uaddr))
+	  set_pointer_arg(5, abs_timeout_uaddr)
+%)
+
 probe syscall.mq_timedreceive = dw_syscall.mq_timedreceive !, nd_syscall.mq_timedreceive ? {}
 probe syscall.mq_timedreceive.return = dw_syscall.mq_timedreceive.return !,
                                        nd_syscall.mq_timedreceive.return ? {}
@@ -110,11 +125,25 @@ probe __nd2_syscall.compat_mq_timedreceive = kprobe.function(@arch_syscall_prefi
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	msg_len = uint_arg(3)
+},
+{
+%( @_IS_SREG_KERNEL %?
+        @_SYSCALL_MQ_TIMEDRECEIVE_REGARGS_STORE
+	if (@probewrite(msg_len))
+	  set_uint_arg(3, msg_len)
+%)
 }
 probe __nd2_syscall.mq_timedreceive = kprobe.function(@arch_syscall_prefix "sys_mq_timedreceive") ?
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	msg_len = ulong_arg(3)
+},
+{
+%( @_IS_SREG_KERNEL %?
+        @_SYSCALL_MQ_TIMEDRECEIVE_REGARGS_STORE
+	if (@probewrite(msg_len))
+	  set_ulong_arg(3, msg_len)
+%)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -131,12 +160,26 @@ probe __tp_syscall.compat_mq_timedreceive = kernel.trace("sys_enter")
 	__set_syscall_pt_regs($regs)
 	@__compat_syscall_gate(@const("__NR_compat_mq_timedreceive"))
 	msg_len = uint_arg(3)
+},
+{
+%( @_IS_SREG_KERNEL %?
+        @_SYSCALL_MQ_TIMEDRECEIVE_REGARGS_STORE
+	if (@probewrite(msg_len))
+	  set_uint_arg(3, msg_len)
+%)
 }
 probe __tp_syscall.mq_timedreceive = kernel.trace("sys_enter")
 {
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_mq_timedreceive"))
 	msg_len = ulong_arg(3)
+},
+{
+%( @_IS_SREG_KERNEL %?
+        @_SYSCALL_MQ_TIMEDRECEIVE_REGARGS_STORE
+	if (@probewrite(msg_len))
+	  set_ulong_arg(3, msg_len)
+%)
 }
 
 probe nd_syscall.mq_timedreceive.return = nd1_syscall.mq_timedreceive.return!, nd2_syscall.mq_timedreceive.return!, tp_syscall.mq_timedreceive.return

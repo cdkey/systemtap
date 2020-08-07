@@ -20,6 +20,18 @@
 	buf_uaddr = pointer_arg(3)
 %)
 
+@define _SYSCALL_FSTATFS64_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(sz))
+	  set_ulong_arg(2, sz)
+
+	if (@probewrite(buf_uaddr))
+	  set_pointer_arg(3, buf_uaddr)
+%)
+
 probe syscall.fstatfs64 = dw_syscall.fstatfs64 !, nd_syscall.fstatfs64 ? {}
 probe syscall.fstatfs64.return = dw_syscall.fstatfs64.return !, nd_syscall.fstatfs64.return ? {}
 
@@ -63,6 +75,9 @@ probe nd2_syscall.fstatfs64 =
 	@_SYSCALL_FSTATFS64_NAME
 	@_SYSCALL_FSTATFS64_REGARGS
 	@_SYSCALL_FSTATFS64_ARGSTR
+},
+{
+        @_SYSCALL_FSTATFS64_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -73,6 +88,9 @@ probe tp_syscall.fstatfs64 = kernel.trace("sys_enter")
 	@_SYSCALL_FSTATFS64_NAME
 	@_SYSCALL_FSTATFS64_REGARGS
 	@_SYSCALL_FSTATFS64_ARGSTR
+},
+{
+        @_SYSCALL_FSTATFS64_REGARGS_STORE
 }
 
 probe nd_syscall.fstatfs64.return = nd1_syscall.fstatfs64.return!, nd2_syscall.fstatfs64.return!, tp_syscall.fstatfs64.return

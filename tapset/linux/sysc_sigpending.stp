@@ -18,6 +18,12 @@
 	set = pointer_arg(1)
 %)
 
+@define _SYSCALL_SIGPENDING_REGARGS_STORE
+%(
+        if (@probewrite(set))
+          set_pointer_arg(1, set)
+%)
+
 probe syscall.sigpending = dw_syscall.sigpending !, nd_syscall.sigpending ? {}
 probe syscall.sigpending.return = dw_syscall.sigpending.return !,
                                   nd_syscall.sigpending.return ? {}
@@ -72,6 +78,9 @@ probe nd2_syscall.sigpending =
 	@_SYSCALL_SIGPENDING_NAME
 	@_SYSCALL_SIGPENDING_REGARGS
 	@_SYSCALL_SIGPENDING_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SIGPENDING_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -82,6 +91,9 @@ probe tp_syscall.sigpending = kernel.trace("sys_enter")
 	@_SYSCALL_SIGPENDING_NAME
 	@_SYSCALL_SIGPENDING_REGARGS
 	@_SYSCALL_SIGPENDING_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SIGPENDING_REGARGS_STORE %)
 }
 
 probe nd_syscall.sigpending.return = nd1_syscall.sigpending.return!, nd2_syscall.sigpending.return!, tp_syscall.sigpending.return

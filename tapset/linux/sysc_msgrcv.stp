@@ -27,6 +27,24 @@
 	msgflg_str = _stp_msgflg_str(msgflg)
 %)
 
+@define _SYSCALL_MSGRCV_REGARGS_STORE
+%(
+        if (@probewrite(msqid))
+          set_int_arg(1, msqid)
+
+	if (@probewrite(msgp_uaddr))
+	  set_pointer_arg(2, msgp_uaddr)
+
+	if (@probewrite(msgsz))
+	  set_ulong_arg(3, msgsz)
+
+	if (@probewrite(msgtyp))
+	  set_long_arg(4, msgtyp)
+
+	if (@probewrite(msgflg))
+	  set_int_arg(5, msgflg)
+%)
+
 probe syscall.msgrcv = dw_syscall.msgrcv !, nd_syscall.msgrcv ? {}
 probe syscall.msgrcv.return = dw_syscall.msgrcv.return !,
                               nd_syscall.msgrcv.return ? {}
@@ -73,6 +91,9 @@ probe nd2_syscall.msgrcv = kprobe.function(@arch_syscall_prefix "sys_msgrcv") ?
 	@_SYSCALL_MSGRCV_NAME
 	@_SYSCALL_MSGRCV_REGARGS
 	@_SYSCALL_MSGRCV_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MSGRCV_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -83,6 +104,9 @@ probe tp_syscall.msgrcv = kernel.trace("sys_enter")
 	@_SYSCALL_MSGRCV_NAME
 	@_SYSCALL_MSGRCV_REGARGS
 	@_SYSCALL_MSGRCV_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MSGRCV_REGARGS_STORE %)
 }
 
 probe nd_syscall.msgrcv.return = nd1_syscall.msgrcv.return!, nd2_syscall.msgrcv.return!, tp_syscall.msgrcv.return
@@ -238,6 +262,24 @@ probe __nd1_syscall.compat_msgrcv = kprobe.function("compat_sys_msgrcv") ?
 	msgp_uaddr = _stp_compat_msgrcv_msgbuf(__uptr, __version)
 %)
 
+@define _SYSCALL_COMPAT_IPC_MSGRCV_REGARGS_STORE
+%(
+	if (@probewrite(__version))
+	  set_uint_arg(1, __version)
+
+        if (@probewrite(msqid))
+          set_int_arg(2, msqid)
+
+	if (@probewrite(msgsz))
+	  set_uint_arg(3, msgsz)
+
+	if (@probewrite(msgflg))
+	  set_int_arg(4, msgflg)
+
+	if (@probewrite(__uptr))
+	  set_ponter_arg(5, __uptr)
+%)
+
 probe __nd1_syscall.compat_ipc.msgrcv = __nd1_syscall.compat_sys_ipc.msgrcv ?,
 				       __nd1_syscall.sys32_ipc.msgrcv ?
 {
@@ -262,6 +304,9 @@ probe nd2_syscall.compat_sys_msgrcv = kprobe.function(@arch_syscall_prefix "comp
 	msgtyp = _stp_compat_msgrcv_msgtyp(__uptr, __version, int_arg(6))
 	msgflg_str = _stp_msgflg_str(msgflg)
 	@_SYSCALL_MSGRCV_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_IPC_MSGRCV_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -275,6 +320,9 @@ probe tp_syscall.compat_sys_msgrcv = kernel.trace("sys_enter")
 	msgtyp = _stp_compat_msgrcv_msgtyp(__uptr, __version, int_arg(6))
 	msgflg_str = _stp_msgflg_str(msgflg)
 	@_SYSCALL_MSGRCV_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_IPC_MSGRCV_REGARGS_STORE %)
 }
 
 probe nd_syscall.compat_sys_msgrcv.return = nd1_syscall.compat_sys_msgrcv.return!, nd2_syscall.compat_sys_msgrcv.return!, tp_syscall.compat_sys_msgrcv.return

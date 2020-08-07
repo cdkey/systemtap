@@ -20,6 +20,18 @@
 	len = int_arg(3)
 %)
 
+@define _SYSCALL_SYSLOG_REGARGS_STORE
+%(
+        if (@probewrite(type))
+          set_int_arg(1, type)
+
+	if (@probewrite(bufp_uaddr))
+	  set_pointer_arg(2, bufp_uaddr)
+
+	if (@probewrite(len))
+	  set_int_arg(3, len)
+%)
+
 probe syscall.syslog = dw_syscall.syslog !, nd_syscall.syslog ? {}
 probe syscall.syslog.return = dw_syscall.syslog.return !,
                               nd_syscall.syslog.return ? {}
@@ -60,6 +72,9 @@ probe nd2_syscall.syslog = kprobe.function(@arch_syscall_prefix "sys_syslog") ?
 	@_SYSCALL_SYSLOG_NAME
 	@_SYSCALL_SYSLOG_REGARGS
 	@_SYSCALL_SYSLOG_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SYSLOG_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -70,6 +85,9 @@ probe tp_syscall.syslog = kernel.trace("sys_enter")
 	@_SYSCALL_SYSLOG_NAME
 	@_SYSCALL_SYSLOG_REGARGS
 	@_SYSCALL_SYSLOG_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SYSLOG_REGARGS_STORE %)
 }
 
 probe nd_syscall.syslog.return = nd1_syscall.syslog.return!, nd2_syscall.syslog.return!, tp_syscall.syslog.return

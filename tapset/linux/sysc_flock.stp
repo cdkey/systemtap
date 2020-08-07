@@ -17,6 +17,15 @@
 	operation = int_arg(2)
 %)
 
+@define _SYSCALL_FLOCK_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(operation))
+	  set_int_arg(2, operation)
+%)
+
 probe syscall.flock = dw_syscall.flock !, nd_syscall.flock ? {}
 probe syscall.flock.return = dw_syscall.flock.return !, nd_syscall.flock.return ? {}
 
@@ -55,6 +64,9 @@ probe nd2_syscall.flock = kprobe.function(@arch_syscall_prefix "sys_flock") ?
 	@_SYSCALL_FLOCK_NAME
 	@_SYSCALL_FLOCK_REGARGS
 	@_SYSCALL_FLOCK_ARGSTR
+},
+{
+        @_SYSCALL_FLOCK_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -65,6 +77,9 @@ probe tp_syscall.flock = kernel.trace("sys_enter")
 	@_SYSCALL_FLOCK_NAME
 	@_SYSCALL_FLOCK_REGARGS
 	@_SYSCALL_FLOCK_ARGSTR
+},
+{
+        @_SYSCALL_FLOCK_REGARGS_STORE
 }
 
 probe nd_syscall.flock.return = nd1_syscall.flock.return!, nd2_syscall.flock.return!, tp_syscall.flock.return

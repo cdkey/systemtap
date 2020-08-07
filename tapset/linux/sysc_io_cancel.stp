@@ -20,6 +20,18 @@
 	result_uaddr = pointer_arg(3)
 %)
 
+@define _SYSCALL_IO_CANCEL_REGARGS_STORE
+%(
+        if (@probewrite(ctx_id))
+          set_ulong_arg(1, ctx_id)
+
+	if (@probewrite(iocb_uaddr))
+	  set_pointer_arg(2, iocb_uaddr)
+
+	if (@probewrite(result_uaddr))
+	  set_pointer_arg(3, result_uaddr)
+%)
+
 probe syscall.io_cancel = dw_syscall.io_cancel !, nd_syscall.io_cancel ? {}
 probe syscall.io_cancel.return = dw_syscall.io_cancel.return !, nd_syscall.io_cancel.return ? {}
 
@@ -65,6 +77,9 @@ probe nd2_syscall.io_cancel = kprobe.function(@arch_syscall_prefix "sys_io_cance
 	@_SYSCALL_IO_CANCEL_NAME
 	@_SYSCALL_IO_CANCEL_REGARGS
 	@_SYSCALL_IO_CANCEL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IO_CANCEL_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -75,6 +90,9 @@ probe tp_syscall.io_cancel = kernel.trace("sys_enter")
 	@_SYSCALL_IO_CANCEL_NAME
 	@_SYSCALL_IO_CANCEL_REGARGS
 	@_SYSCALL_IO_CANCEL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IO_CANCEL_REGARGS_STORE %)
 }
 
 probe nd_syscall.io_cancel.return = nd1_syscall.io_cancel.return!, nd2_syscall.io_cancel.return!, tp_syscall.io_cancel.return

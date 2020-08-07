@@ -19,6 +19,15 @@
 	rlim_uaddr = pointer_arg(2)
 %)
 
+@define _SYSCALL_GETRLIMIT_REGARGS_STORE
+%(
+        if (@probewrite(resource))
+          set_int_arg(1, resource)
+
+	if (@probewrite(rlim_uaddr))
+	  set_pointer_arg(2, rlim_uaddr)
+%)
+
 probe syscall.getrlimit = dw_syscall.getrlimit !, nd_syscall.getrlimit ? {}
 probe syscall.getrlimit.return = dw_syscall.getrlimit.return !,
                                  nd_syscall.getrlimit.return ? {}
@@ -79,6 +88,9 @@ probe nd2_syscall.getrlimit =
 	@_SYSCALL_GETRLIMIT_NAME
 	@_SYSCALL_GETRLIMIT_REGARGS
 	@_SYSCALL_GETRLIMIT_ARGSTR
+},
+{
+        @_SYSCALL_GETRLIMIT_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -88,6 +100,9 @@ probe tp_syscall.getrlimit = __tp_syscall.getrlimit, __tp_syscall.ugetrlimit
 	@_SYSCALL_GETRLIMIT_NAME
 	@_SYSCALL_GETRLIMIT_REGARGS
 	@_SYSCALL_GETRLIMIT_ARGSTR
+},
+{
+        @_SYSCALL_GETRLIMIT_REGARGS_STORE
 }
 probe __tp_syscall.getrlimit = kernel.trace("sys_enter")
 {

@@ -24,12 +24,46 @@
 	offset = @__pos_from_hilo(ulong_arg(5), ulong_arg(4))
 %)
 
+@define _SYSCALL_PWRITEV_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+        if (@probewrite(vector_uaddr))
+          set_pointer_arg(2, vector_uaddr)
+
+        if (@probewrite(count))
+          set_int_arg(3, count)
+
+        if (@probewrite(offset)) {
+          set_ulong_arg(4, __ulong(offset))
+          set_ulong_arg(5, __ulong(offset >> 32))
+        }
+%)
+
 @define _SYSCALL_COMPAT_PWRITEV_REGARGS
 %(
 	fd = int_arg(1)
 	vector_uaddr = pointer_arg(2)
 	count = int_arg(3)
 	offset = (u32_arg(5) << 32) + u32_arg(4)
+%)
+
+@define _SYSCALL_COMPAT_PWRITEV_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+        if (@probewrite(vector_uaddr))
+          set_pointer_arg(2, vector_uaddr)
+
+        if (@probewrite(count))
+          set_int_arg(3, count)
+
+        if (@probewrite(offset)) {
+          set_u32_arg(4, offset & 0xffffffff)
+          set_u32_arg(5, offset >> 32)
+        }
 %)
 
 probe syscall.pwritev = dw_syscall.pwritev !, nd_syscall.pwritev ? {}
@@ -99,12 +133,18 @@ probe __nd2_syscall.pwritev = kprobe.function(@arch_syscall_prefix "sys_pwritev"
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_PWRITEV_REGARGS
 	@_SYSCALL_PWRITEV_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PWRITEV_REGARGS_STORE %)
 }
 probe __nd2_syscall.compat_pwritev = kprobe.function(@arch_syscall_prefix "compat_sys_pwritev").call
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_COMPAT_PWRITEV_REGARGS
 	@_SYSCALL_PWRITEV_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_PWRITEV_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -119,6 +159,9 @@ probe __tp_syscall.pwritev = kernel.trace("sys_enter")
 	@__syscall_gate(@const("__NR_pwritev"))
 	@_SYSCALL_PWRITEV_REGARGS
 	@_SYSCALL_PWRITEV_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PWRITEV_REGARGS_STORE %)
 }
 probe __tp_syscall.compat_pwritev = kernel.trace("sys_enter")
 {
@@ -126,6 +169,9 @@ probe __tp_syscall.compat_pwritev = kernel.trace("sys_enter")
 	@__compat_syscall_gate(@const("__NR_compat_pwritev"))
 	@_SYSCALL_COMPAT_PWRITEV_REGARGS
 	@_SYSCALL_PWRITEV_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_PWRITEV_REGARGS_STORE %)
 }
 
 probe nd_syscall.pwritev.return = nd1_syscall.pwritev.return!, nd2_syscall.pwritev.return!, tp_syscall.pwritev.return

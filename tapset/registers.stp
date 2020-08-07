@@ -94,6 +94,17 @@ function u_register:long (name:string) { }
 function int_arg:long (n:long) { }
 
 /**
+ * sfunction set_int_arg - Set function argument as signed int
+ *
+ * @n: index of argument to return
+ * @v: value to set
+ *
+ * Description: Set the value of argument n as a signed int
+ * (i.e., a 32-bit integer sign-extended to 64 bits).
+ */
+function set_int_arg (n:long, v:long) { }
+
+/**
  * sfunction uint_arg - Return function argument as unsigned int
  *
  * @n: index of argument to return
@@ -102,6 +113,17 @@ function int_arg:long (n:long) { }
  * (i.e., a 32-bit integer zero-extended to 64 bits).
  */
 function uint_arg:long (n:long) { }
+
+/**
+ * sfunction set_uint_arg - Set argument as unsigned int
+ *
+ * @n: index of argument to set
+ * @v: value to set
+ *
+ * Description: Set the value of argument n as an unsigned int
+ * (i.e., a 32-bit integer zero-extended to 64 bits).
+ */
+function set_uint_arg:long (n:long, v:long) { }
 
 /**
  * sfunction long_arg - Return function argument as signed long
@@ -115,6 +137,18 @@ function uint_arg:long (n:long) { }
 function long_arg:long (n:long) { }
 
 /**
+ * sfunction set_long_arg - Set argument as signed long
+ *
+ * @n: index of argument to set
+ * @v: value to set
+ *
+ * Description: Set the value of argument n as a signed long.
+ * On architectures where a long is 32 bits, the value is sign-extended
+ * to 64 bits.
+ */
+function set_long_arg (n:long, v:long) { }
+
+/**
  * sfunction ulong_arg - Return function argument as unsigned long
  *
  * @n: index of argument to return
@@ -126,6 +160,18 @@ function long_arg:long (n:long) { }
 function ulong_arg:long (n:long) { }
 
 /**
+ * sfunction set_ulong_arg - Set function argument as unsigned long
+ *
+ * @n: index of argument to return
+ * @v: value to set
+ *
+ * Description: Set the value of argument n as an unsigned long.
+ * On architectures where a long is 32 bits, the value is zero-extended
+ * to 64 bits.
+ */
+function set_ulong_arg (n:long, v:long) { }
+
+/**
  * sfunction longlong_arg - Return function argument as 64-bit value
  *
  * @n: index of argument to return
@@ -133,6 +179,16 @@ function ulong_arg:long (n:long) { }
  * Description: Return the value of argument n as a 64-bit value.
  */
 function longlong_arg:long (n:long) { }
+
+/**
+ * sfunction set_longlong_arg - Set function argument as 64-bit value
+ *
+ * @n: index of argument to return
+ * @v: value to set
+ *
+ * Description: Set the value of argument n as a 64-bit value.
+ */
+function set_longlong_arg:long (n:long, v:long) { }
 
 /**
  * sfunction ulonglong_arg - Return function argument as 64-bit value
@@ -145,6 +201,17 @@ function longlong_arg:long (n:long) { }
 function ulonglong_arg:long (n:long) { }
 
 /**
+ * sfunction set_ulonglong_arg - Set function argument as 64-bit value
+ *
+ * @n: index of argument to return
+ * @v: value to set
+ *
+ * Description: Set the value of argument n as a 64-bit value.
+ * (Same as longlong_arg.)
+ */
+function set_ulonglong_arg (n:long, v:long) { }
+
+/**
  * sfunction pointer_arg - Return function argument as pointer value
  *
  * @n: index of argument to return
@@ -153,6 +220,17 @@ function ulonglong_arg:long (n:long) { }
  * Can be used with any type of pointer.
  */
 function pointer_arg:long (n:long) { }
+
+/**
+ * sfunction set_pointer_arg - Set function argument as pointer value
+ *
+ * @n: index of argument to return
+ * @v: value to set
+ *
+ * Description: Set the unsigned value of argument n, same as ulong_arg.
+ * Can be used with any type of pointer.
+ */
+function set_pointer_arg (n:long, v:long) { }
 
 /**
  * sfunction s32_arg - Return function argument as signed 32-bit value
@@ -165,6 +243,17 @@ function pointer_arg:long (n:long) { }
 function s32_arg:long (n:long) { }
 
 /**
+ * sfunction set_s32_arg - Set function argument as signed 32-bit value
+ *
+ * @n: index of argument to return
+ * @v: value to set
+ *
+ * Description: Set the signed 32-bit value of argument n,
+ * same as int_arg.
+ */
+function set_s32_arg (n:long, v:long) { }
+
+/**
  * sfunction u32_arg - Return function argument as unsigned 32-bit value
  *
  * @n: index of argument to return
@@ -173,6 +262,17 @@ function s32_arg:long (n:long) { }
  * same as uint_arg.
  */
 function u32_arg:long (n:long) { }
+
+/**
+ * sfunction set_u32_arg - Set function argument as unsigned 32-bit value
+ *
+ * @n: index of argument to return
+ * @v: value to set
+ *
+ * Description: Set the unsigned 32-bit value of argument n,
+ * same as uint_arg.
+ */
+function set_u32_arg (n:long, v:long) { }
 
 /**
  * sfunction s64_arg - Return function argument as signed 64-bit value
@@ -185,6 +285,17 @@ function u32_arg:long (n:long) { }
 function s64_arg:long (n:long) { }
 
 /**
+ * sfunction set_s64_arg - Set function argument as signed 64-bit value
+ *
+ * @n: index of argument to return
+ * @v: value to set
+ *
+ * Description: Set the signed 64-bit value of argument n,
+ * same as longlong_arg.
+ */
+function set_s64_arg (n:long, v:long) { }
+
+/**
  * sfunction u64_arg - Return function argument as unsigned 64-bit value
  *
  * @n: index of argument to return
@@ -193,6 +304,17 @@ function s64_arg:long (n:long) { }
  * same as ulonglong_arg.
  */
 function u64_arg:long (n:long) { }
+
+/**
+ * sfunction set_u64_arg - Set function argument as unsigned 64-bit value
+ *
+ * @n: index of argument to return
+ * @v: value to set
+ *
+ * Description: Set the unsigned 64-bit value of argument n,
+ * same as ulonglong_arg.
+ */
+function set_u64_arg (n:long, v:long) { }
 
 /**
  * sfunction asmlinkage - Mark function as declared asmlinkage

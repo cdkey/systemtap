@@ -19,6 +19,12 @@
 	newmask_str = _stp_sigmask_str(newmask)
 %)
 
+@define _SYSCALL_SSETMASK_REGARGS_STORE
+%(
+        if (@probewrite(newmask))
+          set_int_arg(1, newmask)
+%)
+
 probe syscall.ssetmask = dw_syscall.ssetmask !, nd_syscall.ssetmask ? {}
 probe syscall.ssetmask.return = dw_syscall.ssetmask.return !,
                                 nd_syscall.ssetmask.return ? {}
@@ -58,6 +64,9 @@ probe nd2_syscall.ssetmask = kprobe.function(@arch_syscall_prefix "sys_ssetmask"
 	@_SYSCALL_SSETMASK_NAME
 	@_SYSCALL_SSETMASK_REGARGS
 	@_SYSCALL_SSETMASK_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SSETMASK_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -68,6 +77,9 @@ probe tp_syscall.ssetmask = kernel.trace("sys_enter")
 	@_SYSCALL_SSETMASK_NAME
 	@_SYSCALL_SSETMASK_REGARGS
 	@_SYSCALL_SSETMASK_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SSETMASK_REGARGS_STORE %)
 }
 
 probe nd_syscall.ssetmask.return = nd1_syscall.ssetmask.return!, nd2_syscall.ssetmask.return!, tp_syscall.ssetmask.return

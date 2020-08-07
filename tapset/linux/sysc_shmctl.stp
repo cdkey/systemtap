@@ -23,6 +23,30 @@
 	buf_uaddr = pointer_arg(3)
 %)
 
+@define _SYSCALL_SHMCTL_REGARGS_STORE
+%(
+        if (@probewrite(shmid))
+          set_int_arg(1, shmid)
+
+	if (@probewrite(cmd))
+	  set_int_arg(2, cmd)
+
+	if (@probewrite(buf_uaddr))
+	  set_pointer_arg(3, buf_uaddr)
+%)
+
+@define _SYSCALL_COMPAT_SHMCTL_REGARGS_STORE
+%(
+        if (@probewrite(shmid))
+          set_int_arg(2, shmid)
+
+	if (@probewrite(cmd))
+	  set_int_arg(3, cmd)
+
+	if (@probewrite(buf_uaddr))
+	  set_pointer_arg(5, buf_uaddr)
+%)
+
 probe syscall.shmctl = dw_syscall.shmctl !, nd_syscall.shmctl ? {}
 probe syscall.shmctl.return = dw_syscall.shmctl.return !,
                               nd_syscall.shmctl.return ? {}
@@ -73,6 +97,9 @@ probe nd2_syscall.shmctl = kprobe.function(@arch_syscall_prefix "sys_shmctl") ?
 	@_SYSCALL_SHMCTL_NAME
 	@_SYSCALL_SHMCTL_REGARGS
 	@_SYSCALL_SHMCTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SHMCTL_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -83,6 +110,9 @@ probe tp_syscall.shmctl = kernel.trace("sys_enter")
 	@_SYSCALL_SHMCTL_NAME
 	@_SYSCALL_SHMCTL_REGARGS
 	@_SYSCALL_SHMCTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SHMCTL_REGARGS_STORE %)
 }
 
 probe nd_syscall.shmctl.return = nd1_syscall.shmctl.return!, nd2_syscall.shmctl.return!, tp_syscall.shmctl.return
@@ -214,6 +244,9 @@ probe nd2_syscall.compat_sys_shmctl =
 	cmd_str = _semctl_cmd(cmd)
 	buf_uaddr = pointer_arg(5)
 	@_SYSCALL_SHMCTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_SHMCTL_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -228,6 +261,9 @@ probe tp_syscall.compat_sys_shmctl = kernel.trace("sys_enter")
 	cmd_str = _semctl_cmd(cmd)
 	buf_uaddr = pointer_arg(5)
 	@_SYSCALL_SHMCTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_SHMCTL_REGARGS_STORE %)
 }
 
 probe nd_syscall.compat_sys_shmctl.return = nd1_syscall.compat_sys_shmctl.return!, nd2_syscall.compat_sys_shmctl.return!, tp_syscall.compat_sys_shmctl.return

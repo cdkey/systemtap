@@ -23,6 +23,15 @@
 	sigsetsize = ulong_arg(2)
 %)
 
+@define _SYSCALL_RT_SIGPENDING_REGARGS_STORE
+%(
+        if (@probewrite(set_uaddr))
+          set_pointer_arg(1, set_uaddr)
+
+	if (@probewrite(sigsetsize))
+	  set_ulong_arg(2, sigsetsize)
+%)
+
 probe syscall.rt_sigpending = dw_syscall.rt_sigpending !,
                               nd_syscall.rt_sigpending ? {}
 probe syscall.rt_sigpending.return = dw_syscall.rt_sigpending.return !,
@@ -88,6 +97,9 @@ probe nd2_syscall.rt_sigpending =
 	@_SYSCALL_RT_SIGPENDING_NAME
 	@_SYSCALL_RT_SIGPENDING_REGARGS
 	@_SYSCALL_RT_SIGPENDING_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_RT_SIGPENDING_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -98,6 +110,9 @@ probe tp_syscall.rt_sigpending = kernel.trace("sys_enter")
 	@_SYSCALL_RT_SIGPENDING_NAME
 	@_SYSCALL_RT_SIGPENDING_REGARGS
 	@_SYSCALL_RT_SIGPENDING_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_RT_SIGPENDING_REGARGS_STORE %)
 }
 
 probe nd_syscall.rt_sigpending.return = nd1_syscall.rt_sigpending.return!, nd2_syscall.rt_sigpending.return!, tp_syscall.rt_sigpending.return

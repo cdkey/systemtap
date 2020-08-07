@@ -18,6 +18,16 @@
 %(
 	library_uaddr = pointer_arg(1)
 	library = user_string_quoted(library_uaddr)
+	library_unquoted = user_string_nofault(pointer_arg(1))
+%)
+
+@define _SYSCALL_USELIB_REGARGS_STORE
+%(
+        if (@probewrite(library_uaddr))
+          set_pointer_arg(1, library_uaddr)
+
+	if (@probewrite(library_unquoted))
+	  set_user_string_arg(pointer_arg(1), library_unquoted)
 %)
 
 probe syscall.uselib = dw_syscall.uselib !, nd_syscall.uselib ? {}
@@ -59,6 +69,9 @@ probe nd2_syscall.uselib = kprobe.function(@arch_syscall_prefix "sys_uselib") ?
 	@_SYSCALL_USELIB_NAME
 	@_SYSCALL_USELIB_REGARGS
 	@_SYSCALL_USELIB_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_USELIB_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -69,6 +82,9 @@ probe tp_syscall.uselib = kernel.trace("sys_enter")
 	@_SYSCALL_USELIB_NAME
 	@_SYSCALL_USELIB_REGARGS
 	@_SYSCALL_USELIB_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_USELIB_REGARGS_STORE %)
 }
 
 probe nd_syscall.uselib.return = nd1_syscall.uselib.return!, nd2_syscall.uselib.return!, tp_syscall.uselib.return

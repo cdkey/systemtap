@@ -20,6 +20,12 @@
 	policy_str = _sched_policy_str(policy)
 %)
 
+@define _SYSCALL_SCHED_GET_PRIORITY_MAX_REGARGS_STORE
+%(
+        if (@probewrite(policy))
+          set_int_arg(1, policy)
+%)
+
 probe syscall.sched_get_priority_max = dw_syscall.sched_get_priority_max !,
                                        nd_syscall.sched_get_priority_max ? {}
 probe syscall.sched_get_priority_max.return = dw_syscall.sched_get_priority_max.return !,
@@ -60,6 +66,9 @@ probe nd2_syscall.sched_get_priority_max = kprobe.function(@arch_syscall_prefix 
 	@_SYSCALL_SCHED_GET_PRIORITY_MAX_NAME
 	@_SYSCALL_SCHED_GET_PRIORITY_MAX_REGARGS
 	@_SYSCALL_SCHED_GET_PRIORITY_MAX_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SCHED_GET_PRIORITY_MAX_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -70,6 +79,9 @@ probe tp_syscall.sched_get_priority_max = kernel.trace("sys_enter")
 	@_SYSCALL_SCHED_GET_PRIORITY_MAX_NAME
 	@_SYSCALL_SCHED_GET_PRIORITY_MAX_REGARGS
 	@_SYSCALL_SCHED_GET_PRIORITY_MAX_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SCHED_GET_PRIORITY_MAX_REGARGS_STORE %)
 }
 
 probe nd_syscall.sched_get_priority_max.return = nd1_syscall.sched_get_priority_max.return!, nd2_syscall.sched_get_priority_max.return!, tp_syscall.sched_get_priority_max.return

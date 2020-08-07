@@ -9,6 +9,18 @@
 probe syscall.sysfs = dw_syscall.sysfs !, nd_syscall.sysfs ? {}
 probe syscall.sysfs.return = dw_syscall.sysfs.return !, nd_syscall.sysfs.return ? {}
 
+@define _SYSCALL_SYSFS_REGARGS_STORE
+%(
+	if (@probewrite(option))
+	  set_int_arg(1, option)
+
+        if (@probewrite(arg1))
+          set_ulong_arg(2, arg1)
+
+	if (@probewrite(arg2))
+	  set_ulong_arg(3, arg2)
+%)
+
 # dw_sysfs _____________________________________________________
 
 probe dw_syscall.sysfs = kernel.function("sys_sysfs").call
@@ -72,6 +84,9 @@ probe nd2_syscall.sysfs = kprobe.function(@arch_syscall_prefix "sys_sysfs") ?
 		argstr = sprintf("%d", option)
 	else
 		argstr = sprintf("%d, 0x%x, 0x%x", option, arg1, arg2)
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SYSFS_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -91,6 +106,9 @@ probe tp_syscall.sysfs = kernel.trace("sys_enter")
 		argstr = sprintf("%d", option)
 	else
 		argstr = sprintf("%d, 0x%x, 0x%x", option, arg1, arg2)
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SYSFS_REGARGS_STORE %)
 }
 
 probe nd_syscall.sysfs.return = nd1_syscall.sysfs.return!, nd2_syscall.sysfs.return!, tp_syscall.sysfs.return

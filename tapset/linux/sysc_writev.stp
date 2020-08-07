@@ -25,6 +25,18 @@
 	fd = int_arg(1)
 %)
 
+@define _SYSCALL_WRITEV_REGARGS_STORE
+%(
+	if (@probewrite(fd))
+	  set_int_arg(1, fd)
+
+        if (@probewrite(vector_uaddr))
+          set_pointer_arg(2, vector_uaddr)
+
+	if (@probewrite(count))
+	  set_int_arg(3, count)
+%)
+
 probe syscall.writev = dw_syscall.writev !, nd_syscall.writev ? {}
 probe syscall.writev.return = dw_syscall.writev.return !,
                               nd_syscall.writev.return ? {}
@@ -71,6 +83,9 @@ probe nd2_syscall.writev = kprobe.function(@arch_syscall_prefix "compat_sys_writ
 	@_SYSCALL_WRITEV_NAME
 	@_SYSCALL_WRITEV_REGARGS
 	@_SYSCALL_WRITEV_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_WRITEV_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -81,6 +96,9 @@ probe tp_syscall.writev = kernel.trace("sys_enter")
 	@_SYSCALL_WRITEV_NAME
 	@_SYSCALL_WRITEV_REGARGS
 	@_SYSCALL_WRITEV_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_WRITEV_REGARGS_STORE %)
 }
 
 probe nd_syscall.writev.return = nd1_syscall.writev.return!, nd2_syscall.writev.return!, tp_syscall.writev.return

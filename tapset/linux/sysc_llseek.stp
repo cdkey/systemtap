@@ -26,6 +26,24 @@
 	whence_str = _seek_whence_str(whence)
 %)
 
+@define _SYSCALL_LLSEEK_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(offset_high))
+	  set_ulong_arg(2, offset_high)
+
+	if (@probewrite(offset_low))
+	  set_ulong_arg(3, offset_low)
+
+	if (@probewrite(result_uaddr))
+	  set_pointer_arg(4, result_uaddr)
+
+	if (@probewrite(whence))
+	  set_uint_arg(5, whence)
+%)
+
 probe syscall.llseek = dw_syscall.llseek !, nd_syscall.llseek ? {}
 probe syscall.llseek.return = dw_syscall.llseek.return !, nd_syscall.llseek.return ? {}
 
@@ -68,6 +86,9 @@ probe nd2_syscall.llseek = kprobe.function(@arch_syscall_prefix "sys_llseek") ?
 	@_SYSCALL_LLSEEK_NAME
 	@_SYSCALL_LLSEEK_REGARGS
 	@_SYSCALL_LLSEEK_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_LLSEEK_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -78,6 +99,9 @@ probe tp_syscall.llseek = kernel.trace("sys_enter")
 	@_SYSCALL_LLSEEK_NAME
 	@_SYSCALL_LLSEEK_REGARGS
 	@_SYSCALL_LLSEEK_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_LLSEEK_REGARGS_STORE %)
 }
 
 probe nd_syscall.llseek.return = nd1_syscall.llseek.return!, nd2_syscall.llseek.return!, tp_syscall.llseek.return

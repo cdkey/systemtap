@@ -19,8 +19,24 @@
 	dfd_str = _dfd_str(dfd)
 	pathname = pointer_arg(2)
 	pathname_str = user_string_quoted(pathname)
+	pathname_str_unquoted = user_string_nofault(pointer_arg(2))
 	flag = uint_arg(3)
 	flag_str = _at_flag_str(flag)
+%)
+
+@define _SYSCALL_UNLINKAT_REGARGS_STORE
+%(
+        if (@probewrite(dfd))
+          set_int_arg(1, dfd)
+
+	if (@probewrite(pathname))
+	  set_pointer_arg(2, pathname)
+
+	if (@probewrite(pathname_str_unquoted))
+	  set_user_string_arg(pointer_arg(2), pathname_str_unquoted)
+
+	if (@probewrite(flag))
+	  set_uint_arg(3, flag)
 %)
 
 probe syscall.unlinkat = dw_syscall.unlinkat !, nd_syscall.unlinkat ? {}
@@ -66,6 +82,9 @@ probe nd2_syscall.unlinkat = kprobe.function(@arch_syscall_prefix "sys_unlinkat"
 	@_SYSCALL_UNLINKAT_NAME
 	@_SYSCALL_UNLINKAT_REGARGS
 	@_SYSCALL_UNLINKAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UNLINKAT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -76,6 +95,9 @@ probe tp_syscall.unlinkat = kernel.trace("sys_enter")
 	@_SYSCALL_UNLINKAT_NAME
 	@_SYSCALL_UNLINKAT_REGARGS
 	@_SYSCALL_UNLINKAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UNLINKAT_REGARGS_STORE %)
 }
 
 probe nd_syscall.unlinkat.return = nd1_syscall.unlinkat.return!, nd2_syscall.unlinkat.return!, tp_syscall.unlinkat.return

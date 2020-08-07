@@ -22,7 +22,17 @@
 @define _SYSCALL_LSTAT_REGARGS
 %(
 	path = user_string_quoted(pointer_arg(1))
+	path_unquoted = user_string_nofault(pointer_arg(1))
 	buf_uaddr = pointer_arg(2)
+%)
+
+@define _SYSCALL_LSTAT_REGARGS_STORE
+%(
+        if (@probewrite(path_unquoted))
+          set_user_string_arg(pointer_arg(1), path_unquoted)
+
+	if (@probewrite(buf_uaddr))
+	  set_pointer_arg(2, buf_uaddr)
 %)
 
 probe syscall.lstat = dw_syscall.lstat !, nd_syscall.lstat ? {}
@@ -101,6 +111,9 @@ probe nd2_syscall.lstat =
 	@_SYSCALL_LSTAT_NAME
 	@_SYSCALL_LSTAT_REGARGS
 	@_SYSCALL_LSTAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_LSTAT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -112,6 +125,9 @@ probe tp_syscall.lstat = __tp_syscall.lstat,
 	@_SYSCALL_LSTAT_NAME
 	@_SYSCALL_LSTAT_REGARGS
 	@_SYSCALL_LSTAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_LSTAT_REGARGS_STORE %)
 }
 probe __tp_syscall.lstat = kernel.trace("sys_enter")
 {

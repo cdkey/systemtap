@@ -16,6 +16,12 @@
 	ctx = ulong_arg(1)
 %)
 
+@define _SYSCALL_IO_DESTROY_REGARGS_STORE
+%(
+        if (@probewrite(ctx))
+          set_ulong_arg(1, ctx)
+%)
+
 probe syscall.io_destroy = dw_syscall.io_destroy !, nd_syscall.io_destroy ? {}
 probe syscall.io_destroy.return = dw_syscall.io_destroy.return !,
                                   nd_syscall.io_destroy.return ? {}
@@ -54,6 +60,9 @@ probe nd2_syscall.io_destroy = kprobe.function(@arch_syscall_prefix "sys_io_dest
 	@_SYSCALL_IO_DESTROY_NAME
 	@_SYSCALL_IO_DESTROY_REGARGS
 	@_SYSCALL_IO_DESTROY_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IO_DESTROY_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -64,6 +73,9 @@ probe tp_syscall.io_destroy = kernel.trace("sys_enter")
 	@_SYSCALL_IO_DESTROY_NAME
 	@_SYSCALL_IO_DESTROY_REGARGS
 	@_SYSCALL_IO_DESTROY_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IO_DESTROY_REGARGS_STORE %)
 }
 
 probe nd_syscall.io_destroy.return = nd1_syscall.io_destroy.return!, nd2_syscall.io_destroy.return!, tp_syscall.io_destroy.return

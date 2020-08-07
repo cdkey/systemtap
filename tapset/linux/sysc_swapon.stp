@@ -19,8 +19,21 @@
 %(
 	path_uaddr = pointer_arg(1)
 	path = user_string_quoted(path_uaddr)
+	path_unquoted = user_string_nofault(pointer_arg(1))
 	swapflags = int_arg(2)
 	swapflags_str = _swapon_flags_str(swapflags)
+%)
+
+@define _SYSCALL_SWAPON_REGARGS_STORE
+%(
+        if (@probewrite(path_uaddr))
+          set_pointer_arg(1, path_uaddr)
+
+	if (@probewrite(path_unquoted))
+	  set_user_string_arg(pointer_arg(1), path_unquoted)
+
+	if (@probewrite(swapflags))
+	  set_int_arg(2, swapflags)
 %)
 
 probe syscall.swapon = dw_syscall.swapon !, nd_syscall.swapon ? {}
@@ -64,6 +77,9 @@ probe nd2_syscall.swapon = kprobe.function(@arch_syscall_prefix "sys_swapon") ?
 	@_SYSCALL_SWAPON_NAME
 	@_SYSCALL_SWAPON_REGARGS
 	@_SYSCALL_SWAPON_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SWAPON_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -74,6 +90,9 @@ probe tp_syscall.swapon = kernel.trace("sys_enter")
 	@_SYSCALL_SWAPON_NAME
 	@_SYSCALL_SWAPON_REGARGS
 	@_SYSCALL_SWAPON_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SWAPON_REGARGS_STORE %)
 }
 
 probe nd_syscall.swapon.return = nd1_syscall.swapon.return!, nd2_syscall.swapon.return!, tp_syscall.swapon.return

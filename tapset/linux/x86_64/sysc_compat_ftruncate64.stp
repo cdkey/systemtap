@@ -21,6 +21,17 @@
         length = ((uint_arg(3) << 32) | uint_arg(2))
 %)
 
+@define _SYSCALL_COMPAT_FTRUNCATE64_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(length)) {
+          set_uint_arg(2, length & 0xffffffff)
+	  set_uint_arg(3, length >> 32)
+	}
+%)
+
 probe syscall.compat_ftruncate64 = dw_syscall.compat_ftruncate64 !, nd_syscall.compat_ftruncate64 ? {}
 probe syscall.compat_ftruncate64.return = dw_syscall.compat_ftruncate64.return !, nd_syscall.compat_ftruncate64.return ? {}
 
@@ -66,6 +77,9 @@ probe nd2_syscall.compat_ftruncate64 =
 	@_SYSCALL_COMPAT_FTRUNCATE64_NAME
 	@_SYSCALL_COMPAT_FTRUNCATE64_REGARGS
 	@_SYSCALL_COMPAT_FTRUNCATE64_ARGSTR
+},
+{
+        @_SYSCALL_COMPAT_FTRUNCATE64_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -76,6 +90,9 @@ probe tp_syscall.compat_ftruncate64 = kernel.trace("sys_enter")
 	@_SYSCALL_COMPAT_FTRUNCATE64_NAME
 	@_SYSCALL_COMPAT_FTRUNCATE64_REGARGS
 	@_SYSCALL_COMPAT_FTRUNCATE64_ARGSTR
+},
+{
+        @_SYSCALL_COMPAT_FTRUNCATE64_REGARGS_STORE
 }
 
 probe nd_syscall.compat_ftruncate64.return = nd1_syscall.compat_ftruncate64.return!, nd2_syscall.compat_ftruncate64.return!, tp_syscall.compat_ftruncate64.return

@@ -14,9 +14,22 @@
 @define _SYSCALL_MKNOD_REGARGS
 %(
 	pathname = user_string_quoted(pointer_arg(1))
+	pathname_unquoted = user_string_nofault(pointer_arg(1))
 	mode = uint_arg(2)
 	mode_str = _mknod_mode_str(mode)
 	dev = uint_arg(3)
+%)
+
+@define _SYSCALL_MKNOD_REGARGS_STORE
+%(
+        if (@probewrite(pathname_unquoted))
+          set_user_string_arg(pointer_arg(1), pathname_unquoted)
+
+	if (@probewrite(mode))
+	  set_uint_arg(2, mode)
+
+	if (@probewrite(dev))
+	  set_uint_arg(3, dev)
 %)
 
 probe syscall.mknod = dw_syscall.mknod !, nd_syscall.mknod ? {}
@@ -60,6 +73,9 @@ probe nd2_syscall.mknod = kprobe.function(@arch_syscall_prefix "sys_mknod") ?
 	@_SYSCALL_MKNOD_NAME
 	@_SYSCALL_MKNOD_REGARGS
 	@_SYSCALL_MKNOD_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MKNOD_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -70,6 +86,9 @@ probe tp_syscall.mknod = kernel.trace("sys_enter")
 	@_SYSCALL_MKNOD_NAME
 	@_SYSCALL_MKNOD_REGARGS
 	@_SYSCALL_MKNOD_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MKNOD_REGARGS_STORE %)
 }
 
 probe nd_syscall.mknod.return = nd1_syscall.mknod.return!, nd2_syscall.mknod.return!, tp_syscall.mknod.return

@@ -18,6 +18,12 @@
 	status = int_arg(1)
 %)
 
+@define _SYSCALL_EXIT_GROUP_REGARGS_STORE
+%(
+        if (@probewrite(status))
+          set_int_arg(1, status)
+%)
+
 probe syscall.exit_group = dw_syscall.exit_group !, nd_syscall.exit_group ? {}
 
 probe syscall.exit_group.return = never
@@ -67,6 +73,9 @@ probe nd2_syscall.exit_group = kprobe.function(@arch_syscall_prefix "sys_exit_gr
 	@_SYSCALL_EXIT_GROUP_NAME
 	@_SYSCALL_EXIT_GROUP_REGARGS
 	@_SYSCALL_EXIT_GROUP_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_EXIT_GROUP_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -77,5 +86,7 @@ probe tp_syscall.exit_group = kernel.trace("sys_enter")
 	@_SYSCALL_EXIT_GROUP_NAME
 	@_SYSCALL_EXIT_GROUP_REGARGS
 	@_SYSCALL_EXIT_GROUP_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_EXIT_GROUP_REGARGS_STORE %)
 }
-

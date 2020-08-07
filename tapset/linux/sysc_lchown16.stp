@@ -16,8 +16,21 @@
 @define _SYSCALL_LCHOWN16_REGARGS
 %(
 	path = user_string_quoted(pointer_arg(1))
+	path_unquoted = user_string_nofault(pointer_arg(1))
 	owner = __short(uint_arg(2))
 	group = __short(uint_arg(3))
+%)
+
+@define _SYSCALL_LCHOWN16_REGARGS_STORE
+%(
+        if (@probewrite(path_unquoted))
+          set_user_string_arg(pointer_arg(1), path_unquoted)
+
+	if (@probewrite(owner))
+	  set_uint_arg(2, __short(owner))
+
+	if (@probewrite(group))
+	  set_uint_arg(3, __short(group))
 %)
 
 probe syscall.lchown16 = dw_syscall.lchown16 !, nd_syscall.lchown16 ? {}
@@ -59,6 +72,9 @@ probe nd2_syscall.lchown16 = kprobe.function(@arch_syscall_prefix "sys_lchown16"
 	@_SYSCALL_LCHOWN16_NAME
 	@_SYSCALL_LCHOWN16_REGARGS
 	@_SYSCALL_LCHOWN16_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_LCHOWN16_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -73,6 +89,9 @@ probe tp_syscall.lchown16 = kernel.trace("sys_enter")
 	@_SYSCALL_LCHOWN16_NAME
 	@_SYSCALL_LCHOWN16_REGARGS
 	@_SYSCALL_LCHOWN16_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_LCHOWN16_REGARGS_STORE %)
 }
 
 probe nd_syscall.lchown16.return = nd1_syscall.lchown16.return!, nd2_syscall.lchown16.return!, tp_syscall.lchown16.return

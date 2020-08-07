@@ -22,6 +22,18 @@
 	oact_uaddr = pointer_arg(3)
 %)
 
+@define _SYSCALL_SIGACTION_REGARGS_STORE
+%(
+        if (@probewrite(sig))
+          set_int_arg(1, sig)
+
+	if (@probewrite(act_uaddr))
+	  set_pointer_arg(2, act_uaddr)
+
+	if (@probewrite(oact_uaddr))
+	  set_pointer_arg(3, oact_uaddr)
+%)
+
 @define _SYSCALL_SIGACTION32_REGARGS
 %(
 	sig = int_arg(1)
@@ -76,6 +88,9 @@ probe tp_syscall.sigaction = kernel.trace("sys_enter")
 	@_SYSCALL_SIGACTION_NAME
 	@_SYSCALL_SIGACTION_REGARGS
 	@_SYSCALL_SIGACTION_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SIGACTION_REGARGS_STORE %)
 }
 
 probe nd_syscall.sigaction.return = nd1_syscall.sigaction.return!, tp_syscall.sigaction.return
@@ -143,6 +158,9 @@ probe nd2_syscall.sigaction32 =
 	@_SYSCALL_SIGACTION_NAME
 	@_SYSCALL_SIGACTION32_REGARGS
 	@_SYSCALL_SIGACTION_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SIGACTION_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -153,6 +171,9 @@ probe tp_syscall.sigaction32 = kernel.trace("sys_enter")
 	@_SYSCALL_SIGACTION_NAME
 	@_SYSCALL_SIGACTION32_REGARGS
 	@_SYSCALL_SIGACTION_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SIGACTION_REGARGS_STORE %)
 }
 
 probe nd_syscall.sigaction32.return = nd1_syscall.sigaction32.return!, nd2_syscall.sigaction32.return!, tp_syscall.sigaction32.return

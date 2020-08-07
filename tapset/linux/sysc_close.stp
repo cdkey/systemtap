@@ -16,6 +16,12 @@
 	fd = int_arg(1)
 %)
 
+@define _SYSCALL_CLOSE_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+%)
+
 probe syscall.close = dw_syscall.close !, nd_syscall.close ? {}
 probe syscall.close.return = dw_syscall.close.return !, nd_syscall.close.return ? {}
 
@@ -56,6 +62,9 @@ probe nd2_syscall.close = kprobe.function(@arch_syscall_prefix "sys_close") ?
 	@_SYSCALL_CLOSE_NAME
 	@_SYSCALL_CLOSE_REGARGS
 	@_SYSCALL_CLOSE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_CLOSE_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -66,6 +75,9 @@ probe tp_syscall.close = kernel.trace("sys_enter")
 	@_SYSCALL_CLOSE_NAME
 	@_SYSCALL_CLOSE_REGARGS
 	@_SYSCALL_CLOSE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_CLOSE_REGARGS_STORE %)
 }
 
 probe nd_syscall.close.return = nd1_syscall.close.return!, nd2_syscall.close.return!, tp_syscall.close.return

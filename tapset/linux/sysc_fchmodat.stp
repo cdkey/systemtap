@@ -18,7 +18,20 @@
 	dirfd = int_arg(1)
 	dirfd_str = _dfd_str(dirfd)
 	pathname = user_string_quoted(pointer_arg(2))
+	pathname_unquoted = user_string_nofault(pointer_arg(2))
 	mode = uint_arg(3)
+%)
+
+@define _SYSCALL_FCHMODAT_REGARGS_STORE
+%(
+        if (@probewrite(dirfd))
+          set_int_arg(1, dirfd)
+
+	if (@probewrite(pathname_unquoted))
+	  set_user_string_arg(pointer_arg(2), pathname_unquoted)
+
+	if (@probewrite(mode))
+	  set_uint_arg(3, mode)
 %)
 
 probe syscall.fchmodat = dw_syscall.fchmodat !, nd_syscall.fchmodat ? {}
@@ -74,6 +87,9 @@ probe nd2_syscall.fchmodat = kprobe.function(@arch_syscall_prefix "sys_fchmodat"
 	@_SYSCALL_FCHMODAT_NAME
 	@_SYSCALL_FCHMODAT_REGARGS
 	@_SYSCALL_FCHMODAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_FCHMODAT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -84,6 +100,9 @@ probe tp_syscall.fchmodat = kernel.trace("sys_enter")
 	@_SYSCALL_FCHMODAT_NAME
 	@_SYSCALL_FCHMODAT_REGARGS
 	@_SYSCALL_FCHMODAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_FCHMODAT_REGARGS_STORE %)
 }
 
 probe nd_syscall.fchmodat.return = nd1_syscall.fchmodat.return!, nd2_syscall.fchmodat.return!, tp_syscall.fchmodat.return

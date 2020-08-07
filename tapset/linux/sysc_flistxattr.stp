@@ -18,6 +18,18 @@
 	size = ulong_arg(3)
 %)
 
+@define _SYSCALL_FLISTXATTR_REGARGS_STORE
+%(
+        if (@probewrite(filedes))
+          set_int_arg(1, filedes)
+
+	if (@probewrite(list_uaddr))
+	  set_pointer_arg(2, list_uaddr)
+
+	if (@probewrite(size))
+	  set_ulong_arg(3, size)
+%)
+
 probe syscall.flistxattr = dw_syscall.flistxattr !, nd_syscall.flistxattr ? {}
 probe syscall.flistxattr.return = dw_syscall.flistxattr.return !, nd_syscall.flistxattr.return ? {}
 
@@ -57,6 +69,9 @@ probe nd2_syscall.flistxattr = kprobe.function(@arch_syscall_prefix "sys_flistxa
 	@_SYSCALL_FLISTXATTR_NAME
 	@_SYSCALL_FLISTXATTR_REGARGS
 	@_SYSCALL_FLISTXATTR_ARGSTR
+},
+{
+        @_SYSCALL_FLISTXATTR_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -67,6 +82,9 @@ probe tp_syscall.flistxattr = kernel.trace("sys_enter")
 	@_SYSCALL_FLISTXATTR_NAME
 	@_SYSCALL_FLISTXATTR_REGARGS
 	@_SYSCALL_FLISTXATTR_ARGSTR
+},
+{
+        @_SYSCALL_FLISTXATTR_REGARGS_STORE
 }
 
 probe nd_syscall.flistxattr.return = nd1_syscall.flistxattr.return!, nd2_syscall.flistxattr.return!, tp_syscall.flistxattr.return

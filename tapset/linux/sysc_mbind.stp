@@ -37,6 +37,27 @@
 	flags_str = _mempolicy_flags_str(flags)
 %)
 
+@define _SYSCALL_MBIND_REGARGS_STORE
+%(
+        if (@probewrite(start))
+          set_pointer_arg(1, start)
+
+	if (@probewrite(len))
+	  set_ulong_arg(2, len)
+
+	if (@probewrite(mode))
+	  set_int_arg(3, mode)
+
+	if (@probewrite(nmask_uaddr))
+	  set_pointer_arg(4, nmask_uaddr)
+
+	if (@probewrite(maxnode))
+	  set_ulong_arg(5, maxnode)
+
+	if (@probewrite(flags))
+	  set_uint_arg(6, flags)
+%)
+
 probe syscall.mbind = dw_syscall.mbind !, nd_syscall.mbind ? {}
 probe syscall.mbind.return = dw_syscall.mbind.return !, nd_syscall.mbind.return ? {}
 
@@ -102,6 +123,9 @@ probe nd2_syscall.mbind = kprobe.function(@arch_syscall_prefix "sys_mbind") ?
 	@_SYSCALL_MBIND_NAME
 	@_SYSCALL_MBIND_REGARGS
 	@_SYSCALL_MBIND_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MBIND_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -112,6 +136,9 @@ probe tp_syscall.mbind = kernel.trace("sys_enter")
 	@_SYSCALL_MBIND_NAME
 	@_SYSCALL_MBIND_REGARGS
 	@_SYSCALL_MBIND_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MBIND_REGARGS_STORE %)
 }
 
 probe nd_syscall.mbind.return = nd1_syscall.mbind.return!, nd2_syscall.mbind.return!, tp_syscall.mbind.return

@@ -21,6 +21,12 @@
 	persona = uint_arg(1)
 %)
 
+@define _SYSCALL_PERSONALITY_REGARGS_STORE
+%(
+        if (@probewrite(persona))
+          set_uint_arg(1, persona)
+%)
+
 probe syscall.personality = dw_syscall.personality !, nd_syscall.personality ? {}
 probe syscall.personality.return = dw_syscall.personality.return !,
                                    nd_syscall.personality.return ? {}
@@ -59,6 +65,9 @@ probe nd2_syscall.personality = kprobe.function(@arch_syscall_prefix "sys_person
 	@_SYSCALL_PERSONALITY_NAME
 	@_SYSCALL_PERSONALITY_REGARGS
 	@_SYSCALL_PERSONALITY_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PERSONALITY_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -69,6 +78,9 @@ probe tp_syscall.personality = kernel.trace("sys_enter")
 	@_SYSCALL_PERSONALITY_NAME
 	@_SYSCALL_PERSONALITY_REGARGS
 	@_SYSCALL_PERSONALITY_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PERSONALITY_REGARGS_STORE %)
 }
 
 probe nd_syscall.personality.return = nd1_syscall.personality.return!, nd2_syscall.personality.return!, tp_syscall.personality.return

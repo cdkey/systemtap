@@ -18,6 +18,12 @@
 	seconds = uint_arg(1)
 %)
 
+@define _SYSCALL_ALARM_REGARGS_STORE
+%(
+        if (@probewrite(seconds))
+          set_uint_arg(1, seconds)
+%)
+
 probe syscall.alarm = dw_syscall.alarm !, nd_syscall.alarm ? {}
 probe syscall.alarm.return = dw_syscall.alarm.return !, nd_syscall.alarm.return ? {}
 
@@ -58,6 +64,9 @@ probe nd2_syscall.alarm = kprobe.function(@arch_syscall_prefix "sys_alarm") ?
 	@_SYSCALL_ALARM_NAME
 	@_SYSCALL_ALARM_REGARGS
 	@_SYSCALL_ALARM_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_ALARM_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -68,6 +77,9 @@ probe tp_syscall.alarm = kernel.trace("sys_enter")
 	@_SYSCALL_ALARM_NAME
 	@_SYSCALL_ALARM_REGARGS
 	@_SYSCALL_ALARM_ARGSTR
+},
+{
+       %( @_IS_SREG_KERNEL %? @_SYSCALL_ALARM_REGARGS_STORE %)
 }
 
 probe nd_syscall.alarm.return = nd1_syscall.alarm.return!, nd2_syscall.alarm.return!, tp_syscall.alarm.return

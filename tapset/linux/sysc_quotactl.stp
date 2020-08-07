@@ -18,9 +18,28 @@
 	cmd = uint_arg(1)
 	cmd_str = _quotactl_cmd_str(cmd)
 	special = pointer_arg(2)
-	special_str = user_string_quoted(special)
+	special_str = user_string_quoted(pointer_arg(2))
+	special_str_unquoted = user_string_nofault(pointer_arg(2))
 	id = int_arg(3)
 	addr_uaddr = pointer_arg(4)
+%)
+
+@define _SYSCALL_QUOTACTL_REGARGS_STORE
+%(
+        if (@probewrite(cmd))
+          set_uint_arg(1, cmd)
+
+	if (@probewrite(special))
+	  set_pointer_arg(2, special)
+
+	if (@probewrite(special_str_unquoted))
+	  set_user_string_arg(pointer_arg(2), special_str_unquoted)
+
+	if (@probewrite(id))
+	  set_int_arg(3, id)
+
+	if (@probewrite(addr_uaddr))
+	  set_pointer_arg(4, addr_uaddr)
 %)
 
 probe syscall.quotactl = dw_syscall.quotactl !, nd_syscall.quotactl ? {}
@@ -90,6 +109,9 @@ probe nd2_syscall.quotactl = kprobe.function(@arch_syscall_prefix "sys_quotactl"
 	@_SYSCALL_QUOTACTL_NAME
 	@_SYSCALL_QUOTACTL_REGARGS
 	@__quotactl_argstr(_quotactl_subcmd(cmd), cmd, special, id, addr_uaddr)
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_QUOTACTL_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -100,6 +122,9 @@ probe tp_syscall.quotactl = kernel.trace("sys_enter")
 	@_SYSCALL_QUOTACTL_NAME
 	@_SYSCALL_QUOTACTL_REGARGS
 	@__quotactl_argstr(_quotactl_subcmd(cmd), cmd, special, id, addr_uaddr)
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_QUOTACTL_REGARGS_STORE %)
 }
 
 probe nd_syscall.quotactl.return = nd1_syscall.quotactl.return!, nd2_syscall.quotactl.return!, tp_syscall.quotactl.return

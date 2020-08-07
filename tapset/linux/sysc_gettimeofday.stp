@@ -22,6 +22,15 @@
 	tz_uaddr = pointer_arg(2)
 %)
 
+@define _SYSCALL_GETTIMEOFDAY_REGARGS_STORE
+%(
+        if (@probewrite(tv_uaddr))
+          set_pointer_arg(1, tv_uaddr)
+
+	if (@probewrite(tz_uaddr))
+	  set_pointer_arg(2, tz_uaddr)
+%)
+
 probe syscall.gettimeofday = dw_syscall.gettimeofday !, nd_syscall.gettimeofday ? {}
 probe syscall.gettimeofday.return = dw_syscall.gettimeofday.return !, nd_syscall.gettimeofday.return ? {}
 
@@ -68,6 +77,9 @@ probe nd2_syscall.gettimeofday = kprobe.function(@arch_syscall_prefix "compat_sy
 	@_SYSCALL_GETTIMEOFDAY_NAME
 	@_SYSCALL_GETTIMEOFDAY_REGARGS
 	@_SYSCALL_GETTIMEOFDAY_ARGSTR
+},
+{
+        @_SYSCALL_GETTIMEOFDAY_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -78,6 +90,9 @@ probe tp_syscall.gettimeofday = kernel.trace("sys_enter")
 	@_SYSCALL_GETTIMEOFDAY_NAME
 	@_SYSCALL_GETTIMEOFDAY_REGARGS
 	@_SYSCALL_GETTIMEOFDAY_ARGSTR
+},
+{
+        @_SYSCALL_GETTIMEOFDAY_REGARGS_STORE
 }
 
 probe nd_syscall.gettimeofday.return = nd1_syscall.gettimeofday.return!, nd2_syscall.gettimeofday.return!, tp_syscall.gettimeofday.return

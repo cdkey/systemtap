@@ -25,6 +25,27 @@
 	sigmask = pointer_arg(6)
 %)
 
+@define _SYSCALL_PSELECT6_REGARGS_STORE
+%(
+        if (@probewrite(nfds))
+          set_int_arg(1, nfds)
+
+	if (@probewrite(readfds))
+	  set_pointer_arg(2, readfds)
+
+	if (@probewrite(writefds))
+	  set_pointer_arg(3, writefds)
+
+	if (@probewrite(exceptfds))
+	  set_pointer_arg(4, exceptfds)
+
+	if (@probewrite(timeout))
+	  set_pointer_arg(5, timeout)
+
+	if (@probewrite(sigmask))
+	  set_pointer_arg(6, sigmask)
+%)
+
 probe syscall.pselect6 = dw_syscall.pselect6 !, nd_syscall.pselect6 ? {}
 probe syscall.pselect6.return = dw_syscall.pselect6.return !,
                                 nd_syscall.pselect6.return ? {}
@@ -71,6 +92,9 @@ probe nd2_syscall.pselect6 = kprobe.function(@arch_syscall_prefix "sys_pselect6"
 	@_SYSCALL_PSELECT6_REGARGS
 	timeout_str = _struct_timespec_u(timeout, 1)
 	@_SYSCALL_PSELECT6_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PSELECT6_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -82,6 +106,9 @@ probe tp_syscall.pselect6 = kernel.trace("sys_enter")
 	@_SYSCALL_PSELECT6_REGARGS
 	timeout_str = _struct_timespec_u(timeout, 1)
 	@_SYSCALL_PSELECT6_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PSELECT6_REGARGS_STORE %)
 }
 
 probe nd_syscall.pselect6.return = nd1_syscall.pselect6.return!, nd2_syscall.pselect6.return!, tp_syscall.pselect6.return
@@ -160,6 +187,9 @@ probe nd2_syscall.compat_pselect6 = kprobe.function(@arch_syscall_prefix "compat
 	@_SYSCALL_PSELECT6_REGARGS
 	timeout_str = _struct_compat_timespec_u(timeout, 1)
 	@_SYSCALL_PSELECT6_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PSELECT6_REGARGS_STORE %)
 }
 
 probe tp_syscall.compat_pselect6 = kernel.trace("sys_enter")
@@ -170,6 +200,9 @@ probe tp_syscall.compat_pselect6 = kernel.trace("sys_enter")
 	@_SYSCALL_PSELECT6_REGARGS
 	timeout_str = _struct_compat_timespec_u(timeout, 1)
 	@_SYSCALL_PSELECT6_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PSELECT6_REGARGS_STORE %)
 }
 
 probe nd_syscall.compat_pselect6.return = nd1_syscall.compat_pselect6.return!, nd2_syscall.compat_pselect6.return!, tp_syscall.compat_pselect6.return

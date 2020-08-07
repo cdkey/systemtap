@@ -25,6 +25,21 @@
 	flags_str = _stp_splice_flags_str(flags)
 %)
 
+@define _SYSCALL_VMSPLICE_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(iov))
+	  set_pointer_arg(2, iov)
+
+	if (@probewrite(nr_segs))
+	  set_ulong_arg(3, nr_segs)
+
+	if (@probewrite(flags))
+	  set_uint_arg(4, flags)
+%)
+
 probe syscall.vmsplice = dw_syscall.vmsplice !, nd_syscall.vmsplice ? {}
 probe syscall.vmsplice.return = dw_syscall.vmsplice.return !,
                                 nd_syscall.vmsplice.return ? {}
@@ -70,6 +85,9 @@ probe nd2_syscall.vmsplice = kprobe.function(@arch_syscall_prefix "sys_vmsplice"
 	@_SYSCALL_VMSPLICE_NAME
 	@_SYSCALL_VMSPLICE_REGARGS
 	@_SYSCALL_VMSPLICE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_VMSPLICE_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -80,6 +98,9 @@ probe tp_syscall.vmsplice = kernel.trace("sys_enter")
 	@_SYSCALL_VMSPLICE_NAME
 	@_SYSCALL_VMSPLICE_REGARGS
 	@_SYSCALL_VMSPLICE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_VMSPLICE_REGARGS_STORE %)
 }
 
 probe nd_syscall.vmsplice.return = nd1_syscall.vmsplice.return!, nd2_syscall.vmsplice.return!, tp_syscall.vmsplice.return
@@ -160,6 +181,9 @@ probe nd2_syscall.compat_vmsplice =
 	@_SYSCALL_VMSPLICE_NAME
 	@_SYSCALL_VMSPLICE_REGARGS
 	@_SYSCALL_VMSPLICE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_VMSPLICE_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -170,6 +194,9 @@ probe tp_syscall.compat_vmsplice = kernel.trace("sys_enter")
 	@_SYSCALL_VMSPLICE_NAME
 	@_SYSCALL_VMSPLICE_REGARGS
 	@_SYSCALL_VMSPLICE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_VMSPLICE_REGARGS_STORE %)
 }
 
 probe nd_syscall.compat_vmsplice.return = nd1_syscall.compat_vmsplice.return!, nd2_syscall.compat_vmsplice.return!, tp_syscall.compat_vmsplice.return

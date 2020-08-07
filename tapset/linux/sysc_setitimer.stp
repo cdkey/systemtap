@@ -23,6 +23,18 @@
 	ovalue_uaddr = pointer_arg(3)
 %)
 
+@define _SYSCALL_SETITIMER_REGARGS_STORE
+%(
+        if (@probewrite(which))
+          set_int_arg(1, which)
+
+	if (@probewrite(value_uaddr))
+	  set_pointer_arg(2, value_uaddr)
+
+	if (@probewrite(ovalue_uaddr))
+	  set_pointer_arg(3, ovalue_uaddr)
+%)
+
 probe syscall.setitimer = dw_syscall.setitimer !, nd_syscall.setitimer ? {}
 probe syscall.setitimer.return = dw_syscall.setitimer.return !,
                                  nd_syscall.setitimer.return ? {}
@@ -67,6 +79,9 @@ probe nd2_syscall.setitimer = kprobe.function(@arch_syscall_prefix "sys_setitime
 	@_SYSCALL_SETITIMER_REGARGS
 	value_str = _struct_itimerval_u(value_uaddr)
 	@_SYSCALL_SETITIMER_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETITIMER_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -78,6 +93,9 @@ probe tp_syscall.setitimer = kernel.trace("sys_enter")
 	@_SYSCALL_SETITIMER_REGARGS
 	value_str = _struct_itimerval_u(value_uaddr)
 	@_SYSCALL_SETITIMER_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETITIMER_REGARGS_STORE %)
 }
 
 probe nd_syscall.setitimer.return = nd1_syscall.setitimer.return!, nd2_syscall.setitimer.return!, tp_syscall.setitimer.return
@@ -155,6 +173,9 @@ probe nd2_syscall.compat_setitimer = kprobe.function(@arch_syscall_prefix "compa
 	@_SYSCALL_SETITIMER_REGARGS
 	value_str = _struct_compat_itimerval_u(value_uaddr)
 	@_SYSCALL_SETITIMER_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETITIMER_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -166,6 +187,9 @@ probe tp_syscall.compat_setitimer = kernel.trace("sys_enter")
 	@_SYSCALL_SETITIMER_REGARGS
 	value_str = _struct_compat_itimerval_u(value_uaddr)
 	@_SYSCALL_SETITIMER_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETITIMER_REGARGS_STORE %)
 }
 
 probe nd_syscall.compat_setitimer.return = nd1_syscall.compat_setitimer.return!, nd2_syscall.compat_setitimer.return!, tp_syscall.compat_setitimer.return

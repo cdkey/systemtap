@@ -18,6 +18,12 @@
 	timerid = int_arg(1)
 %)
 
+@define _SYSCALL_TIMER_GETOVERRUN_REGARGS_STORE
+%(
+        if (@probewrite(timerid))
+          set_int_arg(1, timerid)
+%)
+
 probe syscall.timer_getoverrun = dw_syscall.timer_getoverrun !,
                                  nd_syscall.timer_getoverrun ? {}
 probe syscall.timer_getoverrun.return = dw_syscall.timer_getoverrun.return !,
@@ -57,6 +63,9 @@ probe nd2_syscall.timer_getoverrun = kprobe.function(@arch_syscall_prefix "sys_t
 	@_SYSCALL_TIMER_GETOVERRUN_NAME
 	@_SYSCALL_TIMER_GETOVERRUN_REGARGS
 	@_SYSCALL_TIMER_GETOVERRUN_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TIMER_GETOVERRUN_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -67,6 +76,9 @@ probe tp_syscall.timer_getoverrun = kernel.trace("sys_enter")
 	@_SYSCALL_TIMER_GETOVERRUN_NAME
 	@_SYSCALL_TIMER_GETOVERRUN_REGARGS
 	@_SYSCALL_TIMER_GETOVERRUN_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TIMER_GETOVERRUN_REGARGS_STORE %)
 }
 
 probe nd_syscall.timer_getoverrun.return = nd1_syscall.timer_getoverrun.return!, nd2_syscall.timer_getoverrun.return!, tp_syscall.timer_getoverrun.return

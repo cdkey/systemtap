@@ -21,6 +21,15 @@
 	event_f_flags_str = _sys_open_flag_str(event_f_flags)
 %)
 
+@define _SYSCALL_FANOTIFY_INIT_REGARGS_STORE
+%(
+        if (@probewrite(flags))
+          set_uint_arg(1, flags)
+
+	if (@probewrite(event_f_flags))
+	  set_uint_arg(2, event_f_flags)
+%)
+
 probe syscall.fanotify_init = dw_syscall.fanotify_init !, nd_syscall.fanotify_init ? {}
 probe syscall.fanotify_init.return = dw_syscall.fanotify_init.return !, nd_syscall.fanotify_init.return ? {}
 
@@ -62,6 +71,9 @@ probe nd2_syscall.fanotify_init = kprobe.function(@arch_syscall_prefix "sys_fano
 	@_SYSCALL_FANOTIFY_INIT_NAME
 	@_SYSCALL_FANOTIFY_INIT_REGARGS
 	@_SYSCALL_FANOTIFY_INIT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_FANOTIFY_INIT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -72,6 +84,9 @@ probe tp_syscall.fanotify_init = kernel.trace("sys_enter")
 	@_SYSCALL_FANOTIFY_INIT_NAME
 	@_SYSCALL_FANOTIFY_INIT_REGARGS
 	@_SYSCALL_FANOTIFY_INIT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_FANOTIFY_INIT_REGARGS_STORE %)
 }
 
 probe nd_syscall.fanotify_init.return = nd1_syscall.fanotify_init.return!, nd2_syscall.fanotify_init.return!, tp_syscall.fanotify_init.return

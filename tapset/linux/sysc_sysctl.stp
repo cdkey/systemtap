@@ -18,6 +18,12 @@
 	args = pointer_arg(1)
 %)
 
+@define _SYSCALL_SYSCTL_REGARGS_STORE
+%(
+        if (@probewrite(args))
+          set_pointer_arg(1, args)
+%)
+
 probe syscall.sysctl = dw_syscall.sysctl !, nd_syscall.sysctl ? {}
 probe syscall.sysctl.return = dw_syscall.sysctl.return !,
                               nd_syscall.sysctl.return ? {}
@@ -60,6 +66,9 @@ probe nd2_syscall.sysctl = kprobe.function(@arch_syscall_prefix "compat_sys_sysc
 	@_SYSCALL_SYSCTL_NAME
 	@_SYSCALL_SYSCTL_REGARGS
 	@_SYSCALL_SYSCTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SYSCTL_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -70,6 +79,9 @@ probe tp_syscall.sysctl = kernel.trace("sys_enter")
 	@_SYSCALL_SYSCTL_NAME
 	@_SYSCALL_SYSCTL_REGARGS
 	@_SYSCALL_SYSCTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SYSCTL_REGARGS_STORE %)
 }
 
 probe nd_syscall.sysctl.return = nd1_syscall.sysctl.return!, nd2_syscall.sysctl.return!, tp_syscall.sysctl.return

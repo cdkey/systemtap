@@ -22,6 +22,18 @@
 	flags = uint_arg(3)
 %)
 
+@define _SYSCALL_RECVMSG_REGARGS_STORE
+%(
+        if (@probewrite(s))
+          set_int_arg(1, s)
+
+	if (@probewrite(msg_uaddr))
+	  set_pointer_arg(2, msg_uaddr)
+
+	if (@probewrite(flags))
+	  set_uint_arg(3, flags)
+%)
+
 @define _SYSCALL_SOCKETCALL_RECVMSG_REGARGS
 %(
 	__args = &@ulong_cast(pointer_arg(2))
@@ -138,6 +150,9 @@ probe __nd2_syscall.recvmsg = kprobe.function(@arch_syscall_prefix "sys_recvmsg"
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_RECVMSG_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_RECVMSG_REGARGS_STORE %)
 }
 probe __nd2_syscall.socketcall.recvmsg = kprobe.function(@arch_syscall_prefix "sys_socketcall").call ?
 {
@@ -166,6 +181,9 @@ probe __tp_syscall.recvmsg = kernel.trace("sys_enter")
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_recvmsg"))
 	@_SYSCALL_RECVMSG_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_RECVMSG_REGARGS_STORE %)
 }
 probe __tp_syscall.socketcall.recvmsg = kernel.trace("sys_enter")
 {

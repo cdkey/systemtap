@@ -20,6 +20,22 @@
 	mask_str = _inotify_watch_mask_str(mask)
 	path_uaddr = pointer_arg(2)
 	path = user_string_quoted(path_uaddr)
+	path_unquoted = user_string_nofault(pointer_arg(2))
+%)
+
+@define _SYSCALL_INOTIFY_ADD_WATCH_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(mask))
+	  set_uint_arg(3, mask)
+
+	if (@probewrite(path_uaddr))
+	  set_pointer_arg(2, path_uaddr)
+
+	if (@probewrite(path_unquoted))
+	  set_user_string_arg(pointer_arg(2), path_unquoted)
 %)
 
 probe syscall.inotify_add_watch = dw_syscall.inotify_add_watch !,
@@ -66,6 +82,9 @@ probe nd2_syscall.inotify_add_watch = kprobe.function(@arch_syscall_prefix "sys_
 	@_SYSCALL_INOTIFY_ADD_WATCH_NAME
 	@_SYSCALL_INOTIFY_ADD_WATCH_REGARGS
 	@_SYSCALL_INOTIFY_ADD_WATCH_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_INOTIFY_ADD_WATCH_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -76,6 +95,9 @@ probe tp_syscall.inotify_add_watch = kernel.trace("sys_enter")
 	@_SYSCALL_INOTIFY_ADD_WATCH_NAME
 	@_SYSCALL_INOTIFY_ADD_WATCH_REGARGS
 	@_SYSCALL_INOTIFY_ADD_WATCH_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_INOTIFY_ADD_WATCH_REGARGS_STORE %)
 }
 
 probe nd_syscall.inotify_add_watch.return = nd1_syscall.inotify_add_watch.return!, nd2_syscall.inotify_add_watch.return!, tp_syscall.inotify_add_watch.return

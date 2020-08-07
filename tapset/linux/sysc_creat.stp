@@ -14,7 +14,17 @@
 @define _SYSCALL_CREAT_REGARGS
 %(
 	pathname = user_string_quoted(pointer_arg(1))
+	pathname_unquoted = user_string_nofault(pointer_arg(1))
 	mode = uint_arg(2)
+%)
+
+@define _SYSCALL_CREAT_REGARGS_STORE
+%(
+        if (@probewrite(pathname_unquoted))
+          set_user_string_arg(pointer_arg(1), pathname_unquoted)
+
+	if (@probewrite(mode))
+	  set_uint_arg(2, mode)
 %)
 
 probe syscall.creat = dw_syscall.creat !, nd_syscall.creat ? {}
@@ -55,6 +65,9 @@ probe nd2_syscall.creat = kprobe.function(@arch_syscall_prefix "sys_creat") ?
 	@_SYSCALL_CREAT_NAME
 	@_SYSCALL_CREAT_REGARGS
 	@_SYSCALL_CREAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_CREAT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because of it affects all syscalls */
@@ -65,6 +78,9 @@ probe tp_syscall.creat = kernel.trace("sys_enter")
 	@_SYSCALL_CREAT_NAME
 	@_SYSCALL_CREAT_REGARGS
 	@_SYSCALL_CREAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_CREAT_REGARGS_STORE %)
 }
 
 probe nd_syscall.creat.return = nd1_syscall.creat.return!, nd2_syscall.creat.return!, tp_syscall.creat.return

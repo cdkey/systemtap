@@ -19,6 +19,18 @@
 	addrlen = uint_arg(3)
 %)
 
+@define _SYSCALL_CONNECT_REGARGS_STORE
+%(
+        if (@probewrite(sockfd))
+          set_int_arg(1, sockfd)
+
+	if (@probewrite(serv_addr_uaddr))
+	  set_pointer_arg(2, serv_addr_uaddr)
+
+	if (@probewrite(addrlen))
+	  set_uint_arg(3, addrlen)
+%)
+
 @define _SYSCALL_SOCKETCALL_CONNECT_REGARGS
 %(
 	__argsl = &@ulong_cast(pointer_arg(2))
@@ -132,12 +144,18 @@ probe __nd2_syscall.connect = kprobe.function(@arch_syscall_prefix "sys_connect"
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_CONNECT_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_CONNECT_REGARGS_STORE %)
 }
 probe __nd2_syscall.socketcall.connect = kprobe.function(@arch_syscall_prefix "sys_socketcall").call ?
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	if (int_arg(1) != @const("SYS_CONNECT")) next;
 	@_SYSCALL_SOCKETCALL_CONNECT_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_CONNECT_REGARGS_STORE %)
 }
 probe __nd2_syscall.compat_socketcall.connect =
 	kprobe.function(@arch_syscall_prefix "compat_sys_socketcall").call ?
@@ -161,6 +179,9 @@ probe __tp_syscall.connect = kernel.trace("sys_enter")
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_connect"))
 	@_SYSCALL_CONNECT_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_CONNECT_REGARGS_STORE %)
 }
 probe __tp_syscall.socketcall.connect = kernel.trace("sys_enter")
 {

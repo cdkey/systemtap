@@ -14,6 +14,13 @@
 @define _SYSCALL_CHROOT_REGARGS
 %(
 	path = user_string_quoted(pointer_arg(1))
+	path_unquoted = user_string_nofault(pointer_arg(1))
+%)
+
+@define _SYSCALL_CHROOT_REGARGS_STORE
+%(
+        if (@probewrite(path_unquoted))
+          set_user_string_arg(pointer_arg(1), path_unquoted)
 %)
 
 probe syscall.chroot = dw_syscall.chroot !, nd_syscall.chroot ? {}
@@ -53,6 +60,9 @@ probe nd2_syscall.chroot = kprobe.function(@arch_syscall_prefix "sys_chroot") ?
 	@_SYSCALL_CHROOT_NAME
 	@_SYSCALL_CHROOT_REGARGS
 	@_SYSCALL_CHROOT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_CHROOT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -63,6 +73,9 @@ probe tp_syscall.chroot = kernel.trace("sys_enter")
 	@_SYSCALL_CHROOT_NAME
 	@_SYSCALL_CHROOT_REGARGS
 	@_SYSCALL_CHROOT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_CHROOT_REGARGS_STORE %)
 }
 
 probe nd_syscall.chroot.return = nd1_syscall.chroot.return!, nd2_syscall.chroot.return!, tp_syscall.chroot.return

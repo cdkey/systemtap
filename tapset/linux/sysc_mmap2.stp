@@ -17,6 +17,27 @@
 	                 prot_str, flags_str, fd, pgoffset)
 %)
 
+@define _SYSCALL_MMAP2_REGARGS_STORE
+%(
+        if (@probewrite(start))
+          set_ulong_arg(1, start)
+
+	if (@probewrite(length))
+	  set_ulong_arg(2, length)
+
+	if (@probewrite(prot))
+	  set_ulong_arg(3, prot)
+
+	if (@probewrite(flags))
+	  set_ulong_arg(4, flags)
+
+	if (@probewrite(fd))
+	  set_int_arg(5, fd)
+
+	if (@probewrite(pgoffset))
+	  set_ulong_arg(6, pgoffset)
+%)
+
 probe syscall.mmap2 = dw_syscall.mmap2 !, nd_syscall.mmap2 ? {}
 probe syscall.mmap2.return = dw_syscall.mmap2.return !, nd_syscall.mmap2.return ? {}
 
@@ -89,6 +110,9 @@ probe __nd2_syscall.mmap = kprobe.function(@arch_syscall_prefix "sys_mmap") ?
 	# Here $pgoff is the number of bytes, no conversion needed
 	pgoffset = ulong_arg(6)
 	@_SYSCALL_MMAP2_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MMAP2_REGARGS_STORE %)
 }
 probe __nd2_syscall.mmap_pgoff = kprobe.function(@arch_syscall_prefix "sys_mmap_pgoff") ?
 {
@@ -107,6 +131,9 @@ probe __nd2_syscall.mmap_pgoff = kprobe.function(@arch_syscall_prefix "sys_mmap_
 	# number of bytes.
 	pgoffset = ulong_arg(6) * @const("PAGE_SIZE")
 	@_SYSCALL_MMAP2_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MMAP2_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -130,6 +157,9 @@ probe __tp_syscall.mmap = kernel.trace("sys_enter")
 	# Here $pgoff is the number of bytes, no conversion needed
 	pgoffset = ulong_arg(6)
 	@_SYSCALL_MMAP2_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MMAP2_REGARGS_STORE %)
 }
 probe __tp_syscall.mmap_pgoff = kernel.trace("sys_enter")
 {
@@ -149,6 +179,9 @@ probe __tp_syscall.mmap_pgoff = kernel.trace("sys_enter")
 	# number of bytes.
 	pgoffset = ulong_arg(6) * @const("PAGE_SIZE")
 	@_SYSCALL_MMAP2_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MMAP2_REGARGS_STORE %)
 }
 
 probe nd_syscall.mmap2.return = nd1_syscall.mmap2.return!, nd2_syscall.mmap2.return!, tp_syscall.mmap2.return

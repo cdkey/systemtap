@@ -44,12 +44,29 @@
 	euid = __int32(uint_arg(2))
 %)
 
+@define _SYSCALL_SETREUID_REGARGS_STORE
+%(
+        if (@probewrite(ruid))
+          set_uint_arg(1, __int32(ruid))
+
+	if (@probewrite(euid))
+	  set_uint_arg(2, __int32(euid))
+%)
+
 @define _SYSCALL_SETREUID16_REGARGS
 %(
 	ruid = __short(uint_arg(1))
 	euid = __short(uint_arg(2))
 %)
 
+@define _SYSCALL_SETREUID16_REGARGS_STORE
+%(
+        if (@probewrite(ruid))
+          set_uint_arg(1, __short(ruid))
+
+	if (@probewrite(euid))
+	  set_uint_arg(2, __short(euid))
+%)
 probe syscall.setreuid = dw_syscall.setreuid !, nd_syscall.setreuid ? {}
 probe syscall.setreuid.return = dw_syscall.setreuid.return !,
                                 nd_syscall.setreuid.return ? {}
@@ -92,6 +109,9 @@ probe nd2_syscall.setreuid = kprobe.function(@arch_syscall_prefix "sys_setreuid"
 	@_SYSCALL_SETREUID_NAME
 	@_SYSCALL_SETREUID_REGARGS
 	@_SYSCALL_SETREUID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETREUID_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -102,6 +122,9 @@ probe tp_syscall.setreuid = kernel.trace("sys_enter")
 	@_SYSCALL_SETREUID_NAME
 	@_SYSCALL_SETREUID_REGARGS
 	@_SYSCALL_SETREUID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETREUID_REGARGS_STORE %)
 }
 
 probe nd_syscall.setreuid.return = nd1_syscall.setreuid.return!, nd2_syscall.setreuid.return!, tp_syscall.setreuid.return
@@ -173,6 +196,9 @@ probe nd2_syscall.setreuid16 = kprobe.function(@arch_syscall_prefix "sys_setreui
 	@_SYSCALL_SETREUID_NAME
 	@_SYSCALL_SETREUID16_REGARGS
 	@_SYSCALL_SETREUID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETREUID16_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -183,6 +209,9 @@ probe tp_syscall.setreuid16 = kernel.trace("sys_enter")
 	@_SYSCALL_SETREUID_NAME
 	@_SYSCALL_SETREUID16_REGARGS
 	@_SYSCALL_SETREUID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETREUID16_REGARGS_STORE %)
 }
 
 probe nd_syscall.setreuid16.return = nd1_syscall.setreuid16.return!, nd2_syscall.setreuid16.return!, tp_syscall.setreuid16.return

@@ -20,6 +20,15 @@
 	handler_str = _sighandler_str(handler)
 %)
 
+@define _SYSCALL_SIGNAL_REGARGS_STORE
+%(
+        if (@probewrite(sig))
+          set_int_arg(1, sig)
+
+	if (@probewrite(handler))
+	  set_pointer_arg(2, handler)
+%)
+
 probe syscall.signal = dw_syscall.signal !, nd_syscall.signal ? {}
 probe syscall.signal.return = dw_syscall.signal.return !,
                               nd_syscall.signal.return ? {}
@@ -61,6 +70,9 @@ probe nd2_syscall.signal = kprobe.function(@arch_syscall_prefix "sys_signal") ?
 	@_SYSCALL_SIGNAL_NAME
 	@_SYSCALL_SIGNAL_REGARGS
 	@_SYSCALL_SIGNAL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SIGNAL_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -71,6 +83,9 @@ probe tp_syscall.signal = kernel.trace("sys_enter")
 	@_SYSCALL_SIGNAL_NAME
 	@_SYSCALL_SIGNAL_REGARGS
 	@_SYSCALL_SIGNAL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SIGNAL_REGARGS_STORE %)
 }
 
 probe nd_syscall.signal.return = nd1_syscall.signal.return!, nd2_syscall.signal.return!, tp_syscall.signal.return

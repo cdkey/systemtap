@@ -20,8 +20,24 @@
 	dfd = int_arg(1)
 	dfd_str = _dfd_str(dfd)
 	path = user_string_quoted(pointer_arg(2))
+	path_unquoted = user_string_nofault(pointer_arg(2))
 	buf_uaddr = pointer_arg(3)
 	bufsiz = int_arg(4)
+%)
+
+@define _SYSCALL_READLINKAT_REGARGS_STORE
+%(
+        if (@probewrite(dfd))
+          set_int_arg(1, dfd)
+
+	if (@probewrite(path_unquoted))
+	  set_user_string_arg(pointer_arg(2), path_unquoted)
+
+	if (@probewrite(buf_uaddr))
+	  set_pointer_arg(3, buf_uaddr)
+
+	if (@probewrite(bufsiz))
+	  set_int_arg(4, bufsiz)
 %)
 
 probe syscall.readlinkat = dw_syscall.readlinkat !, nd_syscall.readlinkat ? {}
@@ -73,6 +89,9 @@ probe nd2_syscall.readlinkat = kprobe.function(@arch_syscall_prefix "sys_readlin
 	@_SYSCALL_READLINKAT_NAME
 	@_SYSCALL_READLINKAT_REGARGS
 	@_SYSCALL_READLINKAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_READLINKAT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -84,6 +103,9 @@ probe tp_syscall.readlinkat = kernel.trace("sys_enter")
 	@_SYSCALL_READLINKAT_NAME
 	@_SYSCALL_READLINKAT_REGARGS
 	@_SYSCALL_READLINKAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_READLINKAT_REGARGS_STORE %)
 }
 
 probe nd_syscall.readlinkat.return = nd1_syscall.readlinkat.return!, nd2_syscall.readlinkat.return!, tp_syscall.readlinkat.return

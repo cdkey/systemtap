@@ -22,6 +22,15 @@
 	tp_uaddr = pointer_arg(2)
 %)
 
+@define _SYSCALL_CLOCK_SETTIME_REGARGS_STORE
+%(
+        if (@probewrite(clk_id))
+          set_int_arg(1, clk_id)
+
+	if (@probewrite(tp_uaddr))
+	  set_pointer_arg(2, tp_uaddr)
+%)
+
 probe syscall.clock_settime = dw_syscall.clock_settime !, nd_syscall.clock_settime ? {}
 probe syscall.clock_settime.return = dw_syscall.clock_settime.return !, nd_syscall.clock_settime.return ? {}
 
@@ -106,6 +115,9 @@ probe __nd2_syscall.clock_settime = kprobe.function(@arch_syscall_prefix "sys_cl
 	@_SYSCALL_CLOCK_SETTIME_REGARGS
 	tp_uaddr_str = _struct_timespec_u(tp_uaddr, 1)
 	@_SYSCALL_CLOCK_SETTIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_CLOCK_SETTIME_REGARGS_STORE %)
 }
 probe __nd2_syscall.compat_clock_settime =
 	kprobe.function(@arch_syscall_prefix "compat_sys_clock_settime").call ?
@@ -114,6 +126,9 @@ probe __nd2_syscall.compat_clock_settime =
 	@_SYSCALL_CLOCK_SETTIME_REGARGS
 	tp_uaddr_str = _struct_compat_timespec_u(tp_uaddr, 1)
 	@_SYSCALL_CLOCK_SETTIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_CLOCK_SETTIME_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -128,6 +143,9 @@ probe tp_syscall.clock_settime = kernel.trace("sys_enter")
 	else
 		tp_uaddr_str = _struct_timespec_u(tp_uaddr, 1)
 	@_SYSCALL_CLOCK_SETTIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_CLOCK_SETTIME_REGARGS_STORE %)
 }
 
 probe nd_syscall.clock_settime.return = nd1_syscall.clock_settime.return!, nd2_syscall.clock_settime.return!, tp_syscall.clock_settime.return

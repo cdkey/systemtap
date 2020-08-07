@@ -14,8 +14,18 @@
 @define _SYSCALL_DELETE_MODULE_REGARGS
 %(
 	name_user = user_string_quoted(pointer_arg(1))
+	name_user_unquoted = user_string_nofault(pointer_arg(1))
 	flags = uint_arg(2)
 	flags_str = _module_flags_str(flags)
+%)
+
+@define _SYSCALL_DELETE_MODULE_REGARGS_STORE
+%(
+        if (@probewrite(name_user_unquoted))
+          set_user_string_arg(pointer_arg(1), name_user_unquoted)
+
+	if (@probewrite(flags))
+	  set_uint_arg(2, flags)
 %)
 
 probe syscall.delete_module = dw_syscall.delete_module !, nd_syscall.delete_module ? {}
@@ -58,6 +68,9 @@ probe nd2_syscall.delete_module = kprobe.function(@arch_syscall_prefix "sys_dele
 	@_SYSCALL_DELETE_MODULE_NAME
 	@_SYSCALL_DELETE_MODULE_REGARGS
 	@_SYSCALL_DELETE_MODULE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_DELETE_MODULE_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -68,6 +81,9 @@ probe tp_syscall.delete_module = kernel.trace("sys_enter")
 	@_SYSCALL_DELETE_MODULE_NAME
 	@_SYSCALL_DELETE_MODULE_REGARGS
 	@_SYSCALL_DELETE_MODULE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_DELETE_MODULE_REGARGS_STORE %)
 }
 
 probe nd_syscall.delete_module.return = nd1_syscall.delete_module.return!, nd2_syscall.delete_module.return!, tp_syscall.delete_module.return

@@ -24,6 +24,18 @@
 	prio = int_arg(3)
 %)
 
+@define _SYSCALL_SETPRIORITY_REGARGS_STORE
+%(
+        if (@probewrite(which))
+          set_int_arg(1, which)
+
+	if (@probewrite(who))
+	  set_int_arg(2, who)
+
+	if (@probewrite(prio))
+	  set_int_arg(3, prio)
+%)
+
 probe syscall.setpriority = dw_syscall.setpriority !, nd_syscall.setpriority ? {}
 probe syscall.setpriority.return = dw_syscall.setpriority.return !,
                                    nd_syscall.setpriority.return ? {}
@@ -65,6 +77,9 @@ probe nd2_syscall.setpriority = kprobe.function(@arch_syscall_prefix "sys_setpri
 	@_SYSCALL_SETPRIORITY_NAME
 	@_SYSCALL_SETPRIORITY_REGARGS
 	@_SYSCALL_SETPRIORITY_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETPRIORITY_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -75,6 +90,9 @@ probe tp_syscall.setpriority = kernel.trace("sys_enter")
 	@_SYSCALL_SETPRIORITY_NAME
 	@_SYSCALL_SETPRIORITY_REGARGS
 	@_SYSCALL_SETPRIORITY_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETPRIORITY_REGARGS_STORE %)
 }
 
 probe nd_syscall.setpriority.return = nd1_syscall.setpriority.return!, nd2_syscall.setpriority.return!, tp_syscall.setpriority.return

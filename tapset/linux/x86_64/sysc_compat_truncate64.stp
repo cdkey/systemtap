@@ -21,7 +21,22 @@
 %(
 	path_uaddr = pointer_arg(1)
 	path = user_string_quoted(path_uaddr)
+	path_unquoted = user_string_nofault(pointer_arg(1))
         length = ((uint_arg(3) << 32) | uint_arg(2))
+%)
+
+@define _SYSCALL_COMPAT_TRUNCATE64_REGARGS_STORE
+%(
+        if (@probewrite(path_uaddr))
+          set_pointer_arg(1, path_uaddr)
+
+	if (@probewrite(path_unquoted))
+	  set_user_string_arg(pointer_arg(1), path_unquoted)
+
+	if (@probewrite(length)) {
+          set_uint_arg(2, length & 0xffffffff)
+	  set_uint_arg(3, length >> 32)
+	}
 %)
 
 probe syscall.compat_truncate64 = dw_syscall.compat_truncate64 !,
@@ -72,6 +87,9 @@ probe nd2_syscall.compat_truncate64 =
 	@_SYSCALL_COMPAT_TRUNCATE64_NAME
 	@_SYSCALL_COMPAT_TRUNCATE64_REGARGS
 	@_SYSCALL_COMPAT_TRUNCATE64_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_TRUNCATE64_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -82,6 +100,9 @@ probe tp_syscall.compat_truncate64 = kernel.trace("sys_enter")
 	@_SYSCALL_COMPAT_TRUNCATE64_NAME
 	@_SYSCALL_COMPAT_TRUNCATE64_REGARGS
 	@_SYSCALL_COMPAT_TRUNCATE64_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_TRUNCATE64_REGARGS_STORE %)
 }
 
 probe nd_syscall.compat_truncate64.return = nd1_syscall.compat_truncate64.return!, nd2_syscall.compat_truncate64.return!, tp_syscall.compat_truncate64.return

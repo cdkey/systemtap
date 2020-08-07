@@ -19,6 +19,15 @@
 	wd = int_arg(2)
 %)
 
+@define _SYSCALL_INOTIFY_RM_WATCH_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(wd))
+	  set_int_arg(2, wd)
+%)
+
 probe syscall.inotify_rm_watch = dw_syscall.inotify_rm_watch !,
                                  nd_syscall.inotify_rm_watch ? {}
 probe syscall.inotify_rm_watch.return = dw_syscall.inotify_rm_watch.return !,
@@ -59,6 +68,9 @@ probe nd2_syscall.inotify_rm_watch = kprobe.function(@arch_syscall_prefix "sys_i
 	@_SYSCALL_INOTIFY_RM_WATCH_NAME
 	@_SYSCALL_INOTIFY_RM_WATCH_REGARGS
 	@_SYSCALL_INOTIFY_RM_WATCH_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_INOTIFY_RM_WATCH_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -69,6 +81,9 @@ probe tp_syscall.inotify_rm_watch = kernel.trace("sys_enter")
 	@_SYSCALL_INOTIFY_RM_WATCH_NAME
 	@_SYSCALL_INOTIFY_RM_WATCH_REGARGS
 	@_SYSCALL_INOTIFY_RM_WATCH_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_INOTIFY_RM_WATCH_REGARGS_STORE %)
 }
 
 probe nd_syscall.inotify_rm_watch.return = nd1_syscall.inotify_rm_watch.return!, nd2_syscall.inotify_rm_watch.return!, tp_syscall.inotify_rm_watch.return

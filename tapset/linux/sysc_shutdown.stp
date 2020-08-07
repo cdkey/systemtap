@@ -19,6 +19,15 @@
 	how = int_arg(2)
 %)
 
+@define _SYSCALL_SHUTDOWN_REGARGS_STORE
+%(
+        if (@probewrite(s))
+          set_int_arg(1, s)
+
+	if (@probewrite(how))
+	  set_int_arg(2, how)
+%)
+
 @define _SYSCALL_SOCKETCALL_SHUTDOWN_REGARGS
 %(
 	__args = &@ulong_cast(pointer_arg(2))
@@ -128,6 +137,9 @@ probe __nd2_syscall.shutdown = kprobe.function(@arch_syscall_prefix "sys_shutdow
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_SHUTDOWN_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SHUTDOWN_REGARGS_STORE %)
 }
 probe __nd2_syscall.socketcall.shutdown = kprobe.function(@arch_syscall_prefix "sys_socketcall").call ?
 {
@@ -156,6 +168,9 @@ probe __tp_syscall.shutdown = kernel.trace("sys_enter")
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_shutdown"))
 	@_SYSCALL_SHUTDOWN_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SHUTDOWN_REGARGS_STORE %)
 }
 probe __tp_syscall.socketcall.shutdown = kernel.trace("sys_enter")
 {

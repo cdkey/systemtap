@@ -16,6 +16,19 @@
 	filedes = int_arg(1)
 	name_uaddr = pointer_arg(2)
 	name_str = user_string_quoted(pointer_arg(2))
+	name_str_unquoted = user_string_nofault(pointer_arg(2))
+%)
+
+@define _SYSCALL_FREMOVEXATTR_REGARGS_STORE
+%(
+        if (@probewrite(filedes))
+          set_int_arg(1, filedes)
+
+	if (@probewrite(name_uaddr))
+	  set_pointer_arg(2, name_uaddr)
+
+	if (@probewrite(name_str_unquoted))
+	  set_user_string_arg(pointer_arg(2), name_str_unquoted)
 %)
 
 probe syscall.fremovexattr = dw_syscall.fremovexattr !, nd_syscall.fremovexattr ? {}
@@ -57,6 +70,9 @@ probe nd2_syscall.fremovexattr = kprobe.function(@arch_syscall_prefix "sys_fremo
 	@_SYSCALL_FREMOVEXATTR_NAME
 	@_SYSCALL_FREMOVEXATTR_REGARGS
 	@_SYSCALL_FREMOVEXATTR_ARGSTR
+},
+{
+        @_SYSCALL_FREMOVEXATTR_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -67,6 +83,9 @@ probe tp_syscall.fremovexattr = kernel.trace("sys_enter")
 	@_SYSCALL_FREMOVEXATTR_NAME
 	@_SYSCALL_FREMOVEXATTR_REGARGS
 	@_SYSCALL_FREMOVEXATTR_ARGSTR
+},
+{
+        @_SYSCALL_FREMOVEXATTR_REGARGS_STORE
 }
 
 probe nd_syscall.fremovexattr.return = nd1_syscall.fremovexattr.return!, nd2_syscall.fremovexattr.return!, tp_syscall.fremovexattr.return

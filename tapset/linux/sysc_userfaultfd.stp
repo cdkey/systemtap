@@ -17,6 +17,12 @@
 	flags_str = _userfaultfd_flags_str(flags)
 %)
 
+@define _SYSCALL_USERFAULTFD_REGARGS_STORE
+%(
+        if (@probewrite(flags))
+          set_int_arg(1, flags)
+%)
+
 probe syscall.userfaultfd = dw_syscall.userfaultfd !, nd_syscall.userfaultfd ? {}
 probe syscall.userfaultfd.return = dw_syscall.userfaultfd.return !,
                                    nd_syscall.userfaultfd.return ? {}
@@ -57,6 +63,9 @@ probe nd2_syscall.userfaultfd =
 	@_SYSCALL_USERFAULTFD_NAME
 	@_SYSCALL_USERFAULTFD_REGARGS
 	@_SYSCALL_USERFAULTFD_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_USERFAULTFD_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -68,6 +77,9 @@ probe tp_syscall.userfaultfd = kernel.trace("sys_enter")
 	@_SYSCALL_USERFAULTFD_NAME
 	@_SYSCALL_USERFAULTFD_REGARGS
 	@_SYSCALL_USERFAULTFD_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_USERFAULTFD_REGARGS_STORE %)
 }
 
 probe nd_syscall.userfaultfd.return = nd1_syscall.userfaultfd.return!, nd2_syscall.userfaultfd.return!, tp_syscall.userfaultfd.return

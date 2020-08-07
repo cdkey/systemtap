@@ -19,9 +19,28 @@
 	dfd_str = _dfd_str(dfd)
 	filename_uaddr = pointer_arg(2)
 	filename = user_string_quoted(filename_uaddr)
+	filename_unquoted = user_string_nofault(pointer_arg(2))
 	tsp_uaddr = pointer_arg(3)
 	flags = int_arg(4)
 	flags_str = _at_flag_str(flags)
+%)
+
+@define _SYSCALL_UTIMENSAT_REGARGS_STORE
+%(
+        if (@probewrite(dfd))
+          set_int_arg(1, dfd)
+
+	if (@probewrite(filename_uaddr))
+	  set_pointer_arg(2, filename_uaddr)
+
+	if (@probewrite(filename_unquoted))
+	  set_user_string_arg(pointer_arg(2), filename_unquoted)
+
+	if (@probewrite(tsp_uaddr))
+	  set_pointer_arg(3, tsp_uaddr)
+
+	if (@probewrite(flags))
+	  set_int_arg(4, flags)
 %)
 
 probe syscall.utimensat = dw_syscall.utimensat !, nd_syscall.utimensat ? {}
@@ -71,6 +90,9 @@ probe nd2_syscall.utimensat = kprobe.function(@arch_syscall_prefix "sys_utimensa
 	@_SYSCALL_UTIMENSAT_REGARGS
 	tsp_str = _struct_timespec_u(tsp_uaddr, 2)
 	@_SYSCALL_UTIMENSAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UTIMENSAT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -82,6 +104,9 @@ probe tp_syscall.utimensat = kernel.trace("sys_enter")
 	@_SYSCALL_UTIMENSAT_REGARGS
 	tsp_str = _struct_timespec_u(tsp_uaddr, 2)
 	@_SYSCALL_UTIMENSAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UTIMENSAT_REGARGS_STORE %)
 }
 
 probe nd_syscall.utimensat.return = nd1_syscall.utimensat.return!, nd2_syscall.utimensat.return!, tp_syscall.utimensat.return
@@ -162,6 +187,9 @@ probe nd2_syscall.compat_utimensat = kprobe.function(@arch_syscall_prefix "compa
 	@_SYSCALL_UTIMENSAT_REGARGS
 	tsp_str = _struct_compat_timespec_u(tsp_uaddr, 2)
 	@_SYSCALL_UTIMENSAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UTIMENSAT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -173,6 +201,9 @@ probe tp_syscall.compat_utimensat = kernel.trace("sys_enter")
 	@_SYSCALL_UTIMENSAT_REGARGS
 	tsp_str = _struct_compat_timespec_u(tsp_uaddr, 2)
 	@_SYSCALL_UTIMENSAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UTIMENSAT_REGARGS_STORE %)
 }
 
 probe nd_syscall.compat_utimensat.return = nd1_syscall.compat_utimensat.return!, nd2_syscall.compat_utimensat.return!, tp_syscall.compat_utimensat.return

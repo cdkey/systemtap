@@ -44,10 +44,28 @@
 	egid = __int32(uint_arg(2))
 %)
 
+@define _SYSCALL_SETREGID_REGARGS_STORE
+%(
+        if (@probewrite(rgid))
+          set_uint_arg(1, __int32(rgid))
+
+        if (@probewrite(egid))
+          set_uint_arg(2, __int32(egid))
+%)
+
 @define _SYSCALL_SETREGID16_REGARGS
 %(
 	rgid = __short(uint_arg(1))
 	egid = __short(uint_arg(2))
+%)
+
+@define _SYSCALL_SETREGID16_REGARGS_STORE
+%(
+        if (@probewrite(rgid))
+          set_uint_arg(1, __short(rgid))
+
+        if (@probewrite(egid))
+          set_uint_arg(2, __short(egid))
 %)
 
 probe syscall.setregid = dw_syscall.setregid !, nd_syscall.setregid ? {}
@@ -92,6 +110,9 @@ probe nd2_syscall.setregid = kprobe.function(@arch_syscall_prefix "sys_setregid"
 	@_SYSCALL_SETREGID_NAME
 	@_SYSCALL_SETREGID_REGARGS
 	@_SYSCALL_SETREGID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETREGID_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -102,6 +123,9 @@ probe tp_syscall.setregid = kernel.trace("sys_enter")
 	@_SYSCALL_SETREGID_NAME
 	@_SYSCALL_SETREGID_REGARGS
 	@_SYSCALL_SETREGID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETREGID_REGARGS_STORE %)
 }
 
 probe nd_syscall.setregid.return = nd1_syscall.setregid.return!, nd2_syscall.setregid.return!, tp_syscall.setregid.return
@@ -173,6 +197,9 @@ probe nd2_syscall.setregid16 = kprobe.function(@arch_syscall_prefix "sys_setregi
 	@_SYSCALL_SETREGID_NAME
 	@_SYSCALL_SETREGID16_REGARGS
 	@_SYSCALL_SETREGID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETREGID16_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -183,6 +210,9 @@ probe tp_syscall.setregid16 = kernel.trace("sys_enter")
 	@_SYSCALL_SETREGID_NAME
 	@_SYSCALL_SETREGID16_REGARGS
 	@_SYSCALL_SETREGID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETREGID16_REGARGS_STORE %)
 }
 
 probe nd_syscall.setregid16.return = nd1_syscall.setregid16.return!, nd2_syscall.setregid16.return!, tp_syscall.setregid16.return

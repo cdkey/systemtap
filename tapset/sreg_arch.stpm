@@ -1,0 +1,7 @@
+// Expands to a macro conditional that evaluates to true when using a
+// kernel that uses syscall wrappers to pass arguments via pt_regs.
+@define _IS_SREG_KERNEL
+%(
+	arch == "x86_64" && kernel_vr >= "4.17.0"
+       	|| arch == "arm64" && kernel_vr >= "4.19.0"
+%)

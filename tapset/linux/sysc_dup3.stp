@@ -19,6 +19,18 @@
 	flags_str = _dup3_flag_str(flags)
 %)
 
+@define _SYSCALL_DUP3_REGARGS_STORE
+%(
+        if (@probewrite(oldfd))
+          set_int_arg(1, oldfd)
+
+	if (@probewrite(newfd))
+	  set_int_arg(2, newfd)
+
+	if (@probewrite(flags))
+	  set_int_arg(3, flags)
+%)
+
 probe syscall.dup3 = dw_syscall.dup3 !, nd_syscall.dup3 ? {}
 probe syscall.dup3.return = dw_syscall.dup3.return !, nd_syscall.dup3.return ? {}
 
@@ -62,6 +74,9 @@ probe nd2_syscall.dup3 = kprobe.function(@arch_syscall_prefix "sys_dup3") ?
 	@_SYSCALL_DUP3_NAME
 	@_SYSCALL_DUP3_REGARGS
 	@_SYSCALL_DUP3_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_DUP3_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -72,6 +87,9 @@ probe tp_syscall.dup3 = kernel.trace("sys_enter")
 	@_SYSCALL_DUP3_NAME
 	@_SYSCALL_DUP3_REGARGS
 	@_SYSCALL_DUP3_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_DUP3_REGARGS_STORE %)
 }
 
 probe nd_syscall.dup3.return = nd1_syscall.dup3.return!, nd2_syscall.dup3.return!, tp_syscall.dup3.return

@@ -23,12 +23,36 @@
 	shmflg_str = _stp_shmget_flags_str(shmflg)
 %)
 
+@define _SYSCALL_SHMGET_REGARGS_STORE
+%(
+        if (@probewrite(key))
+          set_int_arg(1, key)
+
+	if (@probewrite(size))
+	  set_ulong_arg(2, size)
+
+	if (@probewrite(shmflg))
+	  set_int_arg(3, shmflg)
+%)
+
 @define _SYSCALL_IPC_SHMGET_REGARGS
 %(
 	key = int_arg(2)
 	size = ulong_arg(3)
 	shmflg = int_arg(4)
 	shmflg_str = _stp_shmget_flags_str(shmflg)
+%)
+
+@define _SYSCALL_IPC_SHMGET_REGARGS_STORE
+%(
+        if (@probewrite(key))
+          set_int_arg(2, key)
+
+	if (@probewrite(size))
+	  set_ulong_arg(3, size)
+
+	if (@probewrite(shmflg))
+	  set_int_arg(4, shmflg)
 %)
 
 probe syscall.shmget = dw_syscall.shmget !, nd_syscall.shmget ? {}
@@ -75,6 +99,9 @@ probe __nd2_syscall.shmget = kprobe.function(@arch_syscall_prefix "sys_shmget") 
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_SHMGET_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SHMGET_REGARGS_STORE %)
 }
 probe __nd2_syscall.compat_ipc.shmget =
 	kprobe.function(@arch_syscall_prefix "compat_sys_ipc") ?
@@ -82,6 +109,9 @@ probe __nd2_syscall.compat_ipc.shmget =
 	__set_syscall_pt_regs(pointer_arg(1))
 	if (int_arg(1) != @const("SHMGET")) next;
 	@_SYSCALL_IPC_SHMGET_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IPC_SHMGET_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -95,6 +125,9 @@ probe __tp_syscall.shmget = kernel.trace("sys_enter")
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_shmget"))
 	@_SYSCALL_SHMGET_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SHMGET_REGARGS_STORE %)
 }
 probe __tp_syscall.compat_ipc.shmget = kernel.trace("sys_enter")
 {
@@ -102,6 +135,9 @@ probe __tp_syscall.compat_ipc.shmget = kernel.trace("sys_enter")
 	@__compat_syscall_gate(@const("__NR_compat_ipc"))
 	if (int_arg(1) != @const("SHMGET")) next;
 	@_SYSCALL_IPC_SHMGET_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IPC_SHMGET_REGARGS_STORE %)
 }
 
 probe nd_syscall.shmget.return = nd1_syscall.shmget.return!, nd2_syscall.shmget.return!, tp_syscall.shmget.return

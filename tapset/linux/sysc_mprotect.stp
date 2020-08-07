@@ -20,6 +20,18 @@
 	prot_str = _mprotect_prot_str(prot)
 %)
 
+@define _SYSCALL_MPROTECT_REGARGS_STORE
+%(
+        if (@probewrite(addr))
+          set_ulong_arg(1, addr)
+
+	if (@probewrite(len))
+	  set_ulong_arg(2, len)
+
+	if (@probewrite(prot))
+	  set_ulong_arg(3, prot)
+%)
+
 probe syscall.mprotect = dw_syscall.mprotect !, nd_syscall.mprotect ? {}
 probe syscall.mprotect.return = dw_syscall.mprotect.return !, nd_syscall.mprotect.return ? {}
 
@@ -60,6 +72,9 @@ probe nd2_syscall.mprotect = kprobe.function(@arch_syscall_prefix "sys_mprotect"
 	@_SYSCALL_MPROTECT_NAME
 	@_SYSCALL_MPROTECT_REGARGS
 	@_SYSCALL_MPROTECT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MPROTECT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -70,6 +85,9 @@ probe tp_syscall.mprotect = kernel.trace("sys_enter")
 	@_SYSCALL_MPROTECT_NAME
 	@_SYSCALL_MPROTECT_REGARGS
 	@_SYSCALL_MPROTECT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MPROTECT_REGARGS_STORE %)
 }
 
 probe nd_syscall.mprotect.return = nd1_syscall.mprotect.return!, nd2_syscall.mprotect.return!, tp_syscall.mprotect.return

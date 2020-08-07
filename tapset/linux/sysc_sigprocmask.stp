@@ -23,6 +23,18 @@
 	oldset_uaddr = pointer_arg(3)
 %)
 
+@define _SYSCALL_SIGPROCMASK_REGARGS_STORE
+%(
+        if (@probewrite(how))
+          set_int_arg(1, how)
+
+	if (@probewrite(set_uaddr))
+	  set_pointer_arg(2, set_uaddr)
+
+	if (@probewrite(oldset_uaddr))
+	  set_pointer_arg(3, oldset_uaddr)
+%)
+
 probe syscall.sigprocmask = dw_syscall.sigprocmask !, nd_syscall.sigprocmask ? {}
 probe syscall.sigprocmask.return = dw_syscall.sigprocmask.return !,
                                    nd_syscall.sigprocmask.return ? {}
@@ -81,6 +93,9 @@ probe nd2_syscall.sigprocmask =
 	@_SYSCALL_SIGPROCMASK_NAME
 	@_SYSCALL_SIGPROCMASK_REGARGS
 	@_SYSCALL_SIGPROCMASK_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SIGPROCMASK_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -91,6 +106,9 @@ probe tp_syscall.sigprocmask = kernel.trace("sys_enter")
 	@_SYSCALL_SIGPROCMASK_NAME
 	@_SYSCALL_SIGPROCMASK_REGARGS
 	@_SYSCALL_SIGPROCMASK_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SIGPROCMASK_REGARGS_STORE %)
 }
 
 probe nd_syscall.sigprocmask.return = nd1_syscall.sigprocmask.return!, nd2_syscall.sigprocmask.return!, tp_syscall.sigprocmask.return

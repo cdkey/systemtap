@@ -17,6 +17,12 @@
 	mask = uint_arg(1)
 %)
 
+@define _SYSCALL_UMASK_REGARGS_STORE
+%(
+        if (@probewrite(mask))
+          set_uint_arg(1, mask)
+%)
+
 probe syscall.umask = dw_syscall.umask !, nd_syscall.umask ? {}
 probe syscall.umask.return = dw_syscall.umask.return !,
                              nd_syscall.umask.return ? {}
@@ -55,6 +61,9 @@ probe nd2_syscall.umask = kprobe.function(@arch_syscall_prefix "sys_umask") ?
 	@_SYSCALL_UMASK_NAME
 	@_SYSCALL_UMASK_REGARGS
 	@_SYSCALL_UMASK_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UMASK_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -65,6 +74,9 @@ probe tp_syscall.umask = kernel.trace("sys_enter")
 	@_SYSCALL_UMASK_NAME
 	@_SYSCALL_UMASK_REGARGS
 	@_SYSCALL_UMASK_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UMASK_REGARGS_STORE %)
 }
 
 probe nd_syscall.umask.return = nd1_syscall.umask.return!, nd2_syscall.umask.return!, tp_syscall.umask.return

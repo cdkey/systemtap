@@ -27,6 +27,24 @@
 	new_address = ulong_arg(5)
 %)
 
+@define _SYSCALL_MREMAP_REGARGS_STORE
+%(
+        if (@probewrite(old_address))
+          set_ulong_arg(1, old_address)
+
+	if (@probewrite(old_size))
+	  set_ulong_arg(2, old_size)
+
+	if (@probewrite(new_size))
+	  set_ulong_arg(3, new_size)
+
+	if (@probewrite(flags))
+	  set_ulong_arg(4, flags)
+
+	if (@probewrite(new_address))
+	  set_ulong_arg(5, new_address)
+%)
+
 probe syscall.mremap = dw_syscall.mremap !, nd_syscall.mremap ? {}
 probe syscall.mremap.return = dw_syscall.mremap.return !, nd_syscall.mremap.return ? {}
 
@@ -72,6 +90,9 @@ probe nd2_syscall.mremap = kprobe.function(@arch_syscall_prefix "sys_mremap") ?
 	@_SYSCALL_MREMAP_NAME
 	@_SYSCALL_MREMAP_REGARGS
 	@_SYSCALL_MREMAP_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MREMAP_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -82,6 +103,9 @@ probe tp_syscall.mremap = kernel.trace("sys_enter")
 	@_SYSCALL_MREMAP_NAME
 	@_SYSCALL_MREMAP_REGARGS
 	@_SYSCALL_MREMAP_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MREMAP_REGARGS_STORE %)
 }
 
 probe nd_syscall.mremap.return = nd1_syscall.mremap.return!, nd2_syscall.mremap.return!, tp_syscall.mremap.return

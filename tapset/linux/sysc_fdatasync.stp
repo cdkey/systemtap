@@ -16,6 +16,12 @@
 	fd = int_arg(1)
 %)
 
+@define _SYSCALL_FDATASYNC_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+%)
+
 probe syscall.fdatasync = dw_syscall.fdatasync !, nd_syscall.fdatasync ? {}
 probe syscall.fdatasync.return = dw_syscall.fdatasync.return !, nd_syscall.fdatasync.return ? {}
 
@@ -53,6 +59,9 @@ probe nd2_syscall.fdatasync = kprobe.function(@arch_syscall_prefix "sys_fdatasyn
 	@_SYSCALL_FDATASYNC_NAME
 	@_SYSCALL_FDATASYNC_REGARGS
 	@_SYSCALL_FDATASYNC_ARGSTR
+},
+{
+	%( @_IS_SREG_KERNEL %? @_SYSCALL_FDATASYNC_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -63,6 +72,9 @@ probe tp_syscall.fdatasync = kernel.trace("sys_enter")
 	@_SYSCALL_FDATASYNC_NAME
 	@_SYSCALL_FDATASYNC_REGARGS
 	@_SYSCALL_FDATASYNC_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_FDATASYNC_REGARGS_STORE %)
 }
 
 probe nd_syscall.fdatasync.return = nd1_syscall.fdatasync.return!, nd2_syscall.fdatasync.return!, tp_syscall.fdatasync.return

@@ -20,6 +20,15 @@
 	value_uaddr = pointer_arg(2)
 %)
 
+@define _SYSCALL_TIMERFD_GETTIME_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(value_uaddr))
+	  set_pointer_arg(2, value_uaddr)
+%)
+
 probe syscall.timerfd_gettime = dw_syscall.timerfd_gettime !,
                                 nd_syscall.timerfd_gettime ? {}
 probe syscall.timerfd_gettime.return = dw_syscall.timerfd_gettime.return !,
@@ -79,6 +88,9 @@ probe nd2_syscall.timerfd_gettime =
 	@_SYSCALL_TIMERFD_GETTIME_NAME
 	@_SYSCALL_TIMERFD_GETTIME_REGARGS
 	@_SYSCALL_TIMERFD_GETTIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TIMERFD_GETTIME_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -89,6 +101,9 @@ probe tp_syscall.timerfd_gettime = kernel.trace("sys_enter")
 	@_SYSCALL_TIMERFD_GETTIME_NAME
 	@_SYSCALL_TIMERFD_GETTIME_REGARGS
 	@_SYSCALL_TIMERFD_GETTIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TIMERFD_GETTIME_REGARGS_STORE %)
 }
 
 probe nd_syscall.timerfd_gettime.return = nd1_syscall.timerfd_gettime.return!, nd2_syscall.timerfd_gettime.return!, tp_syscall.timerfd_gettime.return

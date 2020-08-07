@@ -26,6 +26,24 @@
 	timeout_uaddr = pointer_arg(5)
 %)
 
+@define _SYSCALL_SELECT_REGARGS_STORE
+%(
+        if (@probewrite(n))
+          set_int_arg(1, n)
+
+	if (@probewrite(readfds_uaddr))
+	  set_pointer_arg(2, readfds_uaddr)
+
+	if (@probewrite(writefds_uaddr))
+	  set_pointer_arg(3, writefds_uaddr)
+
+	if (@probewrite(exceptfds_uaddr))
+	  set_pointer_arg(4, exceptfds_uaddr)
+
+	if (@probewrite(timeout_uaddr))
+	  set_pointer_arg(5, timeout_uaddr)
+%)
+
 probe syscall.select = dw_syscall.select !, nd_syscall.select ? {}
 probe syscall.select.return = dw_syscall.select.return !,
                               nd_syscall.select.return ? {}
@@ -71,6 +89,9 @@ probe nd2_syscall.select = kprobe.function(@arch_syscall_prefix "sys_select") ?
 	@_SYSCALL_SELECT_REGARGS
 	timeout_str = _struct_timeval_u(timeout_uaddr, 1)
 	@_SYSCALL_SELECT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SELECT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -82,6 +103,9 @@ probe tp_syscall.select = kernel.trace("sys_enter")
 	@_SYSCALL_SELECT_REGARGS
 	timeout_str = _struct_timeval_u(timeout_uaddr, 1)
 	@_SYSCALL_SELECT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SELECT_REGARGS_STORE %)
 }
 
 probe nd_syscall.select.return = nd1_syscall.select.return!, nd2_syscall.select.return!, tp_syscall.select.return
@@ -161,6 +185,9 @@ probe nd2_syscall.compat_select = kprobe.function(@arch_syscall_prefix "compat_s
 	@_SYSCALL_SELECT_REGARGS
 	timeout_str = _struct_compat_timeval_u(timeout_uaddr, 1)
 	@_SYSCALL_SELECT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SELECT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -172,6 +199,9 @@ probe tp_syscall.compat_select = kernel.trace("sys_enter")
 	@_SYSCALL_SELECT_REGARGS
 	timeout_str = _struct_compat_timeval_u(timeout_uaddr, 1)
 	@_SYSCALL_SELECT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SELECT_REGARGS_STORE %)
 }
 
 probe nd_syscall.compat_select.return = nd1_syscall.compat_select.return!, nd2_syscall.compat_select.return!, tp_syscall.compat_select.return

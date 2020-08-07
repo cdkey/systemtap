@@ -19,6 +19,15 @@
 	tp_uaddr = pointer_arg(2)
 %)
 
+@define _SYSCALL_CLOCK_GETTIME_REGARGS_STORE
+%(
+        if (@probewrite(clk_id))
+          set_int_arg(1, clk_id)
+
+	if (@probewrite(tp_uaddr))
+	  set_pointer_arg(2, tp_uaddr)
+%)
+
 probe syscall.clock_gettime = dw_syscall.clock_gettime !, nd_syscall.clock_gettime ? {}
 probe syscall.clock_gettime.return = dw_syscall.clock_gettime.return !, nd_syscall.clock_gettime.return ? {}
 
@@ -75,6 +84,9 @@ probe nd2_syscall.clock_gettime = kprobe.function(@arch_syscall_prefix "sys_cloc
 	@_SYSCALL_CLOCK_GETTIME_NAME
 	@_SYSCALL_CLOCK_GETTIME_REGARGS
 	@_SYSCALL_CLOCK_GETTIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_CLOCK_GETTIME_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -85,6 +97,9 @@ probe tp_syscall.clock_gettime = kernel.trace("sys_enter")
 	@_SYSCALL_CLOCK_GETTIME_NAME
 	@_SYSCALL_CLOCK_GETTIME_REGARGS
 	@_SYSCALL_CLOCK_GETTIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_CLOCK_GETTIME_REGARGS_STORE %)
 }
 
 probe nd_syscall.clock_gettime.return = nd1_syscall.clock_gettime.return!, nd2_syscall.clock_gettime.return!, tp_syscall.clock_gettime.return

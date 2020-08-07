@@ -17,6 +17,12 @@
 	fd = int_arg(1)
 %)
 
+@define _SYSCALL_SYNCFS_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+%)
+
 probe syscall.syncfs = dw_syscall.syncfs !, nd_syscall.syncfs ? {}
 probe syscall.syncfs.return = dw_syscall.syncfs.return !,
                               nd_syscall.syncfs.return ? {}
@@ -55,6 +61,9 @@ probe nd2_syscall.syncfs = kprobe.function(@arch_syscall_prefix "sys_syncfs") ?
 	@_SYSCALL_SYNCFS_NAME
 	@_SYSCALL_SYNCFS_REGARGS
 	@_SYSCALL_SYNCFS_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SYNCFS_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -65,6 +74,9 @@ probe tp_syscall.syncfs = kernel.trace("sys_enter")
 	@_SYSCALL_SYNCFS_NAME
 	@_SYSCALL_SYNCFS_REGARGS
 	@_SYSCALL_SYNCFS_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SYNCFS_REGARGS_STORE %)
 }
 
 probe nd_syscall.syncfs.return = nd1_syscall.syncfs.return!, nd2_syscall.syncfs.return!, tp_syscall.syncfs.return

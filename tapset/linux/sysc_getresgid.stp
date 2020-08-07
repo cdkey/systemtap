@@ -23,6 +23,18 @@
 	sgid_uaddr = pointer_arg(3)
 %)
 
+@define _SYSCALL_GETRESGID_REGARGS_STORE
+%(
+        if (@probewrite(rgid_uaddr))
+          set_pointer_arg(1, rgid_uaddr)
+
+	if (@probewrite(egid_uaddr))
+	  set_pointer_arg(2, egid_uaddr)
+
+	if (@probewrite(sgid_uaddr))
+	  set_pointer_arg(3, sgid_uaddr)
+%)
+
 probe syscall.getresgid = dw_syscall.getresgid !, nd_syscall.getresgid ? {}
 probe syscall.getresgid.return = dw_syscall.getresgid.return !,
                                  nd_syscall.getresgid.return ? {}
@@ -67,6 +79,9 @@ probe nd2_syscall.getresgid = kprobe.function(@arch_syscall_prefix "sys_getresgi
 	@_SYSCALL_GETRESGID_NAME
 	@_SYSCALL_GETRESGID_REGARGS
 	@_SYSCALL_GETRESGID_ARGSTR
+},
+{
+        @_SYSCALL_GETRESGID_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -76,6 +91,9 @@ probe tp_syscall.getresgid = __tp_syscall.getresgid, __tp_syscall.getresgid16
 	@_SYSCALL_GETRESGID_NAME
 	@_SYSCALL_GETRESGID_REGARGS
 	@_SYSCALL_GETRESGID_ARGSTR
+},
+{
+        @_SYSCALL_GETRESGID_REGARGS_STORE
 }
 probe __tp_syscall.getresgid = kernel.trace("sys_enter")
 {

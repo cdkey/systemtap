@@ -208,6 +208,15 @@ probe __nd2_syscall.pipe2 = kprobe.function(@arch_syscall_prefix "sys_pipe2") ?
 		pipe1 = _fildes_index_u(fildes_uaddr, 1)
 		argstr = sprintf("[%d, %d], %s", pipe0, pipe1, flag_str);
 	}
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(fildes_uaddr))
+	  set_pointer_arg(1, fildes_uaddr)
+
+	if (@probewrite(flags))
+	  set_int_arg(2, flags)
+%)
 }
 probe __nd2_syscall.pipe = kprobe.function(@arch_syscall_prefix "sys_pipe")
 {
@@ -225,6 +234,12 @@ probe __nd2_syscall.pipe = kprobe.function(@arch_syscall_prefix "sys_pipe")
 		pipe1 = _fildes_index_u(fildes_uaddr, 1)
 		argstr = sprintf("[%d, %d]", pipe0, pipe1);
 	}
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(fildes_uaddr))
+	  set_pointer_arg(1, fildes_uaddr)
+%)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -248,7 +263,17 @@ probe __tp_syscall.pipe2 = kernel.trace("sys_enter")
 		pipe1 = _fildes_index_u(fildes_uaddr, 1)
 		argstr = sprintf("[%d, %d], %s", pipe0, pipe1, flag_str);
 	}
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(fildes_uaddr))
+	  set_pointer_arg(1, fildes_uaddr)
+
+	if (@probewrite(flags))
+	  set_int_arg(2, flags)
+%)
 }
+
 probe __tp_syscall.pipe = kernel.trace("sys_enter")
 {
 	__set_syscall_pt_regs($regs)
@@ -266,6 +291,12 @@ probe __tp_syscall.pipe = kernel.trace("sys_enter")
 		pipe1 = _fildes_index_u(fildes_uaddr, 1)
 		argstr = sprintf("[%d, %d]", pipe0, pipe1);
 	}
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(fildes_uaddr))
+	  set_pointer_arg(1, fildes_uaddr)
+%)
 }
 
 probe nd_syscall.pipe.return = nd1_syscall.pipe.return!, nd2_syscall.pipe.return!, tp_syscall.pipe.return

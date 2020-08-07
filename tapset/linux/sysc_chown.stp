@@ -14,8 +14,21 @@
 @define _SYSCALL_CHOWN_REGARGS
 %(
 	path = user_string_quoted(pointer_arg(1))
+	path_unquoted = user_string_nofault(pointer_arg(1))
 	owner = __int32(uint_arg(2))
 	group = __int32(uint_arg(3))
+%)
+
+@define _SYSCALL_CHOWN_REGARGS_STORE
+%(
+	if (@probewrite(path_unquoted))
+	  set_user_string_arg(pointer_arg(1), path_unquoted)
+
+	if (@probewrite(owner))
+	  set_uint_arg(2, __int32(owner))
+
+	if (@probewrite(group))
+	  set_uint_arg(3, __int32(group))
 %)
 
 probe syscall.chown = dw_syscall.chown !, nd_syscall.chown ? {}
@@ -77,6 +90,9 @@ probe nd2_syscall.chown = kprobe.function(@arch_syscall_prefix "sys_chown") ?
 	@_SYSCALL_CHOWN_NAME
 	@_SYSCALL_CHOWN_REGARGS
 	@_SYSCALL_CHOWN_ARGSTR
+},
+{
+	%( @_IS_SREG_KERNEL %? @_SYSCALL_CHOWN_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -91,6 +107,9 @@ probe tp_syscall.chown = kernel.trace("sys_enter")
 	@_SYSCALL_CHOWN_NAME
 	@_SYSCALL_CHOWN_REGARGS
 	@_SYSCALL_CHOWN_ARGSTR
+},
+{
+	%( @_IS_SREG_KERNEL %? @_SYSCALL_CHOWN_REGARGS_STORE %)
 }
 
 probe nd_syscall.chown.return = nd1_syscall.chown.return!, nd2_syscall.chown.return!, tp_syscall.chown.return

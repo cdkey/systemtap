@@ -16,6 +16,12 @@
 	oldfd = int_arg(1)
 %)
 
+@define _SYSCALL_DUP_REGARGS_STORE
+%(
+        if (@probewrite(oldfd))
+          set_int_arg(1, oldfd)
+%)
+
 probe syscall.dup = dw_syscall.dup !, nd_syscall.dup ? {}
 probe syscall.dup.return = dw_syscall.dup.return !, nd_syscall.dup.return ? {}
 
@@ -53,6 +59,9 @@ probe nd2_syscall.dup = kprobe.function(@arch_syscall_prefix "sys_dup") ?
 	@_SYSCALL_DUP_NAME
 	@_SYSCALL_DUP_REGARGS
 	@_SYSCALL_DUP_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_DUP_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -63,6 +72,9 @@ probe tp_syscall.dup = kernel.trace("sys_enter")
 	@_SYSCALL_DUP_NAME
 	@_SYSCALL_DUP_REGARGS
 	@_SYSCALL_DUP_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_DUP_REGARGS_STORE %)
 }
 
 probe nd_syscall.dup.return = nd1_syscall.dup.return!, nd2_syscall.dup.return!, tp_syscall.dup.return

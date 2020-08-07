@@ -24,6 +24,18 @@
 	buf_str = user_buffer_quoted(buf_uaddr, count, syscall_string_trunc)
 %)
 
+@define _SYSCALL_PWRITE_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(buf_uaddr))
+	  set_pointer_arg(2, buf_uaddr)
+
+	if (@probewrite(count))
+	  set_ulong_arg(3, count)
+%)
+
 probe syscall.pwrite = dw_syscall.pwrite !, nd_syscall.pwrite ? {}
 probe syscall.pwrite.return = dw_syscall.pwrite.return !,
                               nd_syscall.pwrite.return ? {}
@@ -77,6 +89,14 @@ probe nd2_syscall.pwrite = kprobe.function(@arch_syscall_prefix "sys_pwrite64") 
 	@_SYSCALL_PWRITE_REGARGS
 	offset = longlong_arg(4)
 	@_SYSCALL_PWRITE_ARGSTR
+},
+{
+%( @_IS_SREG_KERNEL %?
+        @_SYSCALL_PWRITE_REGARGS_STORE
+
+	if (@probewrite(offset))
+	  set_longlong_arg(4, offset)
+%)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -88,6 +108,14 @@ probe tp_syscall.pwrite = kernel.trace("sys_enter")
 	@_SYSCALL_PWRITE_REGARGS
 	offset = longlong_arg(4)
 	@_SYSCALL_PWRITE_ARGSTR
+},
+{
+%( @_IS_SREG_KERNEL %?
+        @_SYSCALL_PWRITE_REGARGS_STORE
+
+	if (@probewrite(offset))
+	  set_longlong_arg(4, offset)
+%)
 }
 
 probe nd_syscall.pwrite.return = nd1_syscall.pwrite.return!, nd2_syscall.pwrite.return!, tp_syscall.pwrite.return
@@ -190,6 +218,16 @@ probe nd2_syscall.pwrite32 = kprobe.function(@arch_syscall_prefix "compat_sys_x8
 	@_SYSCALL_PWRITE_REGARGS
 	offset = (u32_arg(5) << 32) + u32_arg(4)
 	@_SYSCALL_PWRITE_ARGSTR
+},
+{
+%( @_IS_SREG_KERNEL %?
+        @_SYSCALL_PWRITE_REGARGS_STORE
+
+	if (@probewrite(offset)) {
+	  set_u32_arg(4, offset & 0xffffffff)
+	  set_u32_arg(5, offset >> 32)
+	}
+%)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -201,6 +239,16 @@ probe tp_syscall.pwrite32 = kernel.trace("sys_enter")
 	@_SYSCALL_PWRITE_REGARGS
 	offset = (u32_arg(5) << 32) + u32_arg(4)
 	@_SYSCALL_PWRITE_ARGSTR
+},
+{
+%( @_IS_SREG_KERNEL %?
+        @_SYSCALL_PWRITE_REGARGS_STORE
+
+	if (@probewrite(offset)) {
+	  set_u32_arg(4, offset & 0xffffffff)
+	  set_u32_arg(5, offset >> 32)
+	}
+%)
 }
 
 probe nd_syscall.pwrite32.return = nd1_syscall.pwrite32.return!, nd2_syscall.pwrite32.return!, tp_syscall.pwrite32.return

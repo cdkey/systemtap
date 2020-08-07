@@ -21,13 +21,39 @@
 %(
 	path_uaddr = pointer_arg(1)
 	path = user_string_quoted(path_uaddr)
+	path_unquoted = user_string_nofault(pointer_arg(1))
 	name_uaddr = pointer_arg(2)
 	name_str = user_string_quoted(name_uaddr)
+	name_str_unquoted = user_string_nofault(pointer_arg(2))
 	value_uaddr = pointer_arg(3)
 	size = ulong_arg(4)
 	value_str = _stp_xattr_val_str(value_uaddr, size)
 	flags = int_arg(5)
 	flags_str = _stp_xattr_flags_str(flags)
+%)
+
+@define _SYSCALL_SETXATTR_REGARGS_STORE
+%(
+        if (@probewrite(path_uaddr))
+          set_pointer_arg(1, path_uaddr)
+
+	if (@probewrite(path_unquoted))
+	  set_user_string_arg(pointer_arg(1), path_unquoted)
+
+	if (@probewrite(name_uaddr))
+	  set_pointer_arg(2, name_uaddr)
+
+	if (@probewrite(name_str_unquoted))
+	  set_user_string_arg(pointer_arg(2), name_str_unquoted)
+
+	if (@probewrite(value_uaddr))
+	  set_pointer_arg(3, value_uaddr)
+
+	if (@probewrite(size))
+	  set_ulong_arg(4, size)
+
+	if (@probewrite(flags))
+	  set_int_arg(5, flags)
 %)
 
 probe syscall.setxattr = dw_syscall.setxattr !, nd_syscall.setxattr ? {}
@@ -76,6 +102,9 @@ probe nd2_syscall.setxattr = kprobe.function(@arch_syscall_prefix "sys_setxattr"
 	@_SYSCALL_SETXATTR_NAME
 	@_SYSCALL_SETXATTR_REGARGS
 	@_SYSCALL_SETXATTR_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETXATTR_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -86,6 +115,9 @@ probe tp_syscall.setxattr = kernel.trace("sys_enter")
 	@_SYSCALL_SETXATTR_NAME
 	@_SYSCALL_SETXATTR_REGARGS
 	@_SYSCALL_SETXATTR_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETXATTR_REGARGS_STORE %)
 }
 
 probe nd_syscall.setxattr.return = nd1_syscall.setxattr.return!, nd2_syscall.setxattr.return!, tp_syscall.setxattr.return

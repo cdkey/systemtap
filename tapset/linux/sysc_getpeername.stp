@@ -20,6 +20,18 @@
 	namelen_uaddr = pointer_arg(3)
 %)
 
+@define _SYSCALL_GETPEERNAME_REGARGS_STORE
+%(
+        if (@probewrite(s))
+          set_int_arg(1, s)
+
+	if (@probewrite(name_uaddr))
+	  set_pointer_arg(2, name_uaddr)
+
+	if (@probewrite(namelen_uaddr))
+	  set_pointer_arg(3, namelen_uaddr)
+%)
+
 @define _SYSCALL_SOCKETCALL_GETPEERNAME_REGARGS
 %(
 	__argsl = &@ulong_cast(pointer_arg(2))
@@ -132,6 +144,9 @@ probe __nd2_syscall.getpeername = kprobe.function(@arch_syscall_prefix "sys_getp
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_GETPEERNAME_REGARGS
+},
+{
+        @_SYSCALL_GETPEERNAME_REGARGS_STORE
 }
 probe __nd2_syscall.socketcall.getpeername =
 	kprobe.function(@arch_syscall_prefix "sys_socketcall").call ?
@@ -160,6 +175,9 @@ probe __tp_syscall.getpeername = kernel.trace("sys_enter")
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_getpeername"))
 	@_SYSCALL_GETPEERNAME_REGARGS
+},
+{
+        @_SYSCALL_GETPEERNAME_REGARGS_STORE
 }
 probe __tp_syscall.socketcall.getpeername = kernel.trace("sys_enter")
 {

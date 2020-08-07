@@ -20,6 +20,18 @@
 	flags = uint_arg(3)
 %)
 
+@define _SYSCALL_SENDMSG_REGARGS_STORE
+%(
+        if (@probewrite(s))
+          set_int_arg(1, s)
+
+	if (@probewrite(msg_uaddr))
+	  set_pointer_arg(2, msg_uaddr)
+
+	if (@probewrite(flags))
+	  set_uint_arg(3, flags)
+%)
+
 @define _SYSCALL_SOCKETCALL_SENDMSG_REGARGS
 %(
 	__args = &@ulong_cast(pointer_arg(2))
@@ -142,6 +154,9 @@ probe __nd2_syscall.sendmsg = kprobe.function(@arch_syscall_prefix "sys_sendmsg"
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_SENDMSG_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SENDMSG_REGARGS_STORE %)
 }
 probe __nd2_syscall.socketcall.sendmsg = kprobe.function(@arch_syscall_prefix "sys_socketcall").call ?
 {
@@ -170,6 +185,9 @@ probe __tp_syscall.sendmsg = kernel.trace("sys_enter")
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_sendmsg"))
 	@_SYSCALL_SENDMSG_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SENDMSG_REGARGS_STORE %)
 }
 probe __tp_syscall.socketcall.sendmsg = kernel.trace("sys_enter")
 {

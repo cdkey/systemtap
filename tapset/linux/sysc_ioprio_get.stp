@@ -19,6 +19,15 @@
 	who = int_arg(2)
 %)
 
+@define _SYSCALL_IOPRIO_GET_REGARGS_STORE
+%(
+        if (@probewrite(which))
+          set_int_arg(1, which)
+
+	if (@probewrite(who))
+	  set_int_arg(2, who)
+%)
+
 probe syscall.ioprio_get = dw_syscall.ioprio_get !, nd_syscall.ioprio_get ? {}
 probe syscall.ioprio_get.return = dw_syscall.ioprio_get.return !,
                                   nd_syscall.ioprio_get.return ? {}
@@ -59,6 +68,9 @@ probe nd2_syscall.ioprio_get = kprobe.function(@arch_syscall_prefix "sys_ioprio_
 	@_SYSCALL_IOPRIO_GET_NAME
 	@_SYSCALL_IOPRIO_GET_REGARGS
 	@_SYSCALL_IOPRIO_GET_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IOPRIO_GET_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -69,6 +81,9 @@ probe tp_syscall.ioprio_get = kernel.trace("sys_enter")
 	@_SYSCALL_IOPRIO_GET_NAME
 	@_SYSCALL_IOPRIO_GET_REGARGS
 	@_SYSCALL_IOPRIO_GET_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IOPRIO_GET_REGARGS_STORE %)
 }
 
 probe nd_syscall.ioprio_get.return = nd1_syscall.ioprio_get.return!, nd2_syscall.ioprio_get.return!, tp_syscall.ioprio_get.return

@@ -17,8 +17,21 @@
 %(
 	fd = int_arg(1)
 	uargs = user_string_quoted(pointer_arg(2))
+	uargs_unquoted = user_string_nofault(pointer_arg(2))
 	flags = int_arg(3)
 	flags_str = _finit_module_flags_str(flags)
+%)
+
+@define _SYSCALL_FINIT_MODULE_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(uargs_unquoted))
+	  set_user_string_arg(pointer_arg(2), uargs_unquoted)
+
+	if (@probewrite(flags))
+	  set_int_arg(3, flags)
 %)
 
 probe syscall.finit_module = dw_syscall.finit_module !, nd_syscall.finit_module ? {}
@@ -61,6 +74,9 @@ probe nd2_syscall.finit_module = kprobe.function(@arch_syscall_prefix "sys_finit
 	@_SYSCALL_FINIT_MODULE_NAME
 	@_SYSCALL_FINIT_MODULE_REGARGS
 	@_SYSCALL_FINIT_MODULE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_FINIT_MODULE_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -71,6 +87,9 @@ probe tp_syscall.finit_module = kernel.trace("sys_enter")
 	@_SYSCALL_FINIT_MODULE_NAME
 	@_SYSCALL_FINIT_MODULE_REGARGS
 	@_SYSCALL_FINIT_MODULE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_FINIT_MODULE_REGARGS_STORE %)
 }
 
 probe nd_syscall.finit_module.return = nd1_syscall.finit_module.return!, nd2_syscall.finit_module.return!, tp_syscall.finit_module.return

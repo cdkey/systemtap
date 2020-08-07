@@ -21,6 +21,24 @@
 	arg5 = ulong_arg(5)
 %)
 
+@define _SYSCALL_KEYCTL_REGARGS_STORE
+%(
+        if (@probewrite(option))
+          set_int_arg(1, option)
+
+	if (@probewrite(arg2))
+          set_ulong_arg(2, arg2)
+
+	if (@probewrite(arg3))
+          set_ulong_arg(3, arg3)
+
+	if (@probewrite(arg4))
+          set_ulong_arg(4, arg4)
+
+	if (@probewrite(arg5))
+          set_ulong_arg(5, arg5)
+%)
+
 probe syscall.keyctl = dw_syscall.keyctl !, nd_syscall.keyctl ? {}
 probe syscall.keyctl.return = dw_syscall.keyctl.return !, nd_syscall.keyctl.return ? {}
 
@@ -66,6 +84,9 @@ probe nd2_syscall.keyctl = kprobe.function(@arch_syscall_prefix "compat_sys_keyc
 	@_SYSCALL_KEYCTL_NAME
 	@_SYSCALL_KEYCTL_REGARGS
 	@__keyctl_argstr(option, arg2, arg3, arg4, arg5)
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_KEYCTL_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -76,6 +97,9 @@ probe tp_syscall.keyctl = kernel.trace("sys_enter")
 	@_SYSCALL_KEYCTL_NAME
 	@_SYSCALL_KEYCTL_REGARGS
 	@__keyctl_argstr(option, arg2, arg3, arg4, arg5)
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_KEYCTL_REGARGS_STORE %)
 }
 
 probe nd_syscall.keyctl.return = nd1_syscall.keyctl.return!, nd2_syscall.keyctl.return!, tp_syscall.keyctl.return

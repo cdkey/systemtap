@@ -19,6 +19,18 @@
 	count = ulong_arg(3)
 %)
 
+@define _SYSCALL_READ_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(buf_uaddr))
+	  set_pointer_arg(2, buf_uaddr)
+
+	if (@probewrite(count))
+	  set_ulong_arg(3, count)
+%)
+
 probe syscall.read = dw_syscall.read !, nd_syscall.read { }
 probe syscall.read.return = dw_syscall.read.return !, nd_syscall.read.return {}
 
@@ -95,6 +107,9 @@ probe nd2_syscall.read = kprobe.function(@arch_syscall_prefix "sys_read")
 	@_SYSCALL_READ_NAME
 	@_SYSCALL_READ_REGARGS
 	@_SYSCALL_READ_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_READ_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -105,6 +120,9 @@ probe tp_syscall.read = kernel.trace("sys_enter")
 	@_SYSCALL_READ_NAME
 	@_SYSCALL_READ_REGARGS
 	@_SYSCALL_READ_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_READ_REGARGS_STORE %)
 }
 
 probe nd_syscall.read.return = nd1_syscall.read.return!, nd2_syscall.read.return!, tp_syscall.read.return

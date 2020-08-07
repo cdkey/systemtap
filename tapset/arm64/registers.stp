@@ -148,6 +148,56 @@ function _stp_arg:long (argnum:long, sign_extend:long, truncate:long) {
 	return val;
 }
 
+/*
+ * Return a pointer to an argument given its offset in pt_regs.
+ */
+function _stp_offset_to_argptr:long (offset:long) %{
+	struct pt_regs *regs = CONTEXT->sregs;
+
+	if (!regs) {
+                snprintf(CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
+                         "cannot access function args in this context");
+                CONTEXT->last_error = CONTEXT->error_buffer;
+                return;
+	}
+	if (STAP_ARG_offset < 0
+	    || STAP_ARG_offset > sizeof(struct pt_regs) - sizeof(long)) {
+		snprintf(CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
+				"Bad register offset: %lld",
+				(long long)STAP_ARG_offset);
+		CONTEXT->last_error = CONTEXT->error_buffer;
+		return;
+	}
+	STAP_RETVALUE = (unsigned long)(((char *)regs) + STAP_ARG_offset);
+%}
+
+/*
+ * Return a pointer to function argument #argnum (1=first arg).
+ */
+function _stp_get_argptr:long (argnum:long) {
+	off = 0
+  assert(!(argnum < 1 || argnum > 8), sprintf("Cannot access arg(%d)", argnum))
+
+	if (argnum == 1)
+		off = _reg_offsets["x0"]
+	else if (argnum == 2)
+		off = _reg_offsets["x1"]
+	else if (argnum == 3)
+		off = _reg_offsets["x2"]
+	else if (argnum == 4)
+		off = _reg_offsets["x3"]
+	else if (argnum == 5)
+		off = _reg_offsets["x4"]
+	else if (argnum == 6)
+		off = _reg_offsets["x5"]
+	else if (argnum == 7)
+		off = _reg_offsets["x6"]
+	else if (argnum == 8)
+		off = _reg_offsets["x7"]
+
+	return _stp_offset_to_argptr(off)
+}
+
 /* Return the value of function arg #argnum (1=first arg) as a signed int. */
 function int_arg:long (argnum:long) {
 	return _stp_arg(argnum, 1, 1)
@@ -199,6 +249,57 @@ function u64_arg:long (argnum:long) {
 	return ulonglong_arg(argnum)
 }
 
+/* Set the value of function arg #argnum (1=first arg) as a signed int. */
+function set_int_arg:long (argnum:long, value:long) {
+	return set_kernel_int(_stp_get_argptr(argnum), value)
+}
+
+/* Return the value of function arg #argnum (1=first arg) as an unsigned int. */
+function set_uint_arg:long (argnum:long, value:long) {
+	return set_int_arg(argnum, value)
+}
+
+function set_long_arg:long (argnum:long, value:long) {
+	return set_kernel_long(_stp_get_argptr(argnum), value)
+}
+
+function set_ulong_arg:long (argnum:long, value:long) {
+	return set_long_arg(argnum, value)
+}
+
+function set_longlong_arg:long (argnum:long, value:long) {
+	if (probing_32bit_app()) {
+		highbits = value >> 32
+		lowbits = value & 0xffffffff
+		set_u32_arg(argnum, lowbits)
+		set_u32_arg(argnum+1, highbits)
+	} else
+		set_long_arg(argnum, value)
+}
+
+function set_ulonglong_arg:long (argnum:long, value:long) {
+	return set_longlong_arg(argnum, value)
+}
+
+function set_pointer_arg:long (argnum:long, value:long) {
+	return set_kernel_pointer(_stp_get_argptr(argnum), value)
+}
+
+function set_s32_arg:long (argnum:long, value:long) {
+	return set_int_arg(argnum, value)
+}
+
+function set_u32_arg:long (argnum:long, value:long) {
+	return set_uint_arg(argnum, value)
+}
+
+function set_s64_arg:long (argnum:long, value:long) {
+	return set_longlong_arg(argnum, value)
+}
+
+function set_u64_arg:long (argnum:long, value:long) {
+	return set_ulonglong_arg(argnum, value)
+}
 function asmlinkage() %{ /* pure */ %}
 
 function fastcall() %{ /* pure */ %}

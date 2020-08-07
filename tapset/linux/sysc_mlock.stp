@@ -18,6 +18,15 @@
 	len = ulong_arg(2)
 %)
 
+@define _SYSCALL_MLOCK_REGARGS_STORE
+%(
+        if (@probewrite(addr))
+          set_ulong_arg(1, addr)
+
+	if (@probewrite(len))
+	 set_ulong_arg(2, len)
+%)
+
 probe syscall.mlock = dw_syscall.mlock !, nd_syscall.mlock ? {}
 probe syscall.mlock.return = dw_syscall.mlock.return !, nd_syscall.mlock.return ? {}
 
@@ -56,6 +65,9 @@ probe nd2_syscall.mlock = kprobe.function(@arch_syscall_prefix "sys_mlock") ?
 	@_SYSCALL_MLOCK_NAME
 	@_SYSCALL_MLOCK_REGARGS
 	@_SYSCALL_MLOCK_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MLOCK_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -66,6 +78,9 @@ probe tp_syscall.mlock = kernel.trace("sys_enter")
 	@_SYSCALL_MLOCK_NAME
 	@_SYSCALL_MLOCK_REGARGS
 	@_SYSCALL_MLOCK_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MLOCK_REGARGS_STORE %)
 }
 
 probe nd_syscall.mlock.return = nd1_syscall.mlock.return!, nd2_syscall.mlock.return!, tp_syscall.mlock.return

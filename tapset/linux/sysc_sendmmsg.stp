@@ -22,6 +22,21 @@
 	flags = uint_arg(4)
 %)
 
+@define _SYSCALL_SENDMMSG_REGARGS_STORE
+%(
+        if (@probewrite(s))
+          set_int_arg(1, s)
+
+	if (@probewrite(mmsg_uaddr))
+	  set_pointer_arg(2, mmsg_uaddr)
+
+	if (@probewrite(vlen))
+	  set_uint_arg(3, vlen)
+
+	if (@probewrite(flags))
+	  set_uint_arg(4, flags)
+%)
+
 @define _SYSCALL_COMPAT_SOCKETCALL_SENDMMSG_REGARGS
 %(
 	__args = &@uint_cast(pointer_arg(2))
@@ -161,6 +176,9 @@ probe __nd2_syscall.sendmmsg = kprobe.function(@arch_syscall_prefix "sys_sendmms
 
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_SENDMMSG_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SENDMMSG_REGARGS_STORE %)
 }
 probe __nd2_syscall.compat_socketcall.sendmmsg =
 	kprobe.function(@arch_syscall_prefix "compat_sys_socketcall").call ?
@@ -175,6 +193,9 @@ probe __nd2_syscall.compat_sendmmsg =
 	@__compat_syscall_gate(@const("__NR_compat_sendmmsg"))
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_SENDMMSG_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SENDMMSG_REGARGS_STORE %)
 }
 
 probe tp_syscall.sendmmsg = __tp_syscall.sendmmsg ?,
@@ -189,6 +210,9 @@ probe __tp_syscall.sendmmsg = kernel.trace("sys_enter")
 	__set_syscall_pt_regs($regs)
 	@__syscall_compat_gate(@const("__NR_sendmmsg"), @const("__NR_compat_sendmmsg"))
 	@_SYSCALL_SENDMMSG_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SENDMMSG_REGARGS_STORE %)
 }
 probe __tp_syscall.compat_socketcall.sendmmsg = kernel.trace("sys_enter")
 {

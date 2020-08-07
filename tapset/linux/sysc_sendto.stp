@@ -28,6 +28,27 @@
 	tolen = uint_arg(6)
 %)
 
+@define _SYSCALL_SENDTO_REGARGS_STORE
+%(
+        if (@probewrite(s))
+          set_int_arg(1, s)
+
+	if (@probewrite(buf_uaddr))
+	  set_pointer_arg(2, buf_uaddr)
+
+	if (@probewrite(len))
+	  set_ulong_arg(3, len)
+
+	if (@probewrite(flags))
+	  set_uint_arg(4, flags)
+
+	if (@probewrite(to_uaddr))
+	  set_pointer_arg(5, to_uaddr)
+
+	if (@probewrite(tolen))
+	  set_uint_arg(6, tolen)
+%)
+
 @define _SYSCALL_SOCKETCALL_SENDTO_REGARGS
 %(
 	__args = &@ulong_cast(pointer_arg(2))
@@ -160,6 +181,9 @@ probe __nd2_syscall.sendto = kprobe.function(@arch_syscall_prefix "sys_sendto") 
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_SENDTO_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SENDTO_REGARGS_STORE %)
 }
 probe __nd2_syscall.socketcall.sendto = kprobe.function(@arch_syscall_prefix "sys_socketcall").call ?
 {
@@ -190,6 +214,9 @@ probe __tp_syscall.sendto = kernel.trace("sys_enter")
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_sendto"))
 	@_SYSCALL_SENDTO_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SENDTO_REGARGS_STORE %)
 }
 probe __tp_syscall.socketcall.sendto = kernel.trace("sys_enter")
 {

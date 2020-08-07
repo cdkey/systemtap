@@ -16,6 +16,12 @@
 	pkey = int_arg(1)
 %)
 
+@define _SYSCALL_PKEY_FREE_REGARGS_STORE
+%(
+        if (@probewrite(pkey))
+          set_int_arg(1, pkey)
+%)
+
 probe syscall.pkey_free = dw_syscall.pkey_free !, nd_syscall.pkey_free ? {}
 probe syscall.pkey_free.return = dw_syscall.pkey_free.return !, nd_syscall.pkey_free.return ? {}
 
@@ -53,6 +59,9 @@ probe nd2_syscall.pkey_free = kprobe.function(@arch_syscall_prefix "sys_pkey_fre
 	@_SYSCALL_PKEY_FREE_NAME
 	@_SYSCALL_PKEY_FREE_REGARGS
 	@_SYSCALL_PKEY_FREE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PKEY_FREE_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -63,6 +72,9 @@ probe tp_syscall.pkey_free = kernel.trace("sys_enter")
 	@_SYSCALL_PKEY_FREE_NAME
 	@_SYSCALL_PKEY_FREE_REGARGS
 	@_SYSCALL_PKEY_FREE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PKEY_FREE_REGARGS_STORE %)
 }
 
 probe nd_syscall.pkey_free.return = nd1_syscall.pkey_free.return!, nd2_syscall.pkey_free.return!, tp_syscall.pkey_free.return

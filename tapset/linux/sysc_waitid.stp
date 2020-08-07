@@ -33,6 +33,24 @@
 	rusage_uaddr = pointer_arg(5)
 %)
 
+@define _SYSCALL_WAITID_REGARGS_STORE
+%(
+        if (@probewrite(which))
+          set_int_arg(1, which)
+
+	if (@probewrite(pid))
+	  set_int_arg(2, pid)
+
+	if (@probewrite(infop_uaddr))
+	  set_pointer_arg(3, infop_uaddr)
+
+	if (@probewrite(options))
+	  set_int_arg(4, options)
+
+	if (@probewrite(rusage_uaddr))
+	  set_pointer_arg(5, rusage_uaddr)
+%)
+
 probe syscall.waitid = dw_syscall.waitid !, nd_syscall.waitid ? {}
 probe syscall.waitid.return = dw_syscall.waitid.return !,
                               nd_syscall.waitid.return ? {}
@@ -94,6 +112,9 @@ probe nd2_syscall.waitid =
 	@_SYSCALL_WAITID_NAME
 	@_SYSCALL_WAITID_REGARGS
 	@_SYSCALL_WAITID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_WAITID_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -104,6 +125,9 @@ probe tp_syscall.waitid = kernel.trace("sys_enter")
 	@_SYSCALL_WAITID_NAME
 	@_SYSCALL_WAITID_REGARGS
 	@_SYSCALL_WAITID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_WAITID_REGARGS_STORE %)
 }
 
 probe nd_syscall.waitid.return = nd1_syscall.waitid.return!, nd2_syscall.waitid.return!, tp_syscall.waitid.return

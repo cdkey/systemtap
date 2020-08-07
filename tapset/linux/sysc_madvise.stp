@@ -20,6 +20,18 @@
 	advice_str = _madvice_advice_str(advice)
 %)
 
+@define _SYSCALL_MADVISE_REGARGS_STORE
+%(
+        if (@probewrite(start))
+          set_ulong_arg(1, start)
+
+	if (@probewrite(length))
+	  set_ulong_arg(2, length)
+
+	if (@probewrite(advice))
+	  set_int_arg(3, advice)
+%)
+
 probe syscall.madvise = dw_syscall.madvise !, nd_syscall.madvise ? {}
 probe syscall.madvise.return = dw_syscall.madvise.return !, nd_syscall.madvise.return ? {}
 
@@ -60,6 +72,9 @@ probe nd2_syscall.madvise = kprobe.function(@arch_syscall_prefix "sys_madvise") 
 	@_SYSCALL_MADVISE_NAME
 	@_SYSCALL_MADVISE_REGARGS
 	@_SYSCALL_MADVISE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MADVISE_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -70,6 +85,9 @@ probe tp_syscall.madvise = kernel.trace("sys_enter")
 	@_SYSCALL_MADVISE_NAME
 	@_SYSCALL_MADVISE_REGARGS
 	@_SYSCALL_MADVISE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MADVISE_REGARGS_STORE %)
 }
 
 probe nd_syscall.madvise.return = nd1_syscall.madvise.return!, nd2_syscall.madvise.return!, tp_syscall.madvise.return

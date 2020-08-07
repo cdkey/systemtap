@@ -19,8 +19,26 @@
 	flags_str = _seccomp_flags_str(flags)
 %( systemtap_v <= "2.9" %?
 	uargs = user_string_quoted(pointer_arg(3))
+	uargs_unquoted = user_string_nofault(pointer_arg(3))
 %)
 	uargs_uaddr = pointer_arg(3)
+%)
+
+@define _SYSCALL_SECCOMP_REGARGS_STORE
+%(
+        if (@probewrite(op))
+          set_uint_arg(1, op)
+
+	if (@probewrite(flags))
+	  set_uint_arg(2, flags)
+
+	if (@probewrite(uargs_uaddr))
+	  set_pointer_arg(3, uargs_uaddr)
+
+%( systemtap_v <= "2.9" %?
+	if (@probewrite(uargs_unquoted))
+	  set_user_string_arg(pointer_arg(3), uargs_unquoted)
+%)
 %)
 
 probe syscall.seccomp = dw_syscall.seccomp !, nd_syscall.seccomp ? {}
@@ -68,6 +86,9 @@ probe nd2_syscall.seccomp = kprobe.function(@arch_syscall_prefix "sys_seccomp") 
 	@_SYSCALL_SECCOMP_NAME
 	@_SYSCALL_SECCOMP_REGARGS
 	@_SYSCALL_SECCOMP_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SECCOMP_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -78,6 +99,9 @@ probe tp_syscall.seccomp = kernel.trace("sys_enter")
 	@_SYSCALL_SECCOMP_NAME
 	@_SYSCALL_SECCOMP_REGARGS
 	@_SYSCALL_SECCOMP_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SECCOMP_REGARGS_STORE %)
 }
 
 probe nd_syscall.seccomp.return = nd1_syscall.seccomp.return!, nd2_syscall.seccomp.return!, tp_syscall.seccomp.return

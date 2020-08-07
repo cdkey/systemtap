@@ -22,6 +22,12 @@
 	name_uaddr = pointer_arg(1)
 %)
 
+@define _SYSCALL_UNAME_REGARGS_STORE
+%(
+        if (@probewrite(name_uaddr))
+          set_pointer_arg(1, name_uaddr)
+%)
+
 probe syscall.uname = dw_syscall.uname !, nd_syscall.uname ? {}
 probe syscall.uname.return = dw_syscall.uname.return !, nd_syscall.uname.return ? {}
 
@@ -81,6 +87,9 @@ probe nd2_syscall.uname =
 	@_SYSCALL_UNAME_NAME
 	@_SYSCALL_UNAME_REGARGS
 	@_SYSCALL_UNAME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UNAME_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -92,6 +101,9 @@ probe tp_syscall.uname = __tp_syscall.uname,
 	@_SYSCALL_UNAME_NAME
 	@_SYSCALL_UNAME_REGARGS
 	@_SYSCALL_UNAME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UNAME_REGARGS_STORE %)
 }
 probe __tp_syscall.uname = kernel.trace("sys_enter")
 {

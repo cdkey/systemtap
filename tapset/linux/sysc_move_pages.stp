@@ -34,6 +34,27 @@
 	flags_str = _mempolicy_flags_str(flags)
 %)
 
+@define _SYSCALL_MOVE_PAGES_REGARGS_STORE
+%(
+        if (@probewrite(pid))
+          set_int_arg(1, pid)
+
+	if (@probewrite(nr_pages))
+	  set_ulong_arg(2, nr_pages)
+
+	if (@probewrite(pages))
+	  set_pointer_arg(3, pages)
+
+	if (@probewrite(nodes))
+	  set_pointer_arg(4, nodes)
+
+	if (@probewrite(status))
+	  set_pointer_arg(5, status)
+
+	if (@probewrite(flags))
+	  set_int_arg(6, flags)
+%)
+
 probe syscall.move_pages = dw_syscall.move_pages !, nd_syscall.move_pages ? {}
 probe syscall.move_pages.return = dw_syscall.move_pages.return !, nd_syscall.move_pages.return ? {}
 
@@ -94,6 +115,9 @@ probe nd2_syscall.move_pages =
 	@_SYSCALL_MOVE_PAGES_NAME
 	@_SYSCALL_MOVE_PAGES_REGARGS
 	@_SYSCALL_MOVE_PAGES_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MOVE_PAGES_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -104,6 +128,9 @@ probe tp_syscall.move_pages = kernel.trace("sys_enter")
 	@_SYSCALL_MOVE_PAGES_NAME
 	@_SYSCALL_MOVE_PAGES_REGARGS
 	@_SYSCALL_MOVE_PAGES_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MOVE_PAGES_REGARGS_STORE %)
 }
 
 probe nd_syscall.move_pages.return = nd1_syscall.move_pages.return!, nd2_syscall.move_pages.return!, tp_syscall.move_pages.return

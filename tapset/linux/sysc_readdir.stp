@@ -22,6 +22,18 @@
 	count = uint_arg(3)
 %)
 
+@define _SYSCALL_READDIR_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_uint_arg(1, fd)
+
+	if (@probewrite(dirent))
+	  set_pointer_arg(2, dirent)
+
+	if (@probewrite(count))
+	  set_uint_arg(3, count)
+%)
+
 probe syscall.readdir = dw_syscall.readdir !, nd_syscall.readdir ? {}
 probe syscall.readdir.return = dw_syscall.readdir.return !,
                                nd_syscall.readdir.return ? {}
@@ -71,6 +83,9 @@ probe nd2_syscall.readdir = kprobe.function(@arch_syscall_prefix "compat_sys_old
 	@_SYSCALL_READDIR_NAME
 	@_SYSCALL_READDIR_REGARGS
 	@_SYSCALL_READDIR_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_READDIR_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -81,6 +96,9 @@ probe tp_syscall.readdir = kernel.trace("sys_enter")
 	@_SYSCALL_READDIR_NAME
 	@_SYSCALL_READDIR_REGARGS
 	@_SYSCALL_READDIR_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_READDIR_REGARGS_STORE %)
 }
 
 probe nd_syscall.readdir.return = nd1_syscall.readdir.return!, nd2_syscall.readdir.return!, tp_syscall.readdir.return

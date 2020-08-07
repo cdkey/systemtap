@@ -26,6 +26,25 @@
 	len = ((uint_arg(6) << 32) | uint_arg(5))
 %)
 
+@define _SYSCALL_COMPAT_FALLOCATE_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(mode))
+	  set_int_arg(2, mode)
+
+	if (@probewrite(offset)) {
+	  set_uint_arg(3, offset & 0xffffffff)
+          set_uint_arg(4, offset >> 32)
+	}
+
+	if (@probewrite(len)) {
+          set_uint_arg(5, len & 0xffffffff)
+	  set_uint_arg(6, len >> 32)
+	}
+%)
+
 probe syscall.compat_fallocate = dw_syscall.compat_fallocate !,
                                  nd_syscall.compat_fallocate ? {}
 probe syscall.compat_fallocate.return = dw_syscall.compat_fallocate.return !,
@@ -74,6 +93,9 @@ probe nd2_syscall.compat_fallocate =
 	@_SYSCALL_COMPAT_FALLOCATE_NAME
 	@_SYSCALL_COMPAT_FALLOCATE_REGARGS
 	@_SYSCALL_COMPAT_FALLOCATE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_FALLOCATE_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -84,6 +106,9 @@ probe tp_syscall.compat_fallocate = kernel.trace("sys_enter")
 	@_SYSCALL_COMPAT_FALLOCATE_NAME
 	@_SYSCALL_COMPAT_FALLOCATE_REGARGS
 	@_SYSCALL_COMPAT_FALLOCATE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_FALLOCATE_REGARGS_STORE %)
 }
 
 probe nd_syscall.compat_fallocate.return = nd1_syscall.compat_fallocate.return!, nd2_syscall.compat_fallocate.return!, tp_syscall.compat_fallocate.return

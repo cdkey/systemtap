@@ -16,6 +16,37 @@
 	argstr = sprintf("%d, %p, %u, %s", semid, sops_uaddr, nsops, timeout_str)
 %)
 
+@define _SYSCALL_SEMTIMEDOP_REGARGS_STORE
+%(
+        if (@probewrite(semid))
+          set_int_arg(1, semid)
+
+	if (@probewrite(sops_uaddr))
+	  set_pointer_arg(2, sops_uaddr)
+
+	if (@probewrite(nsops))
+	  set_uint_arg(3, nsops)
+
+	if (@probewrite(timeout_uaddr))
+	  set_pointer_arg(4, timeout_uaddr)
+%)
+
+
+@define _SYSCALL_COMPAT_SEMTIMEDOP_REGARGS_STORE
+%(
+        if (@probewrite(semid))
+          set_int_arg(2, semid)
+
+	if (@probewrite(sops_uaddr))
+	  set_pointer_arg(5, sops_uaddr)
+
+	if (@probewrite(nsops))
+	  set_uint_arg(3, nsops)
+
+	if (@probewrite(timeout_uaddr))
+	  set_pointer_arg(6, timeout_uaddr)
+%)
+
 probe syscall.semtimedop = dw_syscall.semtimedop !, nd_syscall.semtimedop ? {}
 probe syscall.semtimedop.return = dw_syscall.semtimedop.return !,
                                   nd_syscall.semtimedop.return ? {}
@@ -72,6 +103,9 @@ probe nd2_syscall.semtimedop = kprobe.function(@arch_syscall_prefix "sys_semtime
 	timeout_uaddr = pointer_arg(4)
 	timeout_str = _struct_timespec_u(timeout_uaddr, 1)
 	@_SYSCALL_SEMTIMEDOP_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SEMTIMEDOP_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -86,6 +120,9 @@ probe tp_syscall.semtimedop = kernel.trace("sys_enter")
 	timeout_uaddr = pointer_arg(4)
 	timeout_str = _struct_timespec_u(timeout_uaddr, 1)
 	@_SYSCALL_SEMTIMEDOP_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SEMTIMEDOP_REGARGS_STORE %)
 }
 
 probe nd_syscall.semtimedop.return = nd1_syscall.semtimedop.return!, nd2_syscall.semtimedop.return!, tp_syscall.semtimedop.return
@@ -230,6 +267,9 @@ probe nd2_syscall.compat_sys_semtimedop =
 	timeout_uaddr = pointer_arg(6)
 	timeout_str = _struct_compat_timespec_u(timeout_uaddr, 1)
 	@_SYSCALL_SEMTIMEDOP_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_SEMTIMEDOP_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -245,6 +285,9 @@ probe tp_syscall.compat_sys_semtimedop = kernel.trace("sys_enter")
 	timeout_uaddr = pointer_arg(6)
 	timeout_str = _struct_compat_timespec_u(timeout_uaddr, 1)
 	@_SYSCALL_SEMTIMEDOP_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_SEMTIMEDOP_REGARGS_STORE %)
 }
 
 probe nd_syscall.compat_sys_semtimedop.return = nd1_syscall.compat_sys_semtimedop.return!, nd2_syscall.compat_sys_semtimedop.return!, tp_syscall.compat_sys_semtimedop.return

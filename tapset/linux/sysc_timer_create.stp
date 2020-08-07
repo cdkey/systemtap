@@ -26,6 +26,18 @@
 	timerid_uaddr = pointer_arg(3)
 %)
 
+@define _SYSCALL_TIMER_CREATE_REGARGS_STORE
+%(
+        if (@probewrite(clockid))
+          set_int_arg(1, clockid)
+
+	if (@probewrite(evp_uaddr))
+	  set_pointer_arg(2, evp_uaddr)
+
+	if (@probewrite(timerid_uaddr))
+	  set_pointer_arg(3, timerid_uaddr)
+%)
+
 probe syscall.timer_create = dw_syscall.timer_create !, nd_syscall.timer_create ? {}
 probe syscall.timer_create.return = dw_syscall.timer_create.return !,
                                     nd_syscall.timer_create.return ? {}
@@ -94,6 +106,9 @@ probe __nd2_syscall.timer_create =
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_TIMER_CREATE_REGARGS
 	@_SYSCALL_TIMER_CREATE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TIMER_CREATE_REGARGS_STORE %)
 }
 probe __nd2_syscall.compat_timer_create =
 	kprobe.function(@arch_syscall_prefix "compat_sys_timer_create") ?
@@ -101,6 +116,9 @@ probe __nd2_syscall.compat_timer_create =
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_TIMER_CREATE_REGARGS
 	@_SYSCALL_TIMER_CREATE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TIMER_CREATE_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -111,6 +129,9 @@ probe tp_syscall.timer_create = kernel.trace("sys_enter")
 	@_SYSCALL_TIMER_CREATE_NAME
 	@_SYSCALL_TIMER_CREATE_REGARGS
 	@_SYSCALL_TIMER_CREATE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TIMER_CREATE_REGARGS_STORE %)
 }
 
 probe nd_syscall.timer_create.return = nd1_syscall.timer_create.return!, nd2_syscall.timer_create.return!, tp_syscall.timer_create.return

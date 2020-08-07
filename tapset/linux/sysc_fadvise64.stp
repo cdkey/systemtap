@@ -73,6 +73,21 @@ probe nd2_syscall.fadvise64 = kprobe.function(@arch_syscall_prefix "sys_fadvise6
 	advice = int_arg(4)
 	advice_str = _fadvice_advice_str(advice)
 	@_SYSCALL_FADVISE64_ARGSTR
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(fd))
+	  set_int_arg(1, fd)
+
+	if (@probewrite(offset))
+	  set_longlong_arg(2, offset)
+
+	if (@probewrite(len))
+	  set_long_arg(3, len)
+
+	if (@probewrite(advice))
+	  set_int_arg(4, advice)
+%)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -96,6 +111,29 @@ probe tp_syscall.fadvise64 = kernel.trace("sys_enter")
 %)
 	advice_str = _fadvice_advice_str(advice)
 	@_SYSCALL_FADVISE64_ARGSTR
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(fd))
+	  set_int_arg(1, fd)
+
+	if (@probewrite(offset))
+	  set_longlong_arg(2, offset)
+
+%( CONFIG_64BIT == "y" %?
+	if (@probewrite(len))
+	  set_long_arg(3, len)
+
+	if (@probewrite(advice))
+	  set_int_arg(4, advice)
+%:
+	if (@probewrite(len))
+	  set_long_arg(4, len)
+
+	if (@probewrite(advice))
+	  set_int_arg(5, advice)
+%)
+%)
 }
 
 probe nd_syscall.fadvise64.return = nd1_syscall.fadvise64.return!, nd2_syscall.fadvise64.return!, tp_syscall.fadvise64.return
@@ -233,6 +271,32 @@ probe tp_syscall.fadvise64_64 = kernel.trace("sys_enter")
 %)
 	advice_str = _fadvice_advice_str(advice)
 	@_SYSCALL_FADVISE64_ARGSTR
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(fd))
+	  set_int_arg(1, fd)
+
+%( CONFIG_64BIT == "y" %?
+	if (@probewrite(offset))
+	  set_longlong_arg(2, offset)
+
+	if (@probewrite(len))
+	  set_longlong_arg(3, len)
+
+	if (@probewrite(advice))
+	  set_int_arg(4, advice)
+%:
+	if (@probewrite(offset))
+	  set_longlong_arg(2, offset)
+
+	if (@probewrite(len))
+	  set_longlong_arg(4, len)
+
+	if (@probewrite(advice))
+	  set_int_arg(6, advice)
+%)
+%)
 }
 
 probe nd_syscall.fadvise64_64.return = nd1_syscall.fadvise64_64.return!, tp_syscall.fadvise64_64.return

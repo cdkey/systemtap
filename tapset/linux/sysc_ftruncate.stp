@@ -19,10 +19,32 @@
 	length = @__compat_task ? int_arg(2) : long_arg(2)
 %)
 
+@define _SYSCALL_FTRUNCATE_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(length)) {
+	  if (@__compat_task)
+	    set_int_arg(2, length)
+	  else
+	    set_long_arg(2, length)
+	}
+%)
+
 @define _SYSCALL_FTRUNCATE64_REGARGS
 %(
 	fd = int_arg(1)
 	length = longlong_arg(2)
+%)
+
+@define _SYSCALL_FTRUNCATE64_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(length))
+	  set_longlong_arg(2, length)
 %)
 
 @define _SYSCALL_GATE
@@ -93,6 +115,9 @@ probe nd2_syscall.ftruncate =
 	@_SYSCALL_FTRUNCATE_NAME
 	@_SYSCALL_FTRUNCATE_REGARGS
 	@_SYSCALL_FTRUNCATE_ARGSTR
+},
+{
+        @_SYSCALL_FTRUNCATE_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -104,6 +129,9 @@ probe tp_syscall.ftruncate = kernel.trace("sys_enter")
 	@_SYSCALL_FTRUNCATE_NAME
 	@_SYSCALL_FTRUNCATE_REGARGS
 	@_SYSCALL_FTRUNCATE_ARGSTR
+},
+{
+        @_SYSCALL_FTRUNCATE_REGARGS_STORE
 }
 
 probe nd_syscall.ftruncate.return = nd1_syscall.ftruncate.return!, nd2_syscall.ftruncate.return!, tp_syscall.ftruncate.return
@@ -181,6 +209,9 @@ probe tp_syscall.ftruncate64 = kernel.trace("sys_enter")
 	@_SYSCALL_FTRUNCATE_NAME
 	@_SYSCALL_FTRUNCATE64_REGARGS
 	@_SYSCALL_FTRUNCATE_ARGSTR
+},
+{
+        @_SYSCALL_FTRUNCATE64_REGARGS_STORE
 }
 
 probe nd_syscall.ftruncate64.return = nd1_syscall.ftruncate64.return!, nd2_syscall.ftruncate64.return!, tp_syscall.ftruncate64.return

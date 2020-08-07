@@ -18,6 +18,12 @@
 	unshare_flags_str = __fork_flags(unshare_flags)
 %)
 
+@define _SYSCALL_UNSHARE_REGARGS_STORE
+%(
+        if (@probewrite(unshare_flags))
+          set_ulong_arg(1, unshare_flags)
+%)
+
 probe syscall.unshare = dw_syscall.unshare !, nd_syscall.unshare ? {}
 probe syscall.unshare.return = dw_syscall.unshare.return !,
                                nd_syscall.unshare.return ? {}
@@ -57,6 +63,9 @@ probe nd2_syscall.unshare = kprobe.function(@arch_syscall_prefix "sys_unshare") 
 	@_SYSCALL_UNSHARE_NAME
 	@_SYSCALL_UNSHARE_REGARGS
 	@_SYSCALL_UNSHARE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UNSHARE_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -67,6 +76,9 @@ probe tp_syscall.unshare = kernel.trace("sys_enter")
 	@_SYSCALL_UNSHARE_NAME
 	@_SYSCALL_UNSHARE_REGARGS
 	@_SYSCALL_UNSHARE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UNSHARE_REGARGS_STORE %)
 }
 
 probe nd_syscall.unshare.return = nd1_syscall.unshare.return!, nd2_syscall.unshare.return!, tp_syscall.unshare.return

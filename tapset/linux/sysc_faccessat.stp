@@ -17,8 +17,21 @@
 	dirfd = int_arg(1)
 	dirfd_str = _dfd_str(dirfd)
 	pathname = user_string_quoted(pointer_arg(2))
+	pathname_unquoted = user_string_nofault(pointer_arg(2))
 	mode = int_arg(3)
 	mode_str = _access_mode_str(mode)
+%)
+
+@define _SYSCALL_FACCESSAT_REGARGS_STORE
+%(
+        if (@probewrite(dirfd))
+          set_int_arg(1, dirfd)
+
+	if (@probewrite(pathname_unquoted))
+	  set_user_string_arg(pointer_arg(2), pathname_unquoted)
+
+	if (@probewrite(mode))
+	  set_int_arg(3, mode)
 %)
 
 probe syscall.faccessat = dw_syscall.faccessat !, nd_syscall.faccessat ? {}
@@ -68,6 +81,9 @@ probe nd2_syscall.faccessat = kprobe.function(@arch_syscall_prefix "sys_faccessa
         @_SYSCALL_FACCESSAT_NAME
         @_SYSCALL_FACCESSAT_REGARGS
         @_SYSCALL_FACCESSAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_FACCESSAT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -79,6 +95,9 @@ probe tp_syscall.faccessat = kernel.trace("sys_enter")
         @_SYSCALL_FACCESSAT_NAME
         @_SYSCALL_FACCESSAT_REGARGS
         @_SYSCALL_FACCESSAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_FACCESSAT_REGARGS_STORE %)
 }
 
 probe nd_syscall.faccessat.return = nd1_syscall.faccessat.return!, nd2_syscall.faccessat.return!, tp_syscall.faccessat.return

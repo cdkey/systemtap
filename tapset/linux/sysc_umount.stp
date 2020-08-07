@@ -16,15 +16,32 @@
 @define _SYSCALL_UMOUNT_REGARGS
 %(
 	target = user_string_quoted(pointer_arg(1))
+	target_unquoted = user_string_nofault(pointer_arg(1))
 	flags = int_arg(2)
 	flags_str = _umountflags_str(flags)
+%)
+
+@define _SYSCALL_UMOUNT_REGARGS_STORE
+%(
+        if (@probewrite(target_unquoted))
+          set_user_string_arg(pointer_arg(1), target_unquoted)
+
+	if (@probewrite(flags))
+	  set_int_arg(2, flags)
 %)
 
 @define _SYSCALL_OLDUMOUNT_REGARGS
 %(
 	target = user_string_quoted(pointer_arg(1))
+	target_unquoted = user_string_nofault(pointer_arg(1))
 	flags = 0
 	flags_str = _umountflags_str(0)
+%)
+
+@define _SYSCALL_OLDUMOUNT_REGARGS_STORE
+%(
+        if (@probewrite(target_unquoted))
+          set_user_string_arg(pointer_arg(1), target_unquoted)
 %)
 
 probe syscall.umount = dw_syscall.umount !, nd_syscall.umount ? {}
@@ -96,12 +113,18 @@ probe __nd2_syscall.umount = kprobe.function(@arch_syscall_prefix "sys_umount")
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_UMOUNT_REGARGS
 	@_SYSCALL_UMOUNT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UMOUNT_REGARGS_STORE %)
 }
 probe __nd2_syscall.oldumount = kprobe.function(@arch_syscall_prefix "sys_oldumount") ?
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_OLDUMOUNT_REGARGS
 	@_SYSCALL_UMOUNT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_OLDUMOUNT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -115,6 +138,9 @@ probe __tp_syscall.umount = kernel.trace("sys_enter")
 	@__syscall_compat_gate(@const("__NR_umount2"), @const("__NR_compat_umount2"))
 	@_SYSCALL_UMOUNT_REGARGS
 	@_SYSCALL_UMOUNT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UMOUNT_REGARGS_STORE %)
 }
 probe __tp_syscall.oldumount = kernel.trace("sys_enter") 
 {
@@ -122,6 +148,9 @@ probe __tp_syscall.oldumount = kernel.trace("sys_enter")
 	@__syscall_compat_gate(@const("__NR_umount"), @const("__NR_compat_umount"))
 	@_SYSCALL_OLDUMOUNT_REGARGS
 	@_SYSCALL_UMOUNT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_OLDUMOUNT_REGARGS_STORE %)
 }
 
 probe nd_syscall.umount.return = nd1_syscall.umount.return!, nd2_syscall.umount.return!, tp_syscall.umount.return

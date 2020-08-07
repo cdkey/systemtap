@@ -24,6 +24,27 @@
 	flags = uint_arg(6)
 %)
 
+@define _SYSCALL_COPY_FILE_RANGE_REGARGS_STORE
+%(
+        if (@probewrite(fd_in))
+          set_int_arg(1, fd_in)
+
+	if (@probewrite(off_in))
+	  set_pointer_arg(2, off_in)
+
+	if (@probewrite(fd_out))
+	  set_int_arg(3, fd_out)
+
+	if (@probewrite(off_out))
+	  set_pointer_arg(4, off_out)
+
+	if (@probewrite(len))
+	  set_ulong_arg(5, len)
+
+	if (@probewrite(flags))
+	  set_uint_arg(6, flags)
+%)
+
 probe syscall.copy_file_range = dw_syscall.copy_file_range !, nd_syscall.copy_file_range ? {}
 probe syscall.copy_file_range.return = dw_syscall.copy_file_range.return !, nd_syscall.copy_file_range.return ? {}
 
@@ -67,6 +88,9 @@ probe nd2_syscall.copy_file_range = kprobe.function(@arch_syscall_prefix "sys_co
 	@_SYSCALL_COPY_FILE_RANGE_NAME
 	@_SYSCALL_COPY_FILE_RANGE_REGARGS
 	@_SYSCALL_COPY_FILE_RANGE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COPY_FILE_RANGE_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -77,6 +101,9 @@ probe tp_syscall.copy_file_range = kernel.trace("sys_enter")
 	@_SYSCALL_COPY_FILE_RANGE_NAME
 	@_SYSCALL_COPY_FILE_RANGE_REGARGS
 	@_SYSCALL_COPY_FILE_RANGE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COPY_FILE_RANGE_REGARGS_STORE %)
 }
 
 probe nd_syscall.copy_file_range.return = nd1_syscall.copy_file_range.return!, nd2_syscall.copy_file_range.return!, tp_syscall.copy_file_range.return

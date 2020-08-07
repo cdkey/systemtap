@@ -18,6 +18,15 @@
 	sig_name = _signal_name(sig)
 %)
 
+@define _SYSCALL_KILL_REGARGS_STORE
+%(
+        if (@probewrite(pid))
+          set_int_arg(1, pid)
+
+	if (@probewrite(sig))
+	  set_int_arg(2, sig)
+%)
+
 probe syscall.kill = dw_syscall.kill !, nd_syscall.kill ? {}
 probe syscall.kill.return = dw_syscall.kill.return !, nd_syscall.kill.return ? {}
 
@@ -57,6 +66,9 @@ probe nd2_syscall.kill = kprobe.function(@arch_syscall_prefix "sys_kill") ?
 	@_SYSCALL_KILL_NAME
 	@_SYSCALL_KILL_REGARGS
 	@_SYSCALL_KILL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_KILL_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -67,6 +79,9 @@ probe tp_syscall.kill = kernel.trace("sys_enter")
 	@_SYSCALL_KILL_NAME
 	@_SYSCALL_KILL_REGARGS
 	@_SYSCALL_KILL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_KILL_REGARGS_STORE %)
 }
 
 probe nd_syscall.kill.return = nd1_syscall.kill.return!, nd2_syscall.kill.return!, tp_syscall.kill.return

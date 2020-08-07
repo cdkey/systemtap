@@ -18,6 +18,15 @@
 	init_val_str = _pkey_alloc_init_val_str(init_val)
 %)
 
+@define _SYSCALL_PKEY_ALLOC_REGARGS_STORE
+%(
+        if (@probewrite(flags))
+          set_ulong_arg(1, flags)
+
+	if (@probewrite(init_val))
+	  set_ulong_arg(2, init_val)
+%)
+
 probe syscall.pkey_alloc = dw_syscall.pkey_alloc !, nd_syscall.pkey_alloc ? {}
 probe syscall.pkey_alloc.return = dw_syscall.pkey_alloc.return !, nd_syscall.pkey_alloc.return ? {}
 
@@ -57,6 +66,9 @@ probe nd2_syscall.pkey_alloc = kprobe.function(@arch_syscall_prefix "sys_pkey_al
 	@_SYSCALL_PKEY_ALLOC_NAME
 	@_SYSCALL_PKEY_ALLOC_REGARGS
 	@_SYSCALL_PKEY_ALLOC_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PKEY_ALLOC_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -67,6 +79,9 @@ probe tp_syscall.pkey_alloc = kernel.trace("sys_enter")
 	@_SYSCALL_PKEY_ALLOC_NAME
 	@_SYSCALL_PKEY_ALLOC_REGARGS
 	@_SYSCALL_PKEY_ALLOC_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PKEY_ALLOC_REGARGS_STORE %)
 }
 
 probe nd_syscall.pkey_alloc.return = nd1_syscall.pkey_alloc.return!, nd2_syscall.pkey_alloc.return!, tp_syscall.pkey_alloc.return

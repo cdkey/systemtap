@@ -1445,6 +1445,16 @@ the alias user.  Please note that in each case, the statements in the
 alias handler block are treated ordinarily, so that variables assigned
 there constitute mere initialization, not a macro substitution.
 
+Aliases can also be defined to include both a prologue and an epilogue.
+.SAMPLE
+probe syscall.read = kernel.function("sys_read") {
+  fildes = $fd
+  if (execname() == "init") next
+},{
+  if (tracethis) println ($fd)
+}
+.ESAMPLE
+
 An alias is used just like a built-in probe type.
 .SAMPLE
 probe syscall.read {

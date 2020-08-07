@@ -22,6 +22,20 @@
         len = ulong_arg(4)
 %)
 
+@define _SYSCALL_COMPAT_LOOKUP_DCOOKIE_REGARGS_STORE
+%(
+        if (@probewrite(cookie)) {
+          set_uint_arg(1, cookie & 0xffffffff)
+	  set_uint_arg(2, cookie >> 32)
+	}
+
+	if (@probewrite(buffer_uaddr))
+	  set_pointer_arg(3, buffer_uaddr)
+
+	if (@probewrite(len))
+	  set_ulong_arg(4, len)
+%)
+
 probe syscall.compat_lookup_dcookie = dw_syscall.compat_lookup_dcookie !,
                                       nd_syscall.compat_lookup_dcookie ? {}
 probe syscall.compat_lookup_dcookie.return = dw_syscall.compat_lookup_dcookie.return !,
@@ -69,6 +83,9 @@ probe nd2_syscall.compat_lookup_dcookie = kprobe.function(@arch_syscall_prefix "
 	@_SYSCALL_COMPAT_LOOKUP_DCOOKIE_NAME
 	@_SYSCALL_COMPAT_LOOKUP_DCOOKIE_REGARGS
 	@_SYSCALL_COMPAT_LOOKUP_DCOOKIE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_LOOKUP_DCOOKIE_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -79,6 +96,9 @@ probe tp_syscall.compat_lookup_dcookie = kernel.trace("sys_enter")
 	@_SYSCALL_COMPAT_LOOKUP_DCOOKIE_NAME
 	@_SYSCALL_COMPAT_LOOKUP_DCOOKIE_REGARGS
 	@_SYSCALL_COMPAT_LOOKUP_DCOOKIE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_LOOKUP_DCOOKIE_REGARGS_STORE %)
 }
 
 probe nd_syscall.compat_lookup_dcookie.return = nd1_syscall.compat_lookup_dcookie.return!, nd2_syscall.compat_lookup_dcookie.return!, tp_syscall.compat_lookup_dcookie.return

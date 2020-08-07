@@ -18,6 +18,15 @@
 	nstype_str = __fork_flags(nstype)
 %)
 
+@define _SYSCALL_SETNS_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(nstype))
+	  set_int_arg(2, nstype)
+%)
+
 probe syscall.setns = dw_syscall.setns !, nd_syscall.setns ? {}
 probe syscall.setns.return = dw_syscall.setns.return !, nd_syscall.setns.return ? {}
 
@@ -57,6 +66,9 @@ probe nd2_syscall.setns = kprobe.function(@arch_syscall_prefix "sys_setns") ?
 	@_SYSCALL_SETNS_NAME
 	@_SYSCALL_SETNS_REGARGS
 	@_SYSCALL_SETNS_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETNS_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -67,6 +79,9 @@ probe tp_syscall.setns = kernel.trace("sys_enter")
 	@_SYSCALL_SETNS_NAME
 	@_SYSCALL_SETNS_REGARGS
 	@_SYSCALL_SETNS_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETNS_REGARGS_STORE %)
 }
 
 probe nd_syscall.setns.return = nd1_syscall.setns.return!, nd2_syscall.setns.return!, tp_syscall.setns.return

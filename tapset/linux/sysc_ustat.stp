@@ -18,6 +18,15 @@
 	ubuf_uaddr = pointer_arg(2)
 %)
 
+@define _SYSCALL_USTAT_REGARGS_STORE
+%(
+        if (@probewrite(dev))
+          set_uint_arg(1, dev)
+
+	if (@probewrite(ubuf_uaddr))
+	  set_pointer_arg(2, ubuf_uaddr)
+%)
+
 probe syscall.ustat = dw_syscall.ustat !, nd_syscall.ustat ? {}
 probe syscall.ustat.return = dw_syscall.ustat.return !, nd_syscall.ustat.return ? {}
 
@@ -56,6 +65,9 @@ probe nd2_syscall.ustat = kprobe.function(@arch_syscall_prefix "sys_ustat") ?
 	@_SYSCALL_USTAT_NAME
 	@_SYSCALL_USTAT_REGARGS
 	@_SYSCALL_USTAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_USTAT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -66,6 +78,9 @@ probe tp_syscall.ustat = kernel.trace("sys_enter")
 	@_SYSCALL_USTAT_NAME
 	@_SYSCALL_USTAT_REGARGS
 	@_SYSCALL_USTAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_USTAT_REGARGS_STORE %)
 }
 
 probe nd_syscall.ustat.return = nd1_syscall.ustat.return!, nd2_syscall.ustat.return!, tp_syscall.ustat.return
@@ -148,6 +163,9 @@ probe nd2_syscall.ustat32 =
 	@_SYSCALL_USTAT_NAME
 	@_SYSCALL_USTAT_REGARGS
 	@_SYSCALL_USTAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_USTAT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -158,6 +176,9 @@ probe tp_syscall.ustat32 = kernel.trace("sys_enter")
 	@_SYSCALL_USTAT_NAME
 	@_SYSCALL_USTAT_REGARGS
 	@_SYSCALL_USTAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_USTAT_REGARGS_STORE %)
 }
 
 probe nd_syscall.ustat32.return = nd1_syscall.ustat32.return!, nd2_syscall.ustat32.return!, tp_syscall.ustat32.return

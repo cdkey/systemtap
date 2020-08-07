@@ -22,7 +22,25 @@
         hostname_uaddr = domainname_uaddr
 %)
 	domainname_str = user_string_quoted(domainname_uaddr)
+	domainname_str_unquoted = user_string_nofault(pointer_arg(1))
 	len = int_arg(2)
+%)
+
+@define _SYSCALL_SETDOMAINNAME_REGARGS_STORE
+%(
+        if (@probewrite(domainname_uaddr))
+          set_pointer_arg(1, domainname_uaddr)
+
+%( systemtap_v <= "2.8" %?
+	if (@probewrite(hostname_uaddr))
+	  set_pointer_arg(1, hostname_uaddr)
+%)
+
+	if (@probewrite(domainname_str_unquoted))
+	  set_user_string_arg(pointer_arg(1), domainname_str_unquoted)
+
+	if (@probewrite(len))
+	  set_int_arg(2, len)
 %)
 
 probe syscall.setdomainname = dw_syscall.setdomainname !,
@@ -69,6 +87,9 @@ probe nd2_syscall.setdomainname = kprobe.function(@arch_syscall_prefix "sys_setd
 	@_SYSCALL_SETDOMAINNAME_NAME
 	@_SYSCALL_SETDOMAINNAME_REGARGS
 	@_SYSCALL_SETDOMAINNAME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETDOMAINNAME_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -79,6 +100,9 @@ probe tp_syscall.setdomainname = kernel.trace("sys_enter")
 	@_SYSCALL_SETDOMAINNAME_NAME
 	@_SYSCALL_SETDOMAINNAME_REGARGS
 	@_SYSCALL_SETDOMAINNAME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETDOMAINNAME_REGARGS_STORE %)
 }
 
 probe nd_syscall.setdomainname.return = nd1_syscall.setdomainname.return!, nd2_syscall.setdomainname.return!, tp_syscall.setdomainname.return

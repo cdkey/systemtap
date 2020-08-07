@@ -30,6 +30,18 @@ function user_string:string (addr:long) {
 }
 
 /**
+ * sfunction user_string_nofault - Retrieves string from user space
+ *
+ * @addr: the user space address to retrieve the string from
+ *
+ * Description: Returns the null terminated C string from a given user space
+ * memory address. Returns the empty string if userspace data is not accessible.
+ */
+function user_string_nofault:string (addr:long) {
+	try { return user_string(addr) } catch { return "" }
+}
+
+/**
  * sfunction user_string - Retrieves string from user space with alternative error string
  *
  * @addr: the user space address to retrieve the string from
@@ -138,6 +150,21 @@ function user_string_n:string (addr:long, n:long)
      return user_string_n(addr, n, "user string copy fault")
    }
 %)
+
+/**
+ * sfunction user_string_n_nofault - Retrieves string of given length
+ * from user space
+ *
+ * @addr: the user space address to retrieve the string from
+ * @n: the maximum length of the string (if not null terminated)
+ *
+ * Description: Returns the C string of a maximum given length from a
+ * given user space address. Reports an error on the rare cases
+ * when userspace data is not accessible at the given address.
+ */
+function user_string_n_nofault (addr:long, n:long) {
+  try { return user_string_n(addr, n) } catch { return "" }
+}
 
 /**
  * sfunction user_string_n - Retrieves string of given length from user space

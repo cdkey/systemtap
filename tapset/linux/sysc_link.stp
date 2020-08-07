@@ -15,7 +15,18 @@
 @define _SYSCALL_LINK_REGARGS
 %(
 	oldpath = user_string_quoted(pointer_arg(1))
+	oldpath_unquoted = user_string_nofault(pointer_arg(1))
 	newpath = user_string_quoted(pointer_arg(2))
+	newpath_unquoted = user_string_nofault(pointer_arg(2))
+%)
+
+@define _SYSCALL_LINK_REGARGS_STORE
+%(
+        if (@probewrite(oldpath_unquoted))
+          set_user_string_arg(pointer_arg(1), oldpath_unquoted)
+
+	if (@probewrite(newpath_unquoted))
+	  set_user_string_arg(pointer_arg(2), newpath_unquoted)
 %)
 
 probe syscall.link = dw_syscall.link !, nd_syscall.link ? {}
@@ -56,6 +67,9 @@ probe nd2_syscall.link = kprobe.function(@arch_syscall_prefix "sys_link") ?
 	@_SYSCALL_LINK_NAME
 	@_SYSCALL_LINK_REGARGS
 	@_SYSCALL_LINK_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_LINK_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -66,6 +80,9 @@ probe tp_syscall.link = kernel.trace("sys_enter")
 	@_SYSCALL_LINK_NAME
 	@_SYSCALL_LINK_REGARGS
 	@_SYSCALL_LINK_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_LINK_REGARGS_STORE %)
 }
 
 probe nd_syscall.link.return = nd1_syscall.link.return!, nd2_syscall.link.return!, tp_syscall.link.return

@@ -19,6 +19,15 @@
 	ctxp_uaddr = pointer_arg(2)
 %)
 
+@define _SYSCALL_IO_SETUP_REGARGS_STORE
+%(
+        if (@probewrite(maxevents))
+          set_uint_arg(1, maxevents)
+
+	if (@probewrite(ctxp_uaddr))
+	  set_pointer_arg(2, ctxp_uaddr)
+%)
+
 probe syscall.io_setup = dw_syscall.io_setup !, nd_syscall.io_setup ? {}
 probe syscall.io_setup.return = dw_syscall.io_setup.return !, nd_syscall.io_setup.return ? {}
 
@@ -81,6 +90,9 @@ probe nd2_syscall.io_setup = kprobe.function(@arch_syscall_prefix "sys_io_setup"
 	@_SYSCALL_IO_SETUP_NAME
 	@_SYSCALL_IO_SETUP_REGARGS
 	@_SYSCALL_IO_SETUP_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IO_SETUP_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -91,6 +103,9 @@ probe tp_syscall.io_setup = kernel.trace("sys_enter")
 	@_SYSCALL_IO_SETUP_NAME
 	@_SYSCALL_IO_SETUP_REGARGS
 	@_SYSCALL_IO_SETUP_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IO_SETUP_REGARGS_STORE %)
 }
 
 probe nd_syscall.io_setup.return = nd1_syscall.io_setup.return!, nd2_syscall.io_setup.return!, tp_syscall.io_setup.return

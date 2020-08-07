@@ -21,6 +21,21 @@
 	flags = uint_arg(4)
 %)
 
+@define _SYSCALL_TEE_REGARGS_STORE
+%(
+        if (@probewrite(fdin))
+          set_int_arg(1, fdin)
+
+	if (@probewrite(fdout))
+	  set_int_arg(2, fdout)
+
+	if (@probewrite(len))
+	  set_ulong_arg(3, len)
+
+	if (@probewrite(flags))
+	  set_uint_arg(4, flags)
+%)
+
 probe syscall.tee = dw_syscall.tee !, nd_syscall.tee ? {}
 probe syscall.tee.return = dw_syscall.tee.return !, nd_syscall.tee.return ? {}
 
@@ -61,6 +76,9 @@ probe nd2_syscall.tee = kprobe.function(@arch_syscall_prefix "sys_tee") ?
 	@_SYSCALL_TEE_NAME
 	@_SYSCALL_TEE_REGARGS
 	@_SYSCALL_TEE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TEE_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -71,6 +89,9 @@ probe tp_syscall.tee = kernel.trace("sys_enter")
 	@_SYSCALL_TEE_NAME
 	@_SYSCALL_TEE_REGARGS
 	@_SYSCALL_TEE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TEE_REGARGS_STORE %)
 }
 
 probe nd_syscall.tee.return = nd1_syscall.tee.return!, nd2_syscall.tee.return!, tp_syscall.tee.return

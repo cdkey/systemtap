@@ -31,6 +31,24 @@
 	flags_str = _mempolicy_flags_str(flags)
 %)
 
+@define _SYSCALL_GET_MEMPOLICY_REGARGS_STORE
+%(
+        if (@probewrite(policy_uaddr))
+          set_pointer_arg(1, policy_uaddr)
+
+	if (@probewrite(nmask_uaddr))
+	  set_pointer_arg(2, nmask_uaddr)
+
+	if (@probewrite(maxnode))
+	  set_ulong_arg(3, nmask_uaddr)
+
+	if (@probewrite(addr))
+	  set_ulong_arg(4, addr)
+
+	if (@probewrite(flags))
+	  set_ulong_arg(5, flags)
+%)
+
 probe syscall.get_mempolicy = dw_syscall.get_mempolicy !, nd_syscall.get_mempolicy ? {}
 probe syscall.get_mempolicy.return = dw_syscall.get_mempolicy.return !, nd_syscall.get_mempolicy.return ? {}
 
@@ -91,6 +109,9 @@ probe nd2_syscall.get_mempolicy = kprobe.function(@arch_syscall_prefix "sys_get_
 	@_SYSCALL_GET_MEMPOLICY_NAME
 	@_SYSCALL_GET_MEMPOLICY_REGARGS
 	@_SYSCALL_GET_MEMPOLICY_ARGSTR
+},
+{
+        @_SYSCALL_GET_MEMPOLICY_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -101,6 +122,9 @@ probe tp_syscall.get_mempolicy = kernel.trace("sys_enter")
 	@_SYSCALL_GET_MEMPOLICY_NAME
 	@_SYSCALL_GET_MEMPOLICY_REGARGS
 	@_SYSCALL_GET_MEMPOLICY_ARGSTR
+},
+{
+        @_SYSCALL_GET_MEMPOLICY_REGARGS_STORE
 }
 
 probe nd_syscall.get_mempolicy.return = nd1_syscall.get_mempolicy.return!, nd2_syscall.get_mempolicy.return!, tp_syscall.get_mempolicy.return

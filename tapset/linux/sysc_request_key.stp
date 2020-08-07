@@ -22,10 +22,33 @@
 %(
 	type_uaddr = pointer_arg(1)
 	type_str = user_string_quoted(type_uaddr)
+	type_str_unquoted = user_string_nofault(pointer_arg(1))
 	description_uaddr = pointer_arg(2)
 	description_str = user_string_quoted(description_uaddr)
+	description_str_unquoted = user_string_nofault(pointer_arg(2))
 	callout_info_uaddr = pointer_arg(3)
 	destringid = int_arg(4)
+%)
+
+@define _SYSCALL_REQUEST_KEY_REGARGS_STORE
+%(
+        if (@probewrite(type_uaddr))
+          set_pointer_arg(1, type_uaddr)
+
+	if (@probewrite(type_str_unquoted))
+	  set_user_string_arg(pointer_arg(1), type_str_unquoted)
+
+	if (@probewrite(description_uaddr))
+	  set_pointer_arg(2, description_uaddr)
+
+	if (@probewrite(description_str_unquoted))
+	  set_user_string_arg(pointer_arg(2), description_str_unquoted)
+
+	if (@probewrite(callout_info_uaddr))
+	  set_pointer_arg(3, callout_info_uaddr)
+
+	if (@probewrite(destringid))
+	  set_int_arg(4, destringid)
 %)
 
 probe syscall.request_key = dw_syscall.request_key !, nd_syscall.request_key ? {}
@@ -71,6 +94,9 @@ probe nd2_syscall.request_key = kprobe.function(@arch_syscall_prefix "sys_reques
 	@_SYSCALL_REQUEST_KEY_NAME
 	@_SYSCALL_REQUEST_KEY_REGARGS
 	@_SYSCALL_REQUEST_KEY_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_REQUEST_KEY_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -81,6 +107,9 @@ probe tp_syscall.request_key = kernel.trace("sys_enter")
 	@_SYSCALL_REQUEST_KEY_NAME
 	@_SYSCALL_REQUEST_KEY_REGARGS
 	@_SYSCALL_REQUEST_KEY_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_REQUEST_KEY_REGARGS_STORE %)
 }
 
 probe nd_syscall.request_key.return = nd1_syscall.request_key.return!, nd2_syscall.request_key.return!, tp_syscall.request_key.return

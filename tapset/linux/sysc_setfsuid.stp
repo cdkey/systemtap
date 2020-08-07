@@ -44,6 +44,12 @@
 	fsuid = int_arg(1)
 %)
 
+@define _SYSCALL_SETFSUID_REGARGS_STORE
+%(
+        if (@probewrite(fsuid))
+          set_int_arg(1, fsuid)
+%)
+
 probe syscall.setfsuid = dw_syscall.setfsuid !, nd_syscall.setfsuid ? {}
 probe syscall.setfsuid.return = dw_syscall.setfsuid.return !,
 	                        nd_syscall.setfsuid.return ? {}
@@ -98,6 +104,9 @@ probe nd2_syscall.setfsuid = kprobe.function(@arch_syscall_prefix "sys_setfsuid"
 	@_SYSCALL_SETFSUID_NAME
 	@_SYSCALL_SETFSUID_REGARGS
 	@_SYSCALL_SETFSUID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETFSUID_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -107,6 +116,9 @@ probe tp_syscall.setfsuid = __tp_syscall.setfsuid, __tp_syscall.setfsuid16
 	@_SYSCALL_SETFSUID_NAME
 	@_SYSCALL_SETFSUID_REGARGS
 	@_SYSCALL_SETFSUID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETFSUID_REGARGS_STORE %)
 }
 probe __tp_syscall.setfsuid = kernel.trace("sys_enter")
 {

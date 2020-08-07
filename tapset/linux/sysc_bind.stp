@@ -19,6 +19,18 @@
 	addrlen = int_arg(3)
 %)
 
+@define _SYSCALL_BIND_REGARGS_STORE
+%(
+        if (@probewrite(sockfd))
+          set_int_arg(1, sockfd)
+
+	if (@probewrite(my_addr_uaddr))
+	  set_pointer_arg(2, my_addr_uaddr)
+
+	if (@probewrite(addrlen))
+	  set_int_arg(3, addrlen)
+%)
+
 @define _SYSCALL_SOCKETCALL_BIND_REGARGS
 %(
 	__argsl = &@ulong_cast(pointer_arg(2))
@@ -131,6 +143,9 @@ probe __nd2_syscall.bind = kprobe.function(@arch_syscall_prefix "sys_bind") ?
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_BIND_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_BIND_REGARGS_STORE %)
 }
 probe __nd2_syscall.socketcall.bind = kprobe.function(@arch_syscall_prefix "sys_socketcall").call ?
 {
@@ -159,6 +174,9 @@ probe __tp_syscall.bind = kernel.trace("sys_enter")
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_bind"))
 	@_SYSCALL_BIND_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_BIND_REGARGS_STORE %)
 }
 probe __tp_syscall.socketcall.bind = kernel.trace("sys_enter")
 {

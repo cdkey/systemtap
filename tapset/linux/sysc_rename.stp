@@ -18,7 +18,18 @@
 @define _SYSCALL_RENAME_REGARGS
 %(
 	oldpath = user_string_quoted(pointer_arg(1))
+	oldpath_unquoted = user_string_nofault(pointer_arg(1))
 	newpath = user_string_quoted(pointer_arg(2))
+	newpath_unquoted = user_string_nofault(pointer_arg(2))
+%)
+
+@define _SYSCALL_RENAME_REGARGS_STORE
+%(
+        if (@probewrite(oldpath_unquoted))
+          set_user_string_arg(pointer_arg(1), oldpath_unquoted)
+
+	if (@probewrite(newpath_unquoted))
+	  set_user_string_arg(pointer_arg(2), newpath_unquoted)
 %)
 
 probe syscall.rename = dw_syscall.rename !, nd_syscall.rename ? {}
@@ -60,6 +71,9 @@ probe nd2_syscall.rename = kprobe.function(@arch_syscall_prefix "sys_rename") ?
 	@_SYSCALL_RENAME_NAME
 	@_SYSCALL_RENAME_REGARGS
 	@_SYSCALL_RENAME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_RENAME_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -70,6 +84,9 @@ probe tp_syscall.rename = kernel.trace("sys_enter")
 	@_SYSCALL_RENAME_NAME
 	@_SYSCALL_RENAME_REGARGS
 	@_SYSCALL_RENAME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_RENAME_REGARGS_STORE %)
 }
 
 probe nd_syscall.rename.return = nd1_syscall.rename.return!, nd2_syscall.rename.return!, tp_syscall.rename.return

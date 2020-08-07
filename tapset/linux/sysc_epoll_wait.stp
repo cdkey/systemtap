@@ -25,6 +25,21 @@
 	timeout = int_arg(4)
 %)
 
+@define _SYSCALL_EPOLL_WAIT_REGARGS_STORE
+%(
+	if (@probewrite(epfd))
+	  set_int_arg(1, epfd)
+
+	if (@probewrite(events_uaddr))
+	  set_pointer_arg(2, events_uaddr)
+
+	if (@probewrite(maxevents))
+	  set_int_arg(3, maxevents)
+
+	if (@probewrite(timeout))
+	  set_int_arg(4, timeout)
+%)
+
 probe syscall.epoll_wait = dw_syscall.epoll_wait !, nd_syscall.epoll_wait ? {}
 probe syscall.epoll_wait.return = dw_syscall.epoll_wait.return !, nd_syscall.epoll_wait.return ? {}
 
@@ -101,6 +116,9 @@ probe nd2_syscall.epoll_wait = kprobe.function(@arch_syscall_prefix "sys_epoll_w
 	@_SYSCALL_EPOLL_WAIT_NAME
 	@_SYSCALL_EPOLL_WAIT_REGARGS
 	@_SYSCALL_EPOLL_WAIT_ARGSTR
+},
+{
+	%( @_IS_SREG_KERNEL %? @_SYSCALL_EPOLL_WAIT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -111,6 +129,9 @@ probe tp_syscall.epoll_wait = kernel.trace("sys_enter")
 	@_SYSCALL_EPOLL_WAIT_NAME
 	@_SYSCALL_EPOLL_WAIT_REGARGS
 	@_SYSCALL_EPOLL_WAIT_ARGSTR
+},
+{
+	%( @_IS_SREG_KERNEL %? @_SYSCALL_EPOLL_WAIT_REGARGS_STORE %)
 }
 
 probe nd_syscall.epoll_wait.return = nd1_syscall.epoll_wait.return!, nd2_syscall.epoll_wait.return!, tp_syscall.epoll_wait.return

@@ -25,6 +25,27 @@
 	val3 = int_arg(6)
 %)
 
+@define _SYSCALL_FUTEX_REGARGS_STORE
+%(
+        if (@probewrite(futex_uaddr))
+          set_pointer_arg(1, futex_uaddr)
+
+	if (@probewrite(op))
+	  set_int_arg(2, op)
+
+	if (@probewrite(val))
+	  set_int_arg(3, val)
+
+	if (@probewrite(utime_uaddr))
+	  set_pointer_arg(4, utime_uaddr)
+
+	if (@probewrite(uaddr2_uaddr))
+	  set_pointer_arg(5, uaddr2_uaddr)
+
+	if (@probewrite(val3))
+	  set_int_arg(6, val3)
+%)
+
 probe syscall.futex = dw_syscall.futex !, nd_syscall.futex ? {}
 probe syscall.futex.return = dw_syscall.futex.return !,
                              nd_syscall.futex.return ? {}
@@ -90,6 +111,9 @@ probe nd2_syscall.futex = kprobe.function(@arch_syscall_prefix "sys_futex") ?
 	@_SYSCALL_FUTEX_NAME
 	@_SYSCALL_FUTEX_REGARGS
 	@__futex_argstr(futex_uaddr, op, val, utime_uaddr, uaddr2_uaddr, val3)
+},
+{
+        @_SYSCALL_FUTEX_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -100,6 +124,9 @@ probe tp_syscall.futex = kernel.trace("sys_enter")
 	@_SYSCALL_FUTEX_NAME
 	@_SYSCALL_FUTEX_REGARGS
 	@__futex_argstr(futex_uaddr, op, val, utime_uaddr, uaddr2_uaddr, val3)
+},
+{
+        @_SYSCALL_FUTEX_REGARGS_STORE
 }
 
 probe nd_syscall.futex.return = nd1_syscall.futex.return!, nd2_syscall.futex.return!, tp_syscall.futex.return
@@ -145,6 +172,9 @@ probe nd2_syscall.compat_futex = kprobe.function(@arch_syscall_prefix "compat_sy
 	@_SYSCALL_FUTEX_NAME
 	@_SYSCALL_FUTEX_REGARGS
 	@__futex_argstr(futex_uaddr, op, val, utime_uaddr, uaddr2_uaddr, val3)
+},
+{
+        @_SYSCALL_FUTEX_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -155,6 +185,9 @@ probe tp_syscall.compat_futex = kernel.trace("sys_enter")
 	@_SYSCALL_FUTEX_NAME
 	@_SYSCALL_FUTEX_REGARGS
 	@__futex_argstr(futex_uaddr, op, val, utime_uaddr, uaddr2_uaddr, val3)
+},
+{
+        @_SYSCALL_FUTEX_REGARGS_STORE
 }
 
 probe nd_syscall.compat_futex.return = nd1_syscall.compat_futex.return!, nd2_syscall.compat_futex.return!, tp_syscall.compat_futex.return

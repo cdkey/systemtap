@@ -318,6 +318,18 @@ non-DWARF syscall probe aliases instead.  Use the
 prefix instead of
 .IR syscall.
 The same context variables are available, as far as possible.
+.PP
+.IR nd_syscall
+probes on kernels that use syscall wrappers to pass arguments (currently
+4.17+ on x86_64 and 4.19+ on aarch64) include two probe variables for each
+of the syscall's string parameters. One holds a quoted version of the string
+passed to the syscall. The other holds an unquoted version of the string
+intended to be used when modifying the parameter. If the probe modifies the
+unquoted string variable then as the probe is about to exit the contents
+of this variable will be written to the user space buffer passed to the
+syscall. It is the user's responsibility to ensure that this buffer is large
+enough to hold the modified string and that it is located in a writable memory
+segment.
 
 .SS TIMERS
 

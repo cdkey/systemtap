@@ -16,8 +16,24 @@
 %(
 	path_uaddr = pointer_arg(1)
 	path = user_string_quoted(path_uaddr)
+	path_unquoted = user_string_nofault(pointer_arg(1))
 	list_uaddr = pointer_arg(2)
 	size = ulong_arg(3)
+%)
+
+@define _SYSCALL_LISTXATTR_REGARGS_STORE
+%(
+        if (@probewrite(path_uaddr))
+          set_pointer_arg(1, path_uaddr)
+
+	if (@probewrite(path_unquoted))
+	  set_user_string_arg(pointer_arg(1), path_unquoted)
+
+	if (@probewrite(list_uaddr))
+	  set_pointer_arg(2, list_uaddr)
+
+	if (@probewrite(size))
+	  set_ulong_arg(3, size)
 %)
 
 probe syscall.listxattr = dw_syscall.listxattr !, nd_syscall.listxattr ? {}
@@ -61,6 +77,9 @@ probe nd2_syscall.listxattr = kprobe.function(@arch_syscall_prefix "sys_listxatt
 	@_SYSCALL_LISTXATTR_NAME
 	@_SYSCALL_LISTXATTR_REGARGS
 	@_SYSCALL_LISTXATTR_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_LISTXATTR_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -71,6 +90,9 @@ probe tp_syscall.listxattr = kernel.trace("sys_enter")
 	@_SYSCALL_LISTXATTR_NAME
 	@_SYSCALL_LISTXATTR_REGARGS
 	@_SYSCALL_LISTXATTR_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_LISTXATTR_REGARGS_STORE %)
 }
 
 probe nd_syscall.listxattr.return = nd1_syscall.listxattr.return!, nd2_syscall.listxattr.return!, tp_syscall.listxattr.return

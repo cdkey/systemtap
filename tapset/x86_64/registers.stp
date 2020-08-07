@@ -311,6 +311,52 @@ deref_fault: /* branched to from kread() */
 	CONTEXT->last_error = CONTEXT->error_buffer;
 %}
 
+/* For use with syscall-in-pt_regs mode: kernel 4.17+ or similar */
+function _stp_get_arg_ptr:long (argnum:long) %{
+	void* regptr;
+	struct pt_regs *regs;
+	int is_32bit = _stp_is_compat_task();
+
+	if (!CONTEXT->sregs) {
+                snprintf(CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
+                        "cannot access function args in this context");
+                CONTEXT->last_error = CONTEXT->error_buffer;
+                return;
+	}
+
+        regs = CONTEXT->sregs;
+
+	if (is_32bit) switch (STAP_ARG_argnum) {
+            case 1: regptr = &(regs->bx); break;
+            case 2: regptr = &(regs->cx); break;
+            case 3: regptr = &(regs->dx); break;
+            case 4: regptr = &(regs->si); break;
+            case 5: regptr = &(regs->di); break;
+            case 6: regptr = &(regs->bp); break;
+            default:
+              goto bad_argnum;
+	}
+	else switch (STAP_ARG_argnum) {
+            case 1: regptr = &(regs->di); break;
+            case 2: regptr = &(regs->si); break;
+            case 3: regptr = &(regs->dx); break;
+            case 4: regptr = &(regs->r10); break;
+            case 5: regptr = &(regs->r8); break;
+            case 6: regptr = &(regs->r9); break;
+            default:
+              goto bad_argnum;
+	}
+
+	STAP_RETVALUE = (unsigned long) regptr;
+        return;
+
+bad_argnum:
+        snprintf(CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
+                                "cannot access arg(%lld)", STAP_ARG_argnum);
+        CONTEXT->last_error = CONTEXT->error_buffer;
+        return;
+%}
+
 function probing_32bit_app:long() %{ /* pure */
 	STAP_RETVALUE = (CONTEXT->user_mode_p && _stp_is_compat_task());
 %}
@@ -324,9 +370,21 @@ function uarch_bytes:long() {
   return probing_32bit_app() ? 4 : 8
 }
 
+/* Set the #value of function arg #argnum (1=first arg) as a signed int. */
+function set_int_arg (argnum:long, value:long) {
+	set_kernel_int(_stp_get_arg_ptr(argnum), value);
+	return
+}
+
 /* Return the value of function arg #argnum (1=first arg) as a signed int. */
 function int_arg:long (argnum:long) {
 	return _stp_arg2(argnum, 1, 1, 0)
+}
+
+/* Set the #value of function arg #argnum (1=first arg) as an unsigned int. */
+function set_uint_arg (argnum:long, value:long) {
+	set_int_arg(argnum, value);
+	return
 }
 
 /* Return the value of function arg #argnum (1=first arg) as an unsigned int. */
@@ -334,12 +392,32 @@ function uint_arg:long (argnum:long) {
 	return _stp_arg2(argnum, 0, 1, 0)
 }
 
+function set_long_arg (argnum:long, value:long) {
+	set_kernel_long(_stp_get_arg_ptr(argnum), value);
+	return
+}
+
 function long_arg:long (argnum:long) {
 	return _stp_arg2(argnum, 1, 0, 0)
 }
 
+function set_ulong_arg (argnum:long, value:long) {
+	set_kernel_long(_stp_get_arg_ptr(argnum), value);
+	return
+}
+
 function ulong_arg:long (argnum:long) {
 	return _stp_arg2(argnum, 0, 0, 0)
+}
+
+function set_longlong_arg (argnum:long, value:long) {
+	if (probing_32bit_app()) {
+		highbits = value >> 32
+		lowbits = value & 0xffffffff
+		set_u32_arg(argnum, lowbits)
+		set_u32_arg(argnum+1, highbits)
+	} else
+		set_long_arg(argnum, value)
 }
 
 function longlong_arg:long (argnum:long) {
@@ -351,26 +429,56 @@ function longlong_arg:long (argnum:long) {
 		return _stp_arg2(argnum, 0, 0, 1)
 }
 
+function set_ulonglong_arg (argnum:long, value:long) {
+	set_longlong_arg(argnum, value)
+	return
+}
+
 function ulonglong_arg:long (argnum:long) {
 	return longlong_arg(argnum)
+}
+
+function set_pointer_arg (argnum:long, value:long) {
+	set_kernel_pointer(_stp_get_arg_ptr(argnum), value);
+	return
 }
 
 function pointer_arg:long (argnum:long) {
 	return _stp_arg2(argnum, 0, 0, 0)
 }
 
+function set_s32_arg:long (argnum:long, value:long) {
+	set_int_arg(argnum, value);
+	return
+}
+
 function s32_arg:long (argnum:long) {
 	return int_arg(argnum)
+}
+
+function set_u32_arg (argnum:long, value:long) {
+	set_uint_arg(argnum, value);
+	return
 }
 
 function u32_arg:long (argnum:long) {
 	return uint_arg(argnum)
 }
 
+function set_s64_arg (argnum:long, value:long) {
+	set_longlong_arg(argnum, value);
+	return
+}
+
 function s64_arg:long (argnum:long) {
 	return longlong_arg(argnum)
 }
 
+function set_u64_arg (argnum:long, value:long) {
+	set_ulonglong_arg(argnum, value);
+	return
+}
+ 
 function u64_arg:long (argnum:long) {
 	return ulonglong_arg(argnum)
 }

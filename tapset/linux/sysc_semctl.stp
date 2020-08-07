@@ -33,6 +33,36 @@
 	arg = pointer_arg(5)
 %)
 
+@define _SYSCALL_SEMCTL_REGARGS_STORE
+%(
+        if (@probewrite(semid))
+          set_int_arg(1, semid)
+
+	if (@probewrite(semnum))
+	  set_int_arg(2, semnum)
+
+	if (@probewrite(cmd))
+	  set_int_arg(3, cmd)
+
+	if (@probewrite(arg))
+	  set_pointer_arg(4, arg)
+%)
+
+@define _SYSCALL_IPC_SEMCTL_REGARGS_STORE
+%(
+        if (@probewrite(semid))
+          set_int_arg(2, semid)
+
+	if (@probewrite(semnum))
+	  set_int_arg(3, semnum)
+
+	if (@probewrite(cmd))
+	  set_int_arg(4, cmd)
+
+	if (@probewrite(arg))
+	  set_pointer_arg(5, arg)
+%)
+
 probe syscall.semctl = dw_syscall.semctl !, nd_syscall.semctl ? {}
 probe syscall.semctl.return = dw_syscall.semctl.return !,
                               nd_syscall.semctl.return ? {}
@@ -78,6 +108,9 @@ probe nd2_syscall.semctl = kprobe.function(@arch_syscall_prefix "sys_semctl") ?
 	@_SYSCALL_SEMCTL_NAME
 	@_SYSCALL_SEMCTL_REGARGS
 	@_SYSCALL_SEMCTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SEMCTL_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -88,6 +121,9 @@ probe tp_syscall.semctl = kernel.trace("sys_enter")
 	@_SYSCALL_SEMCTL_NAME
 	@_SYSCALL_SEMCTL_REGARGS
 	@_SYSCALL_SEMCTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SEMCTL_REGARGS_STORE %)
 }
 
 probe nd_syscall.semctl.return = nd1_syscall.semctl.return!, nd2_syscall.semctl.return!, tp_syscall.semctl.return
@@ -205,6 +241,9 @@ probe nd2_syscall.compat_sys_semctl =
 	@_SYSCALL_SEMCTL_NAME
 	@_SYSCALL_IPC_SEMCTL_REGARGS
 	@_SYSCALL_SEMCTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IPC_SEMCTL_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -216,6 +255,9 @@ probe tp_syscall.compat_sys_semctl = kernel.trace("sys_exit")
 	@_SYSCALL_SEMCTL_NAME
 	@_SYSCALL_IPC_SEMCTL_REGARGS
 	@_SYSCALL_SEMCTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IPC_SEMCTL_REGARGS_STORE %)
 }
 
 probe nd_syscall.compat_sys_semctl.return = nd1_syscall.compat_sys_semctl.return!, nd2_syscall.compat_sys_semctl.return!, tp_syscall.compat_sys_semctl.return

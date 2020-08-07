@@ -18,6 +18,12 @@
 	timerid = int_arg(1)
 %)
 
+@define _SYSCALL_TIMER_DELETE_REGARGS_STORE
+%(
+        if (@probewrite(timerid))
+          set_int_arg(1, timerid)
+%)
+
 probe syscall.timer_delete = dw_syscall.timer_delete !, nd_syscall.timer_delete ? {}
 probe syscall.timer_delete.return = dw_syscall.timer_delete.return !,
                                     nd_syscall.timer_delete.return ? {}
@@ -56,6 +62,9 @@ probe nd2_syscall.timer_delete = kprobe.function(@arch_syscall_prefix "sys_timer
 	@_SYSCALL_TIMER_DELETE_NAME
 	@_SYSCALL_TIMER_DELETE_REGARGS
 	@_SYSCALL_TIMER_DELETE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TIMER_DELETE_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -66,6 +75,9 @@ probe tp_syscall.timer_delete = kernel.trace("sys_enter")
 	@_SYSCALL_TIMER_DELETE_NAME
 	@_SYSCALL_TIMER_DELETE_REGARGS
 	@_SYSCALL_TIMER_DELETE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TIMER_DELETE_REGARGS_STORE %)
 }
 
 probe nd_syscall.timer_delete.return = nd1_syscall.timer_delete.return!, nd2_syscall.timer_delete.return!, tp_syscall.timer_delete.return

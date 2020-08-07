@@ -26,6 +26,18 @@
 	mask_uaddr = pointer_arg(3)
 %)
 
+@define _SYSCALL_SCHED_GETAFFINITY_REGARGS_STORE
+%(
+        if (@probewrite(pid))
+          set_int_arg(1, pid)
+
+	if (@probewrite(len))
+	  set_uint_arg(2, len)
+
+	if (@probewrite(mask_uaddr))
+	  set_pointer_arg(3, mask_uaddr)
+%)
+
 probe syscall.sched_getaffinity = dw_syscall.sched_getaffinity !,
                                   nd_syscall.sched_getaffinity ? {}
 probe syscall.sched_getaffinity.return = dw_syscall.sched_getaffinity.return !,
@@ -75,6 +87,9 @@ probe nd2_syscall.sched_getaffinity =
 	@_SYSCALL_SCHED_GETAFFINITY_NAME
 	@_SYSCALL_SCHED_GETAFFINITY_REGARGS
 	@_SYSCALL_SCHED_GETAFFINITY_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SCHED_GETAFFINITY_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -85,6 +100,9 @@ probe tp_syscall.sched_getaffinity = kernel.trace("sys_enter")
 	@_SYSCALL_SCHED_GETAFFINITY_NAME
 	@_SYSCALL_SCHED_GETAFFINITY_REGARGS
 	@_SYSCALL_SCHED_GETAFFINITY_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SCHED_GETAFFINITY_REGARGS_STORE %)
 }
 
 probe nd_syscall.sched_getaffinity.return = nd1_syscall.sched_getaffinity.return!, nd2_syscall.sched_getaffinity.return!, tp_syscall.sched_getaffinity.return

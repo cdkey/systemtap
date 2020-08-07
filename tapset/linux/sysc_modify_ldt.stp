@@ -19,6 +19,18 @@
 	bytecount = ulong_arg(3)
 %)
 
+@define _SYSCALL_MODIFY_LDT_REGARGS_STORE
+%(
+        if (@probewrite(func))
+          set_int_arg(1, func)
+
+	if (@probewrite(ptr_uaddr))
+	  set_pointer_arg(2, ptr_uaddr)
+
+	if (@probewrite(bytecount))
+	  set_ulong_arg(3, bytecount)
+%)
+
 probe syscall.modify_ldt = dw_syscall.modify_ldt !, nd_syscall.modify_ldt ? {}
 probe syscall.modify_ldt.return = dw_syscall.modify_ldt.return !,
                                   nd_syscall.modify_ldt.return ? {}
@@ -59,6 +71,9 @@ probe nd2_syscall.modify_ldt = kprobe.function(@arch_syscall_prefix "sys_modify_
 	@_SYSCALL_MODIFY_LDT_NAME
 	@_SYSCALL_MODIFY_LDT_REGARGS
 	@_SYSCALL_MODIFY_LDT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MODIFY_LDT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -69,6 +84,9 @@ probe tp_syscall.modify_ldt = kernel.trace("sys_enter")
 	@_SYSCALL_MODIFY_LDT_NAME
 	@_SYSCALL_MODIFY_LDT_REGARGS
 	@_SYSCALL_MODIFY_LDT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MODIFY_LDT_REGARGS_STORE %)
 }
 
 probe nd_syscall.modify_ldt.return = nd1_syscall.modify_ldt.return!, nd2_syscall.modify_ldt.return!, tp_syscall.modify_ldt.return

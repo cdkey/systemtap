@@ -41,6 +41,25 @@ deref_fault: /* branched to from store_deref_string() */
 %}
 
 /**
+ * sfunction set_user_string_arg - Writes a string to user memory.
+ * @addr: The user address to write the string to
+ * @val: The string which is to be written
+ *
+ * Description: Writes the given string to a given user memory address.
+ * Reports a warning on string copy fault.
+ * Requires the use of guru mode (-g).
+ */
+function set_user_string_arg (addr:long, val:string) { /* guru */
+  if (val != user_string_nofault(addr)) {
+    try {
+      set_user_string_n(addr, strlen(val), val)
+    } catch {
+      warn(sprintf("unable to write %s to 0x%lx", val, addr))
+    }
+  }
+}
+
+/**
  * sfunction set_user_long - Writes a long value to user memory
  * @addr: The user address to write the long to
  * @val: The long which is to be written

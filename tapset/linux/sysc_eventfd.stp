@@ -82,6 +82,15 @@ probe __nd2_syscall.eventfd2 = kprobe.function(@arch_syscall_prefix "sys_eventfd
 	flags = int_arg(2)
 	flags_str = _eventfd2_flag_str(flags)
 	argstr = sprintf("%u, %s", count, flags_str)
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(count))
+	  set_uint_arg(1, count)
+
+	if (@probewrite(flags))
+	  set_int_arg(2, flags)
+%)
 }
 probe __nd2_syscall.eventfd = kprobe.function(@arch_syscall_prefix "sys_eventfd")
 {
@@ -91,6 +100,12 @@ probe __nd2_syscall.eventfd = kprobe.function(@arch_syscall_prefix "sys_eventfd"
 	flags = 0
 	flags_str = "0x0"
 	argstr = sprint(count)
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(count))
+	  set_uint_arg(1, count)
+%)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -106,6 +121,15 @@ probe __tp_syscall.eventfd2 = kernel.trace("sys_enter")
 	flags = int_arg(2)
 	flags_str = _eventfd2_flag_str(flags)
 	argstr = sprintf("%u, %s", count, flags_str)
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(count))
+	  set_uint_arg(1, count)
+
+	if (@probewrite(flags))
+	  set_int_arg(2, flags)
+%)
 }
 probe __tp_syscall.eventfd = kernel.trace("sys_enter")
 {
@@ -116,6 +140,12 @@ probe __tp_syscall.eventfd = kernel.trace("sys_enter")
 	flags = 0
 	flags_str = "0x0"
 	argstr = sprint(count)
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(count))
+	  set_uint_arg(1, count)
+%)
 }
  
 probe nd_syscall.eventfd.return = nd1_syscall.eventfd.return!, nd2_syscall.eventfd.return!, tp_syscall.eventfd.return

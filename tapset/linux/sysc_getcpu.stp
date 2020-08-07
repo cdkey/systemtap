@@ -22,6 +22,18 @@
 	tcache_uaddr = pointer_arg(3)
 %)
 
+@define _SYSCALL_GETCPU_REGARGS_STORE
+%(
+        if (@probewrite(cpu_uaddr))
+          set_pointer_arg(1, cpu_uaddr)
+
+	if (@probewrite(node_uaddr))
+	  set_pointer_arg(2, node_uaddr)
+
+	if (@probewrite(tcache_uaddr))
+	  set_pointer_arg(3, tcache_uaddr)
+%)
+
 probe syscall.getcpu = dw_syscall.getcpu !, nd_syscall.getcpu ? {}
 probe syscall.getcpu.return = dw_syscall.getcpu.return !, nd_syscall.getcpu.return ? {}
 
@@ -61,6 +73,9 @@ probe nd2_syscall.getcpu = kprobe.function(@arch_syscall_prefix "sys_getcpu") ?
 	@_SYSCALL_GETCPU_NAME
 	@_SYSCALL_GETCPU_REGARGS
 	@_SYSCALL_GETCPU_ARGSTR
+},
+{
+        @_SYSCALL_GETCPU_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -71,6 +86,9 @@ probe tp_syscall.getcpu = kernel.trace("sys_enter")
 	@_SYSCALL_GETCPU_NAME
 	@_SYSCALL_GETCPU_REGARGS
 	@_SYSCALL_GETCPU_ARGSTR
+},
+{
+        @_SYSCALL_GETCPU_REGARGS_STORE
 }
 
 probe nd_syscall.getcpu.return = nd1_syscall.getcpu.return!, nd2_syscall.getcpu.return!, tp_syscall.getcpu.return

@@ -46,6 +46,18 @@
 	suid = __int32(uint_arg(3))
 %)
 
+@define _SYSCALL_SETRESUID_REGARGS_STORE
+%(
+        if (@probewrite(ruid))
+          set_uint_arg(1, __int32(ruid))
+
+	if (@probewrite(euid))
+	  set_uint_arg(2, __int32(euid))
+
+	if (@probewrite(suid))
+	  set_uint_arg(3, __int32(suid))
+%)
+
 @define _SYSCALL_SETRESUID16_REGARGS
 %(
 	ruid = __short(uint_arg(1))
@@ -53,6 +65,17 @@
 	suid = __short(uint_arg(3))
 %)
 
+@define _SYSCALL_SETRESUID16_REGARGS_STORE
+%(
+        if (@probewrite(ruid))
+          set_uint_arg(1, __short(ruid))
+
+	if (@probewrite(euid))
+	  set_uint_arg(2, __short(euid))
+
+	if (@probewrite(suid))
+	  set_uint_arg(3, __short(suid))
+%)
 probe syscall.setresuid = dw_syscall.setresuid !, nd_syscall.setresuid ? {}
 probe syscall.setresuid.return = dw_syscall.setresuid.return !,
                                  nd_syscall.setresuid.return ? {}
@@ -96,6 +119,9 @@ probe nd2_syscall.setresuid = kprobe.function(@arch_syscall_prefix "sys_setresui
 	@_SYSCALL_SETRESUID_NAME
 	@_SYSCALL_SETRESUID_REGARGS
 	@_SYSCALL_SETRESUID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETRESUID_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -106,6 +132,9 @@ probe tp_syscall.setresuid = kernel.trace("sys_enter")
 	@_SYSCALL_SETRESUID_NAME
 	@_SYSCALL_SETRESUID_REGARGS
 	@_SYSCALL_SETRESUID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETRESUID_REGARGS_STORE %)
 }
 
 probe nd_syscall.setresuid.return = nd1_syscall.setresuid.return!, nd2_syscall.setresuid.return!, tp_syscall.setresuid.return
@@ -180,6 +209,9 @@ probe nd2_syscall.setresuid16 = kprobe.function(@arch_syscall_prefix "sys_setres
 	@_SYSCALL_SETRESUID_NAME
 	@_SYSCALL_SETRESUID16_REGARGS
 	@_SYSCALL_SETRESUID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETRESUID16_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -190,6 +222,9 @@ probe tp_syscall.setresuid16 = kernel.trace("sys_enter")
 	@_SYSCALL_SETRESUID_NAME
 	@_SYSCALL_SETRESUID16_REGARGS
 	@_SYSCALL_SETRESUID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETRESUID16_REGARGS_STORE %)
 }
 
 probe nd_syscall.setresuid16.return = nd1_syscall.setresuid16.return!, nd2_syscall.setresuid16.return!, tp_syscall.setresuid16.return

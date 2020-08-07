@@ -24,6 +24,21 @@
 	msgflg_str = _stp_msgflg_str(msgflg)
 %)
 
+@define _SYSCALL_MSGSND_REGARGS_STORE
+%(
+        if (@probewrite(msqid))
+          set_int_arg(1, msqid)
+
+	if (@probewrite(msgp_uaddr))
+	  set_pointer_arg(2, msgp_uaddr)
+
+	if (@probewrite(msgsz))
+	  set_ulong_arg(3, msgsz)
+
+	if (@probewrite(msgflg))
+	  set_int_arg(4, msgflg)
+%)
+
 @define _SYSCALL_COMPAT_MSGSND_REGARGS
 %(
 	msqid = int_arg(1)
@@ -40,6 +55,21 @@
 	msgflg = int_arg(4)
 	msgp_uaddr = pointer_arg(5)
 	msgflg_str = _stp_msgflg_str(msgflg)
+%)
+
+@define _SYSCALL_COMPAT_IPC_MSGSND_REGARGS_STORE
+%(
+        if (@probewrite(msqid))
+          set_int_arg(2, msqid)
+
+	if (@probewrite(msgsz))
+	  set_uint_arg(3, msgsz)
+
+	if (@probewrite(msgflg))
+	  set_int_arg(4, msgflg)
+
+	if (@probewrite(msgp_uaddr))
+	  set_pointer_arg(5, msgp_uaddr)
 %)
 
 probe syscall.msgsnd = dw_syscall.msgsnd !, nd_syscall.msgsnd ? {}
@@ -87,6 +117,9 @@ probe nd2_syscall.msgsnd = kprobe.function(@arch_syscall_prefix "sys_msgsnd") ?
 	@_SYSCALL_MSGSND_NAME
 	@_SYSCALL_MSGSND_REGARGS
 	@_SYSCALL_MSGSND_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MSGSND_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -97,6 +130,9 @@ probe tp_syscall.msgsnd = kernel.trace("sys_enter")
 	@_SYSCALL_MSGSND_NAME
 	@_SYSCALL_MSGSND_REGARGS
 	@_SYSCALL_MSGSND_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MSGSND_REGARGS_STORE %)
 }
 
 probe nd_syscall.msgsnd.return = nd1_syscall.msgsnd.return!, nd2_syscall.msgsnd.return!, tp_syscall.msgsnd.return
@@ -219,6 +255,9 @@ probe nd2_syscall.compat_sys_msgsnd = kprobe.function(@arch_syscall_prefix "comp
 	@_SYSCALL_MSGSND_NAME
 	@_SYSCALL_COMPAT_IPC_MSGSND_REGARGS
 	@_SYSCALL_MSGSND_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_IPC_MSGSND_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -230,6 +269,9 @@ probe tp_syscall.compat_sys_msgsnd = kernel.trace("sys_enter")
 	@_SYSCALL_MSGSND_NAME
 	@_SYSCALL_COMPAT_IPC_MSGSND_REGARGS
 	@_SYSCALL_MSGSND_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_IPC_MSGSND_REGARGS_STORE %)
 }
 
 probe nd_syscall.compat_sys_msgsnd.return = nd1_syscall.compat_sys_msgsnd.return!, nd2_syscall.compat_sys_msgsnd.return!, tp_syscall.compat_sys_msgsnd.return

@@ -17,6 +17,15 @@
 	length = ulong_arg(2)
 %)
 
+@define _SYSCALL_MUNMAP_REGARGS_STORE
+%(
+        if (@probewrite(start))
+          set_ulong_arg(1, start)
+
+	if (@probewrite(length))
+	  set_ulong_arg(2, length)
+%)
+
 probe syscall.munmap = dw_syscall.munmap !, nd_syscall.munmap ? {}
 probe syscall.munmap.return = dw_syscall.munmap.return !,
                               nd_syscall.munmap.return ? {}
@@ -56,6 +65,9 @@ probe nd2_syscall.munmap = kprobe.function(@arch_syscall_prefix "sys_munmap") ?
 	@_SYSCALL_MUNMAP_NAME
 	@_SYSCALL_MUNMAP_REGARGS
 	@_SYSCALL_MUNMAP_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MUNMAP_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -66,6 +78,9 @@ probe tp_syscall.munmap = kernel.trace("sys_enter")
 	@_SYSCALL_MUNMAP_NAME
 	@_SYSCALL_MUNMAP_REGARGS
 	@_SYSCALL_MUNMAP_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MUNMAP_REGARGS_STORE %)
 }
 
 probe nd_syscall.munmap.return = nd1_syscall.munmap.return!, nd2_syscall.munmap.return!, tp_syscall.munmap.return

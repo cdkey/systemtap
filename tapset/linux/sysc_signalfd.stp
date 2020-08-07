@@ -18,6 +18,12 @@ probe syscall.compat_signalfd = dw_syscall.compat_signalfd !,
 probe syscall.compat_signalfd.return = dw_syscall.compat_signalfd.return !,
                                        nd_syscall.compat_signalfd.return ? {}
 
+@define _SYSCALL_SIGNALFD4_REGARGS_STORE
+%(
+        if (@probewrite(flags))
+          set_int_arg(4, flags)
+%)
+
 # dw_signalfd _____________________________________________________
 
 probe dw_syscall.signalfd = __syscall.signalfd4 !, __syscall.signalfd ?
@@ -133,7 +139,11 @@ probe __nd2_syscall.signalfd4 = kprobe.function(@arch_syscall_prefix "sys_signal
 		argstr = sprintf("%d, %p, %d, %s", int_arg(1), pointer_arg(2),
 				 ulong_arg(3), _signalfd4_flags_str(flags))
 	}
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SIGNALFD4_REGARGS_STORE %)
 }
+
 probe __nd2_syscall.signalfd = kprobe.function(@arch_syscall_prefix "sys_signalfd")
 {
 	__set_syscall_pt_regs(pointer_arg(1))
@@ -162,6 +172,9 @@ probe __tp_syscall.signalfd4 = kernel.trace("sys_enter")
 		argstr = sprintf("%d, %p, %d, %s", int_arg(1), pointer_arg(2),
 				 ulong_arg(3), _signalfd4_flags_str(flags))
 	}
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SIGNALFD4_REGARGS_STORE %)
 }
 probe __tp_syscall.signalfd = kernel.trace("sys_enter")
 {
@@ -283,6 +296,9 @@ probe __nd2_syscall.compat_signalfd4 = kprobe.function(@arch_syscall_prefix "com
 				 pointer_arg(2), u32_arg(3),
 				 _signalfd4_flags_str(flags))
 	}
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SIGNALFD4_REGARGS_STORE %)
 }
 probe __nd2_syscall.compat_signalfd = kprobe.function(@arch_syscall_prefix "compat_sys_signalfd")
 {
@@ -313,6 +329,9 @@ probe __tp_syscall.compat_signalfd4 = kernel.trace("sys_enter")
 				 pointer_arg(2), u32_arg(3),
 				 _signalfd4_flags_str(flags))
 	}
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SIGNALFD4_REGARGS_STORE %)
 }
 probe __tp_syscall.compat_signalfd = kernel.function("sys_enter")
 {
@@ -323,6 +342,9 @@ probe __tp_syscall.compat_signalfd = kernel.function("sys_enter")
 	name = "signalfd"
 	argstr = sprintf("%d, %p, %d", int_arg(1), pointer_arg(2),
 			 u32_arg(3))
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SIGNALFD4_REGARGS_STORE %)
 }
 
 probe nd_syscall.compat_signalfd.return = nd1_syscall.compat_signalfd.return!, nd2_syscall.compat_signalfd.return!, tp_syscall.compat_signalfd.return

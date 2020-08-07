@@ -25,14 +25,42 @@
 # 'name2' should have been 'name_str'.  Deprecate the old name.
 %(systemtap_v <= "1.4" %?
 	name2 = user_string_quoted(pointer_arg(2))
+	name2_unquoted = user_string_nofault(pointer_arg(2))
 %)
 	name_uaddr = pointer_arg(2)
 	name_str = user_string_quoted(pointer_arg(2))
+	name_str_unquoted = user_string_nofault(pointer_arg(2))
 	value_uaddr = pointer_arg(3)
 	size = ulong_arg(4)
 	value_str = _stp_xattr_val_str(value_uaddr, size)
 	flags = int_arg(5)
 	flags_str = _stp_xattr_flags_str(flags)
+%)
+
+@define _SYSCALL_FSETXATTR_REGARGS_STORE
+%(
+        if (@probewrite(filedes))
+          set_int_arg(1, filedes)
+
+%(systemtap_v <= "1.4" %?
+	if (@probewrite(name2_unquoted))
+	  set_user_string_arg(pointer_arg(2), name2_unquoted)
+%)
+
+	if (@probewrite(name_uaddr))
+	  set_pointer_arg(2, name_uaddr)
+
+	if (@probewrite(name_str_unquoted))
+	  set_user_string_arg(pointer_arg(2), name_str_unquoted)
+
+	if (@probewrite(value_uaddr))
+	  set_pointer_arg(3, value_uaddr)
+
+	if (@probewrite(size))
+	  set_ulong_arg(4, size)
+
+	if (@probewrite(flags))
+	  set_int_arg(5, flags)
 %)
 
 probe syscall.fsetxattr = dw_syscall.fsetxattr !, nd_syscall.fsetxattr ? {}
@@ -83,6 +111,9 @@ probe nd2_syscall.fsetxattr = kprobe.function(@arch_syscall_prefix "sys_fsetxatt
 	@_SYSCALL_FSETXATTR_NAME
 	@_SYSCALL_FSETXATTR_REGARGS
 	@_SYSCALL_FSETXATTR_ARGSTR
+},
+{
+        @_SYSCALL_FSETXATTR_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -93,6 +124,9 @@ probe tp_syscall.fsetxattr = kernel.trace("sys_enter")
 	@_SYSCALL_FSETXATTR_NAME
 	@_SYSCALL_FSETXATTR_REGARGS
 	@_SYSCALL_FSETXATTR_ARGSTR
+},
+{
+        @_SYSCALL_FSETXATTR_REGARGS_STORE
 }
 
 probe nd_syscall.fsetxattr.return = nd1_syscall.fsetxattr.return!, nd2_syscall.fsetxattr.return!, tp_syscall.fsetxattr.return

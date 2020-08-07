@@ -72,6 +72,21 @@ probe nd2_syscall.fallocate = kprobe.function(@arch_syscall_prefix "sys_fallocat
 	offset = longlong_arg(3)
 	len = longlong_arg(4)
 	@_SYSCALL_FALLOCATE_ARGSTR
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(fd))
+	  set_int_arg(1, fd)
+
+	if (@probewrite(mode))
+	  set_uint_arg(2, mode)
+
+	if (@probewrite(offset))
+	  set_longlong_arg(3, offset)
+
+	if (@probewrite(len))
+	  set_longlong_arg(4, len)
+%)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -94,6 +109,26 @@ probe tp_syscall.fallocate = kernel.trace("sys_enter")
 	len = longlong_arg(5)
 %)
 	@_SYSCALL_FALLOCATE_ARGSTR
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(fd))
+	  set_int_arg(1, fd)
+
+	if (@probewrite(mode))
+	  set_uint_arg(2, mode)
+
+	if (@probewrite(offset))
+	  set_longlong_arg(3, offset)
+
+%( CONFIG_64BIT == "y" %?
+	if (@probewrite(len))
+	  set_longlong_arg(4, len)
+%:
+	if (@probewrite(len))
+	  set_longlong_arg(5, len)
+%)
+%)
 }
 
 probe nd_syscall.fallocate.return = nd1_syscall.fallocate.return!, nd2_syscall.fallocate.return!, tp_syscall.fallocate.return

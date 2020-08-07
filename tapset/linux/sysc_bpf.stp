@@ -20,6 +20,18 @@
 	size = uint_arg(3)
 %)
 
+@define _SYSCALL_BPF_REGARGS_STORE
+%(
+        if (@probewrite(cmd))
+          set_int_arg(1, cmd)
+
+	if (@probewrite(attr_uaddr))
+	  set_pointer_arg(2, attr_uaddr)
+
+	if (@probewrite(size))
+	  set_uint_arg(3, size)
+%)
+
 probe syscall.bpf = dw_syscall.bpf !, nd_syscall.bpf ? {}
 probe syscall.bpf.return = dw_syscall.bpf.return !, nd_syscall.bpf.return ? {}
 
@@ -60,6 +72,9 @@ probe nd2_syscall.bpf = kprobe.function(@arch_syscall_prefix "sys_bpf") ?
 	@_SYSCALL_BPF_NAME
 	@_SYSCALL_BPF_REGARGS
 	@_SYSCALL_BPF_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_BPF_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -70,6 +85,9 @@ probe tp_syscall.bpf = kernel.trace("sys_enter")
 	@_SYSCALL_BPF_NAME
 	@_SYSCALL_BPF_REGARGS
 	@_SYSCALL_BPF_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_BPF_REGARGS_STORE %)
 }
 
 probe nd_syscall.bpf.return = nd1_syscall.bpf.return!, nd2_syscall.bpf.return!, tp_syscall.bpf.return

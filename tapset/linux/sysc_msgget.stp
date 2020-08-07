@@ -20,12 +20,30 @@
 	msgflg_str = __sem_flags(msgflg)
 %)
 
+@define _SYSCALL_MSGGET_REGARGS_STORE
+%(
+        if (@probewrite(key))
+          set_int_arg(1, key)
+
+	if (@probewrite(msgflg))
+	  set_int_arg(2, msgflg)
+%)
+
 @define _SYSCALL_IPC_MSGGET_REGARGS
 %(
 	key = int_arg(2)
 	key_str = _stp_msgget_key_str(key)
 	msgflg = int_arg(3)
 	msgflg_str = __sem_flags(msgflg)
+%)
+
+@define _SYSCALL_IPC_MSGGET_REGARGS_STORE
+%(
+        if (@probewrite(key))
+          set_int_arg(2, key)
+
+	if (@probewrite(msgflg))
+	  set_int_arg(3, msgflg)
 %)
 
 probe syscall.msgget = dw_syscall.msgget !, nd_syscall.msgget ? {}
@@ -72,6 +90,9 @@ probe __nd2_syscall.msgget = kprobe.function(@arch_syscall_prefix "sys_msgget") 
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_MSGGET_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MSGGET_REGARGS_STORE %)
 }
 probe __nd2_syscall.compat_ipc.msgget =
 	kprobe.function(@arch_syscall_prefix "compat_sys_ipc") ?
@@ -79,6 +100,9 @@ probe __nd2_syscall.compat_ipc.msgget =
 	__set_syscall_pt_regs(pointer_arg(1))
 	if ((uint_arg(1) & 0xffff) != @const("MSGGET")) next;
 	@_SYSCALL_IPC_MSGGET_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IPC_MSGGET_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -92,6 +116,9 @@ probe __tp_syscall.msgget = kernel.trace("sys_enter")
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_msgget"))
 	@_SYSCALL_MSGGET_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MSGGET_REGARGS_STORE %)
 }
 probe __tp_syscall.ipc.msgget = kernel.trace("sys_enter")
 {
@@ -99,6 +126,9 @@ probe __tp_syscall.ipc.msgget = kernel.trace("sys_enter")
 	@__syscall_compat_gate(@const("__NR_ipc"), @const("__NR_compat_ipc"))
 	if ((uint_arg(1) & 0xffff) != @const("MSGGET")) next;
 	@_SYSCALL_IPC_MSGGET_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IPC_MSGGET_REGARGS_STORE %)
 }
 
 probe nd_syscall.msgget.return = nd1_syscall.msgget.return!, nd2_syscall.msgget.return!, tp_syscall.msgget.return

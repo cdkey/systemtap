@@ -20,10 +20,29 @@
 	dfd = int_arg(1)
 	dfd_str = _dfd_str(dfd)
 	pathname = user_string_quoted(pointer_arg(2))
+	pathname_unquoted = user_string_nofault(pointer_arg(2))
 	handle_uaddr = pointer_arg(3)
 	mnt_id_uaddr = pointer_arg(4)
 	flags = int_arg(5)
 	flags_str = _at_flag_str(flags)
+%)
+
+@define _SYSCALL_NAME_TO_HANDLE_AT_REGARGS_STORE
+%(
+        if (@probewrite(dfd))
+          set_int_arg(1, dfd)
+
+	if (@probewrite(pathname_unquoted))
+	  set_user_string_arg(pointer_arg(2), pathname_unquoted)
+
+	if (@probewrite(handle_uaddr))
+	  set_pointer_arg(3, handle_uaddr)
+
+	if (@probewrite(mnt_id_uaddr))
+	  set_pointer_arg(4, mnt_id_uaddr)
+
+	if (@probewrite(flags))
+	  set_int_arg(5, flags)
 %)
 
 probe syscall.name_to_handle_at = dw_syscall.name_to_handle_at !,
@@ -75,6 +94,9 @@ probe nd2_syscall.name_to_handle_at =
 	@_SYSCALL_NAME_TO_HANDLE_AT_NAME
 	@_SYSCALL_NAME_TO_HANDLE_AT_REGARGS
 	@_SYSCALL_NAME_TO_HANDLE_AT_ARGSTR
+},
+{
+	%( @_IS_SREG_KERNEL %? @_SYSCALL_NAME_TO_HANDLE_AT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -86,6 +108,9 @@ probe tp_syscall.name_to_handle_at = kernel.trace("sys_enter")
 	@_SYSCALL_NAME_TO_HANDLE_AT_NAME
 	@_SYSCALL_NAME_TO_HANDLE_AT_REGARGS
 	@_SYSCALL_NAME_TO_HANDLE_AT_ARGSTR
+},
+{
+	%( @_IS_SREG_KERNEL %? @_SYSCALL_NAME_TO_HANDLE_AT_REGARGS_STORE %)
 }
 
 probe nd_syscall.name_to_handle_at.return = nd1_syscall.name_to_handle_at.return!, nd2_syscall.name_to_handle_at.return!, tp_syscall.name_to_handle_at.return

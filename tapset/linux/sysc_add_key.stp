@@ -29,6 +29,24 @@
 	ringid = int_arg(5)
 %)
 
+@define _SYSCALL_ADD_KEY_REGARGS_STORE
+%(
+        if (@probewrite(type_uaddr))
+          set_pointer_arg(1, type_uaddr)
+
+        if (@probewrite(description_uaddr))
+	  set_pointer_arg(2, description_uaddr)
+
+        if (@probewrite(payload_uaddr))
+	  set_pointer_arg(3, payload_uaddr)
+
+        if (@probewrite(plen))
+	  set_ulong_arg(4, plen)
+
+        if (@probewrite(ringid))
+	  set_int_arg(5, ringid)
+%)
+
 probe syscall.add_key = dw_syscall.add_key !, nd_syscall.add_key ? {}
 probe syscall.add_key.return = dw_syscall.add_key.return !, nd_syscall.add_key.return ? {}
 
@@ -70,6 +88,9 @@ probe nd2_syscall.add_key = kprobe.function(@arch_syscall_prefix "sys_add_key") 
 	@_SYSCALL_ADD_KEY_NAME
 	@_SYSCALL_ADD_KEY_REGARGS
 	@_SYSCALL_ADD_KEY_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_ADD_KEY_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -80,6 +101,9 @@ probe tp_syscall.add_key = kernel.trace("sys_enter")
 	@_SYSCALL_ADD_KEY_NAME
 	@_SYSCALL_ADD_KEY_REGARGS
 	@_SYSCALL_ADD_KEY_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_ADD_KEY_REGARGS_STORE %)
 }
 
 probe nd_syscall.add_key.return = nd1_syscall.add_key.return!, nd2_syscall.add_key.return!, tp_syscall.add_key.return

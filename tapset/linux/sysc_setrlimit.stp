@@ -26,6 +26,15 @@
 	rlim_str = _struct_rlimit_u(rlim_uaddr)
 %)
 
+@define _SYSCALL_SETRLIMIT_REGARGS_STORE
+%(
+        if (@probewrite(resource))
+          set_uint_arg(1, resource)
+
+	if (@probewrite(rlim_uaddr))
+	  set_pointer_arg(2, rlim_uaddr)
+%)
+
 probe syscall.setrlimit = dw_syscall.setrlimit !, nd_syscall.setrlimit ? {}
 probe syscall.setrlimit.return = dw_syscall.setrlimit.return !,
                                  nd_syscall.setrlimit.return ? {}
@@ -84,6 +93,9 @@ probe nd2_syscall.setrlimit =
 	@_SYSCALL_SETRLIMIT_NAME
 	@_SYSCALL_SETRLIMIT_REGARGS
 	@_SYSCALL_SETRLIMIT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETRLIMIT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -94,6 +106,9 @@ probe tp_syscall.setrlimit = kernel.trace("sys_enter")
 	@_SYSCALL_SETRLIMIT_NAME
 	@_SYSCALL_SETRLIMIT_REGARGS
 	@_SYSCALL_SETRLIMIT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETRLIMIT_REGARGS_STORE %)
 }
 
 probe nd_syscall.setrlimit.return = nd1_syscall.setrlimit.return!, nd2_syscall.setrlimit.return!, tp_syscall.setrlimit.return

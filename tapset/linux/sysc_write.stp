@@ -23,6 +23,18 @@
 	buf_str = user_buffer_quoted(buf_uaddr, count, syscall_string_trunc)
 %)
 
+@define _SYSCALL_WRITE_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(buf_uaddr))
+	  set_pointer_arg(2, buf_uaddr)
+
+	if (@probewrite(count))
+	  set_ulong_arg(3, count)
+%)
+
 probe syscall.write = dw_syscall.write !, nd_syscall.write ? {}
 probe syscall.write.return = dw_syscall.write.return !, nd_syscall.write.return ? {}
 
@@ -99,6 +111,9 @@ probe nd2_syscall.write = kprobe.function(@arch_syscall_prefix "sys_write")
 	@_SYSCALL_WRITE_NAME
 	@_SYSCALL_WRITE_REGARGS
 	@_SYSCALL_WRITE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_WRITE_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -109,6 +124,9 @@ probe tp_syscall.write = kernel.trace("sys_enter")
 	@_SYSCALL_WRITE_NAME
 	@_SYSCALL_WRITE_REGARGS
 	@_SYSCALL_WRITE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_WRITE_REGARGS_STORE %)
 }
 
 probe nd_syscall.write.return = nd1_syscall.write.return!, nd2_syscall.write.return!, tp_syscall.write.return

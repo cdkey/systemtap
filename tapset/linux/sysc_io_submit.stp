@@ -20,6 +20,22 @@
 	iocbpp_uaddr = pointer_arg(3)
 %)
 
+@define _SYSCALL_IO_SUBMIT_REGARGS_STORE
+%(
+        if (@probewrite(ctx_id))
+          set_ulong_arg(1, ctx_id)
+
+	if (@probewrite(nr)) {
+	  if (@__compat_task)
+	    set_int_arg(2, nr)
+	  else
+	    set_long_arg(2, nr)
+	}
+
+	if (@probewrite(iocbpp_uaddr))
+	  set_pointer_arg(3, iocbpp_uaddr)
+%)
+
 probe syscall.io_submit = dw_syscall.io_submit !, nd_syscall.io_submit ? {}
 probe syscall.io_submit.return = dw_syscall.io_submit.return !, nd_syscall.io_submit.return ? {}
 
@@ -75,6 +91,9 @@ probe nd2_syscall.io_submit = kprobe.function(@arch_syscall_prefix "sys_io_submi
 	@_SYSCALL_IO_SUBMIT_NAME
 	@_SYSCALL_IO_SUBMIT_REGARGS
 	@_SYSCALL_IO_SUBMIT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IO_SUBMIT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -85,6 +104,9 @@ probe tp_syscall.io_submit = kernel.trace("sys_enter")
 	@_SYSCALL_IO_SUBMIT_NAME
 	@_SYSCALL_IO_SUBMIT_REGARGS
 	@_SYSCALL_IO_SUBMIT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IO_SUBMIT_REGARGS_STORE %)
 }
 
 probe nd_syscall.io_submit.return = nd1_syscall.io_submit.return!, nd2_syscall.io_submit.return!, tp_syscall.io_submit.return

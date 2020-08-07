@@ -106,6 +106,12 @@ probe nd2_syscall.sigsuspend =
 	mask = ulong_arg(3)
 	mask_str = _stp_sigmask_str(mask)
 	@_SYSCALL_SIGSUSPEND_ARGSTR
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(mask))
+	  set_ulong_arg(3, mask)
+%)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -122,6 +128,17 @@ probe tp_syscall.sigsuspend = kernel.trace("sys_enter")
 %)
 	mask_str = _stp_sigmask_str(mask)
 	@_SYSCALL_SIGSUSPEND_ARGSTR
+},
+{
+%( @_IS_SREG_KERNEL %?
+%( CONFIG_OLD_SIGSUSPEND == "y" %?
+	if (@probewrite(mask))
+	  set_ulong_arg(1, mask)
+%:
+	if (@probewrite(mask))
+	  set_ulong_arg(3, mask)
+%)
+%)
 }
 
 probe nd_syscall.sigsuspend.return = nd1_syscall.sigsuspend.return!, nd2_syscall.sigsuspend.return!, tp_syscall.sigsuspend.return

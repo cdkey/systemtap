@@ -35,6 +35,18 @@
 	}
 %)
 
+@define _SYSCALL_RT_SIGTIMEDWAIT_REGARGS_STORE
+%(
+        if (@probewrite(uthese_uaddr))
+          set_pointer_arg(1, uthese_uaddr)
+
+	if (@probewrite(uinfo_uaddr))
+	  set_pointer_arg(2, uinfo_uaddr)
+
+	if (@probewrite(uts_uaddr))
+	  set_pointer_arg(3, uts_uaddr)
+%)
+
 probe syscall.rt_sigtimedwait = dw_syscall.rt_sigtimedwait !,
                                 nd_syscall.rt_sigtimedwait ? {}
 probe syscall.rt_sigtimedwait.return = dw_syscall.rt_sigtimedwait.return !,
@@ -108,12 +120,26 @@ probe __nd2_syscall.rt_sigtimedwait =
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	sigsetsize = ulong_arg(4)
+},
+{
+%( @_IS_SREG_KERNEL %?
+        @_SYSCALL_RT_SIGTIMEDWAIT_REGARGS_STORE
+	if (@probewrite(sigsetsize))
+	  set_ulong_arg(4, sigsetsize)
+%)
 }
 probe __nd2_syscall.compat_rt_sigtimedwait =
 	kprobe.function(@arch_syscall_prefix "compat_sys_rt_sigtimedwait")
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	sigsetsize = u32_arg(4)
+},
+{
+%( @_IS_SREG_KERNEL %?
+        @_SYSCALL_RT_SIGTIMEDWAIT_REGARGS_STORE
+	if (@probewrite(sigsetsize))
+	  set_u32_arg(4, sigsetsize)
+%)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -130,12 +156,26 @@ probe __tp_syscall.rt_sigtimedwait = kernel.trace("sys_enter")
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_rt_sigtimedwait"))
 	sigsetsize = ulong_arg(4)
+},
+{
+%( @_IS_SREG_KERNEL %?
+        @_SYSCALL_RT_SIGTIMEDWAIT_REGARGS_STORE
+	if (@probewrite(sigsetsize))
+	  set_ulong_arg(4, sigsetsize)
+%)
 }
 probe __tp_syscall.compat_rt_sigtimedwait = kernel.trace("sys_enter")
 {
 	__set_syscall_pt_regs($regs)
 	@__compat_syscall_gate(@const("__NR_compat_rt_sigtimedwait"))
 	sigsetsize = u32_arg(4)
+},
+{
+%( @_IS_SREG_KERNEL %?
+        @_SYSCALL_RT_SIGTIMEDWAIT_REGARGS_STORE
+	if (@probewrite(sigsetsize))
+	  set_u32_arg(4, sigsetsize)
+%)
 }
 
 probe nd_syscall.rt_sigtimedwait.return = nd1_syscall.rt_sigtimedwait.return!, nd2_syscall.rt_sigtimedwait.return!, tp_syscall.rt_sigtimedwait.return

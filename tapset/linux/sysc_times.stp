@@ -19,6 +19,12 @@
 	buf_str = _struct_tms_u(buf_uaddr)
 %)
 
+@define _SYSCALL_TIMES_REGARGS_STORE
+%(
+        if (@probewrite(buf_uaddr))
+          set_pointer_arg(1, buf_uaddr)
+%)
+
 probe syscall.times = dw_syscall.times !, nd_syscall.times ? {}
 probe syscall.times.return = dw_syscall.times.return !,
                              nd_syscall.times.return ? {}
@@ -62,6 +68,9 @@ probe nd2_syscall.times = kprobe.function(@arch_syscall_prefix "compat_sys_times
 	@_SYSCALL_TIMES_NAME
 	@_SYSCALL_TIMES_REGARGS
 	@_SYSCALL_TIMES_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TIMES_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -72,6 +81,9 @@ probe tp_syscall.times = kernel.trace("sys_enter")
 	@_SYSCALL_TIMES_NAME
 	@_SYSCALL_TIMES_REGARGS
 	@_SYSCALL_TIMES_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TIMES_REGARGS_STORE %)
 }
 
 probe nd_syscall.times.return = nd1_syscall.times.return!, nd2_syscall.times.return!, tp_syscall.times.return

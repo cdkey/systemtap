@@ -34,6 +34,32 @@
 	           : _struct_timespec_u(timeout_uaddr, 1))
 %)
 
+@define _SYSCALL_IO_GETEVENTS_REGARGS_STORE
+%(
+        if (@probewrite(ctx_id))
+          set_ulong_arg(1, ctx_id)
+
+	if (@probewrite(min_nr)) {
+	  if (@__compat_task)
+	    set_int_arg(2, min_nr)
+	  else
+	    set_long_arg(2, min_nr)
+	}
+
+	if (@probewrite(nr)) {
+	  if (@__compat_task)
+	    set_int_arg(3, nr)
+	  else
+	    set_long_arg(3, nr)
+	}
+
+	if (@probewrite(events_uaddr))
+	  set_pointer_arg(4, events_uaddr)
+
+	if (@probewrite(timeout_uaddr))
+	  set_pointer_arg(5, timeout_uaddr)
+%)
+
 probe syscall.io_getevents = dw_syscall.io_getevents !, nd_syscall.io_getevents ? {}
 probe syscall.io_getevents.return = dw_syscall.io_getevents.return !,
                                     nd_syscall.io_getevents.return ? {}
@@ -95,6 +121,9 @@ probe nd2_syscall.io_getevents = kprobe.function(@arch_syscall_prefix "sys_io_ge
 	@_SYSCALL_IO_GETEVENTS_NAME
 	@_SYSCALL_IO_GETEVENTS_REGARGS
 	@_SYSCALL_IO_GETEVENTS_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IO_GETEVENTS_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -105,6 +134,9 @@ probe tp_syscall.io_getevents = kernel.trace("sys_enter")
 	@_SYSCALL_IO_GETEVENTS_NAME
 	@_SYSCALL_IO_GETEVENTS_REGARGS
 	@_SYSCALL_IO_GETEVENTS_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IO_GETEVENTS_REGARGS_STORE %)
 }
 
 probe nd_syscall.io_getevents.return = nd1_syscall.io_getevents.return!, nd2_syscall.io_getevents.return!, tp_syscall.io_getevents.return

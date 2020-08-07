@@ -96,6 +96,21 @@ probe __nd2_syscall.sync_file_range =
 	nbytes = longlong_arg(3)
 	flags = uint_arg(4)
 	flags_str = _sync_file_range_flags_str(flags)
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(fd))
+	  set_int_arg(1, fd)
+
+	if (@probewrite(offset))
+	  set_longlong_arg(2, offset)
+
+	if (@probewrite(nbytes))
+	  set_longlong_arg(3, nbytes)
+
+	if (@probewrite(flags))
+	  set_uint_arg(4, flags)
+%)
 }
 probe __nd2_syscall.compat_sync_file_range =
 	kprobe.function(@arch_syscall_prefix "compat_sys_x86_sync_file_range") ?
@@ -106,6 +121,25 @@ probe __nd2_syscall.compat_sync_file_range =
 	nbytes = (uint_arg(5) << 32) | uint_arg(4)
 	flags = uint_arg(6)
 	flags_str = _sync_file_range_flags_str(flags)
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(fd))
+	  set_int_arg(1, fd)
+
+	if (@probewrite(offset)) {
+	  set_uint_arg(2, offset & 0xffffffff)
+	  set_uint_arg(3, offset >> 32)
+	}
+
+	if (@probewrite(nbytes)) {
+	  set_uint_arg(4, nbytes & 0xffffffff)
+	  set_uint_arg(5, nbytes >> 32)
+	}
+
+	if (@probewrite(flags))
+	  set_uint_arg(6, flags)
+%)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -128,6 +162,35 @@ probe tp_syscall.sync_file_range = kernel.trace("sys_enter")
 	}
 	flags_str = _sync_file_range_flags_str(flags)
 	@_SYSCALL_SYNC_FILE_RANGE_ARGSTR
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(fd))
+	  set_int_arg(1, fd)
+
+	if (@__compat_task) {
+		if (@probewrite(offset)) {
+		  set_uint_arg(2, offset & 0xffffffff)
+		  set_uint_arg(3, offset >> 32)
+		}
+
+		if (@probewrite(nbytes)) {
+		  set_uint_arg(4, nbytes & 0xffffffff)
+		  set_uint_arg(5, nbytes >> 32)
+		}
+		if (@probewrite(flags))
+		  set_uint_arg(6, flags)
+	} else {
+		if (@probewrite(offset))
+		  set_longlong_arg(2, offset)
+
+		if (@probewrite(nbytes))
+		  set_longlong_arg(3, nbytes)
+
+		if (@probewrite(flags))
+		  set_uint_arg(4, flags)
+	}
+%)
 }
 
 probe nd_syscall.sync_file_range.return = nd1_syscall.sync_file_range.return!, nd2_syscall.sync_file_range.return!, tp_syscall.sync_file_range.return

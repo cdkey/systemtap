@@ -21,6 +21,18 @@
 	ioprio_str = _stp_ioprio_value_str(ioprio)
 %)
 
+@define _SYSCALL_IOPRIO_SET_REGARGS_STORE
+%(
+        if (@probewrite(which))
+          set_int_arg(1, which)
+
+	if (@probewrite(who))
+	  set_int_arg(2, who)
+
+	if (@probewrite(ioprio))
+	  set_int_arg(3, ioprio)
+%)
+
 probe syscall.ioprio_set = dw_syscall.ioprio_set !, nd_syscall.ioprio_set ? {}
 probe syscall.ioprio_set.return = dw_syscall.ioprio_set.return !,
                                   nd_syscall.ioprio_set.return ? {}
@@ -63,6 +75,9 @@ probe nd2_syscall.ioprio_set = kprobe.function(@arch_syscall_prefix "sys_ioprio_
 	@_SYSCALL_IOPRIO_SET_NAME
 	@_SYSCALL_IOPRIO_SET_REGARGS
 	@_SYSCALL_IOPRIO_SET_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IOPRIO_SET_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -73,6 +88,9 @@ probe tp_syscall.ioprio_set = kernel.trace("sys_enter")
 	@_SYSCALL_IOPRIO_SET_NAME
 	@_SYSCALL_IOPRIO_SET_REGARGS
 	@_SYSCALL_IOPRIO_SET_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IOPRIO_SET_REGARGS_STORE %)
 }
 
 probe nd_syscall.ioprio_set.return = nd1_syscall.ioprio_set.return!, nd2_syscall.ioprio_set.return!, tp_syscall.ioprio_set.return

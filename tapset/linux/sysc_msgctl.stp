@@ -28,6 +28,30 @@
 	buf_uaddr = pointer_arg(5)
 %)
 
+@define _SYSCALL_MSGCTL_REGARGS_STORE
+%(
+        if (@probewrite(msqid))
+          set_int_arg(1, msqid)
+
+	if (@probewrite(cmd))
+	  set_int_arg(2, cmd)
+
+	if (@probewrite(buf_uaddr))
+	  set_pointer_arg(3, buf_uaddr)
+%)
+
+@define _SYSCALL_IPC_MSGCTL_REGARGS_STORE
+%(
+        if (@probewrite(msqid))
+          set_int_arg(1, msqid)
+
+	if (@probewrite(cmd))
+	  set_int_arg(3, cmd)
+
+	if (@probewrite(buf_uaddr))
+	  set_pointer_arg(5, buf_uaddr)
+%)
+
 probe syscall.msgctl = dw_syscall.msgctl !, nd_syscall.msgctl ? {}
 probe syscall.msgctl.return = dw_syscall.msgctl.return !,
                               nd_syscall.msgctl.return ? {}
@@ -72,6 +96,9 @@ probe nd2_syscall.msgctl = kprobe.function(@arch_syscall_prefix "sys_msgctl") ?
 	@_SYSCALL_MSGCTL_NAME
 	@_SYSCALL_MSGCTL_REGARGS
 	@_SYSCALL_MSGCTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MSGCTL_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -82,6 +109,9 @@ probe tp_syscall.msgctl = kernel.trace("sys_enter")
 	@_SYSCALL_MSGCTL_NAME
 	@_SYSCALL_MSGCTL_REGARGS
 	@_SYSCALL_MSGCTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MSGCTL_REGARGS_STORE %)
 }
 
 probe nd_syscall.msgctl.return = nd1_syscall.msgctl.return!, nd2_syscall.msgctl.return!, tp_syscall.msgctl.return
@@ -201,6 +231,9 @@ probe nd2_syscall.compat_sys_msgctl = kprobe.function(@arch_syscall_prefix "comp
 	@_SYSCALL_MSGCTL_NAME
 	@_SYSCALL_IPC_MSGCTL_REGARGS
 	@_SYSCALL_MSGCTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IPC_MSGCTL_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -212,6 +245,9 @@ probe tp_syscall.compat_sys_msgctl = kernel.trace("sys_enter")
 	@_SYSCALL_MSGCTL_NAME
 	@_SYSCALL_IPC_MSGCTL_REGARGS
 	@_SYSCALL_MSGCTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IPC_MSGCTL_REGARGS_STORE %)
 }
 
 probe nd_syscall.compat_sys_msgctl.return = nd1_syscall.compat_sys_msgctl.return!, nd2_syscall.compat_sys_msgctl.return!, tp_syscall.compat_sys_msgctl.return

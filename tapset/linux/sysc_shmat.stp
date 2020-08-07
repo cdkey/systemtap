@@ -21,12 +21,36 @@
 	shmflg_str = _shmat_flags_str(shmflg)
 %)
 
+@define _SYSCALL_SHMAT_REGARGS_STORE
+%(
+        if (@probewrite(shmid))
+          set_int_arg(1, shmid)
+
+	if (@probewrite(shmaddr_uaddr))
+	  set_pointer_arg(2, shmaddr_uaddr)
+
+	if (@probewrite(shmflg))
+	  set_int_arg(3, shmflg)
+%)
+
 @define _SYSCALL_IPC_SHMAT_REGARGS
 %(
 	shmid = int_arg(2)
 	shmaddr_uaddr = pointer_arg(5)
 	shmflg = int_arg(3)
 	shmflg_str = _shmat_flags_str(shmflg)
+%)
+
+@define _SYSCALL_IPC_SHMAT_REGARGS_STORE
+%(
+        if (@probewrite(shmid))
+          set_int_arg(2, shmid)
+
+	if (@probewrite(shmaddr_uaddr))
+	  set_pointer_arg(5, shmaddr_uaddr)
+
+	if (@probewrite(shmflg))
+	  set_int_arg(3, shmflg)
 %)
 
 probe syscall.shmat = dw_syscall.shmat !, nd_syscall.shmat ? {}
@@ -69,6 +93,9 @@ probe nd2_syscall.shmat = kprobe.function(@arch_syscall_prefix "sys_shmat") ?
 	@_SYSCALL_SHMAT_NAME
 	@_SYSCALL_SHMAT_REGARGS
 	@_SYSCALL_SHMAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SHMAT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -79,6 +106,9 @@ probe tp_syscall.shmat = kernel.trace("sys_enter")
 	@_SYSCALL_SHMAT_NAME
 	@_SYSCALL_SHMAT_REGARGS
 	@_SYSCALL_SHMAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SHMAT_REGARGS_STORE %)
 }
 
 probe nd_syscall.shmat.return = nd1_syscall.shmat.return!, nd2_syscall.shmat.return!, tp_syscall.shmat.return
@@ -178,6 +208,9 @@ probe nd2_syscall.compat_sys_shmat =
 	@_SYSCALL_SHMAT_NAME
 	@_SYSCALL_IPC_SHMAT_REGARGS
 	@_SYSCALL_SHMAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IPC_SHMAT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -189,6 +222,9 @@ probe tp_syscall.compat_sys_shmat = kernel.trace("sys_enter")
 	@_SYSCALL_SHMAT_NAME
 	@_SYSCALL_IPC_SHMAT_REGARGS
 	@_SYSCALL_SHMAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IPC_SHMAT_REGARGS_STORE %)
 }
 
 probe nd_syscall.compat_sys_shmat.return = nd1_syscall.compat_sys_shmat.return!, nd2_syscall.compat_sys_shmat.return!, tp_syscall.compat_sys_shmat.return

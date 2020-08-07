@@ -24,6 +24,15 @@
 	buf_uaddr = pointer_arg(2)
 %)
 
+@define _SYSCALL_FSTAT_REGARGS_STORE
+%(
+        if (@probewrite(filedes))
+          set_int_arg(1, filedes)
+
+	if (@probewrite(buf_uaddr))
+	  set_pointer_arg(2, buf_uaddr)
+%)
+
 probe syscall.fstat = dw_syscall.fstat !, nd_syscall.fstat ? {}
 probe syscall.fstat.return = dw_syscall.fstat.return !, nd_syscall.fstat.return ? {}
 
@@ -100,6 +109,9 @@ probe nd2_syscall.fstat =
 	@_SYSCALL_FSTAT_NAME
 	@_SYSCALL_FSTAT_REGARGS
 	@_SYSCALL_FSTAT_ARGSTR
+},
+{
+        @_SYSCALL_FSTAT_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -111,6 +123,9 @@ probe tp_syscall.fstat = __tp_syscall.fstat,
 	@_SYSCALL_FSTAT_NAME
 	@_SYSCALL_FSTAT_REGARGS
 	@_SYSCALL_FSTAT_ARGSTR
+},
+{
+        @_SYSCALL_FSTAT_REGARGS_STORE
 }
 probe __tp_syscall.fstat = kernel.trace("sys_enter")
 {

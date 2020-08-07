@@ -21,6 +21,18 @@
 	addrlen_uaddr = pointer_arg(3)
 %)
 
+@define _SYSCALL_ACCEPT_REGARGS_STORE
+%(
+        if (@probewrite(sockfd))
+	  set_int_arg(1, sockfd)
+
+	if (@probewrite(addr_uaddr))
+	  set_pointer_arg(2, addr_uaddr)
+
+	if (@probewrite(addrlen_uaddr))
+	  set_pointer_arg(3, addrlen_uaddr)
+%)
+
 @define _SYSCALL_SOCKETCALL_ACCEPT_REGARGS
 %(
 	__argsl = &@ulong_cast(pointer_arg(2))
@@ -155,7 +167,11 @@ probe __nd2_syscall.accept = kprobe.function(@arch_syscall_prefix "sys_accept").
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_ACCEPT_REGARGS
+},
+{
+	%( @_IS_SREG_KERNEL %? @_SYSCALL_ACCEPT_REGARGS_STORE %)
 }
+
 probe __nd2_syscall.socketcall.accept = kprobe.function(@arch_syscall_prefix "sys_socketcall").call ?
 {
 	__set_syscall_pt_regs(pointer_arg(1))
@@ -185,12 +201,17 @@ probe tp_syscall.accept = __tp_syscall.accept ?,
 	@_SYSCALL_ACCEPT_ARGSTR
 %)
 }
+
 probe __tp_syscall.accept = kernel.trace("sys_enter")
 {
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_accept"))
 	@_SYSCALL_ACCEPT_REGARGS
+},
+{
+	%( @_IS_SREG_KERNEL %? @_SYSCALL_ACCEPT_REGARGS_STORE %)
 }
+
 probe __tp_syscall.socketcall.accept = kernel.trace("sys_enter")
 {
 	__set_syscall_pt_regs($regs)

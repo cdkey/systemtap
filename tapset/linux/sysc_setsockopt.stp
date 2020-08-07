@@ -27,6 +27,24 @@
 	optlen = uint_arg(5)
 %)
 
+@define _SYSCALL_SETSOCKOPT_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(level))
+	  set_int_arg(2, level)
+
+	if (@probewrite(optname))
+	  set_int_arg(3, optname)
+
+	if (@probewrite(optval_uaddr))
+	  set_pointer_arg(4, optval_uaddr)
+
+	if (@probewrite(optlen))
+	  set_uint_arg(5, optlen)
+%)
+
 @define _SYSCALL_SOCKETCALL_SETSOCKOPT_REGARGS
 %(
 	__args = &@ulong_cast(pointer_arg(2))
@@ -157,6 +175,9 @@ probe __nd2_syscall.setsockopt = kprobe.function(@arch_syscall_prefix "sys_setso
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_SETSOCKOPT_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETSOCKOPT_REGARGS_STORE %)
 }
 probe __nd2_syscall.socketcall.setsockopt = kprobe.function(@arch_syscall_prefix "sys_socketcall").call ?
 {
@@ -186,6 +207,9 @@ probe __tp_syscall.setsockopt = kernel.trace("sys_enter")
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_setsockopt"))
 	@_SYSCALL_SETSOCKOPT_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETSOCKOPT_REGARGS_STORE %)
 }
 probe __tp_syscall.socketcall.setsockopt = kernel.trace("sys_enter")
 {

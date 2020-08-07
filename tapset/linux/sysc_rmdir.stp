@@ -17,6 +17,13 @@
 @define _SYSCALL_RMDIR_REGARGS
 %(
 	pathname = user_string_quoted(pointer_arg(1))
+	pathname_unquoted = user_string_nofault(pointer_arg(1))
+%)
+
+@define _SYSCALL_RMDIR_REGARGS_STORE
+%(
+        if (@probewrite(pathname_unquoted))
+          set_user_string_arg(pointer_arg(1), pathname_unquoted)
 %)
 
 probe syscall.rmdir = dw_syscall.rmdir !, nd_syscall.rmdir ? {}
@@ -56,6 +63,9 @@ probe nd2_syscall.rmdir = kprobe.function(@arch_syscall_prefix "sys_rmdir")
 	@_SYSCALL_RMDIR_NAME
 	@_SYSCALL_RMDIR_REGARGS
 	@_SYSCALL_RMDIR_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_RMDIR_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -66,6 +76,9 @@ probe tp_syscall.rmdir = kernel.trace("sys_enter")
 	@_SYSCALL_RMDIR_NAME
 	@_SYSCALL_RMDIR_REGARGS
 	@_SYSCALL_RMDIR_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_RMDIR_REGARGS_STORE %)
 }
 
 probe nd_syscall.rmdir.return = nd1_syscall.rmdir.return!, nd2_syscall.rmdir.return!, tp_syscall.rmdir.return

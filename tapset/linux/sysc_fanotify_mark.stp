@@ -28,6 +28,7 @@
 	mask = ulonglong_arg(3)
 	dirfd = int_arg(4)
 	pathname = user_string_quoted(pointer_arg(5))
+	pathname_unquoted = user_string_nofault(pointer_arg(5))
 %:
 	# On a 32-bit kernel, 'long long' arguments take the space of
 	# 2 arguments, so we have to adjust the following argument
@@ -35,6 +36,36 @@
 	mask = ulonglong_arg(3)
 	dirfd = int_arg(5)
 	pathname = user_string_quoted(pointer_arg(6))
+	pathname_unquoted = user_string_nofault(pointer_arg(6))
+%)
+%)
+
+@define _SYSCALL_FANOTIFY_MARK_REGARGS_STORE
+%(
+        if (@probewrite(fanotify_fd))
+          set_int_arg(1, fanotify_fd)
+
+	if (@probewrite(flags))
+	  set_uint_arg(2, flags)
+
+%( CONFIG_64BIT == "y" %?
+	if (@probewrite(mask))
+	  set_ulonglong_arg(3, mask)
+
+	if (@probewrite(dirfd))
+	  set_int_arg(4, dirfd)
+
+	if (@probewrite(pathname_unquoted))
+	  set_user_string_arg(pointer_arg(5), pathname_unquoted)
+%:
+	if (@probewrite(mask))
+	  set_ulonglong_arg(3, mask)
+
+	if (@probewrite(dirfd))
+	  set_int_arg(5, dirfd)
+
+	if (@probewrite(pathname_unquoted))
+	  set_user_string_arg(pointer_arg(6), pathname_unquoted)
 %)
 %)
 
@@ -48,6 +79,33 @@
 		mask = ((uint_arg(4) << 32) | uint_arg(3))
 	dirfd = int_arg(5)
 	pathname = user_string_quoted(pointer_arg(6))
+	pathname_unquoted = user_string_nofault(pointer_arg(6))
+%)
+
+@define _SYSCALL_COMPAT_FANOTIFY_MARK_REGARGS_STORE
+%(
+        if (@probewrite(fanotify_fd))
+          set_int_arg(1, fanotify_fd)
+
+	if (@probewrite(flags))
+	  set_uint_arg(2, flags)
+
+	if (@__BIG_ENDIAN)
+	  if (@probewrite(mask)) {
+	    set_uint_arg(3, mask >> 32)
+	    set_uint_arg(4, mask & 0xffffffff)
+	  }
+	else
+	  if (@probewrite(mask)) {
+	    set_uint_arg(3, mask & 0xffffffff)
+	    set_uint_arg(4, mask >> 32)
+	  }
+
+	if (@probewrite(dirfd))
+	  set_int_arg(5, dirfd)
+
+	if (@probewrite(pathname_unquoted))
+	  set_user_string_arg(pointer_arg(6), pathname_unquoted)
 %)
 
 probe syscall.fanotify_mark = dw_syscall.fanotify_mark !, nd_syscall.fanotify_mark ? {}
@@ -134,12 +192,18 @@ probe __nd2_syscall.fanotify_mark = kprobe.function(@arch_syscall_prefix "sys_fa
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_FANOTIFY_MARK_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_FANOTIFY_MARK_REGARGS_STORE %)
 }
 probe __nd2_syscall.compat_fanotify_mark = 
 	kprobe.function(@arch_syscall_prefix "compat_sys_fanotify_mark") ?
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_COMPAT_FANOTIFY_MARK_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_FANOTIFY_MARK_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -157,12 +221,18 @@ probe __tp_syscall.fanotify_mark = kernel.trace("sys_enter")
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_fanotify_mark"))
 	@_SYSCALL_FANOTIFY_MARK_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_FANOTIFY_MARK_REGARGS_STORE %)
 }
 probe __tp_syscall.compat_fanotify_mark = kernel.trace("sys_enter")
 {
 	__set_syscall_pt_regs($regs)
 	@__compat_syscall_gate(@const("__NR_compat_fanotify_mark"))
 	@_SYSCALL_COMPAT_FANOTIFY_MARK_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_FANOTIFY_MARK_REGARGS_STORE %)
 }
 
 probe nd_syscall.fanotify_mark.return = nd1_syscall.fanotify_mark.return!, nd2_syscall.fanotify_mark.return!, tp_syscall.fanotify_mark.return

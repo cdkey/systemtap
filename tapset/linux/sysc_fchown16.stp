@@ -18,6 +18,18 @@
 	group = __short(uint_arg(3))
 %)
 
+@define _SYSCALL_FCHOWN16_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(owner))
+	  set_uint_arg(2, __short(owner))
+
+	if (@probewrite(group))
+	  set_uint_arg(3, __short(group))
+%)
+
 probe syscall.fchown16 = dw_syscall.fchown16 !, nd_syscall.fchown16 ? {}
 probe syscall.fchown16.return = dw_syscall.fchown16.return !, nd_syscall.fchown16.return ? {}
 
@@ -57,6 +69,9 @@ probe nd2_syscall.fchown16 = kprobe.function(@arch_syscall_prefix "sys_fchown16"
 	@_SYSCALL_FCHOWN16_NAME
 	@_SYSCALL_FCHOWN16_REGARGS
 	@_SYSCALL_FCHOWN16_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_FCHOWN16_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -71,6 +86,9 @@ probe tp_syscall.fchown16 = kernel.trace("sys_enter")
 	@_SYSCALL_FCHOWN16_NAME
 	@_SYSCALL_FCHOWN16_REGARGS
 	@_SYSCALL_FCHOWN16_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_FCHOWN16_REGARGS_STORE %)
 }
 
 probe nd_syscall.fchown16.return = nd1_syscall.fchown16.return!, nd2_syscall.fchown16.return!, tp_syscall.fchown16.return

@@ -18,13 +18,36 @@
 @define _SYSCALL_LGETXATTR_REGARGS
 %(
 	path = user_string_quoted(pointer_arg(1))
+	path_unquoted = user_string_nofault(pointer_arg(1))
 # 'name2' should have been 'name_str'.  Deprecate the old name.
 %(systemtap_v <= "1.4" %?
 	name2 = user_string_quoted(pointer_arg(2))
+	name2_unquoted = user_string_nofault(pointer_arg(2))
 %)
 	name_str = user_string_quoted(pointer_arg(2))
+	name_str_unquoted = user_string_nofault(pointer_arg(2))
 	value_uaddr = pointer_arg(3)
 	size = ulong_arg(4)
+%)
+
+@define _SYSCALL_LGETXATTR_REGARGS_STORE
+%(
+        if (@probewrite(path_unquoted))
+          set_user_string_arg(pointer_arg(1), path_unquoted)
+
+%(systemtap_v <= "1.4" %?
+	if (@probewrite(name2_unquoted))
+	  set_user_string_arg(pointer_arg(2), name2_unquoted)
+%)
+
+	if (@probewrite(name_str_unquoted))
+	  set_user_string_arg(pointer_arg(2), name_str_unquoted)
+
+	if (@probewrite(value_uaddr))
+	  set_pointer_arg(3, value_uaddr)
+
+	if (@probewrite(size))
+	  set_ulong_arg(4, size)
 %)
 
 probe syscall.lgetxattr = dw_syscall.lgetxattr !, nd_syscall.lgetxattr ? {}
@@ -71,6 +94,9 @@ probe nd2_syscall.lgetxattr = kprobe.function(@arch_syscall_prefix "sys_lgetxatt
 	@_SYSCALL_LGETXATTR_NAME
 	@_SYSCALL_LGETXATTR_REGARGS
 	@_SYSCALL_LGETXATTR_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_LGETXATTR_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -81,6 +107,9 @@ probe tp_syscall.lgetxattr = kernel.trace("sys_enter")
 	@_SYSCALL_LGETXATTR_NAME
 	@_SYSCALL_LGETXATTR_REGARGS
 	@_SYSCALL_LGETXATTR_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_LGETXATTR_REGARGS_STORE %)
 }
 
 probe nd_syscall.lgetxattr.return = nd1_syscall.lgetxattr.return!, nd2_syscall.lgetxattr.return!, tp_syscall.lgetxattr.return

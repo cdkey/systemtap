@@ -19,6 +19,18 @@
 	protocol = int_arg(3)
 %)
 
+@define _SYSCALL_SOCKET_REGARGS_STORE
+%(
+        if (@probewrite(family))
+          set_int_arg(1, family)
+
+	if (@probewrite(type))
+	  set_int_arg(2, type)
+
+	if (@probewrite(protocol))
+	  set_int_arg(3, protocol)
+%)
+
 @define _SYSCALL_SOCKETCALL_SOCKET_REGARGS
 %(
 	__args = &@ulong_cast(pointer_arg(2))
@@ -137,6 +149,9 @@ probe __nd2_syscall.socket = kprobe.function(@arch_syscall_prefix "sys_socket") 
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_SOCKET_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SOCKET_REGARGS_STORE %)
 }
 probe __nd2_syscall.socketcall.socket = kprobe.function(@arch_syscall_prefix "sys_socketcall").call ?
 {
@@ -167,6 +182,9 @@ probe __tp_syscall.socket = kernel.trace("sys_enter")
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_socket"))
 	@_SYSCALL_SOCKET_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SOCKET_REGARGS_STORE %)
 }
 probe __tp_syscall.socketcall.socket = kernel.trace("sys_enter")
 {

@@ -17,15 +17,39 @@
 %(
 	filename_uaddr = pointer_arg(1)
 	filename = user_string_quoted(filename_uaddr)
+	filename_unquoted = user_string_nofault(pointer_arg(1))
 	tvp_uaddr = pointer_arg(2)
 	tvp_uaddr_str = _struct_timeval_u(tvp_uaddr, 2)
 %)
 
+@define _SYSCALL_UTIMES_REGARGS_STORE
+%(
+        if (@probewrite(filename_uaddr))
+          set_pointer_arg(1, filename_uaddr)
+
+	if (@probewrite(filename_unquoted))
+	  set_user_string_arg(pointer_arg(1), filename_unquoted)
+
+	if (@probewrite(tvp_uaddr))
+	  set_pointer_arg(2, tvp_uaddr)
+%)
+
+
 @define _SYSCALL_COMPAT_SYS_UTIMES_REGARGS
 %(
 	filename = user_string_quoted(pointer_arg(1))
+	filename_unquoted = user_string_nofault(pointer_arg(1))
 	timeval = pointer_arg(2)
 	tvp_uaddr_str = _struct_compat_timeval_u(timeval, 2)
+%)
+
+@define _SYSCALL_COMPAT_SYS_UTIMES_REGARGS_STORE
+%(
+	if (@probewrite(filename_unquoted))
+	  set_user_string_arg(pointer_arg(1), filename_unquoted)
+
+	if (@probewrite(timeval))
+	  set_pointer_arg(2, timeval)
 %)
 
 probe syscall.utimes = dw_syscall.utimes !, nd_syscall.utimes ? {}
@@ -69,6 +93,9 @@ probe nd2_syscall.utimes = kprobe.function(@arch_syscall_prefix "sys_utimes") ?
 	@_SYSCALL_UTIMES_NAME
 	@_SYSCALL_UTIMES_REGARGS
 	@_SYSCALL_UTIMES_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UTIMES_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -79,6 +106,9 @@ probe tp_syscall.utimes = kernel.trace("sys_enter")
 	@_SYSCALL_UTIMES_NAME
 	@_SYSCALL_UTIMES_REGARGS
 	@_SYSCALL_UTIMES_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_UTIMES_REGARGS_STORE %)
 }
 
 probe nd_syscall.utimes.return = nd1_syscall.utimes.return!, nd2_syscall.utimes.return!, tp_syscall.utimes.return
@@ -152,6 +182,9 @@ probe nd2_syscall.compat_sys_utimes = kprobe.function(@arch_syscall_prefix "comp
 	@_SYSCALL_UTIMES_NAME
 	@_SYSCALL_COMPAT_SYS_UTIMES_REGARGS
 	@_SYSCALL_UTIMES_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_SYS_UTIMES_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -162,6 +195,9 @@ probe tp_syscall.compat_sys_utimes = kernel.trace("sys_enter")
 	@_SYSCALL_UTIMES_NAME
 	@_SYSCALL_COMPAT_SYS_UTIMES_REGARGS
 	@_SYSCALL_UTIMES_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_SYS_UTIMES_REGARGS_STORE %)
 }
 
 probe nd_syscall.compat_sys_utimes.return = nd1_syscall.compat_sys_utimes.return!, nd2_syscall.compat_sys_utimes.return!, tp_syscall.compat_sys_utimes.return

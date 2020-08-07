@@ -17,6 +17,14 @@
 	which = int_arg(1)
 	value_uaddr = pointer_arg(2)
 %)
+@define _SYSCALL_GETITIMER_REGARGS_STORE
+%(
+        if (@probewrite(which))
+          set_int_arg(1, which)
+
+	if (@probewrite(value_uaddr))
+	  set_pointer_arg(2, value_uaddr)
+%)
 
 probe syscall.getitimer = dw_syscall.getitimer !, nd_syscall.getitimer ? {}
 probe syscall.getitimer.return = dw_syscall.getitimer.return !,
@@ -75,6 +83,9 @@ probe nd2_syscall.getitimer = kprobe.function(@arch_syscall_prefix "sys_getitime
 	@_SYSCALL_GETITIMER_NAME
 	@_SYSCALL_GETITIMER_REGARGS
 	@_SYSCALL_GETITIMER_ARGSTR
+},
+{
+        @_SYSCALL_GETITIMER_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -85,6 +96,9 @@ probe tp_syscall.getitimer = kernel.trace("sys_enter")
 	@_SYSCALL_GETITIMER_NAME
 	@_SYSCALL_GETITIMER_REGARGS
 	@_SYSCALL_GETITIMER_ARGSTR
+},
+{
+        @_SYSCALL_GETITIMER_REGARGS_STORE
 }
 
 probe nd_syscall.getitimer.return = nd1_syscall.getitimer.return!, nd2_syscall.getitimer.return!, tp_syscall.getitimer.return
@@ -133,6 +147,9 @@ probe nd2_syscall.compat_getitimer = kprobe.function(@arch_syscall_prefix "compa
 	@_SYSCALL_GETITIMER_NAME
 	@_SYSCALL_GETITIMER_REGARGS
 	@_SYSCALL_GETITIMER_ARGSTR
+},
+{
+        @_SYSCALL_GETITIMER_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -143,6 +160,9 @@ probe tp_syscall.compat_getitimer = kernel.trace("sys_enter")
 	@_SYSCALL_GETITIMER_NAME
 	@_SYSCALL_GETITIMER_REGARGS
 	@_SYSCALL_GETITIMER_ARGSTR
+},
+{
+        @_SYSCALL_GETITIMER_REGARGS_STORE
 }
 
 probe nd_syscall.compat_getitimer.return = nd1_syscall.compat_getitimer.return!, nd2_syscall.compat_getitimer.return!, tp_syscall.compat_getitimer.return

@@ -25,9 +25,28 @@
 %(
 	name_uaddr = pointer_arg(1)
 	filename = user_string_quoted(name_uaddr)
+	filename_unquoted = user_string_nofault(pointer_arg(1))
 	u_attr_uaddr = pointer_arg(4)
 	oflag = int_arg(2)
 	oflag_str = _sys_open_flag_str(oflag)
+%)
+
+@define _SYSCALL_MQ_OPEN_REGARGS_STORE
+%(
+        if (@probewrite(name_uaddr))
+          set_pointer_arg(1, name_uaddr)
+
+	if (@probewrite(filename_unquoted))
+	  set_user_string_arg(pointer_arg(1), filename_unquoted)
+
+	if (@probewrite(oflag))
+	  set_int_arg(2, oflag)
+
+	if (@probewrite(mode))
+	  set_uint_arg(3, mode)
+
+	if (@probewrite(u_attr_uaddr))
+	  set_pointer_arg(4, u_attr_uaddr)
 %)
 
 probe syscall.mq_open = dw_syscall.mq_open !, nd_syscall.mq_open ? {}
@@ -105,11 +124,17 @@ probe __nd2_syscall.mq_open = kprobe.function(@arch_syscall_prefix "sys_mq_open"
 {
 	__set_syscall_pt_regs(pointer_arg(1))
         mode = uint_arg(3)
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MQ_OPEN_REGARGS_STORE %)
 }
 probe __nd2_syscall.compat_mq_open = kprobe.function(@arch_syscall_prefix "compat_sys_mq_open")
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	mode = (uint_arg(3) & 0xffff)
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MQ_OPEN_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -125,12 +150,18 @@ probe __tp_syscall.mq_open = kernel.trace("sys_enter")
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_mq_open"))
 	mode = uint_arg(3)
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MQ_OPEN_REGARGS_STORE %)
 }
 probe __tp_syscall.compat_mq_open = kernel.trace("sys_enter")
 {
 	__set_syscall_pt_regs($regs)
 	@__compat_syscall_gate(@const("__NR_compat_mq_open"))
 	mode = (uint_arg(3) & 0xffff)
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MQ_OPEN_REGARGS_STORE %)
 }
 
 probe nd_syscall.mq_open.return = nd1_syscall.mq_open.return!, nd2_syscall.mq_open.return!, tp_syscall.mq_open.return

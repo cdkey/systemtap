@@ -45,6 +45,12 @@
 	gid = int_arg(1)
 %)
 
+@define _SYSCALL_SETGID_REGARGS_STORE
+%(
+        if (@probewrite(gid))
+          set_int_arg(1, gid)
+%)
+
 probe syscall.setgid = dw_syscall.setgid !, nd_syscall.setgid ? {}
 probe syscall.setgid.return = dw_syscall.setgid.return !,
                               nd_syscall.setgid.return ? {}
@@ -99,6 +105,9 @@ probe nd2_syscall.setgid = kprobe.function(@arch_syscall_prefix "sys_setgid") ?,
 	@_SYSCALL_SETGID_NAME
 	@_SYSCALL_SETGID_REGARGS
 	@_SYSCALL_SETGID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETGID_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -108,6 +117,9 @@ probe tp_syscall.setgid = __tp_syscall.setgid, __tp_syscall.setgid16
 	@_SYSCALL_SETGID_NAME
 	@_SYSCALL_SETGID_REGARGS
 	@_SYSCALL_SETGID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETGID_REGARGS_STORE %)
 }
 probe __tp_syscall.setgid = kernel.trace("sys_enter")
 {

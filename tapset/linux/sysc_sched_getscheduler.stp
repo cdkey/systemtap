@@ -18,6 +18,12 @@
 	pid = int_arg(1)
 %)
 
+@define _SYSCALL_SCHED_GETSCHEDULER_REGARGS_STORE
+%(
+        if (@probewrite(pid))
+          set_int_arg(1, pid)
+%)
+
 probe syscall.sched_getscheduler = dw_syscall.sched_getscheduler !,
                                    nd_syscall.sched_getscheduler ? {}
 probe syscall.sched_getscheduler.return = dw_syscall.sched_getscheduler.return !,
@@ -57,6 +63,9 @@ probe nd2_syscall.sched_getscheduler = kprobe.function(@arch_syscall_prefix "sys
 	@_SYSCALL_SCHED_GETSCHEDULER_NAME
 	@_SYSCALL_SCHED_GETSCHEDULER_REGARGS
 	@_SYSCALL_SCHED_GETSCHEDULER_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SCHED_GETSCHEDULER_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -67,6 +76,9 @@ probe tp_syscall.sched_getscheduler = kernel.trace("sys_enter")
 	@_SYSCALL_SCHED_GETSCHEDULER_NAME
 	@_SYSCALL_SCHED_GETSCHEDULER_REGARGS
 	@_SYSCALL_SCHED_GETSCHEDULER_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SCHED_GETSCHEDULER_REGARGS_STORE %)
 }
 
 probe nd_syscall.sched_getscheduler.return = nd1_syscall.sched_getscheduler.return!, nd2_syscall.sched_getscheduler.return!, tp_syscall.sched_getscheduler.return

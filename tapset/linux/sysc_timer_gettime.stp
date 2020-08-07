@@ -22,6 +22,15 @@
 	value_uaddr = pointer_arg(2)
 %)
 
+@define _SYSCALL_TIMER_GETTIME_REGARGS_STORE
+%(
+        if (@probewrite(timerid))
+          set_int_arg(1, timerid)
+
+	if (@probewrite(value_uaddr))
+	  set_pointer_arg(2, value_uaddr)
+%)
+
 probe syscall.timer_gettime = dw_syscall.timer_gettime !,
                               nd_syscall.timer_gettime ? {}
 probe syscall.timer_gettime.return = dw_syscall.timer_gettime.return !,
@@ -90,6 +99,9 @@ probe __nd2_syscall.timer_gettime =
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_TIMER_GETTIME_REGARGS
 	@_SYSCALL_TIMER_GETTIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TIMER_GETTIME_REGARGS_STORE %)
 }
 probe __nd2_syscall.compat_timer_gettime =
 	kprobe.function(@arch_syscall_prefix "compat_sys_timer_gettime") ?
@@ -97,6 +109,9 @@ probe __nd2_syscall.compat_timer_gettime =
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_TIMER_GETTIME_REGARGS
 	@_SYSCALL_TIMER_GETTIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TIMER_GETTIME_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -107,6 +122,9 @@ probe tp_syscall.timer_gettime = kernel.trace("sys_enter")
 	@_SYSCALL_TIMER_GETTIME_NAME
 	@_SYSCALL_TIMER_GETTIME_REGARGS
 	@_SYSCALL_TIMER_GETTIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TIMER_GETTIME_REGARGS_STORE %)
 }
 
 probe nd_syscall.timer_gettime.return = nd1_syscall.timer_gettime.return!, nd2_syscall.timer_gettime.return!, tp_syscall.timer_gettime.return

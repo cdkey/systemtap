@@ -24,6 +24,21 @@
 	data = ulong_arg(4)
 %)
 
+@define _SYSCALL_PTRACE_REGARGS_STORE
+%(
+        if (@probewrite(request))
+          set_long_arg(1, request)
+
+	if (@probewrite(pid))
+	  set_int_arg(2, pid)
+
+	if (@probewrite(addr))
+	  set_ulong_arg(3, addr)
+
+	if (@probewrite(data))
+	  set_ulong_arg(4, data)
+%)
+
 probe syscall.ptrace = dw_syscall.ptrace !, nd_syscall.ptrace ? {}
 probe syscall.ptrace.return = dw_syscall.ptrace.return !,
                               nd_syscall.ptrace.return ? {}
@@ -72,6 +87,9 @@ probe nd2_syscall.ptrace = kprobe.function(@arch_syscall_prefix "sys_ptrace") ?,
 	@_SYSCALL_PTRACE_NAME
 	@_SYSCALL_PTRACE_REGARGS
 	@_SYSCALL_PTRACE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PTRACE_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -82,6 +100,9 @@ probe tp_syscall.ptrace = kernel.trace("sys_enter")
 	@_SYSCALL_PTRACE_NAME
 	@_SYSCALL_PTRACE_REGARGS
 	@_SYSCALL_PTRACE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PTRACE_REGARGS_STORE %)
 }
 
 probe nd_syscall.ptrace.return = nd1_syscall.ptrace.return!, nd2_syscall.ptrace.return!, tp_syscall.ptrace.return

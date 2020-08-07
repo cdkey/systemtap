@@ -16,6 +16,12 @@
 	fd = int_arg(1)
 %)
 
+@define _SYSCALL_FSYNC_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+%)
+
 probe syscall.fsync = dw_syscall.fsync !, nd_syscall.fsync ? {}
 probe syscall.fsync.return = dw_syscall.fsync.return !, nd_syscall.fsync.return ? {}
 
@@ -53,6 +59,9 @@ probe nd2_syscall.fsync = kprobe.function(@arch_syscall_prefix "sys_fsync") ?
 	@_SYSCALL_FSYNC_NAME
 	@_SYSCALL_FSYNC_REGARGS
 	@_SYSCALL_FSYNC_ARGSTR
+},
+{
+        @_SYSCALL_FSYNC_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -63,6 +72,9 @@ probe tp_syscall.fsync = kernel.trace("sys_enter")
 	@_SYSCALL_FSYNC_NAME
 	@_SYSCALL_FSYNC_REGARGS
 	@_SYSCALL_FSYNC_ARGSTR
+},
+{
+        @_SYSCALL_FSYNC_REGARGS_STORE
 }
 
 probe nd_syscall.fsync.return = nd1_syscall.fsync.return!, nd2_syscall.fsync.return!, tp_syscall.fsync.return

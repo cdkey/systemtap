@@ -85,6 +85,12 @@ probe __nd2_syscall.inotify_init1 =
 	name = "inotify_init1"
 	flags = int_arg(1)
 	argstr = _inotify_init1_flag_str(flags)
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(flags))
+	  set_int_arg(1, flags)
+%)
 }
 probe __nd2_syscall.inotify_init =
 	kprobe.function(@arch_syscall0_prefix "sys_inotify_init") ?
@@ -108,6 +114,12 @@ probe __tp_syscall.inotify_init1 = kernel.trace("sys_enter")
 	name = "inotify_init1"
 	flags = int_arg(1)
 	argstr = _inotify_init1_flag_str(flags)
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(flags))
+	  set_int_arg(1, flags)
+%)
 }
 probe __tp_syscall.inotify_init = kernel.trace("sys_enter")
 {

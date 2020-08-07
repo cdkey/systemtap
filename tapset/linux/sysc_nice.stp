@@ -17,6 +17,12 @@
 	inc = int_arg(1)
 %)
 
+@define _SYSCALL_NICE_REGARGS_STORE
+%(
+        if (@probewrite(inc))
+          set_int_arg(1, inc)
+%)
+
 probe syscall.nice = dw_syscall.nice !, nd_syscall.nice ? {}
 probe syscall.nice.return = dw_syscall.nice.return !, nd_syscall.nice.return ? {}
 
@@ -54,6 +60,9 @@ probe nd2_syscall.nice = kprobe.function(@arch_syscall_prefix "sys_nice") ?
 	@_SYSCALL_NICE_NAME
 	@_SYSCALL_NICE_REGARGS
 	@_SYSCALL_NICE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_NICE_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -64,6 +73,9 @@ probe tp_syscall.nice = kernel.trace("sys_enter")
 	@_SYSCALL_NICE_NAME
 	@_SYSCALL_NICE_REGARGS
 	@_SYSCALL_NICE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_NICE_REGARGS_STORE %)
 }
 
 probe nd_syscall.nice.return = nd1_syscall.nice.return!, nd2_syscall.nice.return!, tp_syscall.nice.return

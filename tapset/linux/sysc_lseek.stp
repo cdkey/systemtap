@@ -23,6 +23,22 @@
 	whence_str = _seek_whence_str(whence)
 %)
 
+@define _SYSCALL_LSEEK_REGARGS_STORE
+%(
+        if (@probewrite(fildes))
+          set_int_arg(1, fildes)
+
+	if (@probewrite(offset)) {
+	  if (@__compat_task)
+	    set_int_arg(2, offset)
+	  else
+	    set_long_arg(2, offset)
+	}
+
+	if (@probewrite(whence))
+	  set_uint_arg(3, whence)
+%)
+
 @define _SYSCALL_GATE
 %(
     %( arch == "s390" %?
@@ -105,6 +121,9 @@ probe nd2_syscall.lseek = kprobe.function(@arch_syscall_prefix "sys_lseek") ?
 	@_SYSCALL_LSEEK_NAME
 	@_SYSCALL_LSEEK_REGARGS
 	@_SYSCALL_LSEEK_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_LSEEK_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -115,6 +134,9 @@ probe tp_syscall.lseek = kernel.trace("sys_enter")
 	@_SYSCALL_LSEEK_NAME
 	@_SYSCALL_LSEEK_REGARGS
 	@_SYSCALL_LSEEK_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_LSEEK_REGARGS_STORE %)
 }
 
 probe nd_syscall.lseek.return = nd1_syscall.lseek.return!, nd2_syscall.lseek.return!, tp_syscall.lseek.return

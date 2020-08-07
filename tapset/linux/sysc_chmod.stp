@@ -14,7 +14,17 @@
 @define _SYSCALL_CHMOD_REGARGS
 %(
 	path = user_string_quoted(pointer_arg(1))
+	path_unquoted = user_string_nofault(pointer_arg(1))
 	mode = uint_arg(2)
+%)
+
+@define _SYSCALL_CHMOD_REGARGS_STORE
+%(
+        if (@probewrite(path_unquoted))
+          set_user_string_arg(pointer_arg(1), path_unquoted)
+
+	if (@probewrite(mode))
+	  set_uint_arg(2, mode)
 %)
 
 probe syscall.chmod = dw_syscall.chmod !, nd_syscall.chmod ? {}
@@ -62,6 +72,9 @@ probe nd2_syscall.chmod = kprobe.function(@arch_syscall_prefix "sys_chmod") ?
 	@_SYSCALL_CHMOD_NAME
 	@_SYSCALL_CHMOD_REGARGS
 	@_SYSCALL_CHMOD_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_CHMOD_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -72,6 +85,9 @@ probe tp_syscall.chmod = kernel.trace("sys_enter")
 	@_SYSCALL_CHMOD_NAME
 	@_SYSCALL_CHMOD_REGARGS
 	@_SYSCALL_CHMOD_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_CHMOD_REGARGS_STORE %)
 }
 
 probe nd_syscall.chmod.return = nd1_syscall.chmod.return!, nd2_syscall.chmod.return!, tp_syscall.chmod.return

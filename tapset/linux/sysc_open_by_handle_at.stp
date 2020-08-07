@@ -25,6 +25,18 @@
 	flags_str = _sys_open_flag_str(flags)
 %)
 
+@define _SYSCALL_OPEN_BY_HANDLE_AT_REGARGS_STORE
+%(
+        if (@probewrite(mount_dfd))
+          set_int_arg(1, mount_dfd)
+
+	if (@probewrite(handle_uaddr))
+	  set_pointer_arg(2, handle_uaddr)
+
+	if (@probewrite(flags))
+	  set_int_arg(3, flags)
+%)
+
 probe syscall.open_by_handle_at = dw_syscall.open_by_handle_at !,
                                   nd_syscall.open_by_handle_at ? {}
 probe syscall.open_by_handle_at.return = dw_syscall.open_by_handle_at.return !,
@@ -75,6 +87,9 @@ probe nd2_syscall.open_by_handle_at =
 	@_SYSCALL_OPEN_BY_HANDLE_AT_NAME
 	@_SYSCALL_OPEN_BY_HANDLE_AT_REGARGS
 	@_SYSCALL_OPEN_BY_HANDLE_AT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_OPEN_BY_HANDLE_AT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -86,6 +101,9 @@ probe tp_syscall.open_by_handle_at = kernel.trace("sys_enter")
 	@_SYSCALL_OPEN_BY_HANDLE_AT_NAME
 	@_SYSCALL_OPEN_BY_HANDLE_AT_REGARGS
 	@_SYSCALL_OPEN_BY_HANDLE_AT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_OPEN_BY_HANDLE_AT_REGARGS_STORE %)
 }
 
 probe nd_syscall.open_by_handle_at.return = nd1_syscall.open_by_handle_at.return!, nd2_syscall.open_by_handle_at.return!, tp_syscall.open_by_handle_at.return

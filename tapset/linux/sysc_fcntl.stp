@@ -23,6 +23,18 @@
 	arg = long_arg(3)
 %)
 
+@define _SYSCALL_FCNTL_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(cmd))
+	  set_int_arg(2, cmd)
+
+	if (@probewrite(arg))
+	  set_long_arg(3, arg)
+%)
+
 probe syscall.fcntl = dw_syscall.fcntl !, nd_syscall.fcntl ? {}
 probe syscall.fcntl.return = dw_syscall.fcntl.return !, nd_syscall.fcntl.return ? {}
 
@@ -87,6 +99,9 @@ probe nd2_syscall.fcntl = kprobe.function(@arch_syscall_prefix "sys_fcntl") ?,
 	@_SYSCALL_FCNTL_NAME
 	@_SYSCALL_FCNTL_REGARGS
 	@_SYSCALL_FCNTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_FCNTL_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -96,6 +111,9 @@ probe tp_syscall.fcntl = __tp_syscall.fcntl, __tp_syscall.fcntl64
 	@_SYSCALL_FCNTL_NAME
 	@_SYSCALL_FCNTL_REGARGS
 	@_SYSCALL_FCNTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_FCNTL_REGARGS_STORE %)
 }
 probe __tp_syscall.fcntl = kernel.trace("sys_enter")
 {

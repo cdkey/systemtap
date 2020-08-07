@@ -1,0 +1,306 @@
+global indent, indent_str, entry_p, probe_enable = 0
+global i_mkdir = 0, i_chdir = 0, i_open = 0, i_fchdir = 0, i_rmdir = 0, i_close = 0, i_mkdirat = 0
+global i_dcookie = 0
+
+probe begin {
+	indent = 0
+	for (i=0; i<20; i++) {
+		if (i == 0)
+			indent_str[0] = ""
+		else
+			indent_str[i] =  indent_str[i-1] . "  "
+	}
+}
+
+probe nd2_syscall.* ? {
+	if (pid() == target()) {
+		if (entry_p) printf("\n")
+		printf("%s%s: %s (%s) = ", indent_str[indent], execname(), name, argstr)
+		indent++
+		entry_p = 1
+	}
+}
+
+probe nd2_syscall.lookup_dcookie, syscall.compat_lookup_dcookie ? {
+	if (pid() == target()) {
+		cookie++
+		len--
+		if (i_dcookie == 0) {
+			buffer_uaddr++
+		} else if (i_dcookie == 1) {
+			buffer_uaddr = 0
+		} else if (i_dcookie == 2) {
+			buffer_uaddr++
+		} else if (i_dcookie == 3) {
+			buffer_uaddr = 0
+		}
+
+		i_dcookie++
+		argstr = sprintf("%#lx, %p, %#x", cookie, buffer_uaddr, len)
+		if (entry_p) printf("\n")
+		printf("%s%s: %s (%s) = ", indent_str[indent - 1], execname(), name, argstr)
+	}
+}
+
+probe nd2_syscall.mkdirat {
+	if (pid() == target()) {
+		dirfd++
+		mode++
+
+		if (i_mkdirat == 0) {
+	          	pathname_unquoted = "foobar"
+			argstr = sprintf("%s, \"%s\", %#o", _dfd_str(dirfd), pathname_unquoted, mode)
+		} else if (i_mkdirat == 1) {
+			set_pointer_arg(2, -1)
+			argstr = sprintf("%s, %s, %#o", _dfd_str(dirfd), user_string_quoted(pointer_arg(2)), mode)
+		} else if (i_mkdirat == 2) {
+			pathname_unquoted = "foobar2"
+			argstr = sprintf("%s, \"%s\", %#o", _dfd_str(dirfd), pathname_unquoted, mode)
+			/*
+		} else if (i_mkdirat == 3) {
+			pathname_unquoted = "dir1"
+			argstr = sprintf("%s, \"%s\", %#o", _dfd_str(dirfd), pathname_unquoted, mode)
+			*/
+		} else if (i_mkdirat == 3) {
+			pathname_unquoted = "xyzzy"
+			argstr = sprintf("%s, \"%s\", %#o", _dfd_str(dirfd), pathname_unquoted, mode)
+		} else if (i_mkdirat == 4) {
+			pathname_unquoted = "xyzzy2"
+			argstr = sprintf("%s, \"%s\", %#o", _dfd_str(dirfd), pathname_unquoted, mode)
+		} else if (i_mkdirat == 5) {
+			argstr = sprintf("%s, %s, %#o", _dfd_str(dirfd), pathname, mode)
+		} else if (i_mkdirat == 6) {
+			pathname_unquoted = "xyzzy2"
+			argstr = sprintf("%s, \"%s\", %#o", _dfd_str(dirfd), pathname_unquoted, mode)
+		}
+
+		i_mkdirat++
+		if (entry_p) printf("\n")
+		printf("%s%s: %s (%s) = ", indent_str[indent - 1], execname(), name, argstr)
+	}
+}
+
+probe nd2_syscall.chdir {
+	if (pid() == target()) {
+		if (i_chdir == 0) {
+			path_unquoted = "foobar"
+			argstr = sprintf("\"%s\"", path_unquoted)
+		} else if (i_chdir == 1) {
+			path_unquoted = ".."
+			argstr = sprintf("\"%s\"", path_unquoted)
+		} else if (i_chdir == 2) {
+			;
+		} else if (i_chdir == 3) {
+			path_unquoted = ".."
+			argstr = sprintf("\"%s\"", path_unquoted)
+		}
+
+		i_chdir++
+		if (entry_p) printf("\n")
+		printf("%s%s: %s (%s) = ", indent_str[indent - 1], execname(), name, argstr)
+	}
+}
+
+probe nd2_syscall.close {
+	if (pid() == target() && probe_enable) {
+		if (i_close == 0) {
+			fd++
+		} else if (i_close == 1) {
+			fd++
+		}
+
+		i_close++
+		argstr = sprintf("%d", fd)
+		if (entry_p) printf("\n")
+		printf("%s%s: %s (%s) = ", indent_str[indent - 1], execname(), name, argstr)
+	}
+}
+
+probe nd2_syscall.unlinkat {
+	if (pid() == target()) {
+		dfd++
+		pathname--
+		flag++
+		if (i_rmdir == 0) {
+			pathname_str_unquoted = "foobar"
+			argstr = sprintf("%s, \"%s\", %s", _dfd_str(dfd), pathname_str_unquoted, _at_flag_str(flag))
+		} else if (i_rmdir == 1) {
+			pathname = -1
+			argstr = sprintf("%s, %s, %s", _dfd_str(dfd), user_string_quoted(pathname), _at_flag_str(flag))
+		} else if (i_rmdir == 2) {
+			pathname_str_unquoted = "xyzzy"
+			argstr = sprintf("%s, \"%s\", %s", _dfd_str(dfd), pathname_str_unquoted, _at_flag_str(flag))
+		}
+
+		i_rmdir++
+		if (entry_p) printf("\n")
+		printf("%s%s: %s (%s) = ", indent_str[indent - 1], execname(), name, argstr)
+	}
+}
+
+probe nd2_syscall.fchdir {
+	if (pid() == target()) {
+		if (i_fchdir == 0) {
+			fd++
+		} else if (i_fchdir == 1) {
+			fd++
+		}
+
+		argstr = sprintf("%d", fd)
+		i_fchdir++
+		if (entry_p) printf("\n")
+		printf("%s%s: %s (%s) = ", indent_str[indent - 1], execname(), name, argstr)
+	}
+}
+
+probe nd2_syscall.mkdir {
+	if (pid() == target() ) {
+		pathname_uaddr++
+	  	mode++
+		if (i_mkdir == 0) {
+	          	pathname_unquoted = "foobar"
+			argstr = sprintf("\"%s\", %#o", pathname_unquoted, mode)
+		} else if (i_mkdir == 1) {
+			pathname_uaddr = -1
+			argstr = sprintf("%s, %#o", user_string_quoted(pathname_uaddr), mode)
+		} else if (i_mkdir == 2) {
+			pathname_unquoted = "foobar2"
+			argstr = sprintf("\"%s\", %#o", pathname_unquoted, mode)
+		} else if (i_mkdir == 3) {
+			pathname_unquoted = "dir1"
+			argstr = sprintf("\"%s\", %#o", pathname_unquoted, mode)
+		}
+
+      		i_mkdir++
+		if (entry_p) printf("\n")
+		printf("%s%s: %s (%s) = ", indent_str[indent - 1], execname(), name, argstr)
+	}
+}
+
+probe nd2_syscall.openat {
+	// Check for "STAPTEST" to avoid modifying arguments when opening shared objects.
+	if (pid() == target() && filename_unquoted == "STAPTEST") {
+		flags--
+		if (i_open == 0) {
+			filename_unquoted = "foobar"
+		} else if (i_open == 1) {
+			filename_unquoted = "."
+		}
+
+		i_open++
+		argstr = sprintf("%s, \"%s\", %s", dfd_str, filename_unquoted, _sys_open_flag_str(flags))
+		if (entry_p) printf("\n")
+		printf("%s%s: %s (%s) = ", indent_str[indent - 1], execname(), name, argstr)
+	}
+}
+
+probe __nd2_syscall.epoll_create ? {
+	if (pid() == target()) {
+		argstr = sprint(++size)
+		if (entry_p) printf("\n")
+		printf("%s%s: %s (%s) = ", indent_str[indent - 1], execname(), name, argstr)
+	}
+
+}
+
+probe __nd2_syscall.epoll_create1 ? {
+	if (pid() == target()) {
+		flags++
+		if (flags == 0) {
+			name = "epoll_create";
+			argstr = sprint(size);
+		} else {
+			name = "epoll_create1";
+			argstr = _epoll_create1_flag_str(flags);
+		}
+
+		if (entry_p) printf("\n")
+		printf("%s%s: %s (%s) = ", indent_str[indent - 1], execname(), name, argstr)
+	}
+
+}
+
+probe nd2_syscall.epoll_ctl {
+	if (pid() == target()) {
+		epfd++
+		op--
+		fd++
+		event_uaddr++
+
+		argstr = sprintf("%d, %s, %d, %p", epfd, _opoll_op_str(op), fd, event_uaddr)
+		if (entry_p) printf("\n")
+		printf("%s%s: %s (%s) = ", indent_str[indent - 1], execname(), name, argstr)
+	}
+}
+
+probe nd2_syscall.epoll_pwait ? {
+	if (pid() == target()) {
+		epfd--
+		events_uaddr++
+		maxevents--
+		timeout++
+		sigmask_uaddr--
+		sigsetsize++
+
+		argstr = sprintf("%d, %p, %d, %d, %p, %d", epfd, events_uaddr, maxevents,
+				 timeout, sigmask_uaddr, sigsetsize)
+		if (entry_p) printf("\n")
+		printf("%s%s: %s (%s) = ", indent_str[indent - 1], execname(), name, argstr)
+	}
+}
+
+probe nd2_syscall.epoll_wait {
+	if (pid() == target()) {
+		epfd--
+		events_uaddr++
+		maxevents--
+		timeout++
+
+		argstr = sprintf("%d, %p, %d, %d", epfd, events_uaddr, maxevents, timeout)
+		if (entry_p) printf("\n")
+		printf("%s%s: %s (%s) = ", indent_str[indent - 1], execname(), name, argstr)
+
+	}
+}
+
+probe nd2_syscall.poll {
+	if (pid() == target()) {
+		ufds_uaddr--
+		nfds++
+		timeout--
+
+		argstr = sprintf("%p, %u, %d", ufds_uaddr, nfds, timeout)
+		if (entry_p) printf("\n")
+		printf("%s%s: %s (%s) = ", indent_str[indent - 1], execname(), name, argstr)
+
+	}
+}
+
+probe nd2_syscall.ppoll {
+	if (pid() == target()) {
+		fds_uaddr++
+		nfds--
+		signmask--
+		sigsetsize++
+
+		argstr = sprintf("%p, %u, %s, %p, %d", fds_uaddr, nfds,
+			         _struct_timespec_u(tsp, 1), sigmask, sigsetsize)
+		if (entry_p) printf("\n")
+		printf("%s%s: %s (%s) = ", indent_str[indent - 1], execname(), name, argstr)
+	}
+}
+
+probe nd2_syscall.*.return ? {
+	if (pid() == target()) {
+		if (indent) indent--
+		if (entry_p)
+			printf("%s\n", retstr)
+		else
+			printf("%s%s\n", indent_str[indent],retstr)
+		entry_p = 0
+	}
+}
+
+probe end {
+	printf("\n")
+}

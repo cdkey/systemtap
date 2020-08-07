@@ -20,6 +20,21 @@
 	pkey = int_arg(4)
 %)
 
+@define _SYSCALL_PKEY_MPROTECT_REGARGS_STORE
+%(
+        if (@probewrite(addr))
+          set_ulong_arg(1, addr)
+
+	if (@probewrite(len))
+	  set_ulong_arg(2, len)
+
+	if (@probewrite(prot))
+	  set_ulong_arg(3, prot)
+
+	if (@probewrite(pkey))
+	  set_int_arg(4, pkey)
+%)
+
 probe syscall.pkey_mprotect = dw_syscall.pkey_mprotect !, nd_syscall.pkey_mprotect ? {}
 probe syscall.pkey_mprotect.return = dw_syscall.pkey_mprotect.return !, nd_syscall.pkey_mprotect.return ? {}
 
@@ -61,6 +76,9 @@ probe nd2_syscall.pkey_mprotect = kprobe.function(@arch_syscall_prefix "sys_pkey
 	@_SYSCALL_PKEY_MPROTECT_NAME
 	@_SYSCALL_PKEY_MPROTECT_REGARGS
 	@_SYSCALL_PKEY_MPROTECT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PKEY_MPROTECT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -71,6 +89,9 @@ probe tp_syscall.pkey_mprotect = kernel.trace("sys_enter")
 	@_SYSCALL_PKEY_MPROTECT_NAME
 	@_SYSCALL_PKEY_MPROTECT_REGARGS
 	@_SYSCALL_PKEY_MPROTECT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PKEY_MPROTECT_REGARGS_STORE %)
 }
 
 probe nd_syscall.pkey_mprotect.return = nd1_syscall.pkey_mprotect.return!, nd2_syscall.pkey_mprotect.return!, tp_syscall.pkey_mprotect.return

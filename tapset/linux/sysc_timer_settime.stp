@@ -28,6 +28,21 @@
 	ovalue_uaddr = pointer_arg(4)
 %)
 
+@define _SYSCALL_TIMER_SETTIME_REGARGS_STORE
+%(
+        if (@probewrite(timerid))
+          set_int_arg(1, timerid)
+
+	if (@probewrite(flags))
+	  set_int_arg(2, flags)
+
+	if (@probewrite(value_uaddr))
+	  set_pointer_arg(3, value_uaddr)
+
+	if (@probewrite(ovalue_uaddr))
+	  set_pointer_arg(4, ovalue_uaddr)
+%)
+
 probe syscall.timer_settime = dw_syscall.timer_settime !,
                               nd_syscall.timer_settime ? {}
 probe syscall.timer_settime.return = dw_syscall.timer_settime.return !,
@@ -109,6 +124,9 @@ probe __nd2_syscall.timer_settime =
 	@_SYSCALL_TIMER_SETTIME_REGARGS
 	value_str = _struct_itimerspec_u(value_uaddr)
 	@_SYSCALL_TIMER_SETTIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TIMER_SETTIME_REGARGS_STORE %)
 }
 probe __nd2_syscall.compat_timer_settime =
 	kprobe.function(@arch_syscall_prefix "compat_sys_timer_settime").call ?
@@ -117,6 +135,9 @@ probe __nd2_syscall.compat_timer_settime =
 	@_SYSCALL_TIMER_SETTIME_REGARGS
 	value_str = _struct_compat_itimerspec_u(value_uaddr)
 	@_SYSCALL_TIMER_SETTIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TIMER_SETTIME_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -132,6 +153,9 @@ probe __tp_syscall.timer_settime = kernel.trace("sys_enter")
 	@_SYSCALL_TIMER_SETTIME_REGARGS
 	value_str = _struct_itimerspec_u(value_uaddr)
 	@_SYSCALL_TIMER_SETTIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TIMER_SETTIME_REGARGS_STORE %)
 }
 probe __tp_syscall.compat_timer_settime = kernel.trace("sys_enter")
 {
@@ -140,6 +164,9 @@ probe __tp_syscall.compat_timer_settime = kernel.trace("sys_enter")
 	@_SYSCALL_TIMER_SETTIME_REGARGS
 	value_str = _struct_compat_itimerspec_u(value_uaddr)
 	@_SYSCALL_TIMER_SETTIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TIMER_SETTIME_REGARGS_STORE %)
 }
 
 probe nd_syscall.timer_settime.return = nd1_syscall.timer_settime.return!, nd2_syscall.timer_settime.return!, tp_syscall.timer_settime.return

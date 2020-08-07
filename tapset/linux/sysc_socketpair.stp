@@ -24,6 +24,21 @@
 	sv_uaddr = pointer_arg(4)
 %)
 
+@define _SYSCALL_SOCKETPAIR_REGARGS_STORE
+%(
+        if (@probewrite(family))
+          set_int_arg(1, family)
+
+	if (@probewrite(type))
+	  set_int_arg(2, type)
+
+	if (@probewrite(protocol))
+	  set_int_arg(3, protocol)
+
+	if (@probewrite(sv_uaddr))
+	  set_pointer_arg(4, sv_uaddr)
+%)
+
 @define _SYSCALL_SOCKETCALL_SOCKETPAIR_REGARGS
 %(
 	__args = &@ulong_cast(pointer_arg(2))
@@ -152,6 +167,9 @@ probe __nd2_syscall.socketpair = kprobe.function(@arch_syscall_prefix "sys_socke
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_SOCKETPAIR_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SOCKETPAIR_REGARGS_STORE %)
 }
 probe __nd2_syscall.socketcall.socketpair =
 	kprobe.function(@arch_syscall_prefix "sys_socketcall").call ?
@@ -183,6 +201,9 @@ probe __tp_syscall.socketpair = kernel.trace("sys_enter")
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_socketpair"))
 	@_SYSCALL_SOCKETPAIR_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SOCKETPAIR_REGARGS_STORE %)
 }
 probe __tp_syscall.socketcall.socketpair = kernel.trace("sys_enter")
 {

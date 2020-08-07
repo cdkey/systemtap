@@ -17,10 +17,30 @@
 %(
 	oldname = pointer_arg(1)
 	oldname_str = user_string_quoted(oldname)
+	oldname_str_unquoted = user_string_nofault(pointer_arg(1))
 	newdfd = int_arg(2)
 	newdfd_str = _dfd_str(newdfd)
 	newname = pointer_arg(3)
 	newname_str = user_string_quoted(newname)
+	newname_str_unquoted = user_string_nofault(pointer_arg(3))
+%)
+
+@define _SYSCALL_SYMLINKAT_REGARGS_STORE
+%(
+        if (@probewrite(oldname))
+          set_pointer_arg(1, oldname)
+
+	if (@probewrite(oldname_str_unquoted))
+	  set_user_string_arg(pointer_arg(1), oldname_str_unquoted)
+
+	if (@probewrite(newdfd))
+	  set_int_arg(2, newdfd)
+
+	if (@probewrite(newname))
+	  set_pointer_arg(3, newname)
+
+	if (@probewrite(newname_str_unquoted))
+	  set_user_string_arg(pointer_arg(3), newname_str_unquoted)
 %)
 
 probe syscall.symlinkat = dw_syscall.symlinkat !, nd_syscall.symlinkat ? {}
@@ -72,6 +92,9 @@ probe nd2_syscall.symlinkat = kprobe.function(@arch_syscall_prefix "sys_symlinka
 	@_SYSCALL_SYMLINKAT_NAME
 	@_SYSCALL_SYMLINKAT_REGARGS
 	@_SYSCALL_SYMLINKAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SYMLINKAT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -83,6 +106,9 @@ probe tp_syscall.symlinkat = kernel.trace("sys_enter")
 	@_SYSCALL_SYMLINKAT_NAME
 	@_SYSCALL_SYMLINKAT_REGARGS
 	@_SYSCALL_SYMLINKAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SYMLINKAT_REGARGS_STORE %)
 }
 
 probe nd_syscall.symlinkat.return = nd1_syscall.symlinkat.return!, nd2_syscall.symlinkat.return!, tp_syscall.symlinkat.return

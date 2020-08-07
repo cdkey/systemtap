@@ -17,6 +17,15 @@
 	data = long_arg(2)
 %)
 
+@define _SYSCALL_BDFLUSH_REGARGS_STORE
+%(
+        if (@probewrite(func))
+          set_int_arg(1, func)
+
+	if (@probewrite(data))
+	  set_long_arg(2, data)
+%)
+
 probe syscall.bdflush = dw_syscall.bdflush !, nd_syscall.bdflush ? {}
 probe syscall.bdflush.return = dw_syscall.bdflush.return !, nd_syscall.bdflush.return ? {}
 
@@ -69,6 +78,9 @@ probe nd2_syscall.bdflush = kprobe.function(@arch_syscall_prefix "sys_bdflush") 
 	else
 		data_str = sprintf("%d", data)
 	@_SYSCALL_BDFLUSH_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_BDFLUSH_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -83,6 +95,9 @@ probe tp_syscall.bdflush = kernel.trace("sys_enter")
 	else
 		data_str = sprintf("%d", data)
 	@_SYSCALL_BDFLUSH_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_BDFLUSH_REGARGS_STORE %)
 }
 
 probe nd_syscall.bdflush.return = nd1_syscall.bdflush.return!, nd2_syscall.bdflush.return!, tp_syscall.bdflush.return

@@ -23,6 +23,21 @@
 	flags = int_arg(4)
 %)
 
+@define _SYSCALL_ACCEPT4_REGARGS_STORE
+%(
+        if (@probewrite(sockfd))
+          set_int_arg(1, sockfd)
+
+	if (@probewrite(addr_uaddr))
+	  set_pointer_arg(2, addr_uaddr)
+
+	if (@probewrite(addrlen_uaddr))
+	  set_pointer_arg(3, addrlen_uaddr)
+
+	if (@probewrite(flags))
+	  set_int_arg(4, flags)
+%)
+
 @define _SYSCALL_SOCKETCALL_ACCEPT4_REGARGS
 %(
 	__argsl = &@ulong_cast(pointer_arg(2))
@@ -145,6 +160,9 @@ probe __nd2_syscall.accept4 = kprobe.function(@arch_syscall_prefix "sys_accept4"
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_ACCEPT4_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_ACCEPT4_REGARGS_STORE %)
 }
 probe __nd2_syscall.socketcall.accept4 = kprobe.function(@arch_syscall_prefix "sys_socketcall").call ?
 {
@@ -173,6 +191,9 @@ probe __tp_syscall.accept4 = kernel.trace("sys_enter")
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_accept4"))
 	@_SYSCALL_ACCEPT4_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_ACCEPT4_REGARGS_STORE %)
 }
 probe __tp_syscall.socketcall.accept4 = kernel.trace("sys_enter")
 {

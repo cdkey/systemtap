@@ -27,6 +27,21 @@
 	arg_uaddr = pointer_arg(4)
 %)
 
+@define _SYSCALL_REBOOT_REGARGS_STORE
+%(
+        if (@probewrite(magic))
+          set_int_arg(1, magic)
+
+	if (@probewrite(magic2))
+	  set_int_arg(2, magic2)
+
+	if (@probewrite(flag))
+	  set_uint_arg(3, flag)
+
+	if (@probewrite(arg_uaddr))
+	  set_pointer_arg(4, arg_uaddr)
+%)
+
 probe syscall.reboot = dw_syscall.reboot !, nd_syscall.reboot ? {}
 probe syscall.reboot.return = dw_syscall.reboot.return !,
                               nd_syscall.reboot.return ? {}
@@ -71,6 +86,9 @@ probe nd2_syscall.reboot = kprobe.function(@arch_syscall_prefix "sys_reboot") ?
 	@_SYSCALL_REBOOT_NAME
 	@_SYSCALL_REBOOT_REGARGS
 	@_SYSCALL_REBOOT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_REBOOT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -81,6 +99,9 @@ probe tp_syscall.reboot = kernel.trace("sys_enter")
 	@_SYSCALL_REBOOT_NAME
 	@_SYSCALL_REBOOT_REGARGS
 	@_SYSCALL_REBOOT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_REBOOT_REGARGS_STORE %)
 }
 
 probe nd_syscall.reboot.return = nd1_syscall.reboot.return!, nd2_syscall.reboot.return!, tp_syscall.reboot.return

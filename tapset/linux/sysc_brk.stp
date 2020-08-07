@@ -16,6 +16,12 @@
 	brk = ulong_arg(1)
 %)
 
+@define _SYSCALL_BRK_REGARGS_STORE
+%(
+        if (@probewrite(brk))
+          set_ulong_arg(1, brk)
+%)
+
 probe syscall.brk = dw_syscall.brk !, nd_syscall.brk ? {}
 probe syscall.brk.return = dw_syscall.brk.return !, nd_syscall.brk.return ? {}
 
@@ -56,6 +62,9 @@ probe nd2_syscall.brk = kprobe.function(@arch_syscall_prefix "sys_brk")
 	@_SYSCALL_BRK_NAME
 	@_SYSCALL_BRK_REGARGS
 	@_SYSCALL_BRK_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_BRK_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -66,6 +75,9 @@ probe tp_syscall.brk = kernel.trace("sys_enter")
 	@_SYSCALL_BRK_NAME
 	@_SYSCALL_BRK_REGARGS
 	@_SYSCALL_BRK_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_BRK_REGARGS_STORE %)
 }
 
 probe nd_syscall.brk.return = nd1_syscall.brk.return!, nd2_syscall.brk.return!, tp_syscall.brk.return

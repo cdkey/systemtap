@@ -19,6 +19,12 @@
 	t_uaddr = pointer_arg(1)
 %)
 
+@define _SYSCALL_STIME_REGARGS_STORE
+%(
+        if (@probewrite(t_uaddr))
+          set_pointer_arg(1, t_uaddr)
+%)
+
 probe syscall.stime = dw_syscall.stime !, nd_syscall.stime ? {}
 probe syscall.stime.return = dw_syscall.stime.return !,
                              nd_syscall.stime.return ? {}
@@ -64,6 +70,9 @@ probe nd2_syscall.stime = kprobe.function(@arch_syscall_prefix "compat_sys_stime
 	@_SYSCALL_STIME_REGARGS
 	/* FIXME. Decode time */
 	@_SYSCALL_STIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_STIME_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -74,6 +83,9 @@ probe tp_syscall.stime = kernel.trace("sys_enter")
 	@_SYSCALL_STIME_NAME
 	@_SYSCALL_STIME_REGARGS
 	@_SYSCALL_STIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_STIME_REGARGS_STORE %)
 }
 
 probe nd_syscall.stime.return = nd1_syscall.stime.return!, nd2_syscall.stime.return!, tp_syscall.stime.return

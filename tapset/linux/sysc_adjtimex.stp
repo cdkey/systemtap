@@ -16,6 +16,12 @@
 	buf_uaddr = pointer_arg(1)
 %)
 
+@define _SYSCALL_ADJTIMEX_REGARGS_STORE
+%(
+        if (@probewrite(buf_uaddr))
+          set_pointer_arg(1, buf_uaddr)
+%)
+
 probe syscall.adjtimex = dw_syscall.adjtimex !, nd_syscall.adjtimex ? {}
 probe syscall.adjtimex.return = dw_syscall.adjtimex.return !,
                                 nd_syscall.adjtimex.return ? {}
@@ -77,6 +83,9 @@ probe nd2_syscall.adjtimex = kprobe.function(@arch_syscall_prefix "sys_adjtimex"
 	@_SYSCALL_ADJTIMEX_REGARGS
 	buf_str = _struct_timex_u(buf_uaddr)
 	@_SYSCALL_ADJTIMEX_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_ADJTIMEX_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -88,6 +97,9 @@ probe tp_syscall.adjtimex = kernel.trace("sys_enter")
 	@_SYSCALL_ADJTIMEX_REGARGS
 	buf_str = _struct_timex_u(buf_uaddr)
 	@_SYSCALL_ADJTIMEX_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_ADJTIMEX_REGARGS_STORE %)
 }
 
 probe nd_syscall.adjtimex.return = nd1_syscall.adjtimex.return!, nd2_syscall.adjtimex.return!, tp_syscall.adjtimex.return

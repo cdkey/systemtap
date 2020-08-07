@@ -30,6 +30,21 @@
 	count = ulong_arg(4)
 %)
 
+@define _SYSCALL_SENDFILE_REGARGS_STORE
+%(
+        if (@probewrite(out_fd))
+          set_int_arg(1, out_fd)
+
+	if (@probewrite(in_fd))
+	  set_int_arg(2, in_fd)
+
+	if (@probewrite(offset_uaddr))
+	  set_pointer_arg(3, offset_uaddr)
+
+	if (@probewrite(count))
+	  set_ulong_arg(4, count)
+%)
+
 probe syscall.sendfile = dw_syscall.sendfile !, nd_syscall.sendfile ? {}
 probe syscall.sendfile.return = dw_syscall.sendfile.return !,
                                 nd_syscall.sendfile.return ? {}
@@ -97,6 +112,9 @@ probe nd2_syscall.sendfile =
 	@_SYSCALL_SENDFILE_NAME
 	@_SYSCALL_SENDFILE_REGARGS
 	@_SYSCALL_SENDFILE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SENDFILE_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -107,6 +125,9 @@ probe tp_syscall.sendfile = kernel.trace("sys_enter")
 	@_SYSCALL_SENDFILE_NAME
 	@_SYSCALL_SENDFILE_REGARGS
 	@_SYSCALL_SENDFILE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SENDFILE_REGARGS_STORE %)
 }
 
 probe nd_syscall.sendfile.return = nd1_syscall.sendfile.return!, nd2_syscall.sendfile.return!, tp_syscall.sendfile.return

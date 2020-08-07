@@ -105,19 +105,47 @@ probe nd2_syscall.truncate = __nd2_syscall.truncate ?,
                              __nd2_syscall.compat_truncate ?
 {
 	@_SYSCALL_TRUNCATE_NAME
-	path_uaddr = pointer_arg(1)
-	path = user_string_quoted(path_uaddr)
 	@_SYSCALL_TRUNCATE_ARGSTR
 }
 probe __nd2_syscall.truncate = kprobe.function(@arch_syscall_prefix "sys_truncate") ?
 {
 	__set_syscall_pt_regs(pointer_arg(1))
+	path_uaddr = pointer_arg(1)
+	path = user_string_quoted(path_uaddr)
+	path_unquoted = user_string_nofault(pointer_arg(1))
 	length = long_arg(2)
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(path_uaddr))
+	  set_pointer_arg(1, path_uaddr)
+
+	if (@probewrite(path_unquoted))
+	  set_user_string_arg(pointer_arg(1), path_unquoted)
+
+	if (@probewrite(length))
+	  set_long_arg(2, length)
+%)
 }
 probe __nd2_syscall.compat_truncate = kprobe.function(@arch_syscall_prefix "compat_sys_truncate") ?
 {
 	__set_syscall_pt_regs(pointer_arg(1))
+	path_uaddr = pointer_arg(1)
+	path = user_string_quoted(path_uaddr)
+	path_unquoted = user_string_nofault(pointer_arg(1))
 	length = int_arg(2)
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(path_uaddr))
+	  set_pointer_arg(1, path_uaddr)
+
+	if (@probewrite(path_unquoted))
+	  set_user_string_arg(pointer_arg(1), path_unquoted)
+
+	if (@probewrite(length))
+	  set_int_arg(2, length)
+%)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -126,27 +154,72 @@ probe tp_syscall.truncate = __tp_syscall.truncate ?,
 			   __tp_syscall.compat_truncate ?
 {
 	@_SYSCALL_TRUNCATE_NAME
-	path_uaddr = pointer_arg(1)
-	path = user_string_quoted(path_uaddr)
 	@_SYSCALL_TRUNCATE_ARGSTR
 }
 probe __tp_syscall.truncate = kernel.trace("sys_enter")
 {
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_truncate"))
+	path_uaddr = pointer_arg(1)
+	path = user_string_quoted(path_uaddr)
+	path_unquoted = user_string_nofault(pointer_arg(1))
 	length = long_arg(2)
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(path_uaddr))
+	  set_pointer_arg(1, path_uaddr)
+
+	if (@probewrite(path_unquoted))
+	  set_user_string_arg(pointer_arg(1), path_unquoted)
+
+	if (@probewrite(length))
+	  set_long_arg(2, length)
+%)
 }
+
 probe __tp_syscall.truncate64 = kernel.trace("sys_enter")
 {
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_truncate64"))
+	path_uaddr = pointer_arg(1)
+	path = user_string_quoted(path_uaddr)
+	path_unquoted = user_string_nofault(pointer_arg(1))
 	length = longlong_arg(2)
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(path_uaddr))
+	  set_pointer_arg(1, path_uaddr)
+
+	if (@probewrite(path_unquoted))
+	  set_user_string_arg(pointer_arg(1), path_unquoted)
+
+	if (@probewrite(length))
+	  set_longlong_arg(2, length)
+%)
 }
+
 probe __tp_syscall.compat_truncate = kernel.trace("sys_enter")
 {
 	__set_syscall_pt_regs($regs)
 	@__compat_syscall_gate(@const("__NR_compat_truncate"))
+	path_uaddr = pointer_arg(1)
+	path = user_string_quoted(path_uaddr)
+	path_unquoted = user_string_nofault(pointer_arg(1))
 	length = int_arg(2)
+},
+{
+%( @_IS_SREG_KERNEL %?
+	if (@probewrite(path_uaddr))
+	  set_pointer_arg(1, path_uaddr)
+
+	if (@probewrite(path_unquoted))
+	  set_user_string_arg(pointer_arg(1), path_unquoted)
+
+	if (@probewrite(length))
+	  set_int_arg(2, length)
+%)
 }
 
 probe nd_syscall.truncate.return = nd1_syscall.truncate.return!, nd2_syscall.truncate.return!, tp_syscall.truncate.return

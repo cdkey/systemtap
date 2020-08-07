@@ -19,6 +19,18 @@
 	vec_uaddr = pointer_arg(3)
 %)
 
+@define _SYSCALL_MINCORE_REGARGS_STORE
+%(
+        if (@probewrite(start))
+          set_pointer_arg(1, start)
+
+	if (@probewrite(length))
+	  set_ulong_arg(2, length)
+
+	if (@probewrite(vec_uaddr))
+	  set_pointer_arg(3, vec_uaddr)
+%)
+
 probe syscall.mincore = dw_syscall.mincore !, nd_syscall.mincore ? {}
 probe syscall.mincore.return = dw_syscall.mincore.return !, nd_syscall.mincore.return ? {}
 
@@ -58,6 +70,9 @@ probe nd2_syscall.mincore = kprobe.function(@arch_syscall_prefix "sys_mincore") 
 	@_SYSCALL_MINCORE_NAME
 	@_SYSCALL_MINCORE_REGARGS
 	@_SYSCALL_MINCORE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MINCORE_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -68,6 +83,9 @@ probe tp_syscall.mincore = kernel.trace("sys_enter")
 	@_SYSCALL_MINCORE_NAME
 	@_SYSCALL_MINCORE_REGARGS
 	@_SYSCALL_MINCORE_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MINCORE_REGARGS_STORE %)
 }
 
 probe nd_syscall.mincore.return = nd1_syscall.mincore.return!, nd2_syscall.mincore.return!, tp_syscall.mincore.return

@@ -27,6 +27,24 @@
 	arg5 = ulong_arg(5)
 %)
 
+@define _SYSCALL_PRCTL_REGARGS_STORE
+%(
+        if (@probewrite(option))
+          set_int_arg(1, option)
+
+	if (@probewrite(arg2))
+	  set_ulong_arg(2, arg2)
+
+	if (@probewrite(arg3))
+	  set_ulong_arg(3, arg3)
+
+	if (@probewrite(arg4))
+	  set_ulong_arg(4, arg4)
+
+	if (@probewrite(arg5))
+	  set_ulong_arg(5, arg5)
+%)
+
 probe syscall.prctl = dw_syscall.prctl !, nd_syscall.prctl ? {}
 probe syscall.prctl.return = dw_syscall.prctl.return !, nd_syscall.prctl.return ? {}
 
@@ -68,6 +86,9 @@ probe nd2_syscall.prctl = kprobe.function(@arch_syscall_prefix "sys_prctl") ?
 	@_SYSCALL_PRCTL_NAME
 	@_SYSCALL_PRCTL_REGARGS
 	@_SYSCALL_PRCTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PRCTL_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -78,6 +99,9 @@ probe tp_syscall.prctl = kernel.trace("sys_enter")
 	@_SYSCALL_PRCTL_NAME
 	@_SYSCALL_PRCTL_REGARGS
 	@_SYSCALL_PRCTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PRCTL_REGARGS_STORE %)
 }
 
 probe nd_syscall.prctl.return = nd1_syscall.prctl.return!, nd2_syscall.prctl.return!, tp_syscall.prctl.return

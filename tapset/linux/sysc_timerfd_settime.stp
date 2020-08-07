@@ -33,6 +33,21 @@
 	ovalue_uaddr = pointer_arg(4)
 %)
 
+@define _SYSCALL_TIMERFD_SETTIME_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(flags))
+	  set_int_arg(2, flags)
+
+	if (@probewrite(value_uaddr))
+	  set_pointer_arg(3, value_uaddr)
+
+	if (@probewrite(ovalue_uaddr))
+	  set_pointer_arg(4, ovalue_uaddr)
+%)
+
 probe syscall.timerfd_settime = dw_syscall.timerfd_settime !,
                                 nd_syscall.timerfd_settime ? {}
 probe syscall.timerfd_settime.return = dw_syscall.timerfd_settime.return !,
@@ -108,6 +123,9 @@ probe nd2_syscall.timerfd_settime =
 	@_SYSCALL_TIMERFD_SETTIME_NAME
 	@_SYSCALL_TIMERFD_SETTIME_REGARGS
 	@_SYSCALL_TIMERFD_SETTIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TIMERFD_SETTIME_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -118,6 +136,9 @@ probe tp_syscall.timerfd_settime = kernel.trace("sys_enter")
 	@_SYSCALL_TIMERFD_SETTIME_NAME
 	@_SYSCALL_TIMERFD_SETTIME_REGARGS
 	@_SYSCALL_TIMERFD_SETTIME_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_TIMERFD_SETTIME_REGARGS_STORE %)
 }
 
 probe nd_syscall.timerfd_settime.return = nd1_syscall.timerfd_settime.return!, nd2_syscall.timerfd_settime.return!, tp_syscall.timerfd_settime.return

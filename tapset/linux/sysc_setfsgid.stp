@@ -44,6 +44,12 @@
 	fsgid = int_arg(1)
 %)
 
+@define _SYSCALL_SETFSGID_REGARGS_STORE
+%(
+        if (@probewrite(fsgid))
+          set_int_arg(1, fsgid)
+%)
+
 probe syscall.setfsgid = dw_syscall.setfsgid !, nd_syscall.setfsgid ? {}
 probe syscall.setfsgid.return = dw_syscall.setfsgid.return !,
                                 nd_syscall.setfsgid.return ? {}
@@ -98,6 +104,9 @@ probe nd2_syscall.setfsgid = kprobe.function(@arch_syscall_prefix "sys_setfsgid"
 	@_SYSCALL_SETFSGID_NAME
 	@_SYSCALL_SETFSGID_REGARGS
 	@_SYSCALL_SETFSGID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETFSGID_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -107,6 +116,9 @@ probe tp_syscall.setfsgid = __tp_syscall.setfsgid, __tp_syscall.setfsgid16
 	@_SYSCALL_SETFSGID_NAME
 	@_SYSCALL_SETFSGID_REGARGS
 	@_SYSCALL_SETFSGID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETFSGID_REGARGS_STORE %)
 }
 probe __tp_syscall.setfsgid = kernel.trace("sys_enter")
 {

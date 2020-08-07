@@ -25,6 +25,18 @@
 	fd = int_arg(1)
 %)
 
+@define _SYSCALL_READV_REGARGS_STORE
+%(
+	if (@probewrite(fd))
+	  set_int_arg(1, fd)
+
+        if (@probewrite(vector_uaddr))
+          set_pointer_arg(2, vector_uaddr)
+
+	if (@probewrite(count))
+	  set_int_arg(3, count)
+%)
+
 probe syscall.readv = dw_syscall.readv !, nd_syscall.readv ? {}
 probe syscall.readv.return = dw_syscall.readv.return !,
                              nd_syscall.readv.return ? {}
@@ -71,6 +83,9 @@ probe nd2_syscall.readv = kprobe.function(@arch_syscall_prefix "sys_readv") ?,
 	@_SYSCALL_READV_NAME
 	@_SYSCALL_READV_REGARGS
 	@_SYSCALL_READV_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_READV_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -81,6 +96,9 @@ probe tp_syscall.readv = kernel.trace("sys_enter")
 	@_SYSCALL_READV_NAME
 	@_SYSCALL_READV_REGARGS
 	@_SYSCALL_READV_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_READV_REGARGS_STORE %)
 }
 
 probe nd_syscall.readv.return = nd1_syscall.readv.return!, nd2_syscall.readv.return!, tp_syscall.readv.return

@@ -23,6 +23,20 @@
 	count = ulong_arg(4)
 %)
 
+@define _SYSCALL_COMPAT_READAHEAD_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(offset)) {
+	  set_uint_arg(2, offset & 0xffffffff)
+	  set_uint_arg(3, offset >> 32)
+	}
+
+	if (@probewrite(count))
+	  set_ulong_arg(4, count)
+%)
+
 probe syscall.compat_readahead = dw_syscall.compat_readahead !,
                                  nd_syscall.compat_readahead ? {}
 probe syscall.compat_readahead.return = dw_syscall.compat_readahead.return !,
@@ -67,6 +81,9 @@ probe nd2_syscall.compat_readahead =
 	@_SYSCALL_COMPAT_READAHEAD_NAME
 	@_SYSCALL_COMPAT_READAHEAD_REGARGS
 	@_SYSCALL_COMPAT_READAHEAD_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_READAHEAD_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -77,6 +94,9 @@ probe tp_syscall.compat_readahead = kernel.trace("sys_enter")
 	@_SYSCALL_COMPAT_READAHEAD_NAME
 	@_SYSCALL_COMPAT_READAHEAD_REGARGS
 	@_SYSCALL_COMPAT_READAHEAD_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_COMPAT_READAHEAD_REGARGS_STORE %)
 }
 
 probe nd_syscall.compat_readahead.return = nd1_syscall.compat_readahead.return!, nd2_syscall.compat_readahead.return!, tp_syscall.compat_readahead.return

@@ -19,6 +19,12 @@
 	info_str = _struct_sysinfo_u(info_uaddr)
 %)
 
+@define _SYSCALL_SYSINFO_REGARGS_STORE
+%(
+        if (@probewrite(info_uaddr))
+          set_pointer_arg(1, info_uaddr)
+%)
+
 probe syscall.sysinfo = dw_syscall.sysinfo !, nd_syscall.sysinfo ? {}
 probe syscall.sysinfo.return = dw_syscall.sysinfo.return !, nd_syscall.sysinfo.return ? {}
 
@@ -61,6 +67,9 @@ probe nd2_syscall.sysinfo = kprobe.function(@arch_syscall_prefix "compat_sys_sys
 	@_SYSCALL_SYSINFO_NAME
 	@_SYSCALL_SYSINFO_REGARGS
 	@_SYSCALL_SYSINFO_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SYSINFO_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -71,6 +80,9 @@ probe tp_syscall.sysinfo = kernel.trace("sys_enter")
 	@_SYSCALL_SYSINFO_NAME
 	@_SYSCALL_SYSINFO_REGARGS
 	@_SYSCALL_SYSINFO_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SYSINFO_REGARGS_STORE %)
 }
 
 probe nd_syscall.sysinfo.return = nd1_syscall.sysinfo.return!, nd2_syscall.sysinfo.return!, tp_syscall.sysinfo.return

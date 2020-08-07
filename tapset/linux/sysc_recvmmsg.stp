@@ -25,6 +25,24 @@
 	timeout_uaddr = pointer_arg(5)
 %)
 
+@define _SYSCALL_RECVMMSG_REGARGS_STORE
+%(
+        if (@probewrite(s))
+          set_int_arg(1, s)
+
+	if (@probewrite(mmsg_uaddr))
+	  set_pointer_arg(2, mmsg_uaddr)
+
+	if (@probewrite(vlen))
+	  set_uint_arg(3, vlen)
+
+	if (@probewrite(flags))
+	  set_uint_arg(4, flags)
+
+	if (@probewrite(timeout_addr))
+	  set_pointer_arg(5, timeout_addr)
+%)
+
 probe syscall.recvmmsg = dw_syscall.recvmmsg !, nd_syscall.recvmmsg ? {}
 probe syscall.recvmmsg.return = dw_syscall.recvmmsg.return !,
                                 nd_syscall.recvmmsg.return ? {}
@@ -71,6 +89,9 @@ probe nd2_syscall.recvmmsg = kprobe.function(@arch_syscall_prefix "sys_recvmmsg"
 	@_SYSCALL_RECVMMSG_REGARGS
 	timeout_str = _struct_timespec_u(timeout_uaddr, 1)
 	@_SYSCALL_RECVMMSG_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_RECVMMSG_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -82,6 +103,9 @@ probe tp_syscall.recvmmsg = kernel.trace("sys_enter")
 	@_SYSCALL_RECVMMSG_REGARGS
 	timeout_str = _struct_timespec_u(timeout_uaddr, 1)
 	@_SYSCALL_RECVMMSG_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_RECVMMSG_REGARGS_STORE %)
 }
 
 probe nd_syscall.recvmmsg.return = nd1_syscall.recvmmsg.return!, nd2_syscall.recvmmsg.return!, tp_syscall.recvmmsg.return

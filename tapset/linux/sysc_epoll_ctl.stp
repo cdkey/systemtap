@@ -33,6 +33,21 @@
 	event_uaddr = pointer_arg(4)
 %)
 
+@define _SYSCALL_EPOLL_CTL_REGARGS_STORE
+%(
+        if (@probewrite(epfd))
+          set_int_arg(1, epfd)
+
+	if (@probewrite(op))
+	  set_int_arg(2, op)
+
+	if (@probewrite(fd))
+	  set_int_arg(3, fd)
+
+	if (@probewrite(event_uaddr))
+	  set_pointer_arg(4, event_uaddr)
+%)
+
 probe syscall.epoll_ctl = dw_syscall.epoll_ctl !, nd_syscall.epoll_ctl ? {}
 probe syscall.epoll_ctl.return = dw_syscall.epoll_ctl.return !, nd_syscall.epoll_ctl.return ? {}
 
@@ -90,6 +105,9 @@ probe nd2_syscall.epoll_ctl = kprobe.function(@arch_syscall_prefix "sys_epoll_ct
 	@_SYSCALL_EPOLL_CTL_NAME
 	@_SYSCALL_EPOLL_CTL_REGARGS
 	@_SYSCALL_EPOLL_CTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_EPOLL_CTL_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -100,6 +118,9 @@ probe tp_syscall.epoll_ctl = kernel.trace("sys_enter")
 	@_SYSCALL_EPOLL_CTL_NAME
 	@_SYSCALL_EPOLL_CTL_REGARGS
 	@_SYSCALL_EPOLL_CTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_EPOLL_CTL_REGARGS_STORE %)
 }
 
 probe nd_syscall.epoll_ctl.return = nd1_syscall.epoll_ctl.return!, nd2_syscall.epoll_ctl.return!, tp_syscall.epoll_ctl.return

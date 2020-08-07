@@ -19,11 +19,31 @@
 	olddirfd = int_arg(1)
 	olddirfd_str = _dfd_str(olddirfd)
 	oldpath = user_string_quoted(pointer_arg(2))
+	oldpath_unquoted = user_string_nofault(pointer_arg(2))
 	newdirfd = int_arg(3)
 	newdirfd_str = _dfd_str(newdirfd)
 	newpath = user_string_quoted(pointer_arg(4))
+	newpath_unquoted = user_string_nofault(pointer_arg(4))
 	flags = int_arg(5)
 	flags_str = _at_flag_str(flags)
+%)
+
+@define _SYSCALL_LINKAT_REGARGS_STORE
+%(
+        if (@probewrite(olddirfd))
+          set_int_arg(1, olddirfd)
+
+	if (@probewrite(oldpath_unquoted))
+	  set_user_string_arg(pointer_arg(2), oldpath_unquoted)
+
+	if (@probewrite(newdirfd))
+	  set_int_arg(3, newdirfd)
+
+	if (@probewrite(newpath_unquoted))
+	  set_user_string_arg(pointer_arg(4), newpath_unquoted)
+
+	if (@probewrite(flags))
+	  set_int_arg(5, flags)
 %)
 
 probe syscall.linkat = dw_syscall.linkat !, nd_syscall.linkat ? {}
@@ -74,6 +94,9 @@ probe nd2_syscall.linkat = kprobe.function(@arch_syscall_prefix "sys_linkat") ?
 	@_SYSCALL_LINKAT_NAME
 	@_SYSCALL_LINKAT_REGARGS
 	@_SYSCALL_LINKAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_LINKAT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -84,6 +107,9 @@ probe tp_syscall.linkat = kernel.trace("sys_enter")
 	@_SYSCALL_LINKAT_NAME
 	@_SYSCALL_LINKAT_REGARGS
 	@_SYSCALL_LINKAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_LINKAT_REGARGS_STORE %)
 }
 
 probe nd_syscall.linkat.return = nd1_syscall.linkat.return!, nd2_syscall.linkat.return!, tp_syscall.linkat.return

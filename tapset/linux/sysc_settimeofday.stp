@@ -21,6 +21,15 @@
 	tz_str = _struct_timezone_u(tz_uaddr)
 %)
 
+@define _SYSCALL_SETTIMEOFDAY_REGARGS_STORE
+%(
+        if (@probewrite(tv_uaddr))
+          set_pointer_arg(1, tv_uaddr)
+
+	if (@probewrite(tz_uaddr))
+	  set_pointer_arg(2, tz_uaddr)
+%)
+
 probe syscall.settimeofday = dw_syscall.settimeofday !,
                              nd_syscall.settimeofday ? {}
 probe syscall.settimeofday.return = dw_syscall.settimeofday.return !,
@@ -65,6 +74,9 @@ probe nd2_syscall.settimeofday = kprobe.function(@arch_syscall_prefix "sys_setti
 	@_SYSCALL_SETTIMEOFDAY_REGARGS
 	tv_str = _struct_timeval_u(tv_uaddr, 1)
 	@_SYSCALL_SETTIMEOFDAY_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETTIMEOFDAY_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -76,6 +88,9 @@ probe tp_syscall.settimeofday = kernel.trace("sys_enter")
 	@_SYSCALL_SETTIMEOFDAY_REGARGS
 	tv_str = _struct_timeval_u(tv_uaddr, 1)
 	@_SYSCALL_SETTIMEOFDAY_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETTIMEOFDAY_REGARGS_STORE %)
 }
 
 probe nd_syscall.settimeofday.return = nd1_syscall.settimeofday.return!, nd2_syscall.settimeofday.return!, tp_syscall.settimeofday.return
@@ -155,6 +170,9 @@ probe nd2_syscall.settimeofday32 = kprobe.function(@arch_syscall_prefix "compat_
 	@_SYSCALL_SETTIMEOFDAY_REGARGS
 	tv_str = _struct_compat_timeval_u(tv_uaddr, 1)
 	@_SYSCALL_SETTIMEOFDAY_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETTIMEOFDAY_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -166,6 +184,9 @@ probe tp_syscall.settimeofday32 = kernel.trace("sys_enter")
 	@_SYSCALL_SETTIMEOFDAY_REGARGS
 	tv_str = _struct_compat_timeval_u(tv_uaddr, 1)
 	@_SYSCALL_SETTIMEOFDAY_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETTIMEOFDAY_REGARGS_STORE %)
 }
 
 probe nd_syscall.settimeofday32.return = nd1_syscall.settimeofday32.return!, nd2_syscall.settimeofday32.return!, tp_syscall.settimeofday32.return

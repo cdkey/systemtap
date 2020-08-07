@@ -18,6 +18,12 @@
 	flags_str = _mlockall_flags_str(flags)
 %)
 
+@define _SYSCALL_MLOCKALL_REGARGS_STORE
+%(
+        if (@probewrite(flags))
+          set_int_arg(1, flags)
+%)
+
 probe syscall.mlockall = dw_syscall.mlockall !, nd_syscall.mlockall ? {}
 probe syscall.mlockall.return = dw_syscall.mlockall.return !,
                                 nd_syscall.mlockall.return ? {}
@@ -57,6 +63,9 @@ probe nd2_syscall.mlockall = kprobe.function(@arch_syscall_prefix "sys_mlockall"
 	@_SYSCALL_MLOCKALL_NAME
 	@_SYSCALL_MLOCKALL_REGARGS
 	@_SYSCALL_MLOCKALL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MLOCKALL_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -67,6 +76,9 @@ probe tp_syscall.mlockall = kernel.trace("sys_enter")
 	@_SYSCALL_MLOCKALL_NAME
 	@_SYSCALL_MLOCKALL_REGARGS
 	@_SYSCALL_MLOCKALL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MLOCKALL_REGARGS_STORE %)
 }
 
 probe nd_syscall.mlockall.return = nd1_syscall.mlockall.return!, nd2_syscall.mlockall.return!, tp_syscall.mlockall.return

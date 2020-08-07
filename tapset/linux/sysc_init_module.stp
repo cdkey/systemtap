@@ -19,6 +19,19 @@
 	umod_uaddr = pointer_arg(1)
 	len = ulong_arg(2)
 	uargs = user_string_quoted(pointer_arg(3))
+	uargs_unquoted = user_string_nofault(pointer_arg(3))
+%)
+
+@define _SYSCALL_INIT_MODULE_REGARGS_STORE
+%(
+        if (@probewrite(umod_uaddr))
+          set_pointer_arg(1, umod_uaddr)
+
+	if (@probewrite(len))
+	  set_ulong_arg(2, len)
+
+	if (@probewrite(uargs_unquoted))
+	  set_user_string_arg(pointer_arg(3), uargs_unquoted)
 %)
 
 probe syscall.init_module = dw_syscall.init_module !, nd_syscall.init_module ? {}
@@ -61,6 +74,9 @@ probe nd2_syscall.init_module = kprobe.function(@arch_syscall_prefix "sys_init_m
 	@_SYSCALL_INIT_MODULE_NAME
 	@_SYSCALL_INIT_MODULE_REGARGS
 	@_SYSCALL_INIT_MODULE_ARGSTR
+},
+{
+        @_SYSCALL_INIT_MODULE_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -71,6 +87,9 @@ probe tp_syscall.init_module = kernel.trace("sys_enter")
 	@_SYSCALL_INIT_MODULE_NAME
 	@_SYSCALL_INIT_MODULE_REGARGS
 	@_SYSCALL_INIT_MODULE_ARGSTR
+},
+{
+        @_SYSCALL_INIT_MODULE_REGARGS_STORE
 }
 
 probe nd_syscall.init_module.return = nd1_syscall.init_module.return!, nd2_syscall.init_module.return!, tp_syscall.init_module.return

@@ -20,6 +20,18 @@
 	suid_uaddr = pointer_arg(3)
 %)
 
+@define _SYSCALL_GETRESUID_REGARGS_STORE
+%(
+        if (@probewrite(ruid_uaddr))
+          set_pointer_arg(1, ruid_uaddr)
+
+	if (@probewrite(euid_uaddr))
+	  set_pointer_arg(2, euid_uaddr)
+
+	if (@probewrite(suid_uaddr))
+	  set_pointer_arg(3, suid_uaddr)
+%)
+
 probe syscall.getresuid = dw_syscall.getresuid !, nd_syscall.getresuid ? {}
 probe syscall.getresuid.return = dw_syscall.getresuid.return !, nd_syscall.getresuid.return ? {}
 
@@ -63,6 +75,9 @@ probe nd2_syscall.getresuid = kprobe.function(@arch_syscall_prefix "sys_getresui
 	@_SYSCALL_GETRESUID_NAME
 	@_SYSCALL_GETRESUID_REGARGS
 	@_SYSCALL_GETRESUID_ARGSTR
+},
+{
+        @_SYSCALL_GETRESUID_REGARGS_STORE
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -72,6 +87,9 @@ probe tp_syscall.getresuid = __tp_syscall.getresuid, __tp_syscall.getresuid16
 	@_SYSCALL_GETRESUID_NAME
 	@_SYSCALL_GETRESUID_REGARGS
 	@_SYSCALL_GETRESUID_ARGSTR
+},
+{
+        @_SYSCALL_GETRESUID_REGARGS_STORE
 }
 probe __tp_syscall.getresuid = kernel.trace("sys_enter")
 {

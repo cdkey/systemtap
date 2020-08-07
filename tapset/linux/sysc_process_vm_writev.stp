@@ -33,6 +33,27 @@
 	flags = ulong_arg(6)
 %)
 
+@define _SYSCALL_PROCESS_VM_READV_REGARGS_STORE
+%(
+        if (@probewrite(pid))
+          set_int_arg(1, pid)
+
+        if (@probewrite(local_iov_uaddr))
+          set_pointer_arg(2, local_iov_uaddr)
+
+        if (@probewrite(liovcnt))
+          set_ulong_arg(3, liovcnt)
+
+        if (@probewrite(remote_iov_uaddr))
+          set_pointer_arg(4, remote_iov_uaddr)
+
+        if (@probewrite(riovcnt))
+          set_ulong_arg(5, riovcnt)
+
+        if (@probewrite(flags))
+          set_ulong_arg(6, flags)
+%)
+
 probe syscall.process_vm_writev = dw_syscall.process_vm_writev !,
                                   nd_syscall.process_vm_writev ? {}
 probe syscall.process_vm_writev.return = dw_syscall.process_vm_writev.return !,
@@ -85,6 +106,9 @@ probe nd2_syscall.process_vm_writev =
 	@_SYSCALL_PROCESS_VM_WRITEV_NAME
 	@_SYSCALL_PROCESS_VM_WRITEV_REGARGS
 	@_SYSCALL_PROCESS_VM_WRITEV_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PROCESS_VM_READV_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -95,6 +119,9 @@ probe tp_syscall.process_vm_writev = kernel.trace("sys_enter")
 	@_SYSCALL_PROCESS_VM_WRITEV_NAME
 	@_SYSCALL_PROCESS_VM_WRITEV_REGARGS
 	@_SYSCALL_PROCESS_VM_WRITEV_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PROCESS_VM_READV_REGARGS_STORE %)
 }
 
 probe nd_syscall.process_vm_writev.return = nd1_syscall.process_vm_writev.return!, nd2_syscall.process_vm_writev.return!, tp_syscall.process_vm_writev.return

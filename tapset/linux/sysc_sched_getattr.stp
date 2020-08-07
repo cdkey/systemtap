@@ -23,6 +23,21 @@
 	flags = uint_arg(4)
 %)
 
+@define _SYSCALL_SCHED_GETATTR_REGARGS_STORE
+%(
+        if (@probewrite(pid))
+          set_int_arg(1, pid)
+
+	if (@probewrite(sched_attr_uaddr))
+	  set_pointer_arg(2, sched_attr_uaddr)
+
+	if (@probewrite(size))
+	  set_uint_arg(3, size)
+
+	if (@probewrite(flags))
+	  set_uint_arg(4, flags)
+%)
+
 probe syscall.sched_getattr = dw_syscall.sched_getattr !, nd_syscall.sched_getattr ? {}
 probe syscall.sched_getattr.return = dw_syscall.sched_getattr.return !,
                                      nd_syscall.sched_getattr.return ? {}
@@ -66,6 +81,9 @@ probe nd2_syscall.sched_getattr = kprobe.function(@arch_syscall_prefix "sys_sche
 	@_SYSCALL_SCHED_GETATTR_NAME
 	@_SYSCALL_SCHED_GETATTR_REGARGS
 	@_SYSCALL_SCHED_GETATTR_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SCHED_GETATTR_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -76,6 +94,9 @@ probe tp_syscall.sched_getattr = kernel.trace("sys_enter")
 	@_SYSCALL_SCHED_GETATTR_NAME
 	@_SYSCALL_SCHED_GETATTR_REGARGS
 	@_SYSCALL_SCHED_GETATTR_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SCHED_GETATTR_REGARGS_STORE %)
 }
 
 probe nd_syscall.sched_getattr.return = nd1_syscall.sched_getattr.return!, nd2_syscall.sched_getattr.return!, tp_syscall.sched_getattr.return

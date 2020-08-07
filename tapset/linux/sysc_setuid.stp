@@ -45,6 +45,12 @@
 	uid = int_arg(1)
 %)
 
+@define _SYSCALL_SETUID_REGARGS_STORE
+%(
+        if (@probewrite(uid))
+          set_int_arg(1, uid)
+%)
+
 probe syscall.setuid = dw_syscall.setuid !, nd_syscall.setuid ? {}
 probe syscall.setuid.return = dw_syscall.setuid.return !,
                               nd_syscall.setuid.return ? {}
@@ -99,6 +105,9 @@ probe nd2_syscall.setuid = kprobe.function(@arch_syscall_prefix "sys_setuid") ?,
 	@_SYSCALL_SETUID_NAME
 	@_SYSCALL_SETUID_REGARGS
 	@_SYSCALL_SETUID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETUID_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -108,6 +117,9 @@ probe tp_syscall.setuid = __tp_syscall.setuid, __tp_syscall.setuid16
 	@_SYSCALL_SETUID_NAME
 	@_SYSCALL_SETUID_REGARGS
 	@_SYSCALL_SETUID_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SETUID_REGARGS_STORE %)
 }
 probe __tp_syscall.setuid = kernel.trace("sys_enter")
 {

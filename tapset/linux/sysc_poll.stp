@@ -20,6 +20,18 @@
 	timeout = int_arg(3)
 %)
 
+@define _SYSCALL_POLL_REGARGS_STORE
+%(
+        if (@probewrite(ufds_uaddr))
+          set_pointer_arg(1, ufds_uaddr)
+
+	if (@probewrite(nfds))
+	  set_uint_arg(2, nfds)
+
+	if (@probewrite(timeout))
+	  set_int_arg(3, timeout)
+%)
+
 probe syscall.poll = dw_syscall.poll !, nd_syscall.poll ? {}
 probe syscall.poll.return = dw_syscall.poll.return !, nd_syscall.poll.return ? {}
 
@@ -59,6 +71,9 @@ probe nd2_syscall.poll = kprobe.function(@arch_syscall_prefix "sys_poll") ?
 	@_SYSCALL_POLL_NAME
 	@_SYSCALL_POLL_REGARGS
 	@_SYSCALL_POLL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_POLL_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -69,6 +84,9 @@ probe tp_syscall.poll = kernel.trace("sys_enter")
 	@_SYSCALL_POLL_NAME
 	@_SYSCALL_POLL_REGARGS
 	@_SYSCALL_POLL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_POLL_REGARGS_STORE %)
 }
 
 probe nd_syscall.poll.return = nd1_syscall.poll.return!, nd2_syscall.poll.return!, tp_syscall.poll.return

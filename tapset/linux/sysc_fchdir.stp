@@ -16,6 +16,12 @@
 	fd = int_arg(1)
 %)
 
+@define _SYSCALL_FCHDIR_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+%)
+
 probe syscall.fchdir = dw_syscall.fchdir !, nd_syscall.fchdir ? {}
 probe syscall.fchdir.return = dw_syscall.fchdir.return !, nd_syscall.fchdir.return ? {}
 
@@ -53,6 +59,9 @@ probe nd2_syscall.fchdir = kprobe.function(@arch_syscall_prefix "sys_fchdir")
 	@_SYSCALL_FCHDIR_NAME
 	@_SYSCALL_FCHDIR_REGARGS
 	@_SYSCALL_FCHDIR_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_FCHDIR_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -63,6 +72,9 @@ probe tp_syscall.fchdir = kernel.trace("sys_enter")
 	@_SYSCALL_FCHDIR_NAME
 	@_SYSCALL_FCHDIR_REGARGS
 	@_SYSCALL_FCHDIR_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_FCHDIR_REGARGS_STORE %)
 }
 
 probe nd_syscall.fchdir.return = nd1_syscall.fchdir.return!, nd2_syscall.fchdir.return!, tp_syscall.fchdir.return

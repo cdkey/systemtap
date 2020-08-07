@@ -21,6 +21,18 @@
 	flags_str = _stp_mlock2_str(flags)
 %)
 
+@define _SYSCALL_MLOCK2_REGARGS_STORE
+%(
+        if (@probewrite(addr))
+          set_ulong_arg(1, addr)
+
+	if (@probewrite(len))
+	  set_ulong_arg(2, len)
+
+	if (@probewrite(flags))
+	  set_int_arg(3, flags)
+%)
+
 probe syscall.mlock2 = dw_syscall.mlock2 !, nd_syscall.mlock2 ? {}
 probe syscall.mlock2.return = dw_syscall.mlock2.return !, nd_syscall.mlock2.return ? {}
 
@@ -61,6 +73,9 @@ probe nd2_syscall.mlock2 = kprobe.function(@arch_syscall_prefix "sys_mlock2") ?
 	@_SYSCALL_MLOCK2_NAME
 	@_SYSCALL_MLOCK2_REGARGS
 	@_SYSCALL_MLOCK2_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MLOCK2_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -71,6 +86,9 @@ probe tp_syscall.mlock2 = kernel.trace("sys_enter")
 	@_SYSCALL_MLOCK2_NAME
 	@_SYSCALL_MLOCK2_REGARGS
 	@_SYSCALL_MLOCK2_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MLOCK2_REGARGS_STORE %)
 }
 
 probe nd_syscall.mlock2.return = nd1_syscall.mlock2.return!, nd2_syscall.mlock2.return!, tp_syscall.mlock2.return

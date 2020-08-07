@@ -28,6 +28,21 @@
 	flags_str = _kexec_flags_str(flags)
 %)
 
+@define _SYSCALL_KEXEC_LOAD_REGARGS_STORE
+%(
+        if (@probewrite(entry))
+          set_ulong_arg(1, entry)
+
+	if (@probewrite(nr_segments))
+	  set_ulong_arg(2, nr_segments)
+
+	if (@probewrite(segments_uaddr))
+	  set_pointer_arg(3, segments_uaddr)
+
+	if (@probewrite(flags))
+	  set_ulong_arg(4, flags)
+%)
+
 probe syscall.kexec_load = dw_syscall.kexec_load !, nd_syscall.kexec_load ? {}
 probe syscall.kexec_load.return = dw_syscall.kexec_load.return !,
                                   nd_syscall.kexec_load.return ? {}
@@ -86,6 +101,9 @@ probe nd2_syscall.kexec_load = kprobe.function(@arch_syscall_prefix "sys_kexec_l
 	@_SYSCALL_KEXEC_LOAD_NAME
 	@_SYSCALL_KEXEC_LOAD_REGARGS
 	@_SYSCALL_KEXEC_LOAD_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_KEXEC_LOAD_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -96,6 +114,9 @@ probe tp_syscall.kexec_load = kernel.trace("sys_enter")
 	@_SYSCALL_KEXEC_LOAD_NAME
 	@_SYSCALL_KEXEC_LOAD_REGARGS
 	@_SYSCALL_KEXEC_LOAD_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_KEXEC_LOAD_REGARGS_STORE %)
 }
 
 probe nd_syscall.kexec_load.return = nd1_syscall.kexec_load.return!, nd2_syscall.kexec_load.return!, tp_syscall.kexec_load.return

@@ -27,11 +27,33 @@
 	dfd_str = _dfd_str(dfd)
 	filename_uaddr = pointer_arg(2)
 	filename = user_string_quoted(filename_uaddr)
+	filename_unquoted = user_string_nofault(pointer_arg(2))
 	flags = uint_arg(3)
 	flags_str = _at_flag_str(flags)
 	mask = uint_arg(4)
 	mask_str = _statx_mask_str(mask)
 	buf_uaddr = pointer_arg(5)
+%)
+
+@define _SYSCALL_STATX_REGARGS_STORE
+%(
+        if (@probewrite(dfd))
+          set_int_arg(1, dfd)
+
+	if (@probewrite(filename_uaddr))
+	  set_pointer_arg(2, filename_uaddr)
+
+	if (@probewrite(filename_unquoted))
+	  set_user_string_arg(pointer_arg(2), filename_unquoted)
+
+	if (@probewrite(flags))
+	  set_uint_arg(3, flags)
+
+	if (@probewrite(mask))
+	  set_uint_arg(4, mask)
+
+	if (@probewrite(buf_uaddr))
+	  set_pointer_arg(5, buf_uaddr)
 %)
 
 probe syscall.statx = dw_syscall.statx !, nd_syscall.statx ? {}
@@ -83,6 +105,9 @@ probe nd2_syscall.statx = kprobe.function(@arch_syscall_prefix "sys_statx") ?
 	@_SYSCALL_STATX_NAME
 	@_SYSCALL_STATX_REGARGS
 	@_SYSCALL_STATX_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_STATX_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -93,6 +118,9 @@ probe tp_syscall.statx = kernel.trace("sys_enter")
 	@_SYSCALL_STATX_NAME
 	@_SYSCALL_STATX_REGARGS
 	@_SYSCALL_STATX_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_STATX_REGARGS_STORE %)
 }
 
 probe nd_syscall.statx.return = nd1_syscall.statx.return!, nd2_syscall.statx.return!, tp_syscall.statx.return

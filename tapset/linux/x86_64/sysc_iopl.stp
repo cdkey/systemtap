@@ -19,6 +19,12 @@
 	level = uint_arg(1)
 %)
 
+@define _SYSCALL_IOPL_REGARGS_STORE
+%(
+        if (@probewrite(level))
+          set_uint_arg(1, level)
+%)
+
 probe syscall.iopl = dw_syscall.iopl !, nd_syscall.iopl {}
 probe syscall.iopl.return = dw_syscall.iopl.return !, nd_syscall.iopl.return {}
 
@@ -56,6 +62,9 @@ probe nd2_syscall.iopl = kprobe.function(@arch_syscall_prefix "sys_iopl") ?
 	@_SYSCALL_IOPL_NAME
 	@_SYSCALL_IOPL_REGARGS
 	@_SYSCALL_IOPL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IOPL_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -66,6 +75,9 @@ probe tp_syscall.iopl = kernel.trace("sys_enter")
 	@_SYSCALL_IOPL_NAME
 	@_SYSCALL_IOPL_REGARGS
 	@_SYSCALL_IOPL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IOPL_REGARGS_STORE %)
 }
 
 probe nd_syscall.iopl.return = nd1_syscall.iopl.return!, nd2_syscall.iopl.return!, tp_syscall.iopl.return

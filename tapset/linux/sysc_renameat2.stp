@@ -21,12 +21,38 @@
 	olddfd_str = _dfd_str(olddfd)
 	oldname = pointer_arg(2)
 	oldname_str = user_string_quoted(oldname)
+	oldname_str_unquoted = user_string_nofault(pointer_arg(2))
 	newdfd = int_arg(3)
 	newdfd_str = _dfd_str(newdfd)
 	newname = pointer_arg(4)
 	newname_str = user_string_quoted(newname)
+	newname_str_unquoted = user_string_nofault(pointer_arg(4))
 	flags = uint_arg(5)
 	flags_str = _renameat2_flags_str(flags)
+%)
+
+@define _SYSCALL_RENAMEAT2_REGARGS_STORE
+%(
+        if (@probewrite(olddfd))
+          set_int_arg(1, olddfd)
+
+	if (@probewrite(oldname))
+	  set_pointer_arg(2, oldname)
+
+	if (@probewrite(oldname_str_unquoted))
+	  set_user_string_arg(pointer_arg(2), oldname_str_unquoted)
+
+	if (@probewrite(newdfd))
+	  set_int_arg(3, newdfd)
+
+	if (@probewrite(newname))
+	  set_pointer_arg(4, newname)
+
+	if (@probewrite(newname_str_unquoted))
+	  set_user_string_arg(pointer_arg(4), newname_str_unquoted)
+
+	if (@probewrite(flags))
+	  set_uint_arg(5, flags)
 %)
 
 probe syscall.renameat2 = dw_syscall.renameat2 !, nd_syscall.renameat2 ? {}
@@ -82,6 +108,9 @@ probe nd2_syscall.renameat2 = kprobe.function(@arch_syscall_prefix "sys_renameat
 	@_SYSCALL_RENAMEAT2_NAME
 	@_SYSCALL_RENAMEAT2_REGARGS
 	@_SYSCALL_RENAMEAT2_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_RENAMEAT2_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -92,6 +121,9 @@ probe tp_syscall.renameat2 = kernel.trace("sys_enter")
 	@_SYSCALL_RENAMEAT2_NAME
 	@_SYSCALL_RENAMEAT2_REGARGS
 	@_SYSCALL_RENAMEAT2_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_RENAMEAT2_REGARGS_STORE %)
 }
 
 probe nd_syscall.renameat2.return = nd1_syscall.renameat2.return!, nd2_syscall.renameat2.return!, tp_syscall.renameat2.return

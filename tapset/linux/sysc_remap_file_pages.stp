@@ -28,6 +28,24 @@
 	flags_str = _mmap_flags(flags)
 %)
 
+@define _SYSCALL_REMAP_FILE_PAGES_REGARGS_STORE
+%(
+        if (@probewrite(start))
+          set_ulong_arg(1, start)
+
+	if (@probewrite(size))
+	  set_ulong_arg(2, size)
+
+	if (@probewrite(prot))
+	  set_ulong_arg(3, prot)
+
+	if (@probewrite(pgoff))
+	  set_ulong_arg(4, pgoff)
+
+	if (@probewrite(flags))
+	  set_ulong_arg(5, flags)
+%)
+
 probe syscall.remap_file_pages = dw_syscall.remap_file_pages !,
                                  nd_syscall.remap_file_pages ? {}
 probe syscall.remap_file_pages.return = dw_syscall.remap_file_pages.return !,
@@ -73,6 +91,9 @@ probe nd2_syscall.remap_file_pages = kprobe.function(@arch_syscall_prefix "sys_r
 	@_SYSCALL_REMAP_FILE_PAGES_NAME
 	@_SYSCALL_REMAP_FILE_PAGES_REGARGS
 	@_SYSCALL_REMAP_FILE_PAGES_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_REMAP_FILE_PAGES_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -83,6 +104,9 @@ probe tp_syscall.remap_file_pages = kernel.trace("sys_enter")
 	@_SYSCALL_REMAP_FILE_PAGES_NAME
 	@_SYSCALL_REMAP_FILE_PAGES_REGARGS
 	@_SYSCALL_REMAP_FILE_PAGES_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_REMAP_FILE_PAGES_REGARGS_STORE %)
 }
 
 probe nd_syscall.remap_file_pages.return = nd1_syscall.remap_file_pages.return!, nd2_syscall.remap_file_pages.return!, tp_syscall.remap_file_pages.return

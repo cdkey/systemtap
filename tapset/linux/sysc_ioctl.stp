@@ -20,6 +20,18 @@
 	argp = ulong_arg(3)
 %)
 
+@define _SYSCALL_IOCTL_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+	if (@probewrite(request))
+	  set_int_arg(2, request)
+
+	if (@probewrite(argp))
+	  set_ulong_arg(3, argp)
+%)
+
 probe syscall.ioctl = dw_syscall.ioctl !, nd_syscall.ioctl ? {}
 probe syscall.ioctl.return = dw_syscall.ioctl.return !, nd_syscall.ioctl.return ? {}
 
@@ -76,6 +88,9 @@ probe nd2_syscall.ioctl = kprobe.function(@arch_syscall_prefix "sys_ioctl") ?,
 	@_SYSCALL_IOCTL_NAME
 	@_SYSCALL_IOCTL_REGARGS
 	@_SYSCALL_IOCTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IOCTL_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -86,6 +101,9 @@ probe tp_syscall.ioctl = kernel.trace("sys_enter")
 	@_SYSCALL_IOCTL_NAME
 	@_SYSCALL_IOCTL_REGARGS
 	@_SYSCALL_IOCTL_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IOCTL_REGARGS_STORE %)
 }
 
 probe nd_syscall.ioctl.return = nd1_syscall.ioctl.return!, nd2_syscall.ioctl.return!, tp_syscall.ioctl.return

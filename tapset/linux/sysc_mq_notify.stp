@@ -19,6 +19,15 @@
 	notification_uaddr = pointer_arg(2)
 %)
 
+@define _SYSCALL_MQ_NOTIFY_REGARGS_STORE
+%(
+        if (@probewrite(mqdes))
+          set_int_arg(1, mqdes)
+
+	if (@probewrite(notification_uaddr))
+	  set_pointer_arg(2, notification_uaddr)
+%)
+
 probe syscall.mq_notify = dw_syscall.mq_notify !, nd_syscall.mq_notify ? {}
 probe syscall.mq_notify.return = dw_syscall.mq_notify.return !,
                                  nd_syscall.mq_notify.return ? {}
@@ -78,6 +87,9 @@ probe nd2_syscall.mq_notify =
 	@_SYSCALL_MQ_NOTIFY_NAME
 	@_SYSCALL_MQ_NOTIFY_REGARGS
 	@_SYSCALL_MQ_NOTIFY_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MQ_NOTIFY_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -88,6 +100,9 @@ probe tp_syscall.mq_notify = kernel.trace("sys_enter")
 	@_SYSCALL_MQ_NOTIFY_NAME
 	@_SYSCALL_MQ_NOTIFY_REGARGS
 	@_SYSCALL_MQ_NOTIFY_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MQ_NOTIFY_REGARGS_STORE %)
 }
 
 probe nd_syscall.mq_notify.return = nd1_syscall.mq_notify.return!, nd2_syscall.mq_notify.return!, tp_syscall.mq_notify.return

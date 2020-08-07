@@ -24,6 +24,21 @@
 	old_rlim_uaddr = pointer_arg(4)
 %)
 
+@define _SYSCALL_PRLIMIT64_REGARGS_STORE
+%(
+        if (@probewrite(pid))
+          set_int_arg(1, pid)
+
+	if (@probewrite(resource))
+	  set_int_arg(2, resource)
+
+	if (@probewrite(new_rlim_uaddr))
+	  set_pointer_arg(3, new_rlim_uaddr)
+
+	if (@probewrite(old_rlim_uaddr))
+	  set_pointer_arg(4, old_rlim_uaddr)
+%)
+
 probe syscall.prlimit64 = dw_syscall.prlimit64 !, nd_syscall.prlimit64 ? {}
 probe syscall.prlimit64.return = dw_syscall.prlimit64.return !,
                                  nd_syscall.prlimit64.return ? {}
@@ -67,6 +82,9 @@ probe nd2_syscall.prlimit64 = kprobe.function(@arch_syscall_prefix "sys_prlimit6
 	@_SYSCALL_PRLIMIT64_NAME
 	@_SYSCALL_PRLIMIT64_REGARGS
 	@_SYSCALL_PRLIMIT64_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PRLIMIT64_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -77,6 +95,9 @@ probe tp_syscall.prlimit64 = kernel.trace("sys_enter")
 	@_SYSCALL_PRLIMIT64_NAME
 	@_SYSCALL_PRLIMIT64_REGARGS
 	@_SYSCALL_PRLIMIT64_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_PRLIMIT64_REGARGS_STORE %)
 }
 
 probe nd_syscall.prlimit64.return = nd1_syscall.prlimit64.return!, nd2_syscall.prlimit64.return!, tp_syscall.prlimit64.return

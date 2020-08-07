@@ -16,6 +16,26 @@
 	argstr = sprintf("%d, %d, %u", fd, offset, count)
 %)
 
+@define _SYSCALL_READAHEAD_REGARGS_STORE
+%(
+        if (@probewrite(fd))
+          set_int_arg(1, fd)
+
+%( CONFIG_64BIT == "y" %?
+	if (@probewrite(offset))
+	  set_longlong_arg(2, offset)
+
+	if (@probewrite(count))
+	  set_ulong_arg(3, count)
+%:
+	if (@probewrite(offset))
+	  set_longlong_arg(2, offset)
+
+	if (@probewrite(count))
+	  set_ulong_arg(4, count)
+%)
+%)
+
 probe syscall.readahead = dw_syscall.readahead !, nd_syscall.readahead ? {}
 probe syscall.readahead.return = dw_syscall.readahead.return !,
                                  nd_syscall.readahead.return ? {}
@@ -81,6 +101,9 @@ probe nd2_syscall.readahead = kprobe.function(@arch_syscall_prefix "sys_readahea
 	offset = longlong_arg(2)
 	count = ulong_arg(3)
 	@_SYSCALL_READAHEAD_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_READAHEAD_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -93,6 +116,9 @@ probe tp_syscall.readahead = kernel.trace("sys_enter")
 	offset = longlong_arg(2)
 	count = ulong_arg(3)
 	@_SYSCALL_READAHEAD_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_READAHEAD_REGARGS_STORE %)
 }
 
 probe nd_syscall.readahead.return = nd1_syscall.readahead.return!, nd2_syscall.readahead.return!, tp_syscall.readahead.return

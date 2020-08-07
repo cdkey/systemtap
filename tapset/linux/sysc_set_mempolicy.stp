@@ -22,6 +22,18 @@
 	maxnode = ulong_arg(3)
 %)
 
+@define _SYSCALL_SET_MEMPOLICY_REGARGS_STORE
+%(
+        if (@probewrite(mode))
+          set_int_arg(1, mode)
+
+	if (@probewrite(nmask_uaddr))
+	  set_pointer_arg(2, nmask_uaddr)
+
+	if (@probewrite(maxnode))
+	  set_ulong_arg(3, maxnode)
+%)
+
 probe syscall.set_mempolicy = dw_syscall.set_mempolicy !,
                               nd_syscall.set_mempolicy ? {}
 probe syscall.set_mempolicy.return = dw_syscall.set_mempolicy.return !,
@@ -87,6 +99,9 @@ probe nd2_syscall.set_mempolicy = kprobe.function(@arch_syscall_prefix "sys_set_
 	@_SYSCALL_SET_MEMPOLICY_NAME
 	@_SYSCALL_SET_MEMPOLICY_REGARGS
 	@_SYSCALL_SET_MEMPOLICY_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SET_MEMPOLICY_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -97,6 +112,9 @@ probe tp_syscall.set_mempolicy = kernel.trace("sys_enter")
 	@_SYSCALL_SET_MEMPOLICY_NAME
 	@_SYSCALL_SET_MEMPOLICY_REGARGS
 	@_SYSCALL_SET_MEMPOLICY_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SET_MEMPOLICY_REGARGS_STORE %)
 }
 
 probe nd_syscall.set_mempolicy.return = nd1_syscall.set_mempolicy.return!, nd2_syscall.set_mempolicy.return!, tp_syscall.set_mempolicy.return

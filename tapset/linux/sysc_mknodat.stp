@@ -19,9 +19,25 @@
 	dirfd = int_arg(1)
 	dirfd_str = _dfd_str(dirfd)
 	pathname = user_string_quoted(pointer_arg(2))
+	pathname_unquoted = user_string_nofault(pointer_arg(2))
 	mode = uint_arg(3)
 	mode_str = _mknod_mode_str(mode)
 	dev = uint_arg(4)
+%)
+
+@define _SYSCALL_MKNODAT_REGARGS_STORE
+%(
+        if (@probewrite(dirfd))
+          set_int_arg(1, dirfd)
+
+	if (@probewrite(pathname_unquoted))
+	  set_user_string_arg(pointer_arg(2), pathname_unquoted)
+
+	if (@probewrite(mode))
+	  set_uint_arg(3, mode)
+
+	if (@probewrite(dev))
+	  set_uint_arg(4, dev)
 %)
 
 probe syscall.mknodat = dw_syscall.mknodat !, nd_syscall.mknodat ? {}
@@ -70,6 +86,9 @@ probe nd2_syscall.mknodat = kprobe.function(@arch_syscall_prefix "sys_mknodat") 
 	@_SYSCALL_MKNODAT_NAME
 	@_SYSCALL_MKNODAT_REGARGS
 	@_SYSCALL_MKNODAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MKNODAT_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -80,6 +99,9 @@ probe tp_syscall.mknodat = kernel.trace("sys_enter")
 	@_SYSCALL_MKNODAT_NAME
 	@_SYSCALL_MKNODAT_REGARGS
 	@_SYSCALL_MKNODAT_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_MKNODAT_REGARGS_STORE %)
 }
 
 probe nd_syscall.mknodat.return = nd1_syscall.mknodat.return!, nd2_syscall.mknodat.return!, tp_syscall.mknodat.return

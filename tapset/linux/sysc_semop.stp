@@ -25,6 +25,23 @@
 	nsops = uint_arg(3)
 %)
 
+@define _SYSCALL_SEMOP_REGARGS_STORE
+%(
+        if (@probewrite(semid))
+          set_int_arg(1, semid)
+
+%( systemtap_v < "2.3" %?
+	if (@probewrite(tsops_uaddr))
+	  set_pointer_arg(2, tsops_uaddr)
+%)
+
+	if (@probewrite(sops_uaddr))
+	  set_pointer_arg(2, sops_uaddr)
+
+	if (@probewrite(nsops))
+	  set_uint_arg(3, nsops)
+%)
+
 @define _SYSCALL_IPC_SEMOP_REGARGS
 %(
 	semid = int_arg(2)
@@ -33,6 +50,23 @@
 %)
         sops_uaddr = pointer_arg(5)
         nsops = uint_arg(3)
+%)
+
+@define _SYSCALL_IPC_SEMOP_REGARGS_STORE
+%(
+        if (@probewrite(semid))
+          set_int_arg(2, semid)
+
+%( systemtap_v < "2.3" %?
+	if (@probewrite(tsops_uaddr))
+	  set_pointer_arg(5, tsops_uaddr)
+%)
+
+	if (@probewrite(sops_uaddr))
+	  set_pointer_arg(5, sops_uaddr)
+
+	if (@probewrite(nsops))
+	  set_uint_arg(3, nsops)
 %)
 
 probe syscall.semop = dw_syscall.semop !, nd_syscall.semop ? {}
@@ -111,12 +145,18 @@ probe __nd2_syscall.semop = kprobe.function(@arch_syscall_prefix "sys_semop") ?
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	@_SYSCALL_SEMOP_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SEMOP_REGARGS_STORE %)
 }
 probe __nd2_syscall.compat_semop = kprobe.function(@arch_syscall_prefix "compat_sys_ipc") ?
 {
 	__set_syscall_pt_regs(pointer_arg(1))
 	if (int_arg(1) != @const("SEMOP")) next;
 	@_SYSCALL_IPC_SEMOP_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IPC_SEMOP_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -130,6 +170,9 @@ probe __tp_syscall.semop = kernel.trace("sys_enter")
 	__set_syscall_pt_regs($regs)
 	@__syscall_gate(@const("__NR_semop"))
 	@_SYSCALL_SEMOP_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_SEMOP_REGARGS_STORE %)
 }
 probe __tp_syscall.compat_semop = kernel.trace("sys_enter")
 {
@@ -137,6 +180,9 @@ probe __tp_syscall.compat_semop = kernel.trace("sys_enter")
 	@__compat_syscall_gate(@const("__NR_compat_ipc"))
 	if (int_arg(1) != @const("SEMOP")) next;
 	@_SYSCALL_IPC_SEMOP_REGARGS
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_IPC_SEMOP_REGARGS_STORE %)
 }
 
 probe nd_syscall.semop.return = nd1_syscall.semop.return!, nd2_syscall.semop.return!, tp_syscall.semop.return

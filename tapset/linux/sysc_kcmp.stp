@@ -22,6 +22,24 @@
 	idx2 = ulong_arg(5)
 %)
 
+@define _SYSCALL_KCMP_REGARGS_STORE
+%(
+        if (@probewrite(pid1))
+          set_int_arg(1, pid1)
+
+	if (@probewrite(pid2))
+	  set_int_arg(2, pid2)
+
+	if (@probewrite(type))
+	  set_int_arg(3, type)
+
+	if (@probewrite(idx1))
+	  set_ulong_arg(4, idx1)
+
+	if (@probewrite(idx2))
+	  set_ulong_arg(5, idx2)
+%)
+
 probe syscall.kcmp = dw_syscall.kcmp !, nd_syscall.kcmp ? {}
 probe syscall.kcmp.return = dw_syscall.kcmp.return !, nd_syscall.kcmp.return ? {}
 
@@ -63,6 +81,9 @@ probe nd2_syscall.kcmp = kprobe.function(@arch_syscall_prefix "sys_kcmp") ?
 	@_SYSCALL_KCMP_NAME
 	@_SYSCALL_KCMP_REGARGS
 	@_SYSCALL_KCMP_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_KCMP_REGARGS_STORE %)
 }
 
 /* kernel 3.5+, but undesirable because it affects all syscalls */
@@ -73,6 +94,9 @@ probe tp_syscall.kcmp = kernel.trace("sys_enter")
 	@_SYSCALL_KCMP_NAME
 	@_SYSCALL_KCMP_REGARGS
 	@_SYSCALL_KCMP_ARGSTR
+},
+{
+        %( @_IS_SREG_KERNEL %? @_SYSCALL_KCMP_REGARGS_STORE %)
 }
 
 probe nd_syscall.kcmp.return = nd1_syscall.kcmp.return!, nd2_syscall.kcmp.return!, tp_syscall.kcmp.return
