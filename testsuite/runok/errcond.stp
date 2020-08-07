@@ -1,0 +1,3 @@
+#! stap -p5
+
+global x  probe end if (x/0) { }  probe begin { x = 1 exit() }

@@ -2903,7 +2903,15 @@ c_unparser::emit_probe (derived_probe* v)
           for (set<derived_probe*>::const_iterator
                 it  = v->probes_with_affected_conditions.begin();
                 it != v->probes_with_affected_conditions.end(); ++it)
-            emit_probe_condition_update(*it);
+            {
+              // emit a local out: label, for error catching in these condition exprs
+              o->newline() << "{";
+              o->newline(1) << "__label__ out, deref_fault;";
+              emit_probe_condition_update(*it);
+              o->newline(-1) << "deref_fault: __attribute__((unused));";
+              o->newline() << "out: __attribute__((unused));";
+              o->newline() << "}";
+            }
         }
 
       if (v->needs_global_locks ())
