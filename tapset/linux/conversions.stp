@@ -26,7 +26,7 @@ deref_fault: /* branched to from deref_string() */
      * really odd in the following error message. Setting a format
      * width of '1' fixes this. */
     snprintf (CONTEXT->error_buffer, sizeof(CONTEXT->error_buffer),
-        "kernel string copy fault at 0x%lx [man error::fault]", (void *)
+        "kernel string copy fault at 0x%lx [man error::fault]",
 	(unsigned long) (uintptr_t) STAP_ARG_addr);
     CONTEXT->last_error = CONTEXT->error_buffer;
   }
