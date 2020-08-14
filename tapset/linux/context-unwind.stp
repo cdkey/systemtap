@@ -53,7 +53,7 @@ function print_backtrace_fileline () %{
  * final backtrace string).
  */
 function sprint_backtrace:string () %{
-	/* pure */ /* stable */ /* pragma:unwind */ /* pragma:symbols */
+	/* pure */ /* pragma:unwind */ /* pragma:symbols */
 	_stp_stack_kernel_sprint (STAP_RETVALUE, MAXSTRINGLEN,
 				  CONTEXT, _STP_SYM_SIMPLE);
 %}
@@ -66,7 +66,7 @@ function sprint_backtrace:string () %{
  * as per maximum string length (MAXSTRINGLEN).  See
  * ubacktrace() for user-space backtrace.
  */
-function backtrace:string () %{ /* pure */ /* stable */ /* pragma:unwind */
+function backtrace:string () %{ /* pure */ /* pragma:unwind */
 	_stp_stack_kernel_sprint (STAP_RETVALUE, MAXSTRINGLEN,
 				  CONTEXT, _STP_SYM_NONE);
 %}

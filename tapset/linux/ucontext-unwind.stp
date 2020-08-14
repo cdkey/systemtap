@@ -89,7 +89,7 @@ function print_ubacktrace (pc:long, sp:long, fp:long) %{ /* pragma:unwind */ /* 
  * -d /path/to/exe-or-so and/or add --ldd to load all needed unwind data.
  */
 function sprint_ubacktrace:string () %{ /* pragma:unwind */ /* pragma:symbols */
-/* pure */ /* stable */ /* myproc-unprivileged */ /* pragma:uprobes */ /* pragma:vma */
+/* pure */ /* myproc-unprivileged */ /* pragma:uprobes */ /* pragma:vma */
     _stp_stack_user_sprint (STAP_RETVALUE, MAXSTRINGLEN, CONTEXT,
 			    _STP_SYM_SIMPLE);
 %}
@@ -185,7 +185,7 @@ function print_ubacktrace_fileline (pc:long, sp:long, fp:long) %{ /* pragma:unwi
  * -d /path/to/exe-or-so and/or add --ldd to load all needed unwind data.
  */
 function ubacktrace:string () %{ /* pragma:unwind */
-/* pure */ /* stable */ /* myproc-unprivileged */ /* pragma:uprobes */ /* pragma:vma */
+/* pure */ /* myproc-unprivileged */ /* pragma:uprobes */ /* pragma:vma */
     _stp_stack_user_sprint (STAP_RETVALUE, MAXSTRINGLEN, CONTEXT,
 			    _STP_SYM_NONE);
 %}
