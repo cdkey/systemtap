@@ -403,16 +403,20 @@ instantiate_maps (Elf64_Shdr *shdr, Elf_Data *data)
   rc = setrlimit(RLIMIT_MEMLOCK, &curr_rlimit);
   if (rc < 0)
     fatal("could not increase map resource limit -- "
-          "cur from %lu to %lu, max from %lu to %lu: %s\n",
-          rlim_orig, curr_rlimit.rlim_cur,
-          rlim_max_orig, curr_rlimit.rlim_max,
+          "cur from %llu to %llu, max from %llu to %llu: %s\n",
+          (unsigned long long) rlim_orig,
+          (unsigned long long) curr_rlimit.rlim_cur,
+          (unsigned long long) rlim_max_orig,
+          (unsigned long long) curr_rlimit.rlim_max,
           strerror(errno));
   if (log_level > 1)
     {
-      fprintf(stderr, "increasing map cur resource limit from %lu to %lu\n",
-              rlim_orig, curr_rlimit.rlim_cur);
-      fprintf(stderr, "increasing map max resource limit from %lu to %lu\n",
-              rlim_max_orig, curr_rlimit.rlim_max);
+      fprintf(stderr, "increasing map cur resource limit from %llu to %llu\n",
+              (unsigned long long) rlim_orig,
+              (unsigned long long) curr_rlimit.rlim_cur);
+      fprintf(stderr, "increasing map max resource limit from %llu to %llu\n",
+              (unsigned long long) rlim_max_orig,
+              (unsigned long long) curr_rlimit.rlim_max);
     }
 
   /* Now create the maps: */
