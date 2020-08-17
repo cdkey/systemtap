@@ -133,6 +133,7 @@ struct update_visitor;
 
 struct visitable
 {
+  virtual void visit (visitor* u) = 0;
   virtual ~visitable ();
 };
 
@@ -150,7 +151,6 @@ struct expression : public visitable
   // bodies may be duplicate-eliminated.  So print any relevant member
   // variables somehow.
   virtual void print (std::ostream& o) const = 0;
-  virtual void visit (visitor* u) = 0;
   virtual bool is_symbol(symbol *& sym_out);
 };
 
@@ -699,7 +699,6 @@ struct function_priority_order
 struct statement : public visitable
 {
   virtual void print (std::ostream& o) const = 0;
-  virtual void visit (visitor* u) = 0;
   const token* tok;
   statement ();
   statement (const token* tok);

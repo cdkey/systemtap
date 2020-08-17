@@ -88,9 +88,40 @@ struct c_unparser: public unparser, public visitor
   unsigned fc_counter;
   bool already_checked_action_count;
 
-  varuse_collecting_visitor vcv_needs_global_locks;
+  varuse_collecting_visitor vcv_needs_global_locks; // tracks union of all probe handler body reads/writes
 
   map<string, probe*> probe_contents;
+
+  // with respect to current_probe:
+  set<statement*> pushdown_lock; // emit_lock() required before/inside these statements
+  set<statement*> pushdown_unlock; // emit_unlock() required inside/after these statements
+  inline bool pushdown_lock_p(statement* s) {
+    if (this->session->verbose > 3)
+      clog << "pushdown_lock for " << *s->tok << " "
+           << ((pushdown_lock.find(s) != pushdown_lock.end()) ? "" : "not ")
+           << "needed"
+           << endl;
+    return pushdown_lock.find(s) != pushdown_lock.end();
+  }
+  inline bool pushdown_unlock_p(statement* s) {
+    if (this->session->verbose > 3)
+      clog << "pushdown_unlock for " << *s->tok << " "
+           << ((pushdown_unlock.find(s) != pushdown_unlock.end()) ? "" : "not ")
+           << "needed"
+           << endl;
+    return pushdown_unlock.find(s) != pushdown_unlock.end();
+  }
+  
+  // PR26296
+  //
+  // The trivial implementation is: every statement-visitor in the sets
+  // emits a lock-at-beginning and/or unlock-at-end; never update the sets,
+  // so only the outermost probe-handler body statement object does this.
+  //
+  // But it's better to push operations inward if possible, toward
+  // smaller/nested statements, if the lock lifetimes can be safely
+  // shortened.  How this is done safely/ideally depends on the
+  // statement type, so see those visitors.
 
   map<pair<bool, string>, string> compiled_printfs;
 
@@ -123,10 +154,12 @@ struct c_unparser: public unparser, public visitor
   void emit_module_exit ();
   void emit_function (functiondecl* v);
   void emit_lock_decls (const varuse_collecting_visitor& v);
-  void emit_locks ();
+  void emit_lock ();
+  bool locks_needed_p (visitable *s);
+  void locks_not_needed_argh (statement *s);
+  void emit_unlock ();
   void emit_probe (derived_probe* v);
   void emit_probe_condition_update(derived_probe* v);
-  void emit_unlocks ();
 
   void emit_compiled_printfs ();
   void emit_compiled_printf_locals ();
@@ -2703,6 +2736,8 @@ c_tmpcounter::emit_probe (derived_probe* dp)
   this->action_counter = 0;
   this->already_checked_action_count = false;
   declared_vars.clear();
+  pushdown_lock.clear();
+  pushdown_unlock.clear();
 
   if (get_probe_dupe (dp) == NULL)
     {
@@ -2747,6 +2782,8 @@ c_tmpcounter::emit_probe (derived_probe* dp)
     }
 
   declared_vars.clear();
+  pushdown_lock.clear();
+  pushdown_unlock.clear();
   this->current_probe = 0;
   this->already_checked_action_count = false;
 }
@@ -2815,6 +2852,10 @@ c_unparser::emit_probe (derived_probe* v)
           varuse_collecting_visitor vut(*session);
           v->body->visit (& vut);
 
+          // PR26296
+          // ... so we know the probe handler body will need to lock 
+          pushdown_lock.insert(v->body);
+
           // also visit any probe conditions which this current probe might
           // evaluate so that read locks are emitted as necessary: e.g. suppose
           //    probe X if (a || b) {...} probe Y {a = ...} probe Z {b = ...}
@@ -2830,6 +2871,13 @@ c_unparser::emit_probe (derived_probe* v)
               (*it)->sole_location()->condition->visit (& vut);
             }
 
+          // If there are no probe conditions affected by this probe, then emit
+          // the unlock somewhere in the normal handler.  Otherwise, we need the
+          // unlock done in a fixed location, AFTER all the condition expressions.
+          // PR26296
+          if (v->probes_with_affected_conditions.size() == 0)
+            pushdown_unlock.insert(v->body);
+          
           emit_lock_decls (vut);
         }
 
@@ -2847,10 +2895,13 @@ c_unparser::emit_probe (derived_probe* v)
 
       v->emit_probe_local_init(*this->session, o);
 
+      // PR26296: not so early!
+#if 0
       // emit all read/write locks for global variables
       if (v->needs_global_locks ())
-        emit_locks ();
-
+        emit_lock ();
+#endif
+      
       // initialize locals
       for (unsigned j=0; j<v->locals.size(); j++)
         {
@@ -2886,7 +2937,6 @@ c_unparser::emit_probe (derived_probe* v)
           this->already_checked_action_count = true;
         }
 
-
       v->body->visit (this);
 
       record_actions(0, v->body->tok, true);
@@ -2914,8 +2964,12 @@ c_unparser::emit_probe (derived_probe* v)
             }
         }
 
+      // PR26296
+      // Emit an unlock at the end, even if it was pushed down into some
+      // probe handler statement.  (It'll be conditional on c->locked
+      // anyway.)
       if (v->needs_global_locks ())
-	emit_unlocks ();
+	emit_unlock ();
 
       // XXX: do this flush only if the body included a
       // print/printf/etc. routine!
@@ -2944,6 +2998,11 @@ c_unparser::emit_probe_condition_update(derived_probe* v)
   // locks not only for globals we write to, but also for globals read in other
   // probes' whose conditions we visit below (see in c_unparser::emit_probe). So
   // we can be assured we're the only ones modifying cond_enabled.
+
+  // PR26296
+  // emit all read/write locks for global variables ... if somehow still not done by now
+  if (v->needs_global_locks ())
+    emit_lock ();
 
   o->newline() << "if (" << cond_enabled << " != ";
   o->line() << "!!"; // NB: turn general integer into boolean 1 or 0
@@ -3033,19 +3092,94 @@ c_unparser::emit_lock_decls(const varuse_collecting_visitor& vut)
 }
 
 
+// PR26296: emit locking ops just before statements that involve
+// reads/writes to script globals.
+
 void
-c_unparser::emit_locks()
+c_unparser::emit_lock()
 {
-  o->newline() << "if (!stp_lock_probe(locks, ARRAY_SIZE(locks)))";
-  o->newline(1) << "return;";
-  o->indent(-1);
+  if (this->session->verbose > 3)
+    clog << "emit lock" << endl;
+  
+  // Emit code to lock, if we haven't already done it during this
+  // probe handler run.
+  o->newline() << "if (c->locked == 0) {";
+  o->newline(1) << "if (!stp_lock_probe(locks, ARRAY_SIZE(locks)))";
+  o->newline(1) << "goto out;"; // bypass try/catch etc.
+  o->newline(-1) << "else";
+  o->newline(1) << "c->locked = 1;";
+  o->newline(-2) << "} else if (unlikely(c->locked == 2)) {";
+  o->newline(1) << "_stp_error(\"invalid lock state\");";
+  o->newline(-1) << "}";
+}
+    
+
+// The given statement was found to have no lockworthy constituents.
+// But if given statement was still listed for pushdown, then it was 
+// by logic error, so kvetch and emit a token lock and/or unlock.
+// Eventually this could become an assertion error.
+void
+c_unparser::locks_not_needed_argh (statement *p)
+{
+  if (!pushdown_lock_p(p) && !pushdown_unlock_p(p))
+    return; // no problem then!
+      
+  if (this->session->verbose > 2)
+    clog << "Oops, unexpected"
+         << (pushdown_lock_p(p) ? " lock" : "")
+         << (pushdown_unlock_p(p) ? " unlock" : "")
+         << " pushdown for statement " << *p->tok << endl;
+
+  if (pushdown_lock_p(p))
+    emit_lock();
+  if (pushdown_unlock_p(p))
+    emit_unlock();
+}
+
+
+// Check whether this statement reads or writes any globals.
+// Those that do not, can allow lock or unlock operations to
+// slide forward or backward over them (respectively).
+bool
+c_unparser::locks_needed_p(visitable *s) // statement OR expression
+{
+  if (! current_probe) // called from function context?
+    return false;
+
+  if (! current_probe->needs_global_locks ())
+    return false;
+
+  // NB: In compatible mode, return TRUE all the time, so that
+  // locks/unlocks are emitted early/late always.
+  if (strverscmp(this->session->compatible.c_str(), "4.3") <= 0)
+    return true;
+  
+  varuse_collecting_visitor vut(*session);
+  s->visit (& vut);
+  bool lock_me = false;
+  for (unsigned i = 0; i < session->globals.size(); i++)
+    {
+      vardecl* v = session->globals[i];
+      bool read_p = vut.read.count(v) > 0;
+      bool write_p = vut.written.count(v) > 0;
+      lock_me = read_p || write_p;
+      if (lock_me) break; // first hit is enough
+    }
+
+  return lock_me;
 }
 
 
 void
-c_unparser::emit_unlocks()
+c_unparser::emit_unlock()
 {
-  o->newline() << "stp_unlock_probe(locks, ARRAY_SIZE(locks));";
+  if (this->session->verbose > 3)
+    clog << "emit unlock" << endl;
+  
+  o->newline() << "if (c->locked == 1) {";
+  o->newline(1) << "stp_unlock_probe(locks, ARRAY_SIZE(locks));";
+  o->newline() << "c->locked = 2;"; // NB: 2 so it won't re-lock
+  o->newline(-1) << "}";
 }
 
 
@@ -3734,11 +3868,43 @@ c_unparser::visit_block (block *s)
   o->newline() << "{";
   o->indent (1);
 
+  // PR26296 Designate the statements in the block for locking and unlocking
+  // by whether they are the first (or last) to refer to globals.  Don't emit
+  // locking operations here at all: force them to do so via the pushdown_* set,
+  // except if there are no locks_needed_p statements at all in our body.
+  if (pushdown_lock_p(s) ||
+      pushdown_unlock_p(s))
+    {
+      bool pushed_lock_down = false;
+ 
+      // if needed, find the lock insertion site; instruct it to lock
+      if (pushdown_lock_p(s))
+        for (unsigned i=0; i<s->statements.size(); i++)
+          if (locks_needed_p (s->statements[i]))
+            { pushdown_lock.insert(s->statements[i]); pushed_lock_down = true; break; }
+      
+      // if needed, find the unlock insertion site; instruct it to unlock
+      if (pushdown_unlock_p(s))
+        for (ssize_t i=s->statements.size()-1; i>=0; i--) // NB: traverse backward!
+          if (locks_needed_p (s->statements[i]))
+            { pushdown_unlock.insert(s->statements[i]); pushed_lock_down = true; break; }
+
+      if (! pushed_lock_down)
+        {
+          // NB: pushed_lock_down will remain false if no statement in this block requires global
+          // locks at all.  Ideally, this shouldn't happen, since our parent staptree* shouldn't
+          // have entered us into push_*lock_down[].  Us being in both push_lock_down[] AND
+          // push_unlock_down[] in this case is especially goofy.  Nevertheless, let's play
+          // along and emit a dummy lock and/or unlock at the top.
+          locks_not_needed_argh (s);
+        }
+    }
+    
   for (unsigned i=0; i<s->statements.size(); i++)
     {
       try
         {
-          wrap_compound_visit (s->statements[i]);
+          wrap_compound_visit (s->statements[i]); // incl. lock/unlock as appropriate
 	  o->newline();
         }
       catch (const semantic_error& e)
@@ -3758,6 +3924,10 @@ void c_unparser::visit_try_block (try_block *s)
 
   start_compound_statement ("try_block", s);
 
+  // PR26296: for try/catch, don't try to push lock/unlock down
+  if (pushdown_lock_p(s))
+    emit_lock();
+  
   o->newline() << "{";
   o->newline(1) << "__label__ normal_fallthrough;";
   o->newline(1) << "{";
@@ -3808,6 +3978,9 @@ void c_unparser::visit_try_block (try_block *s)
   o->newline() << ";"; // to have _some_ statement
   o->newline(-1) << "}";
 
+  if (pushdown_unlock_p(s))
+    emit_unlock();
+  
   close_compound_statement ("try_block", s);
 }
 
@@ -3821,6 +3994,14 @@ c_unparser::visit_embeddedcode (embeddedcode *s)
     o->newline() << "assert_is_myproc();";
   o->newline() << "{";
 
+  bool ln = locks_needed_p(s);
+  if (!ln)
+    locks_not_needed_argh(s);
+  
+  // PR26296
+  if (ln && pushdown_lock_p(s))
+    emit_lock();
+  
   //  if (1 || s->tagged_p ("CATCH_DEREF_FAULT"))
   //    o->newline() << "__label__ deref_fault;";
 
@@ -3855,24 +4036,39 @@ c_unparser::visit_embeddedcode (embeddedcode *s)
   //  if (1 || s->tagged_p ("CATCH_DEREF_FAULT"))
   //    o->newline() << ";";
 
+  if (ln && pushdown_unlock_p(s))
+    emit_unlock();
+  
   o->newline() << "}";
 }
 
 
 void
-c_unparser::visit_null_statement (null_statement *)
+c_unparser::visit_null_statement (null_statement *s)
 {
   o->newline() << "/* null */;";
+  locks_not_needed_argh(s);
 }
 
 
 void
 c_unparser::visit_expr_statement (expr_statement *s)
 {
+  bool ln = locks_needed_p(s);
+  
+  if (!ln)
+    locks_not_needed_argh(s);
+  
+  if (ln && pushdown_lock_p(s))
+    emit_lock();
+  
   o->newline() << "(void) ";
   s->value->visit (this);
   o->line() << ";";
   record_actions(1, s->tok);
+
+  if (ln && pushdown_unlock_p(s))
+    emit_unlock();
 }
 
 
@@ -3958,21 +4154,63 @@ c_unparser::visit_if_statement (if_statement *s)
 
   start_compound_statement ("if_statement", s);
 
+  bool condition_nl = locks_needed_p (s->condition);
+  bool thenblock_nl = locks_needed_p (s->thenblock);
+  bool elseblock_nl = s->elseblock ? locks_needed_p (s->elseblock) : false;
+  
+  if (!condition_nl && !thenblock_nl && !elseblock_nl)
+    locks_not_needed_argh(s);
+
+  if (condition_nl && pushdown_lock_p(s))
+    emit_lock(); // and then thenblock/elseblock don't need to lock or pushdown!
+  
   o->newline() << "if (";
   o->indent (1);
+
   wrap_compound_visit (s->condition);
   o->indent (-1);
-  o->line() << ") {";
+  o->line() << ")";
+  
+  o->line() << "{";
   o->indent (1);
+  
+  if (condition_nl && !thenblock_nl && pushdown_unlock_p(s))
+    emit_unlock();
+  
+  if (!condition_nl && thenblock_nl && pushdown_lock_p(s))
+    pushdown_lock.insert(s->thenblock);
+
+  if (thenblock_nl && pushdown_unlock_p(s))
+    pushdown_unlock.insert(s->thenblock);
+  
   wrap_compound_visit (s->thenblock);
   record_actions(0, s->thenblock->tok, true);
+
+  if (!condition_nl && !thenblock_nl && elseblock_nl && pushdown_lock_p(s))
+    emit_lock(); // reluctantly
+
   o->newline(-1) << "}";
+  
   if (s->elseblock)
     {
       o->newline() << "else {";
       o->indent (1);
+
+      if (condition_nl && !elseblock_nl && pushdown_unlock_p(s))
+        emit_unlock();
+
+      if (!condition_nl && elseblock_nl && pushdown_lock_p(s))
+        pushdown_lock.insert(s->elseblock);
+      
+      if (elseblock_nl && pushdown_unlock_p(s))
+        pushdown_unlock.insert(s->elseblock);
+
       wrap_compound_visit (s->elseblock);
       record_actions(0, s->elseblock->tok, true);
+
+      if (!condition_nl && thenblock_nl && !elseblock_nl && pushdown_lock_p(s))
+        emit_lock(); // reluctantly
+      
       o->newline(-1) << "}";
     }
 
@@ -3988,6 +4226,11 @@ c_unparser::visit_for_loop (for_loop *s)
   string contlabel = "continue_" + ctr;
   string breaklabel = "break_" + ctr;
 
+  // PR26269 lockpushdown:
+  // for loops, forget optimizing, just emit locks at top & bottom
+  if (pushdown_lock_p(s))
+    emit_lock();
+  
   start_compound_statement ("for_loop", s);
 
   // initialization
@@ -4027,6 +4270,9 @@ c_unparser::visit_for_loop (for_loop *s)
   o->newline(-1) << breaklabel << ":";
   o->newline(1) << "; /* dummy statement */";
 
+  if (pushdown_unlock_p(s))
+    emit_unlock();
+  
   close_compound_statement ("for_loop", s);
 }
 
@@ -4140,6 +4386,11 @@ c_unparser::visit_foreach_loop (foreach_loop *s)
   string toplabel = "top_" + ctr;
   string contlabel = "continue_" + ctr;
   string breaklabel = "break_" + ctr;
+
+  // PR26269 lockpushdown:
+  // for loops, forget optimizing, just emit locks at top & bottom
+  if (pushdown_lock_p(s))
+    emit_lock();
 
   if (array)
     {
@@ -4423,6 +4674,9 @@ c_unparser::visit_foreach_loop (foreach_loop *s)
 
       delete v;
     }
+
+  if (pushdown_unlock_p(s))
+    emit_unlock();
 }
 
 
@@ -4432,6 +4686,11 @@ c_unparser::visit_return_statement (return_statement* s)
   if (current_function == 0)
     throw SEMANTIC_ERROR (_("cannot 'return' from probe"), s->tok);
 
+  // PR26296: We should not encounter a RETURN statement in a
+  // lock-relevant section of code (a probe handler body) at all.
+  if (pushdown_lock_p(s) || pushdown_unlock_p(s))
+    throw SEMANTIC_ERROR (_("unexpected lock pushdown in 'return'"), s->tok);    
+  
   if (s->value)
     {
       if (s->value->type != current_function->type)
@@ -4444,6 +4703,8 @@ c_unparser::visit_return_statement (return_statement* s)
     throw SEMANTIC_ERROR (_("return type mismatch"), current_function->tok,
                           s->tok);
 
+
+  
   record_actions(1, s->tok, true);
   o->newline() << "goto out;";
 }
@@ -4454,7 +4715,15 @@ c_unparser::visit_next_statement (next_statement* s)
 {
   /* Set next flag to indicate to caller to call next alternative function */
   if (current_function != 0)
-    o->newline() << "c->next = 1;";
+    {
+      o->newline() << "c->next = 1;";
+      // PR26296: We should not encounter a NEXT statement in a
+      // lock-irrelevant section of code (of a function body) at all.
+      if (pushdown_lock_p(s) || pushdown_unlock_p(s))
+        throw SEMANTIC_ERROR (_("unexpected lock pushdown in 'next'"), s->tok);
+    }
+  else if (current_probe != 0)
+    locks_not_needed_argh(s);
 
   record_actions(1, s->tok, true);
   o->newline() << "goto out;";
@@ -4645,8 +4914,20 @@ delete_statement_operand_visitor::visit_arrayindex (arrayindex* e)
 void
 c_unparser::visit_delete_statement (delete_statement* s)
 {
+  bool ln = locks_needed_p (s);
+
+  if (!ln) // unlikely, as delete usually operates on globals
+    locks_not_needed_argh(s);
+
+  if (ln && pushdown_lock_p(s))
+    emit_lock();
+  
   delete_statement_operand_visitor dv (this);
   s->value->visit (&dv);
+
+  if (ln && pushdown_unlock_p(s))
+    emit_unlock();
+
   record_actions(1, s->tok);
 }
 
@@ -4654,6 +4935,8 @@ c_unparser::visit_delete_statement (delete_statement* s)
 void
 c_unparser::visit_break_statement (break_statement* s)
 {
+  locks_not_needed_argh(s);
+
   if (loop_break_labels.empty())
     throw SEMANTIC_ERROR (_("cannot 'break' outside loop"), s->tok);
 
@@ -4665,6 +4948,8 @@ c_unparser::visit_break_statement (break_statement* s)
 void
 c_unparser::visit_continue_statement (continue_statement* s)
 {
+  locks_not_needed_argh(s);
+
   if (loop_continue_labels.empty())
     throw SEMANTIC_ERROR (_("cannot 'continue' outside loop"), s->tok);
 
@@ -8201,13 +8486,14 @@ translate_pass (systemtap_session& s)
 
       // Run a varuse_collecting_visitor over probes that need global
       // variable locks.  We'll use this information later in
-      // emit_locks()/emit_unlocks().
+      // emit_lock()/emit_unlock().
       for (unsigned i=0; i<s.probes.size(); i++)
 	{
-        assert_no_interrupts();
-        s.probes[i]->session_index = i;
-        if (s.probes[i]->needs_global_locks())
+          assert_no_interrupts();
+          s.probes[i]->session_index = i;
+          if (s.probes[i]->needs_global_locks())
 	    s.probes[i]->body->visit (&cup.vcv_needs_global_locks);
+          // XXX: also visit s.probes[i]->sole_condition() ?
 	}
       s.op->assert_0_indent();
 

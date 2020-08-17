@@ -2204,9 +2204,11 @@ run for very long, allocate boundless memory, perform unsafe
 operations, or in unintentionally interfere with the system.  Uses of
 script global variables are automatically read/write locked as
 appropriate, to protect against manipulation by concurrent probe
-handlers.  (Deadlocks are detected with timeouts.  Use the
+handlers.  Locks are taken so as to run the global-variable
+manipulation portion of probe handlers atomically (locks are taken
+all-or-none).  Deadlocks are detected with timeouts.  Use the
 .BR \-t
-flag to receive reports of excessive lock contention.)  Experimenting
+flag to receive reports of excessive lock contention.  Experimenting
 with scripts is therefore generally
 .BR safe .
 The guru-mode

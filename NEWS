@@ -1,5 +1,12 @@
 * What's new in version 4.4
 
+- The locks required to protect concurrent access to global variables
+  has been optimized with a "pushdown" algorithm, so that they span
+  the smallest possible critical region.  Formerly, and with
+  --compatible=4.3, locks always spanned the entire probe handler.
+  Lock pushdown means much greater potential concurrency between
+  probes running on different CPUs.
+
 * What's new in version 4.3, 2020-06-11
 
 - tapset functions for reading CPU registers and primitives involved with the

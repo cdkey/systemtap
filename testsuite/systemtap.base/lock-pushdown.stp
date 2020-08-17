@@ -1,0 +1,256 @@
+#! stap -gp5
+
+
+@define assert_lock(e,v) %( if (%{ c->locked %} != @v) { warn(sprintf("%s, locked mismatch, expected %d, actual %d", @e, @v, %{ c->locked %})) } %)
+
+// for use in probes that don't lock at all
+@define assert_never_locked(e) %( @assert_lock(@e,0) %)
+
+// for use in probes that deal with globals
+// PR26296: in version <= 4.3, this locking took place always in probe prologue/epilogue,
+// so the c->locked value was always 1.  In version >4.4, this locking is pushed down
+// in the control flow to be as tight as possible.
+@define assert_pre_locked(e) %( @assert_lock(@e, %( systemtap_v <= "4.3" %? 1 %: 0 %) ) %)
+@define assert_locked(e) %( @assert_lock(@e, 1 ) %)
+@define assert_un_locked(e) %( @assert_lock(@e, %( systemtap_v <= "4.3" %? 1 %: 2 %) ) %)
+
+
+function used(v:long) %{ %} // prevent given value/variable from being optimized away
+
+
+
+global a = 0
+global b
+global c = 0
+
+
+probe any = timer.s(1) {}
+
+probe timer.s(2) { exit() }
+probe never { used(b[4]) } // so probe-end doesn't auto-print
+
+
+probe begin // begin probes don't lock due to no concurrency
+{
+ @assert_never_locked("begin.1")
+ a = 5
+ @assert_never_locked("begin.2")
+ b[5] = 0
+ @assert_never_locked("begin.3")
+ println("begin pass")
+}
+
+
+// test straight-through pushdown; it should enclose just middle few statements
+
+probe any
+{
+ localvar = 5
+ @assert_pre_locked("straight.1")
+ a = 5
+ @assert_locked("straight.2")
+ a = 6
+ @assert_un_locked("straight.3")
+ localvar = 6
+ used(localvar)
+ @assert_un_locked("straight.4")
+ println("straight pass")
+}
+
+
+// test if/else pushdown; it should enclose sections of the then/else blocks only
+
+probe any
+{
+ @assert_pre_locked("if.1")
+ if (uid() == 0)
+   {
+    @assert_pre_locked("if.2")
+    a++
+    @assert_locked("if.3")
+    a = 5
+    @assert_un_locked("if.4")
+   }
+ else
+ {
+  @assert_pre_locked("if.5")
+  b[a] = 4
+  @assert_un_locked("if.6")
+ }
+ @assert_un_locked("if.7")
+ println("if pass")
+}
+
+
+
+probe any
+{
+ @assert_pre_locked("if2.1")
+ if (uid()==0) {
+   @assert_pre_locked("if2.2")
+   a++
+   @assert_un_locked("if2.3")
+   used(localvar++)
+   @assert_un_locked("if2.4")   
+ } else {
+   used(localvar++)
+   @assert_pre_locked("if2.5")
+ }
+ // could be either un_locked or pre_locked at this point, depending on condition
+ println("if2 pass") 
+}
+
+
+// test probe-conditions; it should keep locked through end of probe handler,
+// for evaluation of dependent probe condition expressions
+probe any
+{
+ @assert_pre_locked("cond.1")   
+ c = 1
+ @assert_locked("cond.2")
+ localvar = 4
+ @assert_locked("cond.3")
+ used(localvar)
+ println("cond pass")
+}
+
+
+probe any if (c)
+{
+}
+
+
+// while loops; locked around the whole loop body, whether or not
+// conditional uses globals
+
+probe any
+{
+ @assert_pre_locked("while.1")
+ while(i++ < 10) {
+   @assert_locked("while.2")
+   a ++
+   @assert_locked("while.3")
+   continue
+ }
+ @assert_un_locked("while.4")
+ println("while pass")
+}
+
+probe any
+{
+ @assert_pre_locked("while2.1")
+ while(a++ < 10) {
+   used(localvar++)
+   @assert_locked("while2.2")
+   break
+ }
+ @assert_un_locked("while2.3")
+ println("while2 pass")
+}
+
+
+// for loops; locked around the whole loop body, whether or not
+// conditional uses globals
+
+probe any
+{
+ @assert_pre_locked("for.1")
+ for(i=0; i<10; i++) {
+   @assert_locked("for.2")
+   a ++
+   @assert_locked("for.3")
+   continue
+ }
+ @assert_un_locked("for.4")
+ println("for pass")
+}
+
+probe any
+{
+ @assert_pre_locked("for2.1")
+ for(a=0; a<10; a++) {
+   used(localvar++)
+   @assert_locked("for2.2")
+   break
+ }
+ @assert_un_locked("for2.3")
+ println("for2 pass")
+}
+
+
+// foreach loops; locked around the whole loop body; loop condition
+// necessarily uses globals (iterating over a map)
+
+probe any
+{
+ @assert_pre_locked("foreach.1")
+ foreach (i in b) {
+   @assert_locked("foreach.2")
+   continue
+ }
+ @assert_un_locked("foreach.3")
+ println("foreach pass")
+}
+
+
+// try statement: no lock pushdown at all
+
+probe any
+{
+ @assert_pre_locked("try.1")
+ try {
+    @assert_locked("try.2")
+    a++
+    @assert_locked("try.3")
+    used(1/0)
+ } catch {
+    @assert_locked("try.4")
+ }
+ @assert_un_locked("try.5")
+ println("try pass")
+}
+
+
+// delete statement
+
+probe any
+{
+ @assert_pre_locked("delete.1")
+ delete b[0]
+ @assert_un_locked("delete.2")
+ println("delete pass")
+}
+
+
+// next statement
+
+probe any
+{
+ @assert_un_locked("next.1")
+ if(uid()!=0)
+   next;
+ @assert_un_locked("next.1")
+ println("next pass")
+}
+
+// next statement in function mucking with global
+
+function any2()
+{
+ @assert_locked("next2.0")
+ a++
+ next
+}
+
+probe any
+{
+ @assert_pre_locked("next2.1")
+ try {
+      @assert_locked("next2.2")
+      any2()
+ } catch {
+      @assert_locked("next2.3")
+ }
+ @assert_un_locked("next2.4")
+ println("next2 pass")
+}

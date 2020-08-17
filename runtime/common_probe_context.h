@@ -79,6 +79,10 @@ int next;
    When it's 1, probe code unwnds. */
 int aborted;
 
+/* A flag to indicate whether globals used by this probe handler have
+   been locked or not. PR26296 */
+int locked;
+
 /* A place to format error messages into if some error occurs, last_error
    will then be pointed here.  */
 string_t error_buffer;
