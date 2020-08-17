@@ -13,7 +13,7 @@ set errs 0
 expect {
     -timeout 180
 
-    -re {^semantic error: unable to find global 'var_really_not_exist'.*? in kernel: operator '@var'} {
+    -re {^semantic error: unresolved \@var\(\) expression: operator \'\@var\' at}  {
         incr errs; exp_continue
     }
 
@@ -45,7 +45,7 @@ set ok 0
 expect {
     -timeout 180
 
-    -re {^semantic error: unable to find global 'var_really_not_exist'.*? in kernel, in \*\.c} {
+    -re {^semantic error: unresolved \@var\(\) expression: operator \'\@var\' at} {
         incr ok; exp_continue
     }
 
