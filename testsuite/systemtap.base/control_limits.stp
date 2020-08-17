@@ -1,7 +1,8 @@
 
 # for MAXNESTING testing
 function recurse (n) {
-  if (n > 0) recurse (n-1)
+  if (n > 0) recurse (n-1);
+  println(n)
 }
 probe begin {
   recurse (7)
