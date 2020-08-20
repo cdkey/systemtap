@@ -18,6 +18,18 @@ expect {
 catch {close}; catch {wait}
 if {$ok == 14} then { pass $subtest } else { fail $subtest }
 
+set subtest "$test -u"
+spawn stap -u -g $srcdir/$subdir/lock-pushdown.stp
+set ok 0
+expect {
+    -timeout 240
+    -re {^[a-z2]* pass\r\n} { incr ok; exp_continue }
+    eof { }
+    timeout { }
+}
+catch {close}; catch {wait}
+if {$ok == 14} then { pass $subtest } else { fail $subtest }
+
 set subtest "$test compat-4.3"
 spawn stap -g --compatible=4.3 $srcdir/$subdir/lock-pushdown.stp
 set ok 0

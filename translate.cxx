@@ -2950,6 +2950,11 @@ c_unparser::emit_probe (derived_probe* v)
 
       if (!v->probes_with_affected_conditions.empty())
         {
+          // PR26296
+          // emit all read/write locks for global variables ... if somehow still not done by now
+          if (v->needs_global_locks ())
+            emit_lock ();
+
           for (set<derived_probe*>::const_iterator
                 it  = v->probes_with_affected_conditions.begin();
                 it != v->probes_with_affected_conditions.end(); ++it)
@@ -2992,17 +2997,18 @@ c_unparser::emit_probe_condition_update(derived_probe* v)
   expression *cond = v->sole_location()->condition;
   assert(cond);
 
+  // NB: the caller guarantees that global variables are already locked
+  // (if necessary) by this point.  It's wrong to judge necessity by
+  // v->needs_global_locks(), because that's the wrong v (the OTHER probe
+  // that is conditional on some global, not THIS probe that modifies the
+  // global, and thus recomputes the conditions).
+  
   string cond_enabled = "stap_probes[" + lex_cast(i) + "].cond_enabled";
 
   // Concurrency note: we're safe modifying cond_enabled here since we emit
   // locks not only for globals we write to, but also for globals read in other
   // probes' whose conditions we visit below (see in c_unparser::emit_probe). So
   // we can be assured we're the only ones modifying cond_enabled.
-
-  // PR26296
-  // emit all read/write locks for global variables ... if somehow still not done by now
-  if (v->needs_global_locks ())
-    emit_lock ();
 
   o->newline() << "if (" << cond_enabled << " != ";
   o->line() << "!!"; // NB: turn general integer into boolean 1 or 0

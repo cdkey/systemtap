@@ -5729,7 +5729,8 @@ semantic_pass_optimize1 (systemtap_session& s)
     }
 
   // We will now remove probes that have empty handlers and join the remaining probes
-  // with their groups. Do not elide probes when the unoptimziation flag is set. 
+  // with their groups. Do not elide probes when the unoptimization flag is set, or
+  // synthetic probes (such as PR18115 probe-conditional synthetic-begin).
   
   vector<derived_probe*> non_empty_probes;
 
@@ -5737,7 +5738,12 @@ semantic_pass_optimize1 (systemtap_session& s)
     {
       derived_probe* p = s.probes[i];
 
-      if (s.unoptimized || s.dump_mode)
+      if (p->synthetic)
+        {
+          non_empty_probes.push_back(p);
+          p->join_group(s);
+        }
+      else if (s.unoptimized || s.dump_mode)
         p->join_group(s);
       else if (s.empty_probes.find(p) == s.empty_probes.end())
         {
