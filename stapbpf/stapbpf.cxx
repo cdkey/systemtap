@@ -86,7 +86,7 @@ static const char *script_name; // name of original systemtap script
 static const char *module_license;
 
 static const char *user;  // username
-static std::string prefix; // used to create procfs-like probe directory
+static std::string procfs_dir_prefix; // used to create procfs-like probe directory
 
 static Elf *module_elf;
 
@@ -1392,16 +1392,26 @@ init_perf_transport()
 static void
 load_bpf_file(const char *module)
 {
-  module_name = module;
+  string module_str(module);
 
   /* Extract basename: */
   char *buf = (char *)malloc(BPF_MAXSTRINGLEN * sizeof(char));
-  string module_name_str(module);
+  // NB: If module doesn't contain a single '/', then the behaviour
+  // of rfind (-1) and substr (-1 + 1) will default to module_str.
   string module_basename_str
-    = module_name_str.substr(module_name_str.rfind('/')+1); // basename
+    = module_str.substr(module_str.rfind('/')+1); // basename
   size_t len = module_basename_str.copy(buf, BPF_MAXSTRINGLEN-1);
   buf[len] = '\0';
   module_basename = buf;
+
+  /* Extract name: */
+  buf = (char*) malloc(BPF_MAXSTRINGLEN * sizeof(char));
+  string suffix = ".bo";
+  string module_name_str
+    = module_basename_str.substr(0, module_basename_str.rfind(suffix)); // name
+  len = module_name_str.copy(buf, BPF_MAXSTRINGLEN-1);
+  buf[len] = '\0';
+  module_name = buf;
 
   int fd = open(module, O_RDONLY);
   if (fd < 0)
@@ -1418,19 +1428,14 @@ load_bpf_file(const char *module)
   if (ehdr == NULL)
     fatal_elf();
 
-  // Get username and set directory prefix
+  // Get username and set procfs_dir_prefix
   struct passwd *p = getpwuid(geteuid()); // effective uid
   if (p)
     user = p->pw_name;
   if (!user)
     fatal("an error occured while retrieving username. %s.\n", strerror(errno));
 
-  // TODO: fix script_name so we can directly use it here 
-
-  std::string module_name = std::string(module_basename);
-  module_name = module_name.substr(0, module_name.size() - 3); // remove ".bo"
-
-  prefix = "/var/tmp/systemtap-" + std::string(user) + "/" + module_name + "/";
+  procfs_dir_prefix = "/var/tmp/systemtap-" + string(user) + "/" + module_name_str + "/";
 
   // Byte order should match the host, since we're loading locally.
   {
@@ -1870,7 +1875,7 @@ perf_event_loop(pthread_t main_thread)
 static void
 procfs_read_event_loop (procfsprobe_data* data, bpf_transport_context* uctx)
 {
-  std::string path_s = prefix + data->path;
+  std::string path_s = procfs_dir_prefix + data->path;
   const char* path = path_s.c_str();
 
   Elf_Data* prog = data->read_prog;  
@@ -1931,7 +1936,7 @@ procfs_read_event_loop (procfsprobe_data* data, bpf_transport_context* uctx)
 static void
 procfs_write_event_loop (procfsprobe_data* data, bpf_transport_context* uctx)
 {
-  std::string path_s = prefix + data->path;
+  std::string path_s = procfs_dir_prefix + data->path;
   const char* path = path_s.c_str();
 
   std::vector<Elf_Data*> prog = data->write_prog;
@@ -1990,13 +1995,13 @@ procfs_cleanup()
   // Delete files and directories created for procfs-like probes.
   for (size_t k = 0; k < procfsprobes.size(); ++k)
     {
-      std::string file_s = prefix + procfsprobes[k].path;
+      std::string file_s = procfs_dir_prefix + procfsprobes[k].path;
       const char* file = file_s.c_str();
       if (remove_file_or_dir(file))
         fprintf(stderr, "WARNING: an error occurred while deleting a file (%s). %s.\n", file, strerror(errno));
     }
 
-  const char* dir = prefix.c_str();
+  const char* dir = procfs_dir_prefix.c_str();
   if (procfsprobes.size() > 0 && remove_file_or_dir(dir))
     fprintf(stderr, "WARNING: an error ocurred while deleting a directory (%s). %s.\n", dir, strerror(errno));
 
@@ -2013,7 +2018,7 @@ procfs_spawn(bpf_transport_context* uctx)
     fatal("an error occurred while setting up procfs cleaner. %s.\n", strerror(errno));
 
   // Create directory for procfs-like probes.
-  if (procfsprobes.size() > 0 && create_dir(prefix.c_str()))
+  if (procfsprobes.size() > 0 && create_dir(procfs_dir_prefix.c_str()))
     fatal("an error occurred while making procfs directory. %s.\n", strerror(errno)); 
   
   // Create all of the fifos used for procfs-like probes and spawn threads.
@@ -2021,7 +2026,7 @@ procfs_spawn(bpf_transport_context* uctx)
     {
       procfsprobe_data* data = &procfsprobes[k];
 
-      std::string path = prefix + data->path;
+      std::string path = procfs_dir_prefix + data->path;
 
       uint64_t cmask = umask(data->umask);
 
