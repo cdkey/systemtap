@@ -1169,7 +1169,7 @@ lists what is available for each type of probe point.  These context
 variables become normal string or numeric scalars once they are stored
 in normal script variables.  See the TYPECASTING section below on how
 to to turn them back into typed pointers for further processing as
-context variables.
+context variables.  There is some automation to help!
 
 .SS STATEMENTS
 Statements enable procedural control flow.  They may occur within
@@ -1316,9 +1316,9 @@ function call
 array membership check
 .RB exp " in " array
 .br
-.BR "[" exp1 ", " exp2 ", " ... "] in " array
+.BR "[" exp1 ", " exp2 ", ... ] in " array
 .br
-.BR "[" "*" ", " "*" ", ... "] in " array
+.BR "[" *    ", " *    ", ... ] in " array
 
 .SS REGULAR EXPRESSION MATCHING
 The scripting language supports regular expression matching.
@@ -1788,8 +1788,25 @@ probe oneshot {
 .SS TYPECASTING
 Once a pointer (see the CONTEXT VARIABLES section of 
 .IR stapprobes (3stap))
-has been saved into a script integer variable, the translator loses the type
-information necessary to access members from that pointer.  Using the
+has been saved into a script integer variable, the translator
+\fBattempts to\fP keep the type information necessary to 
+access members from that pointer.  
+
+The translator attempts to track DWARF typing associated with
+script variables assigned from addresses of context $variables,
+@cast or @var operators.  Depending on the complexity of the
+script code, this association may pass to related variables,
+so that \fI->\fP and \fI[]\fP operators may be used on them,
+just as on the original context variable.  For example:
+
+.SAMPLE
+foo = $param->foo; printf("x:%d y:%d\\n", foo->x, foo->y)
+printf("my value is %d\\n", ($type == 42 ? $foo : $bar)->value)
+printf("my parent pid is %d\\n", task_parent(task_current())->tgid)
+.ESAMPLE
+
+However, if this association heuristic doesn't work for a script, 
+using the
 .I @cast()
 operator tells the translator how to interpret the number as a typed pointer.
 .SAMPLE
