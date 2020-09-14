@@ -56,22 +56,11 @@ static inline void _stp_unlock_inode(struct inode *inode);
 #endif
 
 
-// For now, disable transport version 3 (unless STP_USE_RING_BUFFER is
-// defined).
-#if STP_TRANSPORT_VERSION == 3 && !defined(STP_USE_RING_BUFFER)
-#undef STP_TRANSPORT_VERSION
-#define STP_TRANSPORT_VERSION 2
-#endif
-
 #include "control.h"
 #if STP_TRANSPORT_VERSION == 1
 #include "relayfs.c"
 #elif STP_TRANSPORT_VERSION == 2
 #include "relay_v2.c"
-#include "debugfs.c"
-#elif STP_TRANSPORT_VERSION == 3
-/* TODO: Ring buffer mechanism is deprecated and could be removed. */
-#include "ring_buffer.c"
 #include "debugfs.c"
 #else
 #error "Unknown STP_TRANSPORT_VERSION"

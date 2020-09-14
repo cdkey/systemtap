@@ -14,9 +14,6 @@
 #ifdef STP_BULKMODE
 #error "Bulk mode output (percpu files) not supported for --runtime=dyninst"
 #endif
-#ifdef STP_USE_RING_BUFFER
-#error "Ring buffer output not supported for --runtime=dyninst"
-#endif
 
 #include "transport.c"
 #include "vsprintf.c"
