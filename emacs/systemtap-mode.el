@@ -1,6 +1,6 @@
 ;;; systemtap-mode.el --- A mode for SystemTap
 
-;; Copyright (C) 2008 Tomoki Sekiyama <sekiyama@yahoo.co.jp>
+;; Copyright (C) 2008, 2020 Tomoki Sekiyama <sekiyama@yahoo.co.jp>
 ;; Copyright (C) 2012 Rüdiger Sonderfeld <ruediger@c-plusplus.de>
 
 ;; Authors:    2008 Tomoki Sekiyama
@@ -54,7 +54,7 @@
 (eval-when-compile
   (require 'cc-langs)
   (require 'cc-fonts)
-  (require 'cl))
+  (require 'cl-lib))
 
 (eval-and-compile
   (c-add-language 'systemtap-mode 'awk-mode))
@@ -148,17 +148,13 @@
   (interrupt-process "systemtap-script")
   (message "SystemTap script is interrupted."))
 
-;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.stp\\'" . systemtap-mode))
 
-;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.stpm\\'" . systemtap-mode))
 
 (require 'simple)
 
-;;;###autoload
-; prog-mode is newer than emacs 23
-(define-derived-mode systemtap-mode fundamental-mode "SystemTap"
+(define-derived-mode systemtap-mode prog-mode "SystemTap"
   "Major mode for editing SystemTap scripts.
 
 Key bindings:
@@ -172,6 +168,7 @@ Key bindings:
   (c-common-init 'systemtap-mode)
   (easy-menu-add systemtap-menu)
   (c-run-mode-hooks 'c-mode-common-hook)
+  (set (make-local-variable 'comment-start) "#")
   (c-update-modeline))
 
 (provide 'systemtap-mode)
