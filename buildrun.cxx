@@ -499,8 +499,12 @@ compile_pass (systemtap_session& s)
 		  "STAPCONF_GET_USER_PAGES_REMOTE_FLAGS", NULL);
   output_autoconf(s, o, cs, "autoconf-get_user_pages_remote-flags_locked.c",
 		  "STAPCONF_GET_USER_PAGES_REMOTE_FLAGS_LOCKED", NULL);
+  output_autoconf(s, o, cs, "autoconf-get_user_pages_remote-notask_struct.c",
+		  "STAPCONF_GET_USER_PAGES_REMOTE_NOTASK_STRUCT", NULL);
   output_autoconf(s, o, cs, "autoconf-get_user_pages-flags.c",
 		  "STAPCONF_GET_USER_PAGES_FLAGS", NULL);
+  output_autoconf(s, o, cs, "autoconf-get_user_pages-notask_struct.c",
+		  "STAPCONF_GET_USER_PAGES_NOTASK_STRUCT", NULL);
   output_autoconf(s, o, cs, "autoconf-bio-bi_opf.c", "STAPCONF_BIO_BI_OPF", NULL);
   output_autoconf(s, o, cs, "autoconf-linux-sched_headers.c",
 		  "STAPCONF_LINUX_SCHED_HEADERS", NULL);

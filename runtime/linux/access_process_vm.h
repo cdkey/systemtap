@@ -38,7 +38,12 @@ __access_process_vm_ (struct task_struct *tsk, unsigned long addr, void *buf,
       void *maddr;
 
 #ifdef STAPCONF_GET_USER_PAGES_REMOTE
-#if defined(STAPCONF_GET_USER_PAGES_REMOTE_FLAGS_LOCKED)
+#if defined(STAPCONF_GET_USER_PAGES_REMOTE_NOTASK_STRUCT)
+      unsigned int flags = FOLL_FORCE;
+      if (write)
+	  flags |= FOLL_WRITE;
+      ret = get_user_pages_remote (mm, addr, 1, flags, &page, &vma, NULL);
+#elif defined(STAPCONF_GET_USER_PAGES_REMOTE_FLAGS_LOCKED)
       unsigned int flags = FOLL_FORCE;
       if (write)
 	  flags |= FOLL_WRITE;
@@ -52,7 +57,12 @@ __access_process_vm_ (struct task_struct *tsk, unsigned long addr, void *buf,
       ret = get_user_pages_remote (tsk, mm, addr, 1, write, 1, &page, &vma);
 #endif
 #else /* !STAPCONF_GET_USER_PAGES_REMOTE* */
-#if defined(STAPCONF_GET_USER_PAGES_FLAGS)
+#if defined(STAPCONF_GET_USER_PAGES_NOTASK_STRUCT)
+      unsigned int flags = FOLL_FORCE;
+      if (write)
+	  flags |= FOLL_WRITE;
+      ret = get_user_pages (mm, addr, 1, flags, &page, &vma);
+#elif defined(STAPCONF_GET_USER_PAGES_FLAGS)
       unsigned int flags = FOLL_FORCE;
       if (write)
 	  flags |= FOLL_WRITE;
