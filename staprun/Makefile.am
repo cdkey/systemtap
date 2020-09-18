@@ -41,7 +41,7 @@ if HAVE_HTTP_SUPPORT
 staprun_LDADD += $(openssl_LIBS)
 endif
 
-stapio_SOURCES = stapio.c mainloop.c common.c ctl.c relay.c relay_old.c monitor.c
+stapio_SOURCES = stapio.c mainloop.c common.c ctl.c relay.c monitor.c
 stapio_LDADD =  libstrfloctime.a -lpthread
 stapio_LDFLAGS =  -Wl,--whole-archive,libstrfloctime.a,--no-whole-archive
 
