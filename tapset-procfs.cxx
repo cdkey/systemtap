@@ -221,12 +221,7 @@ procfs_derived_probe_group::emit_kernel_module_exit (systemtap_session& s)
 {
   if (probes_by_path.empty())
     return;
-  // If we're using the original transport, it uses the
-  // '/proc/systemtap/{module_name}' directory to store control
-  // files. Let the transport layer clean up that directory.
-  s.op->newline() << "#if (STP_TRANSPORT_VERSION != 1)";
   s.op->newline() << "_stp_rmdir_proc_module();";
-  s.op->newline() << "#endif";
 }
 
 

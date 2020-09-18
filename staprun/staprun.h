@@ -142,9 +142,6 @@ extern char *__name__;
 /* Grabbed from linux/module.h kernel include. */
 #define MODULE_NAME_LEN (64 - sizeof(unsigned long))
 
-/* We define this so we are compatible with old transport, but we
- * don't have to use it. */
-#define STP_TRANSPORT_VERSION 1
 #include "../runtime/transport/transport_msgs.h"
 
 #define RELAYFS_MAGIC	0xF0B4A981

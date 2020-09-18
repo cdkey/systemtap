@@ -131,17 +131,6 @@ void stp_print_flush(_stp_pbuf *pb)
 
 #else  /* !STP_BULKMODE */
 
-#if STP_TRANSPORT_VERSION == 1
-	/** STP_TRANSPORT_VERSION == 1 is special, _stp_ctl_send will
-	    pass through procfs _stp_ctl_write_fs which recognizes
-	    STP_REALTIME_DATA as data that can be concatenated if the
-	    previous buffer is also of type STP_REALTIME_DATA and there
-	    is some room left in that packet instead of creating a new
-	    packet to be queued.  */
-	if (unlikely(_stp_ctl_send(STP_REALTIME_DATA, pb->buf, len) <= 0))
-		atomic_inc (&_stp_transport_failures);
-
-#else  /* STP_TRANSPORT_VERSION != 1 */
 	{
 		unsigned long flags;
 		struct context* __restrict__ c = NULL;
@@ -200,6 +189,5 @@ void stp_print_flush(_stp_pbuf *pb)
 
 		_stp_runtime_entryfn_put_context(c);
 	}
-#endif /* STP_TRANSPORT_VERSION != 1 */
 #endif /* !STP_BULKMODE */
 }

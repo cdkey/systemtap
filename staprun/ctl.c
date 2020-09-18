@@ -18,7 +18,6 @@ int init_ctl_channel(const char *name, int verb)
 {
 	char buf[PATH_MAX];
 	struct statfs st;
-	int old_transport = 0;
 
         (void) verb;
         if (0) goto out; /* just to defeat gcc warnings */
@@ -67,12 +66,13 @@ int init_ctl_channel(const char *name, int verb)
 		if (sprintf_chk(buf, "/sys/kernel/debug/systemtap/%s/%s", 
                                 name, CTL_CHANNEL_NAME))
 			return -1;
-	} else {
-		old_transport = 1;
+                /*
+                STP_TRANSPORT_VERSION=1 used this:
 		if (sprintf_chk(buf, "/proc/systemtap/%s/%s", name, CTL_CHANNEL_NAME))
 			return -2;
-	}
-
+                */
+        }
+        
 	control_channel = open_cloexec(buf, O_RDWR, 0);
 	dbug(2, "Opened %s (%d)\n", buf, control_channel);
 
@@ -105,7 +105,7 @@ out:
                     name);
 		return -3;
 	}
-	return old_transport;
+	return 0;
 }
 
 void close_ctl_channel(void)

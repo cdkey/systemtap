@@ -480,7 +480,6 @@ static int _stp_module_update_self (void)
 	return 0;
 }
 
-#if STP_TRANSPORT_VERSION == 2
 /* Notification function to call on a kernel panic */
 static int _stp_module_panic_notifier (struct notifier_block *nb, unsigned long val, void *data)
 {
@@ -580,5 +579,5 @@ static int _stp_module_panic_notifier (struct notifier_block *nb, unsigned long 
         }
         return NOTIFY_DONE;
 }
-#endif
+
 #endif /* _STP_SYMBOLS_C_ */

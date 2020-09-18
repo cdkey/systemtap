@@ -57,14 +57,8 @@ static inline void _stp_unlock_inode(struct inode *inode);
 
 
 #include "control.h"
-#if STP_TRANSPORT_VERSION == 1
-#include "relayfs.c"
-#elif STP_TRANSPORT_VERSION == 2
 #include "relay_v2.c"
 #include "debugfs.c"
-#else
-#error "Unknown STP_TRANSPORT_VERSION"
-#endif
 #include "control.c"
 
 static unsigned _stp_nsubbufs = 8;
@@ -94,14 +88,12 @@ static struct notifier_block _stp_module_notifier_nb = {
         .priority = 0
 };
 
-#if STP_TRANSPORT_VERSION == 2
 static int _stp_module_panic_notifier (struct notifier_block * nb,
                                  unsigned long val, void *data);
 static struct notifier_block _stp_module_panic_notifier_nb = {
         .notifier_call = _stp_module_panic_notifier,
         .priority = INT_MAX
 };
-#endif
 
 static struct timer_list _stp_ctl_work_timer;
 
@@ -198,9 +190,7 @@ static void _stp_handle_start(struct _stp_msg_start *st)
 		_stp_ctl_send_notify(STP_START, st, sizeof(*st));
 
 		/* Register the panic notifier. */
-#if STP_TRANSPORT_VERSION == 2
 		atomic_notifier_chain_register(&panic_notifier_list, &_stp_module_panic_notifier_nb);
-#endif
 
 		/* If we're here, we know that _stp_transport_state
 		 * is _STP_TS_START_CALLED. Go ahead and set it to
@@ -327,9 +317,7 @@ static void _stp_cleanup_and_exit(int send_exit)
 		dbug_trans(1, "done with ctl_send STP_EXIT\n");
 
 		/* Unregister the panic notifier. */
-#if STP_TRANSPORT_VERSION == 2
 		atomic_notifier_chain_unregister(&panic_notifier_list, &_stp_module_panic_notifier_nb);
-#endif
 	}
 }
 
@@ -589,11 +577,7 @@ static int _stp_lock_transport_dir(void)
 {
 	int numtries = 0;
 
-#if STP_TRANSPORT_VERSION == 1
-	while ((_stp_lockfile = relayfs_create_dir("systemtap_lock", NULL)) == NULL) {
-#else
 	while ((_stp_lockfile = debugfs_create_dir("systemtap_lock", NULL)) == NULL) {
-#endif
 		if (numtries++ >= 50)
 			return 0;
 		msleep(50);
@@ -604,11 +588,7 @@ static int _stp_lock_transport_dir(void)
 static void _stp_unlock_transport_dir(void)
 {
 	if (_stp_lockfile) {
-#if STP_TRANSPORT_VERSION == 1
-		relayfs_remove_dir(_stp_lockfile);
-#else
 		debugfs_remove(_stp_lockfile);
-#endif
 		_stp_lockfile = NULL;
 	}
 }
@@ -631,25 +611,13 @@ static struct dentry *_stp_get_root_dir(void)
 		return __stp_root_dir;
 	}
 
-#if STP_TRANSPORT_VERSION == 1
-	fs = get_fs_type("relayfs");
-	if (!fs) {
-		errk("Couldn't find relayfs filesystem.\n");
-		return NULL;
-	}
-#else
 	fs = get_fs_type("debugfs");
 	if (!fs) {
 		errk("Couldn't find debugfs filesystem.\n");
 		return NULL;
 	}
-#endif
 
-#if STP_TRANSPORT_VERSION == 1
-	__stp_root_dir = relayfs_create_dir(name, NULL);
-#else
 	__stp_root_dir = debugfs_create_dir(name, NULL);
-#endif
 	if (__stp_root_dir == ERR_PTR(-EEXIST)) /* some kernels signal duplication this way */
 	  __stp_root_dir = NULL;
 	if (!__stp_root_dir) {
@@ -691,11 +659,7 @@ static void _stp_remove_root_dir(void)
 {
 	if (__stp_root_dir) {
 		if (simple_empty(__stp_root_dir)) {
-#if STP_TRANSPORT_VERSION == 1
-			relayfs_remove_dir(__stp_root_dir);
-#else
 			debugfs_remove(__stp_root_dir);
-#endif
 		}
 		__stp_root_dir = NULL;
 	}
@@ -727,11 +691,7 @@ static int _stp_transport_fs_init(const char *module_name)
 		return -1;
 	}
 
-#if STP_TRANSPORT_VERSION == 1
-        __stp_module_dir = relayfs_create_dir(module_name, root_dir);
-#else
         __stp_module_dir = debugfs_create_dir(module_name, root_dir);
-#endif
         if (!__stp_module_dir) {
 		errk("Could not create module directory \"%s\"\n",
 		     module_name);
@@ -748,11 +708,7 @@ static int _stp_transport_fs_init(const char *module_name)
 	}
 
 	if (_stp_transport_data_fs_init() != 0) {
-#if STP_TRANSPORT_VERSION == 1
-		relayfs_remove_dir(__stp_module_dir);
-#else
 		debugfs_remove(__stp_module_dir);
-#endif
 		__stp_module_dir = NULL;
 		_stp_remove_root_dir();
 		_stp_unlock_transport_dir();
@@ -775,11 +731,7 @@ static void _stp_transport_fs_close(void)
 			return;
 		}
 
-#if STP_TRANSPORT_VERSION == 1
-		relayfs_remove_dir(__stp_module_dir);
-#else
 		debugfs_remove(__stp_module_dir);
-#endif
 		__stp_module_dir = NULL;
 
 		_stp_remove_root_dir();

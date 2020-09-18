@@ -23,7 +23,6 @@
 
 /* globals */
 int ncpus;
-static int use_old_transport = 0;
 static int pending_interrupts = 0;
 static int target_pid_failed_p = 0;
 
@@ -439,41 +438,6 @@ void system_cmd(char *cmd)
   _exit(1);
 }
 
-/* This is only used in the old relayfs code */
-static void read_buffer_info(void)
-{
-  char buf[PATH_MAX];
-  struct statfs st;
-  int fd, len, ret;
-
-  /* NB: we don't have to worry about PR14245 on old_transport aka
-     rhel4; no HAVE_OPENAT, and thus no -F fd option. */
-  if (!use_old_transport)
-    return;
-
-  if (statfs("/sys/kernel/debug", &st) == 0 && (int)st.f_type == (int)DEBUGFS_MAGIC)
-    return;
-
-  if (sprintf_chk(buf, "/proc/systemtap/%s/bufsize", modname))
-    return;
-  fd = open(buf, O_RDONLY);
-  if (fd < 0)
-    return;
-
-  len = read(fd, buf, sizeof(buf));
-  if (len <= 0) {
-    perr(_("Couldn't read bufsize"));
-    close(fd);
-    return;
-  }
-  ret = sscanf(buf, "%u,%u", &n_subbufs, &subbuf_size);
-  if (ret != 2)
-    perr(_("Couldn't read bufsize"));
-
-  dbug(2, "n_subbufs= %u, size=%u\n", n_subbufs, subbuf_size);
-  close(fd);
-  return;
-}
 
 /**
  *	init_stapio - initialize the app
@@ -486,25 +450,17 @@ int init_stapio(void)
   dbug(2, "init_stapio\n");
 
   /* create control channel */
-  use_old_transport = init_ctl_channel(modname, 1);
-  if (use_old_transport < 0) {
+  int rc = init_ctl_channel(modname, 1);
+  if (rc < 0) {
     err(_("Failed to initialize control channel.\n"));
     return -1;
   }
-  read_buffer_info();
 
   if (attach_mod) {
     dbug(2, "Attaching\n");
-    if (use_old_transport) {
-      if (init_oldrelayfs() < 0) {
-        close_ctl_channel();
-        return -1;
-      }
-    } else {
-      if (init_relayfs() < 0) {
-        close_ctl_channel();
-        return -1;
-      }
+    if (init_relayfs() < 0) {
+            close_ctl_channel();
+            return -1;
     }
     return 0;
   }
@@ -589,9 +545,7 @@ void cleanup_and_exit(int detach, int rc)
      for another reason.  So, we no longer   while(...wait()...);  here.
    */
 
-  if (use_old_transport)
-    close_oldrelayfs(detach);
-  else if (pending_interrupts > 2)
+  if (pending_interrupts > 2)
     kill_relayfs();
   else
     close_relayfs();
@@ -810,15 +764,6 @@ int stp_main_loop(void)
     PROBE3(staprun, recv__ctlmsg, recvbuf.type, recvbuf.payload.data, nb);
 
     switch (recvbuf.type) {
-#if STP_TRANSPORT_VERSION == 1
-    case STP_REALTIME_DATA:
-      if (write_realtime_data(recvbuf.payload.data, nb)) {
-        _perr(_("write error (nb=%ld)"), (long)nb);
-        cleanup_and_exit(0, 1);
-	/* NOTREACHED */
-      }
-      break;
-#endif
     case STP_OOB_DATA:
       /* Note that "WARNING:" should not be translated, since it is
        * part of the module cmd protocol. */
@@ -970,15 +915,9 @@ int stp_main_loop(void)
       {
         struct _stp_msg_start ts;
         struct _stp_msg_ns_pid nspid;
-        if (use_old_transport) {
-	  if (init_oldrelayfs() < 0) {
-            cleanup_and_exit(0, 1);
-	    /* NOTREACHED */
-	  }
-        } else {
-          if (init_relayfs() < 0)
-            cleanup_and_exit(0, 1);
-	    /* NOTREACHED */
+        if (init_relayfs() < 0) {
+                cleanup_and_exit(0, 1);
+                /* NOTREACHED */
         }
 
         if (target_namespaces_pid > 0) {

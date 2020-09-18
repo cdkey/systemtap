@@ -149,22 +149,6 @@ struct _stp_msg_ns_pid
   pid_t target;
 };
 
-#if STP_TRANSPORT_VERSION == 1
-/**** for compatibility with old relayfs ****/
-struct _stp_buf_info
-{
-        int32_t cpu;
-        uint32_t produced;
-        uint32_t consumed;
-        int32_t flushing;
-};
-struct _stp_consumed_info
-{
-        int32_t cpu;
-        uint32_t consumed;
-};
-#endif
-
 /* Unwind data. stapio->module */
 struct _stp_msg_relocation
 {

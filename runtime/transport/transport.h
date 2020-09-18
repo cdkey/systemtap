@@ -13,12 +13,7 @@
 
 /* STP_CTL_BUFFER_SIZE is the maximum size of a message */
 /* exchanged on the control channel. */
-#if STP_TRANSPORT_VERSION == 1
-/* Old transport sends print output on control channel */
-#define STP_CTL_BUFFER_SIZE STP_BUFFER_SIZE
-#else
 #define STP_CTL_BUFFER_SIZE 384
-#endif
 
 static unsigned _stp_nsubbufs;
 static unsigned _stp_subbuf_size;

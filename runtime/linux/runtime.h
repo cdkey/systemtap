@@ -52,14 +52,8 @@
 #include <linux/user_namespace.h>
 #endif
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,15)
 #if !defined (CONFIG_DEBUG_FS)  && !defined (CONFIG_DEBUG_FS_MODULE)
 #error "DebugFS is required and was not found in the kernel."
-#endif
-#define STP_TRANSPORT_VERSION 2
-#else
-/* older kernels have no debugfs and older version of relayfs. */
-#define STP_TRANSPORT_VERSION 1
 #endif
 
 #if defined(STAPCONF_UDELAY_SIMPLE_EXPORTED)

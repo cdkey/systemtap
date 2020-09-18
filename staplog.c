@@ -220,6 +220,9 @@ static ulong get_rchan_addr(ulong stp_relay_data)
 	 * stp_relay_data.flushing, we'll assume this is a system
 	 * using STP_TRANSPORT_VERSION 1.  Note that this will fail if
 	 * the debuginfo of the trace module isn't available.
+         *
+         * NB: STP_TRANSPORT_VERSION 1 code has been removed from the
+         * bulk of the runtime in 2020-09, so this will always be false.
 	 */
 	if ((offset = MEMBER_OFFSET("_stp_relay_data_type", "flushing")) > 0) {
 		old_format = 1;
