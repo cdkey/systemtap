@@ -38,13 +38,16 @@ fi
 
 prog=systemtap
 
+prefix=@prefix@
+exec_prefix=@exec_prefix@
 # Commands
 STAP=@bindir@/stap
 STAPRUN=@bindir@/staprun
 UNAME=/bin/uname
 LSMOD=/sbin/lsmod
-DRACUT=@dracutbindir@/dracut
+DRACUT=`which dracut`
 NEWKERNELPKG=/sbin/new-kernel-pkg
+KERNELINSTALL=/usr/bin/kernel-install
 
 # Not actually used directly, but needed by
 # stap dracut module for inclusion in initramfs
@@ -836,20 +839,12 @@ backup_initramfs() {
 
 onboot () {
   local s ret ss
-  if [ ! -f "$NEWKERNELPKG" ]; then
-    clog "Could not find $NEWKERNELPKG" -n
-    do_failure "$NEWKERNELPKG not found"
-    clog
-    clog "This feature requires $NEWKERNELPKG."
-    clog "If it is located elsewhere, modify the \$NEWKERNELPKG parameter" -n
+  if [ ! -f "$NEWKERNELPKG" -a ! -f "$KERNELINSTALL" ]; then
+    do_failure "Could not find $NEWKERNELPKG nor $KERNELINSTALL"
     return 1
   fi
   if [ ! -f "$DRACUT" ]; then
-    clog "Could not find $DRACUT" -n
     do_failure "$DRACUT not found"
-    clog
-    clog "The system must be dracut-based to use this feature"
-    clog "If it is located elsewhere, modify the \$DRACUT parameter" -n
     return 1
   fi
   if [ ! -d "$(dirname $DRACUT_SRC)" ]; then
@@ -948,10 +943,14 @@ onboot () {
   # We're installing the initramfs in the default location, so user
   # expects the next boot to use it. Let's also update the bootloader.
   clog " Updating bootloader ... " -n
-  logex $NEWKERNELPKG --initrdfile="$INITRAMFS" \
-                      --update $KRELEASE
+  if [ -x "$NEWKERNELPKG" ]; then
+      logex $NEWKERNELPKG --initrdfile="$INITRAMFS" \
+            --update $KRELEASE
+  else
+      logex $KERNELINSTALL add $KRELEASE /boot/vmlinuz-$KRELEASE
+  fi
   if [ $? -ne 0 ]; then
-    do_failure "$NEWKERNELPKG exited with nonzero status"
+    do_failure "bootloader update exited with nonzero status"
     return 1
   fi
   might_success "initramfs created and bootloader updated"
