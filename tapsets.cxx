@@ -1006,10 +1006,10 @@ struct dwarf_builder: public derived_probe_builder
 
   dwarf_builder() {}
 
-  dwflpp *get_kern_dw(systemtap_session& sess, const string& module)
+  dwflpp *get_kern_dw(systemtap_session& sess, const string& module, bool debuginfo_needed = true)
   {
     if (kern_dw[module] == 0)
-      kern_dw[module] = new dwflpp(sess, module, true); // might throw
+      kern_dw[module] = new dwflpp(sess, module, true, debuginfo_needed); // might throw
     return kern_dw[module];
   }
 
@@ -8430,7 +8430,19 @@ dwarf_builder::build(systemtap_session & sess,
   int64_t proc_pid;
   if (has_null_param (parameters, TOK_KERNEL))
     {
-      dw = get_kern_dw(sess, "kernel");
+      bool debuginfo_needed = true;
+
+      /* PR26660 kernel.statement(HEX).absolute does not require kernel
+       * debuginfo */
+      bool has_statement_num = has_param (parameters, TOK_STATEMENT);
+      if (has_statement_num)
+        {
+          if (has_param (parameters, TOK_ABSOLUTE))
+            debuginfo_needed = false;
+        }
+
+      //cerr << "debuginfo needed? " << debuginfo_needed << endl;
+      dw = get_kern_dw(sess, "kernel", debuginfo_needed);
     }
   else if (get_param (parameters, TOK_MODULE, module_name))
     {

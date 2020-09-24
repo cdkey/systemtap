@@ -72,14 +72,14 @@ using namespace __gnu_cxx;
 static string TOK_KERNEL("kernel");
 
 
-dwflpp::dwflpp(systemtap_session & session, const string& name, bool kernel_p):
+dwflpp::dwflpp(systemtap_session & session, const string& name, bool kernel_p, bool debuginfo_needed):
   sess(session), module(NULL), module_bias(0), mod_info(NULL),
   module_start(0), module_end(0), cu(NULL), dwfl(NULL),
   module_dwarf(NULL), function(NULL), blacklist_func(), blacklist_func_ret(),
   blacklist_file(),  blacklist_enabled(false)
 {
   if (kernel_p)
-    setup_kernel(name, session);
+    setup_kernel(name, session, debuginfo_needed);
   else
     {
       vector<string> modules;
@@ -336,9 +336,9 @@ dwflpp::setup_kernel(const string& name, systemtap_session & s, bool debuginfo_n
         // Suggest a likely kernel dir to find debuginfo rpm for
         string dir = string(sess.sysroot + "/lib/modules/" + sess.kernel_release );
         find_debug_rpms(sess, dir.c_str());
+        throw SEMANTIC_ERROR (_F("missing %s kernel/module debuginfo [man warning::debuginfo] under '%s'",
+                                  sess.architecture.c_str(), sess.kernel_build_tree.c_str()));
       }
-      throw SEMANTIC_ERROR (_F("missing %s kernel/module debuginfo [man warning::debuginfo] under '%s'",
-                                sess.architecture.c_str(), sess.kernel_build_tree.c_str()));
     }
 
   if (dwfl != NULL)
@@ -374,9 +374,9 @@ dwflpp::setup_kernel(const vector<string> &names, bool debuginfo_needed)
         // Suggest a likely kernel dir to find debuginfo rpm for
         string dir = string(sess.sysroot + "/lib/modules/" + sess.kernel_release );
         find_debug_rpms(sess, dir.c_str());
+        throw SEMANTIC_ERROR (_F("missing %s kernel/module debuginfo [man warning::debuginfo] under '%s'",
+                                 sess.architecture.c_str(), sess.kernel_build_tree.c_str()));
       }
-      throw SEMANTIC_ERROR (_F("missing %s kernel/module debuginfo [man warning::debuginfo] under '%s'",
-                               sess.architecture.c_str(), sess.kernel_build_tree.c_str()));
     }
 
   build_kernel_blacklist();

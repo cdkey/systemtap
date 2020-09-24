@@ -202,7 +202,7 @@ struct dwflpp
   std::string module_name;
   std::string function_name;
 
-  dwflpp(systemtap_session & session, const std::string& user_module, bool kernel_p);
+  dwflpp(systemtap_session & session, const std::string& user_module, bool kernel_p, bool debuginfo_needed = true);
   dwflpp(systemtap_session & session, const std::vector<std::string>& user_modules, bool kernel_p);
   ~dwflpp();
 
