@@ -1094,6 +1094,10 @@ file name at the end and has the shortest file name path (e.g. given
 \texttt{src/sub/module/bar/baz.c} and \texttt{src/bar/baz.c} the second
 CU will be chosen to resolve \texttt{foo}).
 
+The notation \texttt{@var("varname", "/path/to/exe-or-so)} is also supported
+to explicitly specify an executable or library file path in which the global or
+top-level static variable resides.
+
 \texttt{\$var->field} or \texttt{@var("var@file.c")->field} traverses a
 structure's field. The indirection operator may be repeated to follow
 additional levels of pointers.

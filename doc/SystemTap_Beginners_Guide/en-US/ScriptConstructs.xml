@@ -171,6 +171,12 @@ then it can be referenced through
 </para>
 
 <para>
+It is also supported to specify an executable or library file path as the
+second argument, as in
+<quote><command>@var("<replaceable>varname</replaceable>", "<replaceable>/path/to/exe/or/lib</replaceable>")</command></quote>
+</para>
+
+<para>
 SystemTap tracks the typing information of the target variable and can
 examine the fields of a structure with the <command>-></command> operator.
 The <command>-></command> operator can be chained to look at data structures
