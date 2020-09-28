@@ -197,3 +197,12 @@ struct unwind_context uwcontext_kernel;
 #ifdef _HAVE_PERF_
 long *perf_read_values;
 #endif
+
+/* Maximum number of backtrace levels. */
+#ifndef MAXBACKTRACE
+#define MAXBACKTRACE 20
+#endif
+
+/* PR26673 we should allocate this array in struct context instead of on the
+ * kernel stack */
+unsigned long kern_bt_entries[MAXBACKTRACE];

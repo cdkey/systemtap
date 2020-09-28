@@ -1,0 +1,17 @@
+set test "max-kernel-bt"
+set testpath "$srcdir/$subdir"
+
+if {! [installtest_p]} { untested $test; return }
+
+# --- TEST 1 ---
+
+set subtest1 "TEST 1: max backtrace"
+set test_name "$test: $subtest1"
+
+set cmd "stap -DMAXBACKTRACE=256 -vvv '$srcdir/$subdir/${test}_1.stp'"
+set exit_code [run_cmd_2way $cmd out stderr]
+set out_pat "\\ygcc \[^\\n\]*\"MAXBACKTRACE=256\" .*?hello world\\n 0x\[a-f0-9\]+ "
+like "${test_name}: stdout" $out $out_pat "-lineanchor"
+set stderr_pat "^Pass 5: run completed in "
+like "${test_name}: stderr" $stderr $stderr_pat "-lineanchor"
+is "${test_name}: exit code" $exit_code 0

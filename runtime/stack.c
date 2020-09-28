@@ -19,11 +19,6 @@
 #ifndef _STACK_C_
 #define _STACK_C_
 
-/* Maximum number of backtrace levels. */
-#ifndef MAXBACKTRACE
-#define MAXBACKTRACE 20
-#endif
-
 /** @file stack.c
  * @brief Stack Tracing Functions
  */
@@ -79,7 +74,8 @@ _stp_init_stack(void)
 
 
 
-static void _stp_stack_print_fallback(unsigned long, struct pt_regs*, int, int, int);
+static void _stp_stack_print_fallback(struct context *, unsigned long,
+				      struct pt_regs*, int, int, int);
 
 #ifdef STP_USE_DWARF_UNWINDER
 #ifdef STAPCONF_LINUX_UACCESS_H
@@ -164,7 +160,8 @@ static const struct stacktrace_ops print_stack_ops = {
 };
 
 /* Used for kernel backtrace printing when other mechanisms fail. */
-static void _stp_stack_print_fallback(unsigned long stack, struct pt_regs *regs,
+static void _stp_stack_print_fallback(struct context *c __attribute__((unused)),
+				      unsigned long stack, struct pt_regs *regs,
 				      int sym_flags, int levels, int skip)
 {
         struct print_stack_data print_data;
@@ -183,10 +180,10 @@ static void _stp_stack_print_fallback(unsigned long stack, struct pt_regs *regs,
 #endif
 }
 #else
-static void _stp_stack_print_fallback(unsigned long sp, struct pt_regs *regs,
-				      int sym_flags,
+static void _stp_stack_print_fallback(struct context *c, unsigned long sp,
+				      struct pt_regs *regs, int sym_flags,
 				      int levels, int skip) {
-	unsigned long entries[MAXBACKTRACE];
+        unsigned long *entries = c->kern_bt_entries;
         unsigned i;
         unsigned num_entries;
         
@@ -463,7 +460,7 @@ static void _stp_stack_kernel_print(struct context *c, int sym_flags)
 		l = _stp_stack_kernel_get(c, n);
 		if (l == 0) {
 			remaining = MAXBACKTRACE - n;
-			_stp_stack_print_fallback(UNW_SP(&c->uwcontext_kernel.info),
+			_stp_stack_print_fallback(c, UNW_SP(&c->uwcontext_kernel.info),
 						  &c->uwcontext_kernel.info.regs,
 						  sym_flags, remaining, 0);
 			break;
@@ -491,7 +488,7 @@ static void _stp_stack_kernel_print(struct context *c, int sym_flags)
 		sp = 0;
 		skip = 5; /* yes, that many framework frames. */
 #endif
-		_stp_stack_print_fallback(sp, NULL, sym_flags,
+		_stp_stack_print_fallback(c, sp, NULL, sym_flags,
 					  MAXBACKTRACE, skip);
 #else
 		if (sym_flags & _STP_SYM_SYMBOL)
