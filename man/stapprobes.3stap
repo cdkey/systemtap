@@ -595,6 +595,15 @@ an alternative syntax for
 .IR $varname
 .
 .TP
+@var("varname","module")
+The global variable in scope of the given module already loaded into
+the current probed process.  Useful to get an exported variable in a
+shared library loaded into the process being probed, or a global
+variable in a process while a shared library probe is being executed.
+For user-space modules only.  For example:
+.IR @var("_r_debug","/lib/ld-linux.so.2")
+.
+.TP
 @var("varname@src/file.c")
 refers to the global (either file local or external) variable
 .IR varname
@@ -611,6 +620,12 @@ and
 the second CU will be chosen to resolve the (file) global variable
 .IR foo
 .
+
+.TP
+@var("varname@src/file.c","module")
+The global variable in scope of the given CU, defined in the given module,
+even if the variable is static (so the name is not unique without the CU name).
+
 .TP
 $var\->field traversal via a structure's or a pointer's field.  This
 generalized indirection operator may be repeated to follow more
