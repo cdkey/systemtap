@@ -19,7 +19,7 @@ CERTDB = ../../../../etc/systemtap/staprun
 # owns this build directory. This is so that the stap-server service
 # can rebuild the module, if necessary.
 default:
-	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
+	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) KBUILD_EXTMOD=$(PWD) modules
 	if test `id -u` = 0 -o `id -un` = stap-server; then \
 		if test -x $(LIBEXECDIR)/stap-sign-module; then \
 			stap_dir=${SYSTEMTAP_DIR}; \
