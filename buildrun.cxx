@@ -1140,9 +1140,10 @@ make_typequery_umod(systemtap_session& s, const vector<string>& headers, string&
   // cwd in this case will be the cwd of stap itself though, which may be
   // trickier to deal with.  It might be better to "cd `dirname $script`"
   // first...
+  // s.runtime_path allows finding linux/stp_tls.h
   vector<string> cmd
     {
-      "gcc", "-shared", "-g", "-fno-eliminate-unused-debug-types",
+      "gcc", "-shared", "-g", "-I", s.runtime_path, "-fno-eliminate-unused-debug-types",
       "-xc", "/dev/null", "-o", name,
     };
   for (size_t i = 0; i < headers.size(); ++i)

@@ -1,0 +1,39 @@
+set test "tls"
+set stap_path $env(SYSTEMTAP_PATH)/stap
+
+set so_flags "additional_flags=-shared"
+set so_flags "$so_flags additional_flags=-g"
+set so_flags "$so_flags additional_flags=-fPIC"
+set so_flags "$so_flags additional_flags=-DNO_MAIN"
+set so_sopath "[pwd]/libtls1.so"
+set so_exepath "[pwd]/tls1.x"
+set res0 [target_compile $srcdir/$subdir/tls1_.c $so_sopath \
+	      executable $so_flags ]
+set x_flags "additional_flags=-Wl,-rpath,[pwd]"
+set x_flags "$x_flags additional_flags=-g"
+set x_flags "$x_flags additional_flags=-L[pwd] additional_flags=-ltls1"
+set x_flags "$x_flags additional_flags=-lpthread"
+set x_flags "$x_flags additional_flags=-DONLY_MAIN"
+set res [target_compile $srcdir/$subdir/tls1.c $so_exepath \
+	     executable $x_flags ]
+if { $res0 != "" || $res != "" } {
+    fail "$test compiling -shared"
+    return
+} else {
+    pass "$test compiling -shared"
+}
+
+set ok 0
+spawn $stap_path -g -c $so_exepath $srcdir/$subdir/tls1.stp $so_sopath
+expect {
+    -re {In Stap: tls1=0x2 tls2=0x3} { incr ok; exp_continue }
+    -re {In Stap: tls1=0x3 tls2=0x4} { incr ok; exp_continue }
+    -re {In Stap: tls=99} { incr ok; exp_continue }
+    eof { }
+    }
+    catch {close}; catch {wait}
+if {$ok == 3} {
+    pass "$test"
+} else {
+    fail "$test ($ok)
+}

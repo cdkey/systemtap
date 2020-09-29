@@ -1,0 +1,9 @@
+probe process(@1).statement("increase_tls@*:11")
+{
+  printf("In Stap: tls1=%#lx tls2=%#lx\n", @var("tls1"), @var("tls2")) 
+}
+
+probe process("tls1.x").function("main").return
+{
+  printf("In Stap: tls=%d\n", @var("tls")) 
+}
