@@ -348,11 +348,11 @@ compile_server_client::process_response ()
     }
 
   // Output stdout and stderr.
-  filename = backend->server_tmpdir + "/stderr";
-  flush_to_stream (filename, clog);
-
   filename = backend->server_tmpdir + "/stdout";
   flush_to_stream (filename, cout);
+
+  filename = backend->server_tmpdir + "/stderr";
+  flush_to_stream (filename, clog);
 
   return rc;
 }

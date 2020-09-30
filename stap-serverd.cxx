@@ -1472,10 +1472,17 @@ get_client_mok_fingerprints (const string &filename,
     {
       string fingerprint;
 
+      if (line == "missing") // PR26665: needs signature, but has no useful mok key
+	{
+	  // save it, so handleRequest() sends back a new MOK pubkey
+	  mok_fingerprints.push_back(line);
+	  continue;
+	}
+
       if ((regexec(&checkre, line.c_str(), 3, matches, 0) != 0))
         {
 	  // Not fatal. Just ignore it.
-	  client_error(_F("MOK fingerprint value '%s' isn't in the correct forma",
+	  client_error(_F("MOK fingerprint value '%s' isn't in the correct format",
 			  line.c_str()), stapstderr);
 	  continue;
 	}
@@ -1952,6 +1959,12 @@ handleRequest (const string &requestDirName, const string &responseDirName, stri
 	      // module.
 	      client_error (_("No matching machine owner key (MOK) available on the server to sign the\n module."), stapstderr);
 
+	      // Well akksshually ... we could sign the new module with
+	      // this key preemptively ... and return the MOK public
+	      // key.  But that wouldn't help the client machine,
+	      // because it won't be able to run the signed .ko until
+	      // a MOK enroll + UEFI reboot anyway.
+
 	      // Since we can't sign the module, send the client one
 	      // of our MOKs. If we don't have any, create one.
 	      vector<string> mok_fingerprints;
@@ -1976,7 +1989,7 @@ handleRequest (const string &requestDirName, const string &responseDirName, stri
 		  string src = mok_directory + MOK_PUBLIC_CERT_FILE;
 		  string dst = responseDirName + MOK_PUBLIC_CERT_FILE;
 		  if (copy_file (src, dst, true))
-		    client_error ("The server has no machine owner key (MOK) in common with this\nsystem. Use the following command to import a server MOK into this\nsystem, then reboot:\n\n\tmokutil --import signing_key.x509", stapstderr);
+		    client_error ("The server has no machine owner key (MOK) in common with this\nsystem. Use the following command to import a server MOK into this\nsystem, then reboot:\n\n\t# sudo mokutil --import signing_key.x509", stapstderr);
 		  else
 		    client_error ("The server has no machine owner key (MOK) in common with this\nsystem. The server failed to return a certificate.", stapstderr);
 		}

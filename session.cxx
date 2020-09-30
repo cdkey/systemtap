@@ -1991,6 +1991,13 @@ systemtap_session::check_options (int argc, char * const argv [])
       // Cache the current system's machine owner key (MOK)
       // information, to pass over to the server.
       get_mok_info();
+
+      // If the mok_fingerprints are empty ... we don't have one enrolled,
+      // but would like to find a server - any server - and ask for one.
+      // Enroll a magic string.   PR26665
+      if (mok_fingerprints.size() == 0)
+	mok_fingerprints.push_back("missing");
+      // see also: nss-server-info.cxx nss_get_or_keep_compatible_server_info()
     }
 }
 
@@ -2840,6 +2847,8 @@ systemtap_session::get_mok_info()
     // we can't get the list of MOKs. Quit.
     throw runtime_error(_F("Failed to get list of machine owner keys (MOK) for module signing: rc %d", rc));
 
+  string state = "SHA1";
+  
   string line, fingerprint;
   while (! out.eof())
     {
@@ -2847,17 +2856,35 @@ systemtap_session::get_mok_info()
 
       // Get a line of the output, then try to find the fingerprint in
       // the line.
+      // PR26665: but only Systemtap MOK keys; there may be others.
       getline(out, line);
-      if (! regexp_match(line, "^SHA1 Fingerprint: ([0-9a-f:]+)$", matches))
-        {
-	  // matches[0] is the entire line, matches[1] is the first
-	  // submatch, in this case the actual fingerprint
+
+      if (state == "SHA1") { // look for a new key fingerprint
+	if (! regexp_match(line, "^SHA1 Fingerprint: ([0-9a-f:]+)$", matches))
+	  {
+	    // matches[0] is the entire line, matches[1] is the first
+	    // submatch, in this case the actual fingerprint
+	    fingerprint = matches[1];
+	    if (verbose > 2)
+	      clog << "MOK fingerprint found: " << fingerprint << endl;
+	    state = "Issuer";
+	  }
+	// else stay in SHA1 state
+      } else if (state == "Issuer") { // validate issuer
+	if (! regexp_match(line, "^[ \t]*Issuer: O=(.*)$", matches)) {
 	  if (verbose > 2)
-	    clog << "MOK fingerprint found: " << matches[1] << endl;
-	  if (! matches[1].empty())
-	    mok_fingerprints.push_back(matches[1]);
+	    clog << "Issuer found: " << matches[1] << endl;
+	  if (! regexp_match(matches[1], "Systemtap", matches))
+	    mok_fingerprints.push_back(fingerprint);
+	  state = "SHA1"; // start looking for another key
 	}
+      } else { // some other line in mokutil output ... there are plenty
+	; // carry on searching
+      }
     }
+
+  if (verbose > 2)
+    clog << "Number of enrolled Systemtap MOK keys found: " << mok_fingerprints.size() << endl;
 }
 
 void

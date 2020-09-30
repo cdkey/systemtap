@@ -781,6 +781,14 @@ nss_client_backend::find_and_connect_to_server ()
 		criteria += ",signer";
 	      clog << _F("No servers matched the selection criteria of %s.", criteria.c_str())
 		   << endl;
+
+	      // PR26665, mention case of local mok key but no matching server 
+	      if (s.modules_must_be_signed() && s.mok_fingerprints.size() > 0)
+		{
+		  clog << _("Consider removing the local MOK to associate with a new server") << endl;
+		  clog << _("# sudo mokutil --list-enrolled") << endl;
+		  clog << _("# sudo mokutil --export / --delete  OR  --reset") << endl;
+		}
 	    }
 	}
       return 1;

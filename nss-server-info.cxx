@@ -1819,6 +1819,8 @@ nss_get_or_keep_compatible_server_info (
 	  && servers[i].sysinfo != s.architecture)
 	{
 	  // Target platform mismatch.
+	  if (s.verbose > 3)
+	    clog << "Rejected server (platform): " << servers[i] << endl;
 	  servers.erase (servers.begin () + i);
 	  continue;
 	}
@@ -1827,20 +1829,14 @@ nss_get_or_keep_compatible_server_info (
       // server has the right MOK.
       if (! s.mok_fingerprints.empty ())
         {
-	  // This server has no MOKs.
-	  if (servers[i].mok_fingerprints.empty ())
-	    {
-	      servers.erase (servers.begin () + i);
-	      continue;
-	    }
-
 	  // Make sure the server has at least one MOK in common with
 	  // the client.
 	  vector<string>::const_iterator it;
 	  bool mok_found = false;
 	  for (it = s.mok_fingerprints.begin(); it != s.mok_fingerprints.end(); it++)
 	    {
-	      if (find(servers[i].mok_fingerprints.begin(),
+	      if ((*it == "missing") || // PR26665: see also session.cxx check_options()
+		  find(servers[i].mok_fingerprints.begin(),
 		       servers[i].mok_fingerprints.end(), *it)
 		  != servers[i].mok_fingerprints.end ())
 	        {
@@ -1852,12 +1848,16 @@ nss_get_or_keep_compatible_server_info (
 	  // This server has no MOK in common with the client.
 	  if (! mok_found)
 	    {
+	      if (s.verbose > 3)
+		clog << "Rejected server (common mok): " << servers[i] << endl;
 	      servers.erase (servers.begin () + i);
 	      continue;
 	    }
 	}
 
       // The server is compatible. Leave it in the list.
+      if (s.verbose > 3)
+	clog << "Accepted server: " << servers[i] << endl;
       ++i;
     }
 #else // ! HAVE_AVAHI
