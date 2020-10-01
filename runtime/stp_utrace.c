@@ -1090,6 +1090,9 @@ static struct utrace *get_utrace_lock(struct task_struct *target,
 	}
 
 	utrace = task_utrace_struct(target);
+	if (unlikely(!utrace))
+		return ERR_PTR(-ESRCH);
+
 	spin_lock(&utrace->lock);
 	if (unlikely(utrace->reap) || unlikely(!engine->ops) ||
 	    unlikely(engine->ops == &utrace_detached_ops)) {
