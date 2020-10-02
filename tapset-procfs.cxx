@@ -232,6 +232,12 @@ procfs_derived_probe_group::emit_module_decls (systemtap_session& s)
     return;
 
   s.op->newline() << "/* ---- procfs probes ---- */";
+  s.op->newline() << "#ifndef STP_MAX_PROCFS_FILES";
+  s.op->newline() << "#define STP_MAX_PROCFS_FILES " << probes_by_path.size();
+  s.op->newline() << "#endif";
+  // NB: Users of kernels old enough to enable _STP_ALLOW_PROCFS_PATH_SUBDIRS
+  // and who use the undocumented procfs("sub/dir") feature will need to override
+  // this with stap -D .... to bump it up.
   s.op->newline() << "#include \"procfs.c\"";
   s.op->newline() << "#include \"procfs-probes.c\"";
 

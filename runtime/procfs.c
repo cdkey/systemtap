@@ -40,12 +40,11 @@
 #define _STP_ALLOW_PROCFS_PATH_SUBDIRS
 #endif
 
-/* The maximum number of files AND directories that can be opened.
- * It would be great if the translator would emit this based on the actual
- * number of needed files.
+/* The maximum number of files that can be opened.  Plus if
+ * _STP_ALLOW_PROCFS_PATH_SUBDIRS, add number of directories.
  */
 #ifndef STP_MAX_PROCFS_FILES
-#define STP_MAX_PROCFS_FILES 16
+#error "need STP_MAX_PROCFS_FILES"
 #endif
 
 static int _stp_num_pde = 0;
