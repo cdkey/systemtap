@@ -74,10 +74,10 @@ function d_name:string(dentry:long)
                         @cast(inode, "struct inode", "kernel")->i_dentry->next)
 
 	if (@type_member_defined("struct dentry", d_alias)) {
-        	return & @container_of(d_alias, "struct dentry", d_alias)
+	        return & @module_container_of(d_alias, "kernel<linux/dcache.h>", "struct dentry", d_alias)
 	}
 	else {
-        	return & @container_of(d_alias, "struct dentry", d_u->d_alias)
+	        return & @module_container_of(d_alias, "kernel<linux/dcache.h>", "struct dentry", d_u->d_alias)
 	}
 }
 
