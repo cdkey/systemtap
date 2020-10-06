@@ -1,6 +1,8 @@
 set test "tls"
 set stap_path $env(SYSTEMTAP_PATH)/stap
 
+# Check tls use in .exe and .so
+
 set so_flags "additional_flags=-shared"
 set so_flags "$so_flags additional_flags=-g"
 set so_flags "$so_flags additional_flags=-fPIC"
@@ -35,5 +37,19 @@ expect {
 if {$ok == 3} {
     pass "$test"
 } else {
-    fail "$test ($ok)
+    fail "$test ($ok)"
+}
+
+# Check errno
+
+spawn $stap_path  -e "probe process(\"/lib64/libc.so.6\").function(\"*stat*\").return { printf(\"errno=%d %s\n\", @var(\"errno@errno.c\"),errno_str(@var(\"errno@errno.c\"))) }" -c "/usr/bin/ls /file/does/not/exist"
+expect {
+    -re {errno=2 (ENOENT)} { incr ok; exp_continue }
+    eof { }
+    }
+    catch {close}; catch {wait}
+if {$ok == 3} {
+    pass "$test"
+} else {
+    fail "$test ($ok)"
 }

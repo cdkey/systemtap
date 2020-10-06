@@ -18,10 +18,9 @@ private global tls_module = 0
 private global l_tls_modid_offset = 1112
 private global l_map_start_offset = 848
 private global l_map_end_offset = 856
-private global l_text_end_offset = 864  
 
+// Get the thread context pointer that points to the tls thread control block
 @__private30 function get_thread_context_pointer () %{
-  // Get the thread context pointer that points to the tls thread control block
 # ifdef __i386
   unsigned long gs;
   rdmsrl(MSR_FS_BASE, gs);
@@ -48,9 +47,44 @@ private global l_text_end_offset = 864
 %}
 
 
+// Get inode of followed link
+// TODO Does not follow symbolic links, e.g. to follow /lib64/libc.so.6
+//      The idea was to do 'inode = get_inode_from_path (l_name); name = inode_path(inode);'
+
+@__private30 function get_inode_from_path:long (tls_module_name) %{
+  struct inode *tls_inode;
+  struct path tls_path;
+  int code;
+  STAP_PRINTF("get_inode_from_path %s\n",STAP_ARG_tls_module_name);
+  code = kern_path(/* string */ STAP_ARG_tls_module_name, LOOKUP_FOLLOW, &tls_path);
+  if (code == 0)
+    STAP_RETVALUE = (int64_t)tls_path.dentry->d_inode;
+  else
+    STAP_RETVALUE = 0;
+%}
+
+
+// Return basename of a path
+
+@__private30 function basename (l_name:string)
+{
+   for (lni = 0; lni < strlen (l_name); lni++) {
+      if (stringat(l_name, lni) == 0x2f)  // '/'
+	 slash = lni;
+   } 
+   if (slash > 0) {
+      slash += 1;
+      return substr (l_name, slash, strlen(l_name)-slash);
+   }
+   else
+      return l_name;
+}
+
+
+// Setup the link_map subset : l_name, map_start, map_end
+
 @__private30 function setup_link_map ()
 {
-  // Setup the link_map subset : l_name, map_start, map_end
   delete tls_link_map_name
   delete tls_link_map_start
   delete tls_link_map_end
@@ -59,40 +93,34 @@ private global l_text_end_offset = 864
   l_map = @var("_rtld_global","/usr/lib64/ld-linux-x86-64.so.2")->_dl_ns[0]->_ns_loaded;
   if (tls_debug > 1)
     println (@var("_rtld_global","/usr/lib64/ld-linux-x86-64.so.2")->_dl_ns[0]->_ns_loaded$);
-  l = l_map
-  while (l)
+  while (l_map)
     {
-     l_name = user_string(@cast(l, "link_map", "<link.h>")->l_name);
-     l_addr = user_uint64(@cast(l, "link_map", "<link.h>")->l_addr);
-     l_tls_modid = user_int64(l + l_tls_modid_offset)
-     l_map_start = user_int64(l + l_map_start_offset)
-     l_map_end = user_int64(l + l_map_end_offset)
-     l_text_end = user_int64(l + l_text_end_offset)
-     for (lni = 0; lni < strlen (l_name); lni++) {
-	if (stringat(l_name, lni) == 0x2f)
-	   slash = lni
-	}
-     if (slash > 0)
-	 slash += 1;
+     l_name = user_string(@cast(l_map, "link_map", "<link.h>")->l_name);
+     l_addr = user_uint64(@cast(l_map, "link_map", "<link.h>")->l_addr);
+     l_tls_modid = user_int64(l_map + l_tls_modid_offset)
+     l_map_start = user_int64(l_map + l_map_start_offset)
+     l_map_end = user_int64(l_map + l_map_end_offset)
      if (l_tls_modid == 1)
        l_name = execname();
-     if (l_tls_modid != 0)
-       {
-	 tls_link_map_name[l_tls_modid] = substr (l_name, slash, strlen(l_name)-slash)
-	 tls_link_map_start[l_tls_modid] = l_map_start
-	 tls_link_map_end[l_tls_modid] = l_map_end
-	 if (tls_debug)
-	   printf("link_map: %s l_addr=%#lx modid=%d map_start=%#lx map_end=%#lx text_end=%#lx\n", tls_link_map_name[l_tls_modid], l_addr, l_tls_modid, l_map_start, l_map_end, l_text_end);
+     name_base = basename (l_name);
+     if (l_tls_modid != 0) {
+	tls_link_map_name[l_tls_modid] = name_base;
+	tls_link_map_start[l_tls_modid] = l_map_start;
+	tls_link_map_end[l_tls_modid] = l_map_end;
+	if (tls_debug)
+	   printf("link_map: %s l_addr=%#lx modid=%d map_start=%#lx map_end=%#lx\n", tls_link_map_name[l_tls_modid], l_addr, l_tls_modid, l_map_start, l_map_end);
        }
-     l = @cast(l, "link_map", "<link.h>")->l_next;
+     l_map = @cast(l_map, "link_map", "<link.h>")->l_next;
     }
 }
 
 
+// Find the module by matching the probe address to the link_map address
+// See glibc td_thr/td_thr_tls_get_addr.c which does something similar
+// Replaced by set_tls_module_by_name
+
 @__private30 function set_tls_module_by_addr ()
 {
-  // Find the module by matching the probe address from the link_map
-  // See glibc td_thr/td_thr_tls_get_addr.c which does something similar
   probe_addr = addr()
   // TODO return probe addr can result in a false positive
   if (isinstr(pp(), ".return"))
@@ -110,29 +138,63 @@ private global l_text_end_offset = 864
 }
 
 
+// Compare module names.  
+// sonames, real sonames, and linker sonames should compare equal
+
+@__private30 function regex_module_compare (stap_mod:string, map_mod:string)
+{
+   // Not an soname
+   if (stap_mod !~ "^lib.*$") 
+      return stap_mod == map_mod;
+
+   // Most common case libMATCH-1.soMATCH-2
+   // MATCH-1 is the soname minus lib prefix and .so* suffix
+   if (stap_mod !~ "lib([-\._\+a-zA-Z0-9]+)\.so([\.0-9]*)")
+      return 0;
+   stap_lib = matched(1);
+
+   if (map_mod !~ "lib([-\._\+a-zA-Z0-9]+)\.so([\.0-9]*)")
+      return 0;
+   map_lib = matched(1);
+   if (stap_lib == map_lib)
+     return 1;
+   
+   // The above will miss e.g. libc.so.6/libc-2.31.so
+   // MATCH-1 is the soname minus lib prefix and -version.so suffix
+   if (stap_mod !~ "lib([_\+a-zA-Z0-9]+)([-\.0-9]*)\.so([\.0-9]*)")
+     return 0;
+   stap_lib = matched(1);
+   if (map_mod !~ "lib([_\+a-zA-Z0-9]+)([-\.0-9]*)\.so([\.0-9]*)")
+     return 0;
+   map_lib = matched(1);
+   if (stap_lib == map_lib)
+     return 1;
+   else
+     return 0;
+}
+      
+
+// Find the module by matching the probe name to the link_map name
+
 @__private30 function set_tls_module_by_name ()
 {
-  // Find the module by matching the name from the link_map to the name from the probe
-  // This is a backup measure.
   tls_pp = pp()
   probe_addr = addr()
   proc = strpos(tls_pp, "process(\"") + 9;
   for (lpp = proc; lpp > 8 && lpp < strlen (tls_pp); lpp++)
-      if (stringat(tls_pp, lpp) == 0x22) {
-	  matched_proc = substr(tls_pp, proc, lpp - 9)
-	  break;
-      }
-  
+     if (stringat(tls_pp, lpp) == 0x22) {  // '"'
+	matched_proc = basename(substr(tls_pp, proc, lpp - 9))
+	break;
+     }
+
   foreach (lm in tls_link_map_name) {
     if (lm==0) continue;
-    // very simple exact match; e.g. fails with libc.so.6 libc-2.31.so
-    // TODO Improve match
-      if (isinstr(matched_proc, tls_link_map_name[lm])) {
-	 if (tls_debug)
-	   printf("Name Match: %s map_start=%#lx probe_address=%#lx map_end=%#lx \n",
+    if (regex_module_compare (matched_proc, tls_link_map_name[lm])) {
+       if (tls_debug)
+	  printf("Name Match: %s map_start=%#lx probe_address=%#lx map_end=%#lx \n",
 		 tls_link_map_name[lm], tls_link_map_start[lm], probe_addr,tls_link_map_end[lm])
-	  return lm;
-      }
+       return lm;
+    }
   }
 }
 
@@ -147,10 +209,7 @@ function __push_tls_address (tls_var_offset:long)
 {
   tcbhead = get_thread_context_pointer ();
   setup_link_map ();
-  module = set_tls_module_by_addr ();
-  if (module == 0)
-    // finding the module by address failed, so try by name
-    module = set_tls_module_by_name ();
+  module = set_tls_module_by_name ();
   if (module) 
     {
       // dtv[-1] is module count
