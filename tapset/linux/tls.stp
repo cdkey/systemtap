@@ -8,29 +8,25 @@
 
 global tls_debug = 0
 private global tls_link_map_name
-private global tls_link_map_start
-private global tls_link_map_end
 private global tls_module = 0
 
-// @cast of glibc include/link.h gives compile errors compiling module so until resolution:
-// some link_map members are in glibc include/link.h but not in /usr/include/link.h
-// so use member offsets, e.g. (void*)(&((struct link_map *)0)->l_tls_modid) = 1112
-private global l_tls_modid_offset = 1112
-private global l_map_start_offset = 848
-private global l_map_end_offset = 856
-
 // Get the thread context pointer that points to the tls thread control block
-@__private30 function get_thread_context_pointer () %{
+@__private30 function get_thread_context_pointer (tls_thread_reg_val:long) %{
 # ifdef __i386
+{
   unsigned long gs;
   rdmsrl(MSR_FS_BASE, gs);
   STAP_RETVALUE = gs;
-# elif __x86_64
+}
+# elif defined __x86_64
+{
   unsigned long fs;
   rdmsrl(MSR_FS_BASE, fs);
   STAP_RETVALUE = fs;
-# elif __s390x__
+}
+# elif defined __s390x__
 // untested
+{
   unsigned long tlsval;
   asm ("ear %0,%%a0" : "=r" (tlsval));
   asm ("sllg %0,%0,32" : "=r" (tlsval));
@@ -39,10 +35,19 @@ private global l_map_end_offset = 856
   # sllg %r1,%r1,32
   # ear %r1,%a1
   STAP_RETVALUE = tlsval;
-# elif __aarch64__
-// TODO (r18?)
-# elif __powerpc64__
-// TODO (r13?)
+}
+# elif defined __aarch64__
+{
+  unsigned long tlsval;
+  asm("mrs %0,tpidr_el0" : "=r" (tlsval));
+  STAP_RETVALUE = tlsval;
+}
+# elif defined __powerpc64__
+{
+  unsigned long tcb;
+  asm("subi %0,%1,28688," : "=r" (tcb) : "r" (STAP_ARG_tls_thread_reg_val)); // -0x7010
+  STAP_RETVALUE = tcb;
+}
 # endif
 %}
 
@@ -55,7 +60,6 @@ private global l_map_end_offset = 856
   struct inode *tls_inode;
   struct path tls_path;
   int code;
-  STAP_PRINTF("get_inode_from_path %s\n",STAP_ARG_tls_module_name);
   code = kern_path(/* string */ STAP_ARG_tls_module_name, LOOKUP_FOLLOW, &tls_path);
   if (code == 0)
     STAP_RETVALUE = (int64_t)tls_path.dentry->d_inode;
@@ -81,60 +85,42 @@ private global l_map_end_offset = 856
 }
 
 
-// Setup the link_map subset : l_name, map_start, map_end
+// Setup the link_map module/l_name mapping
 
 @__private30 function setup_link_map ()
 {
   delete tls_link_map_name
-  delete tls_link_map_start
-  delete tls_link_map_end
+%( arch == "x86_64" %?
   l_map_count = @var("_rtld_global","/usr/lib64/ld-linux-x86-64.so.2")->_dl_nns
   // TODO Do namespaces need to be supported? assume [0]
   l_map = @var("_rtld_global","/usr/lib64/ld-linux-x86-64.so.2")->_dl_ns[0]->_ns_loaded;
   if (tls_debug > 1)
-    println (@var("_rtld_global","/usr/lib64/ld-linux-x86-64.so.2")->_dl_ns[0]->_ns_loaded$);
+    println ("l_map=", @var("_rtld_global","/usr/lib64/ld-linux-x86-64.so.2")->_dl_ns[0]->_ns_loaded$);
+%)
+%( arch == "powerpc" %?
+  l_map_count = @var("_rtld_global","/usr/lib64/ld64.so.2")->_dl_nns
+  // TODO Do namespaces need to be supported? assume [0]
+  l_map = @var("_rtld_global","/usr/lib64/ld64.so.2")->_dl_ns[0]->_ns_loaded;
+  if (tls_debug)
+    println ("modid=", @var("_rtld_global","/usr/lib64/ld64.so.2")->_dl_ns[0]->_ns_loaded->l_tls_modid)
+  if (tls_debug > 1) 
+    println ("l_map=", @var("_rtld_global","/usr/lib64/ld64.so.2")->_dl_ns[0]->_ns_loaded$);
+%)
   while (l_map)
     {
-     l_name = user_string(@cast(l_map, "link_map", "<link.h>")->l_name);
-     l_addr = user_uint64(@cast(l_map, "link_map", "<link.h>")->l_addr);
-     l_tls_modid = user_int64(l_map + l_tls_modid_offset)
-     l_map_start = user_int64(l_map + l_map_start_offset)
-     l_map_end = user_int64(l_map + l_map_end_offset)
-     if (l_tls_modid == 1)
+     l_name = user_string(l_map->l_name);
+     l_addr = user_uint64(l_map->l_addr);
+     l_tls_modid = l_map->l_tls_modid
+     if (l_name == "" && l_tls_modid == 1)
        l_name = execname();
      name_base = basename (l_name);
      if (l_tls_modid != 0) {
 	tls_link_map_name[l_tls_modid] = name_base;
-	tls_link_map_start[l_tls_modid] = l_map_start;
-	tls_link_map_end[l_tls_modid] = l_map_end;
 	if (tls_debug)
-	   printf("link_map: %s l_addr=%#lx modid=%d map_start=%#lx map_end=%#lx\n", tls_link_map_name[l_tls_modid], l_addr, l_tls_modid, l_map_start, l_map_end);
+	   printf("link_map: %s l_addr=%#lx modid=%d\n", tls_link_map_name[l_tls_modid], l_addr, l_tls_modid);
        }
-     l_map = @cast(l_map, "link_map", "<link.h>")->l_next;
+     l_map = l_map->l_next
     }
-}
-
-
-// Find the module by matching the probe address to the link_map address
-// See glibc td_thr/td_thr_tls_get_addr.c which does something similar
-// Replaced by set_tls_module_by_name
-
-@__private30 function set_tls_module_by_addr ()
-{
-  probe_addr = addr()
-  // TODO return probe addr can result in a false positive
-  if (isinstr(pp(), ".return"))
-      return 0;
-
-  foreach (lm in tls_link_map_name) {
-    if (tls_link_map_start[lm] < probe_addr && probe_addr < tls_link_map_end[lm]) 
-      {
-	if (tls_debug)
-	  printf("Address Match: %s map_start=%#lx probe_address=%#lx map_end=%#lx \n",
-		 tls_link_map_name[lm], tls_link_map_start[lm], probe_addr,tls_link_map_end[lm])
-	return lm;
-      }
-  }
 }
 
 
@@ -191,11 +177,12 @@ private global l_map_end_offset = 856
     if (lm==0) continue;
     if (regex_module_compare (matched_proc, tls_link_map_name[lm])) {
        if (tls_debug)
-	  printf("Name Match: %s map_start=%#lx probe_address=%#lx map_end=%#lx \n",
-		 tls_link_map_name[lm], tls_link_map_start[lm], probe_addr,tls_link_map_end[lm])
+	  printf("Name Match: %s probe_address=%#lx\n",
+		 tls_link_map_name[lm], probe_addr)
        return lm;
     }
   }
+  return 1;
 }
 
 
@@ -207,10 +194,18 @@ private global l_map_end_offset = 856
 
 function __push_tls_address (tls_var_offset:long) 
 {
-  tcbhead = get_thread_context_pointer ();
+%( arch == "powerpc" %?
+   // It seems the value of r13 cannot be dependably relied on in get_thread_context_pointer
+   r13 = register("r13")
+   %:
+   r13 = 0
+%)
+  tcbhead = get_thread_context_pointer (r13);
+  if (tls_debug > 1)
+    printf ("tcbhead=%#lx/%d\n", tcbhead, tcbhead);
   setup_link_map ();
   module = set_tls_module_by_name ();
-  if (module) 
+  if (module >= 0) 
     {
       // dtv[-1] is module count
       // dtv[0] is generation count

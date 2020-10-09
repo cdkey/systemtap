@@ -35,9 +35,9 @@ expect {
     }
     catch {close}; catch {wait}
 if {$ok == 3} {
-    pass "$test"
+    pass "$test tls vars"
 } else {
-    fail "$test ($ok)"
+    fail "$test tls vars ($ok)"
 }
 
 # Check errno
@@ -49,7 +49,7 @@ expect {
     }
     catch {close}; catch {wait}
 if {$ok == 3} {
-    pass "$test"
+    pass "$test errno"
 } else {
-    fail "$test ($ok)"
+    fail "$test errno ($ok)"
 }
