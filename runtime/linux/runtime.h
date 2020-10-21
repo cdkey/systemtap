@@ -83,9 +83,11 @@ static void _stp_exit(void);
 
 #ifdef STAPCONF_HLIST_4ARGS
 #define stap_hlist_for_each_entry(a,b,c,d) hlist_for_each_entry(a,b,c,d)
+#define stap_hlist_for_each_entry_rcu(a,b,c,d) hlist_for_each_entry_rcu(a,b,c,d)
 #define stap_hlist_for_each_entry_safe(a,b,c,d,e) hlist_for_each_entry_safe(a,b,c,d,e)
 #else
 #define stap_hlist_for_each_entry(a,b,c,d) (void) b; hlist_for_each_entry(a,c,d)
+#define stap_hlist_for_each_entry_rcu(a,b,c,d) (void) b; hlist_for_each_entry_rcu(a,c,d)
 #define stap_hlist_for_each_entry_safe(a,b,c,d,e) (void) b; hlist_for_each_entry_safe(a,c,d,e)
 #endif
 

@@ -10,14 +10,30 @@
 
 #include "stp_helper_lock.h"
 
-// __stp_tf_vma_lock protects the hash table.
-// Documentation/spinlocks.txt suggest we can be a bit more clever
-// if we guarantee that in interrupt context we only read, not write
-// the datastructures. We should never change the hash table or the
-// contents in interrupt context (which should only ever call 
-// stap_find_vma_map_info for getting stored vma info). So we might
-// want to look into that if this seems a bottleneck.
-static STP_DEFINE_RWLOCK(__stp_tf_vma_lock);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,12,0)
+static inline bool atomic_try_cmpxchg(atomic_t *v, int *old, int new)
+{
+	int r, o = *old;
+	r = atomic_cmpxchg(v, o, new);
+	if (unlikely(r != o))
+		*old = r;
+	return likely(r == o);
+}
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0)
+static inline int atomic_fetch_add_unless(atomic_t *v, int a, int u)
+{
+	int c = atomic_read(v);
+
+	do {
+		if (unlikely(c == u))
+			break;
+	} while (!atomic_try_cmpxchg(v, &c, c + a));
+
+	return c;
+}
+#endif
 
 #define __STP_TF_HASH_BITS 4
 #define __STP_TF_TABLE_SIZE (1 << __STP_TF_HASH_BITS)
@@ -28,20 +44,26 @@ static STP_DEFINE_RWLOCK(__stp_tf_vma_lock);
 #error "gimme a little more TASK_FINDER_VMA_ENTRY_PATHLEN"
 #endif
 
-
 struct __stp_tf_vma_entry {
 	struct hlist_node hlist;
 
-	pid_t pid;
+	struct rcu_head rcu;
+	atomic_t refcount;
+	struct task_struct *tsk;
 	unsigned long vm_start;
 	unsigned long vm_end;
-        char path[TASK_FINDER_VMA_ENTRY_PATHLEN]; /* mmpath name, if known */
+	char path[TASK_FINDER_VMA_ENTRY_PATHLEN]; /* mmpath name, if known */
 
 	// User data (possibly stp_module)
 	void *user;
 };
 
-static struct hlist_head *__stp_tf_vma_map;
+struct __stp_tf_vma_bucket {
+	struct hlist_head head;
+	stp_spinlock_t lock;
+};
+
+static struct __stp_tf_vma_bucket *__stp_tf_vma_map;
 
 // __stp_tf_vma_new_entry(): Returns an newly allocated or NULL.
 // Must only be called from user context.
@@ -51,22 +73,38 @@ static struct __stp_tf_vma_entry *
 __stp_tf_vma_new_entry(void)
 {
 	struct __stp_tf_vma_entry *entry;
-	size_t size = sizeof (struct __stp_tf_vma_entry);
+	// Alloc using kmalloc rather than the stp variant. This way the RCU
+	// callback freeing the entries will not depend on using a function
+	// within this module to free the allocated memory (_stp_kfree), which
+	// lets us omit a costly rcu_barrier operation upon module unload.
 #ifdef CONFIG_UTRACE
-	entry = (struct __stp_tf_vma_entry *) _stp_kmalloc_gfp(size,
-                                                         STP_ALLOC_SLEEP_FLAGS);
+	entry = kmalloc(sizeof(*entry), STP_ALLOC_SLEEP_FLAGS);
 #else
-	entry = (struct __stp_tf_vma_entry *) _stp_kmalloc_gfp(size,
-                                                               STP_ALLOC_FLAGS);
+	entry = kmalloc(sizeof(*entry), STP_ALLOC_FLAGS);
 #endif
 	return entry;
 }
 
-// __stp_tf_vma_release_entry(): Frees an entry.
+// __stp_tf_vma_put_entry(): Put a specified number of references on the entry.
 static void
-__stp_tf_vma_release_entry(struct __stp_tf_vma_entry *entry)
+__stp_tf_vma_put_entry(struct __stp_tf_vma_bucket *bucket,
+		       struct __stp_tf_vma_entry *entry, int count)
 {
-	_stp_kfree (entry);
+	unsigned long flags;
+	int old;
+
+	// We must atomically subtract only if the refcount is non-zero, as well
+	// as check to see if the new refcount is zero, in which case we should
+	// free the entry.
+	old = atomic_fetch_add_unless(&entry->refcount, -count, 0);
+	if (old - count)
+		return;
+
+	stp_spin_lock_irqsave(&bucket->lock, flags);
+	hlist_del_rcu(&entry->hlist);
+	stp_spin_unlock_irqrestore(&bucket->lock, flags);
+
+	kfree_rcu(entry, rcu);
 }
 
 // stap_initialize_vma_map():  Initialize the free list.  Grabs the
@@ -77,145 +115,118 @@ __stp_tf_vma_release_entry(struct __stp_tf_vma_entry *entry)
 static int
 stap_initialize_vma_map(void)
 {
-	size_t size = sizeof(struct hlist_head) * __STP_TF_TABLE_SIZE;
-	struct hlist_head *map = (struct hlist_head *) _stp_kzalloc_gfp(size,
-							STP_ALLOC_SLEEP_FLAGS);
-	if (map == NULL)
+	struct __stp_tf_vma_bucket *buckets;
+	int i;
+
+	buckets = _stp_kmalloc_gfp(sizeof(*buckets) * __STP_TF_TABLE_SIZE,
+				   STP_ALLOC_SLEEP_FLAGS);
+	if (!buckets)
 		return -ENOMEM;
 
-	__stp_tf_vma_map = map;
+	for (i = 0; i < __STP_TF_TABLE_SIZE; i++) {
+		struct __stp_tf_vma_bucket *bucket = &buckets[i];
+
+		INIT_HLIST_HEAD(&bucket->head);
+		stp_spin_lock_init(&bucket->lock);
+	}
+
+	__stp_tf_vma_map = buckets;
 	return 0;
 }
 
 // stap_destroy_vma_map(): Unconditionally destroys vma entries.
-// Nothing should be using it anymore. Doesn't lock anything and just
-// frees all items.
+// Nothing should be using it anymore.
 static void
 stap_destroy_vma_map(void)
 {
-	if (__stp_tf_vma_map != NULL) {
-		int i;
-		for (i = 0; i < __STP_TF_TABLE_SIZE; i++) {
-			struct hlist_head *head = &__stp_tf_vma_map[i];
-			struct hlist_node *node;
-			struct hlist_node *n;
-			struct __stp_tf_vma_entry *entry = NULL;
+	int i;
 
-			if (hlist_empty(head))
-				continue;
+	if (!__stp_tf_vma_map)
+		return;
 
-		        stap_hlist_for_each_entry_safe(entry, node, n, head, hlist) {
-				hlist_del(&entry->hlist);
-				__stp_tf_vma_release_entry(entry);
-			}
-		}
-		_stp_kfree(__stp_tf_vma_map);
+	for (i = 0; i < __STP_TF_TABLE_SIZE; i++) {
+		struct __stp_tf_vma_bucket *bucket = &__stp_tf_vma_map[i];
+		struct __stp_tf_vma_entry *entry;
+		struct hlist_node *node;
+
+		rcu_read_lock();
+		stap_hlist_for_each_entry_rcu(entry, node, &bucket->head, hlist)
+			__stp_tf_vma_put_entry(bucket, entry, 1);
+		rcu_read_unlock();
 	}
+
+	_stp_kfree(__stp_tf_vma_map);
 }
 
-
-// __stp_tf_vma_map_hash(): Compute the vma map hash.
-static inline u32
-__stp_tf_vma_map_hash(struct task_struct *tsk)
+// __stp_tf_vma_bucket(): Get the bucket that should contain the task.
+static inline struct __stp_tf_vma_bucket *
+__stp_tf_get_vma_bucket(struct task_struct *tsk)
 {
-    return (jhash_1word(tsk->pid, 0) & (__STP_TF_TABLE_SIZE - 1));
+	return &__stp_tf_vma_map[hash_ptr(tsk, __STP_TF_HASH_BITS)];
 }
 
-// Get vma_entry if the vma is present in the vma map hash table.
-// Returns NULL if not present.  The __stp_tf_vma_lock must be read locked
-// before calling this function.
-static struct __stp_tf_vma_entry *
-__stp_tf_get_vma_map_entry_internal(struct task_struct *tsk,
-				    unsigned long vm_start)
-{
-	struct hlist_head *head;
-	struct hlist_node *node;
-	struct __stp_tf_vma_entry *entry;
-
-	head = &__stp_tf_vma_map[__stp_tf_vma_map_hash(tsk)];
-	stap_hlist_for_each_entry(entry, node, head, hlist) {
-		if (tsk->pid == entry->pid
-		    && vm_start == entry->vm_start) {
-			return entry;
-		}
-	}
-	return NULL;
-}
-
-// Get vma_entry if the vma with the given vm_end is present in the vma map
-// hash table for the tsk.  Returns NULL if not present.
-// The __stp_tf_vma_lock must be read locked before calling this function.
-static struct __stp_tf_vma_entry *
-__stp_tf_get_vma_map_entry_end_internal(struct task_struct *tsk,
-					unsigned long vm_end)
-{
-	struct hlist_head *head;
-	struct hlist_node *node;
-	struct __stp_tf_vma_entry *entry;
-
-	head = &__stp_tf_vma_map[__stp_tf_vma_map_hash(tsk)];
-	stap_hlist_for_each_entry(entry, node, head, hlist) {
-		if (tsk->pid == entry->pid
-		    && vm_end == entry->vm_end) {
-			return entry;
-		}
-	}
-	return NULL;
-}
-
+// Get vma entry if the vma is present in the vma map hash table satisfying the
+// given condition.
+#define __stp_tf_get_vma_map(bucket, tsk, acquire, condition)			\
+({										\
+	struct __stp_tf_vma_entry *entry, *found = NULL;			\
+	struct hlist_node *node;						\
+										\
+	rcu_read_lock();							\
+	stap_hlist_for_each_entry_rcu(entry, node, &bucket->head, hlist) {	\
+		if (entry->tsk == tsk && (condition) &&				\
+		    atomic_add_unless(&entry->refcount, acquire, 0)) {		\
+			found = entry;						\
+			break;							\
+		}								\
+	}									\
+	rcu_read_unlock();							\
+										\
+	found;									\
+})
 
 // Add the vma info to the vma map hash table.
 // Caller is responsible for name lifetime.
 // Can allocate memory, so needs to be called
 // only from user context.
 static int
-stap_add_vma_map_info(struct task_struct *tsk,
-		      unsigned long vm_start, unsigned long vm_end,
-		      const char *path, void *user)
+stap_add_vma_map_info(struct task_struct *tsk, unsigned long vm_start,
+		      unsigned long vm_end, const char *path, void *user)
 {
-	struct hlist_head *head;
-	struct hlist_node *node;
+	struct __stp_tf_vma_bucket *bucket = __stp_tf_get_vma_bucket(tsk);
 	struct __stp_tf_vma_entry *entry;
-	struct __stp_tf_vma_entry *new_entry;
+	struct hlist_node *node;
 	unsigned long flags;
+	size_t path_len;
 
-	// Take a write lock, since we are most likely going to write
-	// after reading. But reserve a new entry first outside the lock.
-	new_entry = __stp_tf_vma_new_entry();
-	stp_write_lock_irqsave(&__stp_tf_vma_lock, flags);
-	entry = __stp_tf_get_vma_map_entry_internal(tsk, vm_start);
-	if (entry != NULL) {
-		stp_write_unlock_irqrestore(&__stp_tf_vma_lock, flags);
-		if (new_entry)
-			__stp_tf_vma_release_entry(new_entry);
-		return -EBUSY;	/* Already there */
-	}
+	// Check if the entry already exists
+	if (__stp_tf_get_vma_map(bucket, tsk, 0, entry->vm_start == vm_start))
+		return -EEXIST;
 
-	if (!new_entry) {
-		stp_write_unlock_irqrestore(&__stp_tf_vma_lock, flags);
+	entry = __stp_tf_vma_new_entry();
+	if (!entry)
 		return -ENOMEM;
-	}
 
-	// Fill in the info
-	entry = new_entry;
-	entry->pid = tsk->pid;
+	// Fill in the new entry
+	entry->refcount = (atomic_t)ATOMIC_INIT(1);
+	entry->tsk = tsk;
 	entry->vm_start = vm_start;
 	entry->vm_end = vm_end;
-        if (strlen(path) >= TASK_FINDER_VMA_ENTRY_PATHLEN-3)
-          {
-            strlcpy (entry->path, "...", TASK_FINDER_VMA_ENTRY_PATHLEN);
-            strlcpy (entry->path+3, &path[strlen(path)-TASK_FINDER_VMA_ENTRY_PATHLEN+4],
-                     TASK_FINDER_VMA_ENTRY_PATHLEN-3);
-          }
-        else
-          {
-            strlcpy (entry->path, path, TASK_FINDER_VMA_ENTRY_PATHLEN);
-          }
 	entry->user = user;
 
-	head = &__stp_tf_vma_map[__stp_tf_vma_map_hash(tsk)];
-	hlist_add_head(&entry->hlist, head);
-	stp_write_unlock_irqrestore(&__stp_tf_vma_lock, flags);
+	path_len = strlen(path);
+	if (path_len >= TASK_FINDER_VMA_ENTRY_PATHLEN - 3) {
+		strlcpy(entry->path, "...", TASK_FINDER_VMA_ENTRY_PATHLEN);
+		strlcpy(entry->path + 3,
+			&path[path_len - TASK_FINDER_VMA_ENTRY_PATHLEN + 4],
+			TASK_FINDER_VMA_ENTRY_PATHLEN - 3);
+	} else {
+		strlcpy(entry->path, path, TASK_FINDER_VMA_ENTRY_PATHLEN);
+	}
+
+	stp_spin_lock_irqsave(&bucket->lock, flags);
+	hlist_add_head_rcu(&entry->hlist, &bucket->head);
+	stp_spin_unlock_irqrestore(&bucket->lock, flags);
 	return 0;
 }
 
@@ -224,26 +235,19 @@ stap_add_vma_map_info(struct task_struct *tsk,
 // task. Returns zero on success, -ESRCH if no existing matching entry could
 // be found.
 static int
-stap_extend_vma_map_info(struct task_struct *tsk,
-			 unsigned long vm_start, unsigned long vm_end)
+stap_extend_vma_map_info(struct task_struct *tsk, unsigned long vm_start,
+			 unsigned long vm_end)
 {
-	struct hlist_head *head;
-	struct hlist_node *node;
+	struct __stp_tf_vma_bucket *bucket = __stp_tf_get_vma_bucket(tsk);
 	struct __stp_tf_vma_entry *entry;
 
-	unsigned long flags;
-	int res = -ESRCH; // Entry not there or doesn't match.
+	entry = __stp_tf_get_vma_map(bucket, tsk, 1, entry->vm_end == vm_start);
+	if (!entry)
+		return -ESRCH;
 
-	// Take a write lock, since we are most likely going to write
-	// to the entry after reading, if its vm_end matches our vm_start.
-	stp_write_lock_irqsave(&__stp_tf_vma_lock, flags);
-	entry = __stp_tf_get_vma_map_entry_end_internal(tsk, vm_start);
-	if (entry != NULL) {
-		entry->vm_end = vm_end;
-		res = 0;
-	}
-	stp_write_unlock_irqrestore(&__stp_tf_vma_lock, flags);
-	return res;
+	entry->vm_end = vm_end;
+	__stp_tf_vma_put_entry(bucket, entry, 1);
+	return 0;
 }
 
 
@@ -252,128 +256,95 @@ stap_extend_vma_map_info(struct task_struct *tsk,
 static int
 stap_remove_vma_map_info(struct task_struct *tsk, unsigned long vm_start)
 {
-	struct hlist_head *head;
-	struct hlist_node *node;
+	struct __stp_tf_vma_bucket *bucket = __stp_tf_get_vma_bucket(tsk);
 	struct __stp_tf_vma_entry *entry;
-	int rc = -ESRCH;
 
-	// Take a write lock since we are most likely going to delete
-	// after reading.
-	unsigned long flags;
-	stp_write_lock_irqsave(&__stp_tf_vma_lock, flags);
-	entry = __stp_tf_get_vma_map_entry_internal(tsk, vm_start);
-	if (entry != NULL) {
-		hlist_del(&entry->hlist);
-		__stp_tf_vma_release_entry(entry);
-                rc = 0;
-	}
-	stp_write_unlock_irqrestore(&__stp_tf_vma_lock, flags);
-	return rc;
+	entry = __stp_tf_get_vma_map(bucket, tsk, 1, entry->vm_start == vm_start);
+	if (!entry)
+		return -ESRCH;
+
+	// Put two references: one for the reference we just got,
+	// and another to free the entry.
+	__stp_tf_vma_put_entry(bucket, entry, 2);
+	return 0;
 }
 
 // Finds vma info if the vma is present in the vma map hash table for
 // a given task and address (between vm_start and vm_end).
-// Returns -ESRCH if not present.  The __stp_tf_vma_lock must *not* be
-// locked before calling this function.
+// Returns -ESRCH if not present.
 static int
 stap_find_vma_map_info(struct task_struct *tsk, unsigned long addr,
 		       unsigned long *vm_start, unsigned long *vm_end,
 		       const char **path, void **user)
 {
-	struct hlist_head *head;
-	struct hlist_node *node;
+	struct __stp_tf_vma_bucket *bucket;
 	struct __stp_tf_vma_entry *entry;
-	struct __stp_tf_vma_entry *found_entry = NULL;
-	int rc = -ESRCH;
-	unsigned long flags;
 
-	if (__stp_tf_vma_map == NULL)
-		return rc;
+	if (!__stp_tf_vma_map)
+		return -ESRCH;
 
-	stp_read_lock_irqsave(&__stp_tf_vma_lock, flags);
-	head = &__stp_tf_vma_map[__stp_tf_vma_map_hash(tsk)];
-	stap_hlist_for_each_entry(entry, node, head, hlist) {
-		if (tsk->pid == entry->pid
-		    && addr >= entry->vm_start
-		    && addr < entry->vm_end) {
-			found_entry = entry;
-			break;
-		}
-	}
-	if (found_entry != NULL) {
-		if (vm_start != NULL)
-			*vm_start = found_entry->vm_start;
-		if (vm_end != NULL)
-			*vm_end = found_entry->vm_end;
-		if (path != NULL)
-			*path = found_entry->path;
-		if (user != NULL)
-			*user = found_entry->user;
-		rc = 0;
-	}
-	stp_read_unlock_irqrestore(&__stp_tf_vma_lock, flags);
-	return rc;
+	bucket = __stp_tf_get_vma_bucket(tsk);
+	entry = __stp_tf_get_vma_map(bucket, tsk, 1, addr >= entry->vm_start &&
+				     addr < entry->vm_end);
+	if (!entry)
+		return -ESRCH;
+
+	if (vm_start)
+		*vm_start = entry->vm_start;
+	if (vm_end)
+		*vm_end = entry->vm_end;
+	if (path)
+		*path = entry->path;
+	if (user)
+		*user = entry->user;
+
+	__stp_tf_vma_put_entry(bucket, entry, 1);
+	return 0;
 }
 
 // Finds vma info if the vma is present in the vma map hash table for
 // a given task with the given user handle.
-// Returns -ESRCH if not present.  The __stp_tf_vma_lock must *not* be
-// locked before calling this function.
+// Returns -ESRCH if not present.
 static int
 stap_find_vma_map_info_user(struct task_struct *tsk, void *user,
 			    unsigned long *vm_start, unsigned long *vm_end,
 			    const char **path)
 {
-	struct hlist_head *head;
-	struct hlist_node *node;
+	struct __stp_tf_vma_bucket *bucket;
 	struct __stp_tf_vma_entry *entry;
-	struct __stp_tf_vma_entry *found_entry = NULL;
-	int rc = -ESRCH;
-	unsigned long flags;
 
-	if (__stp_tf_vma_map == NULL)
-		return rc;
+	if (!__stp_tf_vma_map)
+		return -ESRCH;
 
-	stp_read_lock_irqsave(&__stp_tf_vma_lock, flags);
-	head = &__stp_tf_vma_map[__stp_tf_vma_map_hash(tsk)];
-	stap_hlist_for_each_entry(entry, node, head, hlist) {
-		if (tsk->pid == entry->pid
-		    && user == entry->user) {
-			found_entry = entry;
-			break;
-		}
-	}
-	if (found_entry != NULL) {
-		if (vm_start != NULL)
-			*vm_start = found_entry->vm_start;
-		if (vm_end != NULL)
-			*vm_end = found_entry->vm_end;
-		if (path != NULL)
-			*path = found_entry->path;
-		rc = 0;
-	}
-	stp_read_unlock_irqrestore(&__stp_tf_vma_lock, flags);
-	return rc;
+	bucket = __stp_tf_get_vma_bucket(tsk);
+	entry = __stp_tf_get_vma_map(bucket, tsk, 1, entry->user == user);
+	if (!entry)
+		return -ESRCH;
+
+	if (vm_start)
+		*vm_start = entry->vm_start;
+	if (vm_end)
+		*vm_end = entry->vm_end;
+	if (path)
+		*path = entry->path;
+
+	__stp_tf_vma_put_entry(bucket, entry, 1);
+	return 0;
 }
 
 static int
 stap_drop_vma_maps(struct task_struct *tsk)
 {
-	struct hlist_head *head;
-	struct hlist_node *node;
-	struct hlist_node *n;
+	struct __stp_tf_vma_bucket *bucket = __stp_tf_get_vma_bucket(tsk);
 	struct __stp_tf_vma_entry *entry;
+	struct hlist_node *node;
 
-	unsigned long flags;
-	stp_write_lock_irqsave(&__stp_tf_vma_lock, flags);
-	head = &__stp_tf_vma_map[__stp_tf_vma_map_hash(tsk)];
-        stap_hlist_for_each_entry_safe(entry, node, n, head, hlist) {
-            if (tsk->pid == entry->pid) {
-		    hlist_del(&entry->hlist);
-		    __stp_tf_vma_release_entry(entry);
-            }
-        }
-	stp_write_unlock_irqrestore(&__stp_tf_vma_lock, flags);
+	rcu_read_lock();
+	stap_hlist_for_each_entry_rcu(entry, node, &bucket->head, hlist) {
+		if (entry->tsk == tsk)
+			__stp_tf_vma_put_entry(bucket, entry, 1);
+	}
+	rcu_read_unlock();
 	return 0;
 }
 
