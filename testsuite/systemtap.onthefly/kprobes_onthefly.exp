@@ -137,8 +137,10 @@ proc make_script {SUBTEST ENABLED MAXTOGGLES TIMER} {
    # with 'h'.
    #
    # XXX: Also skip lock:lock_* tracepoints due to issues on recent rawhide.
+   # TODOXXX: Recent ppc64 also has issues with one of the tracepoints under
+   # 'm'. Needs further investigation.
    if {[string match ppc* $::tcl_platform(machine)]} {
-      set kernel_trace {kernel.trace("[a-gi-km-z]*")}
+      set kernel_trace {kernel.trace("[a-gi-kn-z]*")}
    } else {
       set kernel_trace {kernel.trace("[a-km-z]*")}
    }
