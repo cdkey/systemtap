@@ -35,7 +35,9 @@ static inline int atomic_fetch_add_unless(atomic_t *v, int a, int u)
 }
 #endif
 
-#define __STP_TF_HASH_BITS 4
+#ifndef __STP_TF_HASH_BITS
+#define __STP_TF_HASH_BITS 8
+#endif
 #define __STP_TF_TABLE_SIZE (1 << __STP_TF_HASH_BITS)
 
 #ifndef TASK_FINDER_VMA_ENTRY_PATHLEN
