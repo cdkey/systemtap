@@ -162,23 +162,17 @@ private global tls_module = 0
 
 // Find the module by matching the probe name to the link_map name
 
-@__private30 function set_tls_module_by_name ()
+@__private30 function set_tls_module_by_name (tls_module:string)
 {
-  tls_pp = pp()
-  probe_addr = addr()
-  proc = strpos(tls_pp, "process(\"") + 9;
-  for (lpp = proc; lpp > 8 && lpp < strlen (tls_pp); lpp++)
-     if (stringat(tls_pp, lpp) == 0x22) {  // '"'
-	matched_proc = basename(substr(tls_pp, proc, lpp - 9))
-	break;
-     }
+  matched_proc = basename(tls_module);
 
+  if (tls_debug)
+    printf("Looking for %s in link_map\n", matched_proc);
   foreach (lm in tls_link_map_name) {
     if (lm==0) continue;
     if (regex_module_compare (matched_proc, tls_link_map_name[lm])) {
        if (tls_debug)
-	  printf("Name Match: %s probe_address=%#lx\n",
-		 tls_link_map_name[lm], probe_addr)
+	 printf("Name Match: %s \n", tls_link_map_name[lm]);
        return lm;
     }
   }
@@ -192,7 +186,7 @@ private global tls_module = 0
  * Description: Called for DW_OP_GNU_push_tls_address relocation from loc2stap.css::location_context::translate
  */
 
-function __push_tls_address (tls_var_offset:long) 
+function __push_tls_address (tls_var_offset:long, tls_module:string) 
 {
 %( arch == "powerpc" %?
    // It seems the value of r13 cannot be dependably relied on in get_thread_context_pointer
@@ -204,7 +198,7 @@ function __push_tls_address (tls_var_offset:long)
   if (tls_debug > 1)
     printf ("tcbhead=%#lx/%d\n", tcbhead, tcbhead);
   setup_link_map ();
-  module = set_tls_module_by_name ();
+  module = set_tls_module_by_name (tls_module);
   if (module >= 0) 
     {
       // dtv[-1] is module count

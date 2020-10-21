@@ -3,7 +3,11 @@
 #include <stdlib.h>
 #include <alloca.h>
 
+#if defined EXTERN_TLS
+__thread unsigned long tls = 99; 
+#else
 static __thread unsigned long tls = 99; 
+#endif
 
 void *increase_tls(void *arg);
 

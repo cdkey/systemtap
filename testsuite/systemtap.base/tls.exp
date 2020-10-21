@@ -1,23 +1,64 @@
 set test "tls"
 set stap_path $env(SYSTEMTAP_PATH)/stap
 
-# Check tls use in .exe and .so
+# exp_internal 1
 
 set so_flags "additional_flags=-shared"
 set so_flags "$so_flags additional_flags=-g"
 set so_flags "$so_flags additional_flags=-fPIC"
-set so_flags "$so_flags additional_flags=-DNO_MAIN"
-set so_sopath "[pwd]/libtls1.so"
-set so_exepath "[pwd]/tls1.x"
-set res0 [target_compile $srcdir/$subdir/tls1_.c $so_sopath \
-	      executable $so_flags ]
 set x_flags "additional_flags=-Wl,-rpath,[pwd]"
 set x_flags "$x_flags additional_flags=-g"
-set x_flags "$x_flags additional_flags=-L[pwd] additional_flags=-ltls1"
+set x_flags "$x_flags additional_flags=-fPIC"
 set x_flags "$x_flags additional_flags=-lpthread"
-set x_flags "$x_flags additional_flags=-DONLY_MAIN"
-set res [target_compile $srcdir/$subdir/tls1.c $so_exepath \
-	     executable $x_flags ]
+
+# static tls variables
+
+set so1_sopath "[pwd]/libtls1.so"
+set res0 [target_compile $srcdir/$subdir/tls1_.c $so1_sopath \
+	      executable $so_flags ]
+set x1_flags "$x_flags additional_flags=-L[pwd] additional_flags=-ltls1"
+set x1_exepath "[pwd]/tls1.x"
+set res [target_compile $srcdir/$subdir/tls1.c $x1_exepath \
+	     executable $x1_flags ]
+if {$res0 != "" || $res != ""} {
+    fail "$test compiling tls1"
+    return
+} else {
+    pass "$test compiling tls1"
+}
+
+set ok 0
+spawn $stap_path -g -c $x1_exepath $srcdir/$subdir/tls1.stp $so1_sopath IGNORE
+expect {
+    -timeout 180
+    -re {In Stap.*: tls1=0x2 tls2=0x3} { incr ok; exp_continue }
+    -re {In Stap.*: tls1=0x3 tls2=0x4} { incr ok; exp_continue }
+    -re {In Stap.*: tls=99} { incr ok; exp_continue }
+    eof { }
+    }
+    catch {close}; catch {wait}
+if {$ok == 3} {
+    pass "$test local tls vars"
+} else {
+    fail "$test local tls vars ($ok)"
+}
+
+# extern tls variables
+
+set so2_sopath "[pwd]/libtls2.so"
+set so3_sopath "[pwd]/libtls3.so"
+set so2_flags "$so_flags additional_flags=-DEXTERN_TLS"
+
+set res0 [target_compile $srcdir/$subdir/tls1_.c $so2_sopath \
+	      executable $so2_flags ]
+set res1 [target_compile $srcdir/$subdir/tls2_.c $so3_sopath \
+	      executable $so2_flags ]
+set x2_flags "$x_flags additional_flags=-L[pwd] additional_flags=-ltls2"
+set x2_flags "$x2_flags additional_flags=-ltls3"
+set x2_flags "$x2_flags additional_flags=-DEXTERN_TLS"
+set x2_exepath "[pwd]/tls2.x"
+set res [target_compile $srcdir/$subdir/tls1.c $x2_exepath \
+	 executable $x2_flags ]
 if { $res0 != "" || $res != "" } {
     fail "$test compiling -shared"
     return
@@ -26,30 +67,55 @@ if { $res0 != "" || $res != "" } {
 }
 
 set ok 0
-spawn $stap_path -g -c $so_exepath $srcdir/$subdir/tls1.stp $so_sopath
+spawn $stap_path -g -c $x2_exepath $srcdir/$subdir/tls1.stp $so2_sopath $so3_sopath
 expect {
-    -re {In Stap: tls1=0x2 tls2=0x3} { incr ok; exp_continue }
-    -re {In Stap: tls1=0x3 tls2=0x4} { incr ok; exp_continue }
-    -re {In Stap: tls=99} { incr ok; exp_continue }
+    -timeout 180
+    -re {In Stap worker: tls1=0x2 tls2=0x3\r\n} { incr ok; exp_continue }
+    -re {In Stap worker: tls1=0x3 tls2=0x4\r\n} { incr ok; exp_continue }
+    -re {In Stap increase_tls: tls1=0x2 tls2=0x3\r\n} { incr ok; exp_continue }
+    -re {In Stap increase_tls: tls1=0x3 tls2=0x4\r\n} { incr ok; exp_continue }
     eof { }
     }
     catch {close}; catch {wait}
-if {$ok == 3} {
-    pass "$test tls vars"
+if {$ok == 4} {
+    pass "$test ext tls vars"
 } else {
-    fail "$test tls vars ($ok)"
+    fail "$test ext tls vars ($ok)"
 }
 
 # Check errno
 
-spawn $stap_path  -e "probe process(\"/lib64/libc.so.6\").function(\"*stat*\").return { printf(\"errno=%d %s\n\", @var(\"errno@errno.c\"),errno_str(@var(\"errno@errno.c\"))) }" -c "/usr/bin/ls /file/does/not/exist"
+set errno_exepath "[pwd]/tlserrno.x"
+set res [target_compile $srcdir/$subdir/tlserrno.c $errno_exepath \
+	     executable "-g" ]
+if {$res != ""} {
+    fail "$test compiling tlserrno"
+    return
+} else {
+    pass "$test compiling tls1errno"
+}
+
+spawn $stap_path  -e "probe process(\"/lib64/libc.so.6\").function(\"*stat*\").return { printf(\"errno=%d %s\\n\", @var(\"errno@errno.c\"),errno_str(@var(\"errno@errno.c\"))) }" -c "/usr/bin/ls /file/does/not/exist"
 expect {
+    -timeout 180
     -re {errno=2 (ENOENT)} { incr ok; exp_continue }
     eof { }
     }
     catch {close}; catch {wait}
-if {$ok == 3} {
+if {$ok >= 1} {
     pass "$test errno"
 } else {
     fail "$test errno ($ok)"
+}
+
+spawn $stap_path -e "probe process(\"tlserrno.x\").function(\"main\").return {println (\"In Stap errno=\",@errno)" -c $errno_exepath {
+    -timeout 180
+    -re {In Stap errno=2} { incr ok; exp_continue }
+    eof { }
+    }
+    catch {close}; catch {wait}
+if {$ok >= 1} {
+    pass "$test @errno"
+} else {
+    fail "$test @errno ($ok)"
 }

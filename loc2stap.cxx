@@ -698,6 +698,7 @@ location_context::translate (const Dwarf_Op *expr, const size_t len,
               fc->function = std::string("__push_tls_address");
               fc->synthetic = true;
               fc->args.push_back(addr);
+              fc->args.push_back(new literal_string(this->dw->module_name));
 	      PUSH(fc);
             }
             break;
