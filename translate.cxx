@@ -3961,8 +3961,9 @@ void c_unparser::visit_try_block (try_block *s)
   // NB: MAXACTION errors are not catchable and we should never clear the error
   // message below otherwise the source location in the message would
   // become inaccurate (always being the top-level try/catch statement's).
-  o->newline() << "if (unlikely (c->actionremaining <= 0)) goto out;";
-
+  if (!session->suppress_time_limits)
+    o->newline() << "if (unlikely (c->actionremaining <= 0)) goto out;";
+  
   if (s->catch_error_var)
     {
       var cev(getvar(s->catch_error_var->referent, s->catch_error_var->tok));
