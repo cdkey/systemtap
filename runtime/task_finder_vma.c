@@ -21,7 +21,7 @@ static inline bool atomic_try_cmpxchg(atomic_t *v, int *old, int new)
 }
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0)
+#ifndef STAPCONF_ATOMIC_FETCH_ADD_UNLESS
 static inline int atomic_fetch_add_unless(atomic_t *v, int a, int u)
 {
 	int c = atomic_read(v);
