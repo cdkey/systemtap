@@ -107,16 +107,24 @@ proc test_embedded_C { privilege test_fraction { transitive_test 0 } } {
 		continue
 	}
 
+
 	# Test calling the function. If successful, the stap rc will be 0.
 	if { $transitive_test } {
 	    set call [add_args $prototype]
-	    set cmd [concat [list stap -p2 $option -e "function foo() { $call } probe begin { foo() }"]]
+	    set cmd [concat [list stap -p2 $option -e] "'function foo() { $call } probe begin { foo() }'"]
 	} else {
 	    set call [add_args $prototype]
-	    set cmd [concat [list stap -p2 $option -e "probe begin { $call }"]]
+	    set cmd [concat [list stap -p2 $option -e] "'probe begin { $call }'"]
 	}
-	verbose -log "eval exec $cmd"
-	set rc [catch {eval exec $cmd} res_stap]
+        # XXX drop the pass2 standard output, ~800k lines in systemtap.log
+        # whereas standard error is kept for inspecting error messages
+        if {! [info exists env(SYSTEMTAP_SHOW_EMBEDDED_C)]} {
+            verbose -log "eval exec sh -c \"$cmd >/dev/null\""
+            set rc [catch {eval exec sh -c "\"$cmd >/dev/null\""} res_stap]
+        } else {
+            verbose -log "eval exec sh -c \"$cmd\""
+            set rc [catch {eval exec sh -c "\"$cmd\""} res_stap]
+        }
 	verbose -log $res_stap
 
 	# Look for a message saying that the function is not allowed
