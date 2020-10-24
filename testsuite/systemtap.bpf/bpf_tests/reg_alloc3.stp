@@ -1,4 +1,5 @@
 global flag = 1
+global seen
 probe begin {
 	printf("BEGIN\n")
 }
@@ -9,7 +10,11 @@ probe kernel.trace("sched_switch") {
 	y = 2
 	z = 3
 
-	printf("%d\n", $next_comm[0]);
+	//printf very verbose over 5s
+	//printf("%d\n", $next_comm[0]);
+	pid = $next_comm[0]
+	if (!seen[pid]) printf("seen %d\n", pid)
+	seen[pid] = 1
 
 	if (x != 1 || y != 2 || z != 3)
 		flag = 0
@@ -21,7 +26,7 @@ probe timer.s(5) {
 
 probe end {
 	if (flag)
-	        printf("END PASS\n")
+		printf("END PASS\n")
 	else
 		printf("END FAIL\n")
 }
