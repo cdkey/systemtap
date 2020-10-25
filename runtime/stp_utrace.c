@@ -105,7 +105,9 @@ struct utrace {
 	struct task_work report_work;
 };
 
-#define TASK_UTRACE_HASH_BITS 5
+#ifndef TASK_UTRACE_HASH_BITS
+#define TASK_UTRACE_HASH_BITS 8
+#endif
 #define TASK_UTRACE_TABLE_SIZE (1 << TASK_UTRACE_HASH_BITS)
 
 static struct hlist_head task_utrace_table[TASK_UTRACE_TABLE_SIZE];
