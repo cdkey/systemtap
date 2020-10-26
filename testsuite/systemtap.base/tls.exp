@@ -31,8 +31,7 @@ set ok 0
 spawn $stap_path -g -c $x1_exepath $srcdir/$subdir/tls1.stp $so1_sopath IGNORE
 expect {
     -timeout 180
-    -re {In Stap.*: tls1=0x2 tls2=0x3} { incr ok; exp_continue }
-    -re {In Stap.*: tls1=0x3 tls2=0x4} { incr ok; exp_continue }
+    -re {In Stap increase_tls: tls1=0x[23] tls2=0x[34]} { incr ok; exp_continue }
     -re {In Stap.*: tls=99} { incr ok; exp_continue }
     eof { }
     }
@@ -70,10 +69,8 @@ set ok 0
 spawn $stap_path -g -c $x2_exepath $srcdir/$subdir/tls1.stp $so2_sopath $so3_sopath
 expect {
     -timeout 180
-    -re {In Stap worker: tls1=0x2 tls2=0x3\r\n} { incr ok; exp_continue }
-    -re {In Stap worker: tls1=0x3 tls2=0x4\r\n} { incr ok; exp_continue }
-    -re {In Stap increase_tls: tls1=0x2 tls2=0x3\r\n} { incr ok; exp_continue }
-    -re {In Stap increase_tls: tls1=0x3 tls2=0x4\r\n} { incr ok; exp_continue }
+    -re {In Stap worker: tls1=0x[23] tls2=0x[34]\r\n} { incr ok; exp_continue }
+    -re {In Stap increase_tls: tls1=0x[23] tls2=0x[34]\r\n} { incr ok; exp_continue }
     eof { }
     }
     catch {close}; catch {wait}

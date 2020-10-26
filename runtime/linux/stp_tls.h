@@ -37,15 +37,4 @@ typedef union dtv
   struct dtv_pointer pointer;
 } dtv_t;
 
-// sysdeps/x86_64/dl-tls.h
-
-// Thus a pointer to a TLS variable defined in a module id `ti_module`
-// would be *(dtv[tls_index.ti_module].pointer + tls_index.ti_offset);
-typedef unsigned long uint64_t;
-typedef struct
-{
-  uint64_t ti_module;
-  uint64_t ti_offset;
-} tls_index;
-
 #endif /* _STAPLINUX_TLS_H_ */

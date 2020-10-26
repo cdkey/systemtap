@@ -6,6 +6,38 @@
 # published by the Free Software Foundation.
 # Reference: "ELF Handling For Thread-Local Storage" by Ulrich Drepper
 
+/*
+ * TCB Pointer points to the thread control block.  dtv points to the DTV
+ * array.  DTV[1]-DTV[N]  point to tls entries for module I from the link
+ * map.  DTV[1] is the main executable.  The dtv val points to the tls
+ * entry where the tls variable value is located.  The tls variable value
+ * is also located a fixed offset from the tcbhead so if relocations are
+ * simple enough a compiler can generate a direct load.  Complicated
+ * relocations may result in a compiler calling a runtime routine
+ * __tls_get_addr which uses the DTV. 
+ * 
+ * 			TCB Pointer
+ * 			     |
+ * 			     V
+ * TLS			struct tcbhead
+ * +---------------------+	+----------------+ 
+ * |OFFSET|OFFSET|OFFSET | | void *tcb	 |
+ * |  2   |  1   |  0    | | dtv_t *dtv	 | --+
+ * +---------------------+	+----------------+   |
+ * 		 ^-------------------+	     |
+ *     <----------------------------------------+
+ *      +----------------------------+  | 
+ *  DTV |length|gen|dtv[1]|dtv[2]|...|  |
+ *      +----------------------------+  |
+ * 	    dtv[n] |		     |
+ *         +---------------------+      |
+ * 	|unsigned long counter|	     |
+ * 	|struct dtv_pointer { |	     |
+ * 	|  void *val	      |->----+
+ * 	|  void *to_free}     |
+ * 	+---------------------|
+ */ 
+
 global tls_debug = 0
 private global tls_link_map_name
 private global tls_module = 0
@@ -25,15 +57,11 @@ private global tls_module = 0
   STAP_RETVALUE = fs;
 }
 # elif defined __s390x__
-// untested
 {
   unsigned long tlsval;
-  asm ("ear %0,%%a0" : "=r" (tlsval));
-  asm ("sllg %0,%0,32" : "=r" (tlsval));
-  asm ("ear %0,%%a1" : "=r" (tlsval));
-  # ear %r1,%a0
-  # sllg %r1,%r1,32
-  # ear %r1,%a1
+  asm volatile ("ear %0,%%a0" : "=r" (tlsval));
+  asm volatile ("sllg %0,%0,32" : "=r" (tlsval));
+  asm volatile ("ear %0,%%a1" : "=r" (tlsval));
   STAP_RETVALUE = tlsval;
 }
 # elif defined __aarch64__
@@ -99,13 +127,17 @@ private global tls_module = 0
 %)
 %( arch == "powerpc" %?
   l_map_count = @var("_rtld_global","/usr/lib64/ld64.so.2")->_dl_nns
-  // TODO Do namespaces need to be supported? assume [0]
   l_map = @var("_rtld_global","/usr/lib64/ld64.so.2")->_dl_ns[0]->_ns_loaded;
-  if (tls_debug)
-    println ("modid=", @var("_rtld_global","/usr/lib64/ld64.so.2")->_dl_ns[0]->_ns_loaded->l_tls_modid)
   if (tls_debug > 1) 
     println ("l_map=", @var("_rtld_global","/usr/lib64/ld64.so.2")->_dl_ns[0]->_ns_loaded$);
 %)
+%( arch == "s390" %?
+  l_map_count = @var("_rtld_global","/usr/lib64/ld64.so.1")->_dl_nns
+  l_map = @var("_rtld_global","/usr/lib64/ld64.so.1")->_dl_ns[0]->_ns_loaded;
+  if (tls_debug > 1) 
+    println ("l_map=", @var("_rtld_global","/usr/lib64/ld64.so.1")->_dl_ns[0]->_ns_loaded$);
+%)
+     
   while (l_map)
     {
      l_name = user_string(l_map->l_name);
@@ -205,8 +237,6 @@ function __push_tls_address (tls_var_offset:long, tls_module:string)
       // dtv[0] is generation count
       // dtv[1] is module[0] info, the main executable
       // dtv[2..n] is module info for dependent shared objects
-      dtv$counter = @cast(tcbhead, "tcbhead", "<linux/stp_tls.h>")->dtv[-1]->counter;
-      dtv$gen = @cast(tcbhead, "tcbhead", "<linux/stp_tls.h>")->dtv[0]->counter;
       dtv1$pointer$val = @cast(tcbhead, "tcbhead", "<linux/stp_tls.h>")->dtv[module]->pointer->val;
       return dtv1$pointer$val + tls_var_offset;
     }
