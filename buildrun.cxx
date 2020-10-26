@@ -421,6 +421,7 @@ compile_pass (systemtap_session& s)
   output_exportconf(s, o2, "PDE_DATA", "STAPCONF_PDE_DATA");
   output_autoconf(s, o, cs, "autoconf-module-sect-attrs.c", "STAPCONF_MODULE_SECT_ATTRS", NULL);
   output_exportconf(s, o2, "kernel_read_file_from_path", "STAPCONF_KERNEL_READ_FILE_FROM_PATH");
+  output_autoconf(s, o, cs, "autoconf-kernel_read_file_from_path-offset.c", "STAPCONF_KERNEL_READ_FILE_FROM_PATH_OFFSET", NULL);
   output_autoconf(s, o, cs, "autoconf-utrace-via-tracepoints.c", "STAPCONF_UTRACE_VIA_TRACEPOINTS", NULL);
   output_autoconf(s, o, cs, "autoconf-task_work-struct.c", "STAPCONF_TASK_WORK_STRUCT", NULL);
   output_autoconf(s, o, cs, "autoconf-vm-area-pte.c", "STAPCONF_VM_AREA_PTE", NULL);

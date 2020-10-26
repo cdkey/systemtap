@@ -14,6 +14,12 @@
 #include "../sym.h"
 #include "relay_compat.h"
 
+#ifdef STAPCONF_KERNEL_READ_FILE_FROM_PATH_OFFSET
+// XXX kernel commit b89999d004931ab2e51236 for v5.10-rc1 split
+// kernel_read_file_* functions into a separate header.
+#include <linux/kernel_read_file.h>
+#endif
+
 #ifndef KERN_CONT
 #define KERN_CONT	""
 #endif
@@ -158,15 +164,26 @@ read_sect_sysfs(const char* module, const char *section)
         int rc;
         unsigned long addr = 0;
         void *buffer = NULL;
+#ifdef STAPCONF_KERNEL_READ_FILE_FROM_PATH_OFFSET
+        size_t size;
+#else
         loff_t size;
-        
+#endif
+
         if (pathname == 0)
                 goto out;
         rc = snprintf(pathname, PATH_MAX, "/sys/module/%s/sections/%s", module, section);
         if (rc >= PATH_MAX)
                 goto out1;
+#ifdef STAPCONF_KERNEL_READ_FILE_FROM_PATH_OFFSET
+        rc = kernel_read_file_from_path(pathname, 0 /* offset */,
+                                        &buffer, 64 /* max. bytes expected */,
+                                        &size /* file_size */,
+                                        READING_UNKNOWN);
+#else
         rc = kernel_read_file_from_path(pathname, &buffer, &size, 64 /* max. bytes expected */,
                                         READING_UNKNOWN);
+#endif
         if (rc <= 0)
                 goto out1;
         rc = kstrtoul(buffer, 0, &addr);
