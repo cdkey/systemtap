@@ -4,18 +4,34 @@ PATH=/usr/sbin:/sbin:/usr/bin:/bin:$PATH; export PATH
 
 check_error() { if test $1 != 0; then printf "\n$2\n"; exit $1; fi }
 
-prep_rpm_based() {
-# uname -r can produce different kinds of output:
-# 2.6.32-30.el6.x86_64 (no variant, but including ".arch")
-# 2.6.18-194.3.1.el5debug ("variant", without dot, no arch)
-# 2.6.33.4-95.fc13.i686.PAE (".arch.variant", two dots)
-# 3.18.6-100.fc20.i686+PAE (".arch+variant", dot, plus)
+
 if [ "$#" -lt 1 ]; then
     UNAME=`uname -r` # determine the kernel running on the machine
 else
     UNAME=$1 #user passed in uname value
 fi
 UNAME=`echo $UNAME | sed "s/ //"` #strip out any whitespace
+echo "Configuring for kernel release $UNAME"
+
+
+# See if the configured debuginfod
+DEBUGINFOD=0
+prep_debuginfod() {
+    # choose a part of the kernel that elfutils 0.181 can decode
+    vdso=`ls -1 /lib/modules/$UNAME/vdso/*.so 2>/dev/null | head -1` # vdso32.so and/or vdso64.so or whatever
+    if debuginfod-find debuginfo "$vdso" > /dev/null 2>&1; then
+        DEBUGINFOD=1
+        echo "Will use debuginfod DEBUGINFOD_URLS=$DEBUGINFOD_URLS to fetch debuginfo."
+    fi
+}
+
+
+prep_rpm_based() {
+# uname -r can produce different kinds of output:
+# 2.6.32-30.el6.x86_64 (no variant, but including ".arch")
+# 2.6.18-194.3.1.el5debug ("variant", without dot, no arch)
+# 2.6.33.4-95.fc13.i686.PAE (".arch.variant", two dots)
+# 3.18.6-100.fc20.i686+PAE (".arch+variant", dot, plus)
 KERNEL="kernel"
 for VARIANT in debug kdump PAE xen; do
   # strip out ".variant" or else "+variant" or else "variant" at end.
@@ -37,8 +53,10 @@ else
 fi
 CANDIDATES="$KERNEL-$KERN_REV.$KERN_ARCH \
   $KERNEL-devel-$KERN_REV.$KERN_ARCH \
-  $DI_DEPS \
-  $KERNEL-debuginfo-$KERN_REV.$KERN_ARCH"
+  $DI_DEPS"
+if [ "$DEBUGINFOD" -eq 0 ]; then # add debuginfo search if not already 
+    CANDIDATES="$CANDIDATES $KERNEL-debuginfo-$KERN_REV.$KERN_ARCH"
+fi
 NEEDED=`rpm --qf "%{name}-%{version}-%{release}.%{arch}\n" \
     -q $CANDIDATES | grep "is not installed" | awk '{print $2}'`
 if [ "$NEEDED" != "" ]; then
@@ -55,6 +73,8 @@ if [ "$NEEDED" != "" ]; then
     fi
 fi
 }
+
+
 
 prep_deb_based() {
 if [ $# -ne 0 ]; then
@@ -93,7 +113,9 @@ esac
     echo "make >= 0"
     echo "linux-image-$ABINAME = $VERSION"
     echo "linux-headers-$ABINAME = $VERSION"
-	echo "linux-image-$ABINAME-dbgsym = $VERSION"
+    if [ "$DEBUGINFOD" -eq 0 ]; then # add dbgsym search if not already 
+        echo "linux-image-$ABINAME-dbgsym = $VERSION"
+    fi
 ) | while read package relation requiredversion; do
     installedversion="$(dpkg-query -W "$package" 2> /dev/null | cut -f 2)"
     if [ "$installedversion" = "" ]; then
@@ -130,6 +152,8 @@ if [ "$user" != "root" ]; then
 fi
 }
 
+
+prep_debuginfod "$@"
 DISTRO="$(lsb_release --id --short 2> /dev/null)"
 case "$DISTRO" in
 Debian|Ubuntu)

@@ -1,5 +1,8 @@
 * What's new in version 4.4
 
+- stap-prep now avoids downloading kernel debuginfo if a successful
+  connection to debuginfod server is made. 
+
 - The locks required to protect concurrent access to global variables
   has been optimized with a "pushdown" algorithm, so that they span
   the smallest possible critical region.  Formerly, and with

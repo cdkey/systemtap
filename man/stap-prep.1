@@ -36,6 +36,11 @@ installing kernel headers, debug symbols and build tools that match
 the currently running kernel or optionally the kernel version given by
 the user.
 
+If the debuginfod\-find tool is installed and is able to fetch
+debuginfo for a kernel component, it is assumed to remain available
+later.  In this case, no debug symbols will be downloaded during
+stap\-prep.
+
 The exact behavior of stap\-prep may be customized by the
 distribution maintainers. It might for example only give suggestions
 and not actually install the required packages if that is difficult to
@@ -49,6 +54,7 @@ Please install linux-image-3.2.0-2-amd64-dbg
 
 .SH SEE ALSO
 .nh
+.BR http://sourceware.org/elfutils/Debuginfod.html
 .nf
 .IR stap (1)
 
