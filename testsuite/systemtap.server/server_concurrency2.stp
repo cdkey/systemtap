@@ -1,5 +1,5 @@
 
-probe module("[stu]*").function("*") {
+probe module("amd*").function("*") {
   printf("hello");
   exit();
 }

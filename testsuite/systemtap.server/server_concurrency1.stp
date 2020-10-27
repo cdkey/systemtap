@@ -1,5 +1,5 @@
 
-probe module("[a-c]*").function("*") {
+probe module("acpi*").function("*") {
   printf("hello");
   exit();
 }

@@ -1,5 +1,5 @@
 
-probe module("[j-l]*").function("*") {
+probe module("dm-*").function("*") {
   printf("hello");
   exit();
 }
