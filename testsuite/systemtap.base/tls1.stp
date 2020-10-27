@@ -1,0 +1,18 @@
+global probe_itw=0
+
+probe process(@1).function("increase_tls").label("stp_probe")
+{
+  printf("In Stap increase_tls: tls1=%#lx tls2=%#lx\n", @var("tls1"), @var("tls2")) 
+}
+
+%(@2 != "IGNORE" %?
+probe process(@2).function("increase_tls_worker").label("stp_probe")
+{
+  printf("In Stap worker: tls1=%#lx tls2=%#lx\n", @var("tls1",@1), @var("tls2",@1)) 
+}
+%)
+
+probe process("tls1.x").function("main").return
+{
+  printf("In Stap: tls=%d\n", @var("tls")) 
+}

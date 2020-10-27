@@ -1,5 +1,8 @@
 * What's new in version 4.4
 
+- Implicit thread local storage variables can now be accessed on
+  x86_64, ppc, and s390.
+
 - Replaced spinlocks with RCU locks in vma map's hash table lookups
   which reduces CPU time a lot when there are a lot of target
   processes and vma tracker is enabled.
