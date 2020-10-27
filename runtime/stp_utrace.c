@@ -86,6 +86,7 @@ struct utrace {
 	unsigned int death:1;	/* in utrace_report_death() now */
 	unsigned int reap:1;	/* release_task() has run */
 	unsigned int pending_attach:1;	/* need splice_attaching() */
+	unsigned int freed:1;   /* pending RCU free */
 
 	/* We need the '*_work_added' variables to be atomic so they
 	 * can be modified without locking the utrace struct. This is
@@ -103,6 +104,8 @@ struct utrace {
 
 	struct task_work resume_work;
 	struct task_work report_work;
+
+	struct rcu_head rcu;
 };
 
 #ifndef TASK_UTRACE_HASH_BITS
@@ -110,14 +113,12 @@ struct utrace {
 #endif
 #define TASK_UTRACE_TABLE_SIZE (1 << TASK_UTRACE_HASH_BITS)
 
-static struct hlist_head task_utrace_table[TASK_UTRACE_TABLE_SIZE];
-//DEFINE_MUTEX(task_utrace_mutex);      /* Protects task_utrace_table */
-static STP_DEFINE_SPINLOCK(task_utrace_lock); /* Protects task_utrace_table */
+struct utrace_bucket {
+	struct hlist_head head;
+	stp_spinlock_t lock;
+};
 
-/* Temporary storage for utrace structures that utrace_exit() has removed
-   from task_utrace_table prior to cleaning them up: */
-static HLIST_HEAD(utrace_cleanup_list);
-static DEFINE_SPINLOCK(utrace_cleanup_lock); /* Protects utrace_cleanup_list */
+static struct utrace_bucket task_utrace_table[TASK_UTRACE_TABLE_SIZE];
 
 /* Tracepoint reporting is delayed using task_work structures stored
    in the following linked list: */
@@ -341,7 +342,10 @@ static int utrace_init(void)
 
 	/* initialize the list heads */
 	for (i = 0; i < TASK_UTRACE_TABLE_SIZE; i++) {
-		INIT_HLIST_HEAD(&task_utrace_table[i]);
+		struct utrace_bucket *bucket = &task_utrace_table[i];
+
+		INIT_HLIST_HEAD(&bucket->head);
+		stp_spin_lock_init(&bucket->lock);
 	}
 
 #if !defined(STAPCONF_TRY_TO_WAKE_UP_EXPORTED) \
@@ -458,7 +462,7 @@ static int utrace_exit(void)
 	int i;
 	struct utrace *utrace;
 	struct hlist_head *head;
-	struct hlist_node *node, *node2;
+	struct hlist_node *node;
 	struct __stp_utrace_task_work *task_node, *task_node2;
 	unsigned long flags;
 
@@ -477,33 +481,23 @@ static int utrace_exit(void)
 	 * to be run. So, now would be a great time to actually free
 	 * everything. */
 
-	/* Since utrace->lock is an ordinary spinlock, we cannot
-           grab it within a task_utrace_lock section. Likewise,
-           on kernel-RT we can no longer do memory management in
-           a raw_spinlock section. So we dump utrace structures
-           to a separate hlist before freeing them: */
 #ifdef STP_TF_DEBUG
 	printk(KERN_ERR "%s:%d - freeing task-specific\n", __FUNCTION__, __LINE__);
 #endif
-	spin_lock(&utrace_cleanup_lock);
-	stp_spin_lock(&task_utrace_lock);
 	for (i = 0; i < TASK_UTRACE_TABLE_SIZE; i++) {
-		head = &task_utrace_table[i];
-		stap_hlist_for_each_entry_safe(utrace, node, node2, head,
-					       hlist) {
-			hlist_del(&utrace->hlist);
-			INIT_HLIST_NODE(&utrace->hlist);
-			hlist_add_head(&utrace->hlist, &utrace_cleanup_list);
-		}
-	}
-	stp_spin_unlock(&task_utrace_lock);
+		struct utrace_bucket *bucket = &task_utrace_table[i];
 
-	stap_hlist_for_each_entry_safe(utrace, node, node2, &utrace_cleanup_list,
-				       hlist) {
-		hlist_del(&utrace->hlist);
-		utrace_cleanup(utrace);
+		rcu_read_lock();
+		stap_hlist_for_each_entry_rcu(utrace, node, &bucket->head, hlist) {
+			utrace->freed = true;
+			stp_spin_lock(&bucket->lock);
+			hlist_del_rcu(&utrace->hlist);
+			stp_spin_unlock(&bucket->lock);
+
+			utrace_cleanup(utrace);
+		}
+		rcu_read_unlock();
 	}
-	spin_unlock(&utrace_cleanup_lock);
 
 	/* Likewise, free any task_work_list item(s). */
 	stp_spin_lock_irqsave(&__stp_utrace_task_work_list_lock, flags);
@@ -515,6 +509,11 @@ static int utrace_exit(void)
 	stp_spin_unlock_irqrestore(&__stp_utrace_task_work_list_lock, flags);
 
 	if (utrace_cachep) {
+		/*
+		 * We need an RCU barrier because utrace_cachep is used in the
+		 * utrace RCU callback (utrace_free_rcu()).
+		 */
+		rcu_barrier();
 		kmem_cache_destroy(utrace_cachep);
 		utrace_cachep = NULL;
 	}
@@ -555,6 +554,13 @@ stp_task_notify_resume(struct task_struct *target, struct utrace *utrace)
 	}
 }
 
+static void utrace_free_rcu(struct rcu_head *rcu)
+{
+	struct utrace *utrace = container_of(rcu, typeof(*utrace), rcu);
+
+	kmem_cache_free(utrace_cachep, utrace);
+}
+
 /*
  * Clean up everything associated with @task.utrace.
  *
@@ -563,10 +569,6 @@ stp_task_notify_resume(struct task_struct *target, struct utrace *utrace)
 static void utrace_cleanup(struct utrace *utrace)
 {
 	struct utrace_engine *engine, *next;
-
-	/* We used to require task_utrace_lock here, but none of the
-	 * actual cleanup work seems to need it. */
-	lockdep_assert_held(&utrace_cleanup_lock);
 
 	/* Free engines associated with the struct utrace, starting
 	 * with the 'attached' list then doing the 'attaching' list. */
@@ -591,11 +593,7 @@ static void utrace_cleanup(struct utrace *utrace)
 	 * since those were cancelled by
 	 * utrace_cancel_all_task_work(). */
 
-	/* Free the struct utrace itself. */
-#ifdef STP_TF_DEBUG
-	memset(utrace, 0, sizeof(struct utrace));
-#endif
-	kmem_cache_free(utrace_cachep, utrace);
+	call_rcu(&utrace->rcu, utrace_free_rcu);
 #ifdef STP_TF_DEBUG
 	printk(KERN_ERR "%s:%d exit\n", __FUNCTION__, __LINE__);
 #endif
@@ -641,15 +639,16 @@ static void utrace_cancel_all_task_work(void)
 	unsigned long flags;
 
 	/* Cancel any pending utrace task_work item(s). */
-	stp_spin_lock(&task_utrace_lock);
 	for (i = 0; i < TASK_UTRACE_TABLE_SIZE; i++) {
-		head = &task_utrace_table[i];
-		stap_hlist_for_each_entry(utrace, utrace_node, head, hlist) {
+		struct utrace_bucket *bucket = &task_utrace_table[i];
+
+		rcu_read_lock();
+		stap_hlist_for_each_entry_rcu(utrace, utrace_node, &bucket->head, hlist) {
 			CANCEL_IF_WORK(utrace->resume_work_added, utrace_resume);
 			CANCEL_IF_WORK(utrace->report_work_added, utrace_report_work);
 		}
+		rcu_read_unlock();
 	}
-	stp_spin_unlock(&task_utrace_lock);
 
 	/* Cancel any pending task_work_list item(s). */
 	stp_spin_lock_irqsave(&__stp_utrace_task_work_list_lock, flags);
@@ -690,22 +689,27 @@ static void utrace_shutdown(void)
 	utrace_cancel_all_task_work();
 }
 
-/*
- * This routine must be called under the task_utrace_lock.
- */
-static struct utrace *__task_utrace_struct(struct task_struct *task)
+static struct utrace_bucket *get_utrace_bucket(struct task_struct *task)
 {
-	struct hlist_head *head;
-	struct hlist_node *node;
-	struct utrace *utrace;
+	return &task_utrace_table[hash_ptr(task, TASK_UTRACE_HASH_BITS)];
+}
 
-	lockdep_assert_held(&task_utrace_lock);
-	head = &task_utrace_table[hash_ptr(task, TASK_UTRACE_HASH_BITS)];
-	stap_hlist_for_each_entry(utrace, node, head, hlist) {
-		if (utrace->task == task)
-			return utrace;
+static struct utrace *task_utrace_struct(struct utrace_bucket *bucket,
+					 struct task_struct *task)
+{
+	struct utrace *utrace, *found = NULL;
+	struct hlist_node *node;
+
+	rcu_read_lock();
+	stap_hlist_for_each_entry_rcu(utrace, node, &bucket->head, hlist) {
+		if (utrace->task == task && !utrace->freed) {
+			found = utrace;
+			break;
+		}
 	}
-	return NULL;
+	rcu_read_unlock();
+
+	return found;
 }
 
 /*
@@ -716,14 +720,15 @@ static struct utrace *__task_utrace_struct(struct task_struct *task)
  *
  * This returns false only in case of a memory allocation failure.
  */
-static bool utrace_task_alloc(struct task_struct *task)
+static struct utrace *utrace_task_alloc(struct utrace_bucket *bucket,
+					struct task_struct *task)
 {
-	struct utrace *utrace = kmem_cache_zalloc(utrace_cachep,
-						  STP_ALLOC_FLAGS);
-	struct utrace *u;
+	struct utrace *utrace;
 
+	utrace = kmem_cache_zalloc(utrace_cachep, STP_ALLOC_FLAGS);
 	if (unlikely(!utrace))
-		return false;
+		return NULL;
+
 	spin_lock_init(&utrace->lock);
 	INIT_LIST_HEAD(&utrace->attached);
 	INIT_LIST_HEAD(&utrace->attaching);
@@ -734,21 +739,10 @@ static bool utrace_task_alloc(struct task_struct *task)
 	atomic_set(&utrace->resume_work_added, 0);
 	atomic_set(&utrace->report_work_added, 0);
 
-	stp_spin_lock(&task_utrace_lock);
-	u = __task_utrace_struct(task);
-	if (u == NULL) {
-		hlist_add_head(&utrace->hlist,
-			       &task_utrace_table[hash_ptr(task, TASK_UTRACE_HASH_BITS)]);
-	}
-	else {
-#ifdef STP_TF_DEBUG
-		memset(utrace, 0, sizeof(struct utrace));
-#endif
-		kmem_cache_free(utrace_cachep, utrace);
-	}
-	stp_spin_unlock(&task_utrace_lock);
-
-	return true;
+	stp_spin_lock(&bucket->lock);
+	hlist_add_head_rcu(&utrace->hlist, &bucket->head);
+	stp_spin_unlock(&bucket->lock);
+	return utrace;
 }
 
 /* macros for utrace_free(): */
@@ -772,16 +766,17 @@ static bool utrace_task_alloc(struct task_struct *task)
  * free_task() when @task is being deallocated. But free_task() has no
  * tracepoint we can easily hook.
  */
-static void utrace_free(struct utrace *utrace)
+static void utrace_free(struct utrace_bucket *bucket, struct utrace *utrace)
 {
 	if (unlikely(!utrace))
 		return;
 
 	/* Remove this utrace from the mapping list of tasks to
 	 * struct utrace. */
-	stp_spin_lock(&task_utrace_lock);
-	hlist_del(&utrace->hlist);
-	stp_spin_unlock(&task_utrace_lock);
+	utrace->freed = true;
+	stp_spin_lock(&bucket->lock);
+	hlist_del_rcu(&utrace->hlist);
+	stp_spin_unlock(&bucket->lock);
 
 	/* Free the utrace struct. */
 #ifdef STP_TF_DEBUG
@@ -799,20 +794,7 @@ static void utrace_free(struct utrace *utrace)
 	FREE_IF_WORK(utrace->resume_work_added, utrace_resume);
 	FREE_IF_WORK(utrace->report_work_added, utrace_report_work);
 
-#ifdef STP_TF_DEBUG
-	memset(utrace, 0, sizeof(struct utrace));
-#endif
-	kmem_cache_free(utrace_cachep, utrace);
-}
-
-static struct utrace *task_utrace_struct(struct task_struct *task)
-{
-	struct utrace *utrace;
-
-	stp_spin_lock(&task_utrace_lock);
-	utrace = __task_utrace_struct(task);
-	stp_spin_unlock(&task_utrace_lock);
-	return utrace;
+	call_rcu(&utrace->rcu, utrace_free_rcu);
 }
 
 /*
@@ -961,7 +943,8 @@ static struct utrace_engine *utrace_attach_task(
 	struct task_struct *target, int flags,
 	const struct utrace_engine_ops *ops, void *data)
 {
-	struct utrace *utrace = task_utrace_struct(target);
+	struct utrace_bucket *bucket = get_utrace_bucket(target);
+	struct utrace *utrace = task_utrace_struct(bucket, target);
 	struct utrace_engine *engine;
 	int ret;
 
@@ -991,9 +974,9 @@ static struct utrace_engine *utrace_attach_task(
 		return ERR_PTR(-EPERM);
 
 	if (!utrace) {
-		if (unlikely(!utrace_task_alloc(target)))
+		utrace = utrace_task_alloc(bucket, target);
+		if (unlikely(!utrace))
 			return ERR_PTR(-ENOMEM);
-		utrace = task_utrace_struct(target);
 	}
 
 	engine = kmem_cache_alloc(utrace_engine_cachep, STP_ALLOC_FLAGS);
@@ -1067,6 +1050,7 @@ static struct utrace *get_utrace_lock(struct task_struct *target,
 				      bool attached)
 	__acquires(utrace->lock)
 {
+	struct utrace_bucket *bucket;
 	struct utrace *utrace;
 
 	rcu_read_lock();
@@ -1091,7 +1075,8 @@ static struct utrace *get_utrace_lock(struct task_struct *target,
 		return attached ? ERR_PTR(-ESRCH) : ERR_PTR(-ERESTARTSYS);
 	}
 
-	utrace = task_utrace_struct(target);
+	bucket = get_utrace_bucket(target);
+	utrace = task_utrace_struct(bucket, target);
 	if (unlikely(!utrace))
 		return ERR_PTR(-ESRCH);
 
@@ -1413,7 +1398,8 @@ static void utrace_finish_stop(void)
 	 * sure we do nothing until the tracer drops utrace->lock.
 	 */
 	if (unlikely(__fatal_signal_pending(current))) {
-		struct utrace *utrace = task_utrace_struct(current);
+		struct utrace_bucket *bucket = get_utrace_bucket(current);
+		struct utrace *utrace = task_utrace_struct(bucket, current);
 		spin_lock(&utrace->lock);
 		spin_unlock(&utrace->lock);
 	}
@@ -2196,14 +2182,16 @@ static void utrace_report_exec(void *cb_data __attribute__ ((unused)),
 {
 #ifdef STP_UTRACE_USE_TASK_WORK_QUEUE
 	// This is the version that's deferred with task_work_list.
+	struct utrace_bucket *bucket;
 	struct task_work *work;
 	struct utrace *utrace;
 	int rc;
 
 	if (atomic_read(&utrace_state) != __UTRACE_REGISTERED)
 		return;
-	utrace = task_utrace_struct(task);
 
+	bucket = get_utrace_bucket(task);
+	utrace = task_utrace_struct(bucket, task);
 	if (!utrace || !(utrace->utrace_flags & UTRACE_EVENT(EXEC)))
 		return;
 
@@ -2230,12 +2218,14 @@ static void utrace_report_exec(void *cb_data __attribute__ ((unused)),
 	}
 #else
 	// This is the original version.
+	struct utrace_bucket *bucket;
 	struct utrace *utrace;
 
 	if (atomic_read(&utrace_state) != __UTRACE_REGISTERED)
 		return;
-	utrace = task_utrace_struct(task);
 
+	bucket = get_utrace_bucket(task);
+	utrace = task_utrace_struct(bucket, task);
 	if (utrace && utrace->utrace_flags & UTRACE_EVENT(EXEC)) {
 		INIT_REPORT(report);
 
@@ -2322,13 +2312,16 @@ static void utrace_report_syscall_entry(void *cb_data __attribute__ ((unused)),
 #ifdef STP_UTRACE_USE_TASK_WORK_QUEUE
 	// This is the version that's deferred with task_work_list.
 	struct task_struct *task = current;
+	struct utrace_bucket *bucket;
 	struct task_work *work;
 	struct utrace *utrace;
 	int rc;
 
 	if (atomic_read(&utrace_state) != __UTRACE_REGISTERED)
 		return;
-	utrace = task_utrace_struct(task);
+
+	bucket = get_utrace_bucket(task);
+	utrace = task_utrace_struct(bucket, task);
 
 	/* FIXME: Is this 100% correct? */
 	if (!utrace
@@ -2360,11 +2353,14 @@ static void utrace_report_syscall_entry(void *cb_data __attribute__ ((unused)),
 #else
 	// This is the original version.
 	struct task_struct *task = current;
+	struct utrace_bucket *bucket;
 	struct utrace *utrace;
 
 	if (atomic_read(&utrace_state) != __UTRACE_REGISTERED)
 		return;
-	utrace = task_utrace_struct(task);
+
+	bucket = get_utrace_bucket(task);
+	utrace = task_utrace_struct(bucket, task);
 
 	/* FIXME: Is this 100% correct? */
 	if (utrace
@@ -2423,13 +2419,16 @@ static void utrace_report_syscall_exit(void *cb_data __attribute__ ((unused)),
 #ifdef STP_UTRACE_USE_TASK_WORK_QUEUE
 	// This is the version that's deferred with task_work_list.
 	struct task_struct *task = current;
+	struct utrace_bucket *bucket;
 	struct task_work *work;
 	struct utrace *utrace;
 	int rc;
 
 	if (atomic_read(&utrace_state) != __UTRACE_REGISTERED)
 		return;
-	utrace = task_utrace_struct(task);
+
+	bucket = get_utrace_bucket(task);
+	utrace = task_utrace_struct(bucket, task);
 
 	/* FIXME: Is this 100% correct? */
 	if (!utrace
@@ -2461,11 +2460,14 @@ static void utrace_report_syscall_exit(void *cb_data __attribute__ ((unused)),
 #else
 	// This is the original version.
 	struct task_struct *task = current;
+	struct utrace_bucket *bucket;
 	struct utrace *utrace;
 
 	if (atomic_read(&utrace_state) != __UTRACE_REGISTERED)
 		return;
-	utrace = task_utrace_struct(task);
+
+	bucket = get_utrace_bucket(task);
+	utrace = task_utrace_struct(bucket, task);
 
 	/* FIXME: Is this 100% correct? */
 	if (utrace
@@ -2529,13 +2531,16 @@ static void utrace_report_clone(void *cb_data __attribute__ ((unused)),
 {
 #ifdef STP_UTRACE_USE_TASK_WORK_QUEUE
 	// This is the version that's deferred with task_work_list.
+	struct utrace_bucket *bucket;
 	struct task_work *work;
 	struct utrace *utrace;
 	int rc;
 
 	if (atomic_read(&utrace_state) != __UTRACE_REGISTERED)
 		return;
-	utrace = task_utrace_struct(task);
+
+	bucket = get_utrace_bucket(task);
+	utrace = task_utrace_struct(bucket, task);
 
 #ifdef STP_TF_DEBUG
 	printk(KERN_ERR "%s:%d - parent %p, child %p, current %p\n",
@@ -2564,11 +2569,14 @@ static void utrace_report_clone(void *cb_data __attribute__ ((unused)),
 	}
 #else
 	// This is the original version.
+	struct utrace_bucket *bucket;
 	struct utrace *utrace;
 
 	if (atomic_read(&utrace_state) != __UTRACE_REGISTERED)
 		return;
-	utrace = task_utrace_struct(task);
+
+	bucket = get_utrace_bucket(task);
+	utrace = task_utrace_struct(bucket, task);
 
 #ifdef STP_TF_DEBUG
 	printk(KERN_ERR "%s:%d - parent %p, child %p, current %p\n",
@@ -2728,7 +2736,8 @@ static void utrace_clone_work(struct task_work *work)
  */
 static void utrace_finish_vfork(struct task_struct *task)
 {
-	struct utrace *utrace = task_utrace_struct(task);
+	struct utrace_bucket *bucket = get_utrace_bucket(task);
+	struct utrace *utrace = task_utrace_struct(bucket, task);
 
 	if (utrace->vfork_stop) {
 		spin_lock(&utrace->lock);
@@ -2748,12 +2757,15 @@ static void utrace_finish_vfork(struct task_struct *task)
 static void utrace_report_death(void *cb_data __attribute__ ((unused)),
 				struct task_struct *task)
 {
+	struct utrace_bucket *bucket;
 	struct utrace *utrace;
 	INIT_REPORT(report);
 
 	if (atomic_read(&utrace_state) != __UTRACE_REGISTERED)
 		return;
-	utrace = task_utrace_struct(task);
+
+	bucket = get_utrace_bucket(task);
+	utrace = task_utrace_struct(bucket, task);
 
 #ifdef STP_TF_DEBUG
 	printk(KERN_ERR "%s:%d - task %p, utrace %p, flags %lx\n", __FUNCTION__, __LINE__, task, utrace, utrace ? utrace->utrace_flags : 0);
@@ -2820,7 +2832,7 @@ static void utrace_report_death(void *cb_data __attribute__ ((unused)),
 				 -1/*signal*/);
 
 		utrace_maybe_reap(task, utrace, false);
-		utrace_free(utrace);
+		utrace_free(bucket, utrace);
 	}
 }
 
@@ -2955,6 +2967,7 @@ static void utrace_report_work(struct task_work *work)
 	 */
 	struct utrace *utrace = container_of(work, struct utrace, report_work);
 	struct task_struct *task = current;
+	struct utrace_bucket *bucket = get_utrace_bucket(task);
 	INIT_REPORT(report);
 	struct utrace_engine *engine;
 	unsigned long clone_flags;
@@ -2978,7 +2991,7 @@ static void utrace_report_work(struct task_work *work)
 			 -1/*signal*/);
 
 	utrace_maybe_reap(task, utrace, false);
-	utrace_free(utrace);
+	utrace_free(bucket, utrace);
 
 	/* Remember that this task_work_func is finished. */
 	stp_task_work_func_done();
