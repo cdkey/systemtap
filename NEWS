@@ -1,5 +1,9 @@
 * What's new in version 4.4
 
+- Replaced spinlocks with RCU locks in vma map's hash table lookups
+  which reduces CPU time a lot when there are a lot of target
+  processes and vma tracker is enabled.
+
 - stap-prep now avoids downloading kernel debuginfo if a successful
   connection to debuginfod server is made. 
 
