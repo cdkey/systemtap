@@ -584,7 +584,8 @@ probes may also refer to context variables.
 
 .TP
 $var
-refers to an in-scope variable "var".  If it's an integer-like type,
+refers to an in-scope variable or thread local storage variable 
+"var".  If it's an integer-like type, 
 it will be cast to a 64-bit int for systemtap script use.  String-like
 pointers (char *) may be copied to systemtap string values using the
 .IR kernel_string " or " user_string
@@ -596,7 +597,8 @@ an alternative syntax for
 .
 .TP
 @var("varname","module")
-The global variable in scope of the given module already loaded into
+The global variable or global thread local storage variable 
+in scope of the given module already loaded into
 the current probed process.  Useful to get an exported variable in a
 shared library loaded into the process being probed, or a global
 variable in a process while a shared library probe is being executed.
@@ -695,6 +697,9 @@ expands to a string with all of $var's members and submembers, equivalent to
 sprintf("{.a=%i, .b=%u, .c={.x=%p, .y=%c}, .d=[%i, ...]}",
         $EXPR\->a, $EXPR\->b, $EXPR\->c\->x, $EXPR\->c\->y, $EXPR\->d[0])
 .ESAMPLE
+.TP
+@errno
+expands to the last value the C library global variable errno was set to.
 
 .SS MORE ON RETURN PROBES
 
