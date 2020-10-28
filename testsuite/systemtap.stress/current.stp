@@ -56,8 +56,8 @@ probe
 
     kernel.function("*@kernel/time.c").call,
     kernel.function("*@kernel/time.c").return,
-    module("*").function("*interrupt*").call ?,
-    module("*").function("*interrupt*").return ?
+    module("usb*").function("*interrupt*").call ?,
+    module("usb*").function("*interrupt*").return ?
 {
     length <<< commlen()
     length <<< pcommlen()
