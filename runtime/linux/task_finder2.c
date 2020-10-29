@@ -918,7 +918,7 @@ __stp_utrace_attach_match_filename(struct task_struct *tsk,
 		// when the thread gets quiesced.
 		rc = __stp_utrace_attach(tsk, &tgt->ops, tgt,
 					 __STP_ATTACHED_TASK_EVENTS,
-					 UTRACE_STOP);
+					 UTRACE_INTERRUPT);
 		if (rc != 0 && rc != EPERM)
 			break;
 		tgt->engine_attached = 1;
@@ -1868,7 +1868,7 @@ stap_start_task_finder(void)
 			// Set up events we need for attached tasks.
 			rc = __stp_utrace_attach(tsk, &tgt->ops, tgt,
 						 __STP_ATTACHED_TASK_EVENTS,
-						 UTRACE_STOP);
+						 UTRACE_INTERRUPT);
 			dbug_task(2, "__stp_utrace_attach() for %d returned %d", tsk->tgid,
 				  rc);
 
