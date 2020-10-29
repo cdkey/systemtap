@@ -106,6 +106,7 @@ static void *_stp_mem_debug_setup(void *addr, size_t size, enum _stp_memtype typ
 {
 	struct list_head *p;
 	struct _stp_mem_entry *m;
+	unsigned long flags;
 	memset(addr, 0x55, MEM_FENCE_SIZE);
 	addr += MEM_FENCE_SIZE;
 	memset(addr + size, 0x55, MEM_FENCE_SIZE);
@@ -115,9 +116,9 @@ static void *_stp_mem_debug_setup(void *addr, size_t size, enum _stp_memtype typ
 	m->type = type;
 	m->len = size;
 	m->addr = addr;
-	spin_lock(&_stp_mem_lock);
+	spin_lock_irqsave(&_stp_mem_lock, flags);
 	list_add(p, &_stp_mem_list); 
-	spin_unlock(&_stp_mem_lock);
+	spin_unlock_irqrestore(&_stp_mem_lock, flags);
 	return addr;
 }
 
@@ -125,13 +126,14 @@ static void *_stp_mem_debug_setup(void *addr, size_t size, enum _stp_memtype typ
 static void _stp_mem_debug_percpu(struct _stp_mem_entry *m, void *addr, size_t size)
 {
 	struct list_head *p = (struct list_head *)m;
+	unsigned long flags;
 	m->magic = MEM_MAGIC;
 	m->type = MEM_PERCPU;
 	m->len = size;
 	m->addr = addr;
-	spin_lock(&_stp_mem_lock);
+	spin_lock_irqsave(&_stp_mem_lock, flags);
 	list_add(p, &_stp_mem_list);
-	spin_unlock(&_stp_mem_lock);	
+	spin_unlock_irqrestore(&_stp_mem_lock, flags);
 }
 
 static void _stp_mem_debug_free(void *addr, enum _stp_memtype type)
@@ -139,8 +141,9 @@ static void _stp_mem_debug_free(void *addr, enum _stp_memtype type)
 	int found = 0;
 	struct list_head *p, *tmp;
 	struct _stp_mem_entry *m = NULL;
+	unsigned long flags;
 
-	spin_lock(&_stp_mem_lock);
+	spin_lock_irqsave(&_stp_mem_lock, flags);
 	list_for_each_safe(p, tmp, &_stp_mem_list) {
 		m = list_entry(p, struct _stp_mem_entry, list);
 		if (m->addr == addr) {
@@ -149,7 +152,7 @@ static void _stp_mem_debug_free(void *addr, enum _stp_memtype type)
 			break;
 		}
 	}
-	spin_unlock(&_stp_mem_lock);
+	spin_unlock_irqrestore(&_stp_mem_lock, flags);
 	if (!found) {
 		printk("SYSTEMTAP ERROR: Free of unallocated memory %p type=%s\n", 
 		       addr, _stp_malloc_types[type].free);
@@ -190,8 +193,9 @@ static void _stp_mem_debug_validate(void *addr)
 	int found = 0;
 	struct list_head *p, *tmp;
 	struct _stp_mem_entry *m = NULL;
+	unsigned long flags;
 
-	spin_lock(&_stp_mem_lock);
+	spin_lock_irqsave(&_stp_mem_lock, flags);
 	list_for_each_safe(p, tmp, &_stp_mem_list) {
 		m = list_entry(p, struct _stp_mem_entry, list);
 		if (m->addr == addr) {
@@ -199,7 +203,7 @@ static void _stp_mem_debug_validate(void *addr)
 			break;
 		}
 	}
-	spin_unlock(&_stp_mem_lock);
+	spin_unlock_irqrestore(&_stp_mem_lock, flags);
 	if (!found) {
 		printk("SYSTEMTAP ERROR: Couldn't validate memory %p\n", 
 		       addr);
@@ -577,8 +581,9 @@ static void _stp_mem_debug_done(void)
 #ifdef DEBUG_MEM
 	struct list_head *p, *tmp;
 	struct _stp_mem_entry *m;
+	unsigned long flags;
 
-	spin_lock(&_stp_mem_lock);
+	spin_lock_irqsave(&_stp_mem_lock, flags);
 	list_for_each_safe(p, tmp, &_stp_mem_list) {
 		m = list_entry(p, struct _stp_mem_entry, list);
 		list_del(p);
@@ -610,7 +615,7 @@ static void _stp_mem_debug_done(void)
 		}
 	}
 done:
-	spin_unlock(&_stp_mem_lock);
+	spin_unlock_irqrestore(&_stp_mem_lock, flags);
 
 	return;
 
