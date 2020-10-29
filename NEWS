@@ -3,9 +3,10 @@
 - Implicit thread local storage variables can now be accessed on
   x86_64, ppc, and s390.
 
-- Replaced spinlocks with RCU locks in vma map's hash table lookups
-  which reduces CPU time a lot when there are a lot of target
-  processes and vma tracker is enabled.
+- Replaced spinlocks with RCU locks in vma map and utrace task's hash
+  table lookups which reduces CPU time a lot when there are a lot of
+  target processes and vma tracker or task finder is enabled. We also
+  increased the default hash table sizes to reduce hash conflicts.
 
 - stap-prep now avoids downloading kernel debuginfo if a successful
   connection to debuginfod server is made. 
