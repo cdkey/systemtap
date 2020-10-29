@@ -595,6 +595,12 @@ void defined_op::print (ostream& o) const
 }
 
 
+void probewrite_op::print (ostream& o) const
+{
+  o << "@probewrite(" << name << ")";
+}
+
+
 void entry_op::print (ostream& o) const
 {
   o << "@entry(" << *operand << ")";
@@ -1814,6 +1820,12 @@ defined_op::visit (visitor* u)
 
 
 void
+probewrite_op::visit (visitor* u)
+{
+  u->visit_probewrite_op(this);
+}
+
+void
 entry_op::visit (visitor* u)
 {
   u->visit_entry_op(this);
@@ -2193,6 +2205,14 @@ traversing_visitor::visit_defined_op (defined_op* e)
   e->operand->visit (this);
 }
 
+
+void
+traversing_visitor::visit_probewrite_op (probewrite_op* e)
+{
+  throw SEMANTIC_ERROR(_("unexpected @probewrite"), e->tok);
+}
+
+
 void
 traversing_visitor::visit_entry_op (entry_op* e)
 {
@@ -2505,6 +2525,82 @@ void
 functioncall_traversing_visitor::note_recursive_functioncall (functioncall*)
 {
 }
+
+
+void
+symuse_collecting_visitor::visit_try_block(try_block* s)
+{
+  // Default to varuse visitor behaviour if the referent is set.
+  if (s->catch_error_var->referent)
+    varuse_collecting_visitor::visit_try_block(s);
+  else
+    {
+      if (s->try_block)
+        s->try_block->visit(this);
+      if (s->catch_block)
+        s->catch_block->visit(this);
+    }
+
+  // Add the name regardless of whether the referent is set or not.
+  if (s->catch_error_var)
+    written_names.insert(s->catch_error_var->name);
+}
+
+
+void
+symuse_collecting_visitor::visit_embeddedcode(embeddedcode* s)
+{
+  // If either of the referent vectors have a single element, then
+  // we can default to varuse visitor behaviour.
+  if (!s->read_referents.empty() || !s->write_referents.empty())
+    varuse_collecting_visitor::visit_embeddedcode(s);
+}
+
+
+void
+symuse_collecting_visitor::visit_embedded_expr(embedded_expr* e)
+{
+  // Similar to symuse_collecting_visitor::visit_embeddedcode.
+  if (!e->read_referents.empty() || !e->write_referents.empty())
+    varuse_collecting_visitor::visit_embedded_expr(e);
+}
+
+
+void
+symuse_collecting_visitor::visit_target_symbol(target_symbol* e)
+{
+  varuse_collecting_visitor::visit_target_symbol(e);
+
+  // We treat target symbols differently under the symuse visitor
+  // when compared to the varuse visitor. Target symbol names are
+  // added to the name sets that track reads and writes.
+  if (is_active_lvalue(e))
+    written_names.insert(e->name);
+  else
+    read_names.insert(e->name);
+}
+
+
+void
+symuse_collecting_visitor::visit_symbol(symbol* e)
+{
+  // Similar to the varuse visitor case. The symbol names are also tracked.
+  if (e->referent)
+    varuse_collecting_visitor::visit_symbol(e);
+
+  if (current_lvalue == e || current_lrvalue == e)
+    written_names.insert(e->name);
+
+  if (current_lvalue != e || current_lrvalue)
+    read_names.insert(e->name);
+}
+
+
+void
+symuse_collecting_visitor::visit_probewrite_op(probewrite_op*)
+{
+}
+
 
 void
 varuse_collecting_visitor::visit_if_statement (if_statement *s)
@@ -3270,6 +3366,12 @@ throwing_visitor::visit_defined_op (defined_op* e)
 }
 
 void
+throwing_visitor::visit_probewrite_op(probewrite_op* e)
+{
+  throwone(e->tok);
+}
+
+void
 throwing_visitor::visit_entry_op (entry_op* e)
 {
   throwone (e->tok);
@@ -3597,6 +3699,12 @@ update_visitor::visit_defined_op (defined_op* e)
 {
   replace (e->operand);
   provide (e);
+}
+
+void
+update_visitor::visit_probewrite_op(probewrite_op* e)
+{
+  provide(e);
 }
 
 void

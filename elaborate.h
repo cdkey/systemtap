@@ -173,6 +173,7 @@ struct typeresolution_info: public visitor
   void visit_autocast_op (autocast_op* e);
   void visit_atvar_op (atvar_op* e);
   void visit_defined_op (defined_op* e);
+  void visit_probewrite_op(probewrite_op* e);
   void visit_entry_op (entry_op* e);
   void visit_perf_op (perf_op* e);
 
@@ -467,6 +468,18 @@ void derive_probes (systemtap_session& s,
 symbol * get_symbol_within_expression (expression *e);
 
 struct unparser;
+
+
+struct probewrite_evaluator: public update_visitor
+{
+  systemtap_session& session;
+  statement* probe_body;
+
+  probewrite_evaluator(systemtap_session& s, statement* probe_body):
+    session(s), probe_body(probe_body) {}
+
+  void visit_probewrite_op(probewrite_op* e);
+};
 
 
 struct const_folder: public update_visitor

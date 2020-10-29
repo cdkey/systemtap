@@ -1,0 +1,13 @@
+probe foo = process.function("test")
+{
+}, 
+{ 
+    if(@probewrite($a))
+        println("PASS")
+    else
+        println("FAIL")
+}
+
+probe foo {
+    $a = 0
+}

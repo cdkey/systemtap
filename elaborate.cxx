@@ -928,6 +928,13 @@ alias_expansion_builder::build_with_suffix(systemtap_session & sess,
   else
     n->body = new block (alias->body, use->body);
 
+  // We'll try to resolve any @probewrite predicates while we have
+  // direct access to the probe body (use->body). Note that the
+  // symuse visitor used by the probewrite_evaluator won't be able
+  // to visit function bodies since symbol resolution is still left.
+  probewrite_evaluator pw_eval(sess, use->body);
+  pw_eval.replace(n->body);
+
   unsigned old_num_results = finished_results.size();
   // If expanding for an alias suffix, be sure to pass on any errors
   // to the caller instead of printing them in derive_probes():
@@ -4437,6 +4444,22 @@ void semantic_pass_opt5 (systemtap_session& s, bool& relaxed_p)
 }
 
 
+void
+probewrite_evaluator::visit_probewrite_op(probewrite_op* e)
+{
+  symuse_collecting_visitor scv(session);
+  probe_body->visit(&scv);
+
+  literal_number* ln;
+
+  if (scv.written_names.find(e->name) != scv.written_names.end())
+    ln = new literal_number(1);
+  else
+    ln = new literal_number(0);
+
+  ln->tok = e->tok;
+  provide(ln);
+}
 
 void
 const_folder::get_literal(expression*& e,
@@ -5914,6 +5937,7 @@ struct initial_typeresolution_info : public typeresolution_info
   void visit_target_symbol (target_symbol*) {}
   void visit_atvar_op (atvar_op*) {}
   void visit_defined_op (defined_op*) {}
+  void visit_probewrite_op (probewrite_op*) {}
   void visit_entry_op (entry_op*) {}
   void visit_cast_op (cast_op*) {}
 };
@@ -6714,6 +6738,13 @@ typeresolution_info::visit_defined_op (defined_op* e)
     session.print_error (SEMANTIC_ERROR(_("unexpected @defined"), e->tok));
   else
     num_still_unresolved ++;
+}
+
+
+void
+typeresolution_info::visit_probewrite_op(probewrite_op* e)
+{
+  throw SEMANTIC_ERROR(_("unexpected @probewrite"), e->tok);
 }
 
 

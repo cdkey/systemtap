@@ -684,6 +684,9 @@ for use in conditionals such as
 @defined($foo\->bar) ? $foo\->bar : 0
 .ESAMPLE
 .TP
+@probewrite($VAR)
+see the PROBES section of \fIstap\fR(1).
+.TP
 $EXPR$
 expands to a string with all of $EXPR's members, equivalent to
 .SAMPLE

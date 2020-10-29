@@ -206,6 +206,7 @@ private: // nonterminals
   atvar_op *parse_atvar_op ();
   expression* parse_entry_op (const token* t);
   expression* parse_defined_op (const token* t);
+  expression* parse_probewrite_op(const token* t);
   expression* parse_const_op (const token* t);
   expression* parse_perf_op (const token* t);
   expression* parse_target_register (const token* t);
@@ -1456,6 +1457,7 @@ lexer::lexer (istream& input, const string& in, systemtap_session& s, bool cc):
       // proposed macro names without building a string with that prefix.
       atwords.insert("cast");
       atwords.insert("defined");
+      atwords.insert("probewrite");
       atwords.insert("entry");
       atwords.insert("perf");
       atwords.insert("var");
@@ -3866,6 +3868,9 @@ expression* parser::parse_symbol ()
       if (name == "@defined")
         return parse_defined_op (t);
 
+      if (name == "@probewrite")
+        return parse_probewrite_op(t);
+
       if (name == "@const")
         return parse_const_op (t);
 
@@ -4197,6 +4202,17 @@ expression* parser::parse_defined_op (const token* t)
   dop->operand = parse_expression ();
   expect_op(")");
   return dop;
+}
+
+
+expression* parser::parse_probewrite_op (const token* t)
+{
+  probewrite_op* pwop = new probewrite_op;
+  pwop->tok = t;
+  expect_op("(");
+  expect_unknown(tok_identifier, pwop->name);
+  expect_op(")");
+  return pwop;
 }
 
 

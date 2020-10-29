@@ -1,0 +1,13 @@
+probe foo = begin
+{ 
+}, 
+{ 
+    if(@probewrite(var))
+        println("PASS")
+    else
+        println("FAIL")
+}
+
+probe foo {
+    var = 0
+}

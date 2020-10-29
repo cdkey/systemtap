@@ -1,0 +1,25 @@
+# Test the @probewrite predicate.
+set test "probewrite"
+
+set ok 0
+
+spawn stap $srcdir/$subdir/${test}_1.stp
+expect {
+    "PASS" {incr ok; exp_continue}
+}
+
+spawn stap $srcdir/$subdir/${test}_2.stp
+expect {
+    "PASS" {incr ok; exp_continue}
+}
+
+exec gcc -g -o $test $srcdir/$subdir/${test}_3.c
+
+spawn stap -g $srcdir/$subdir/${test}_3.stp -c ./$test
+expect {
+    "PASS" {incr ok; exp_continue}
+}
+
+exec rm $test
+
+if { $ok == 3 } { pass $test } { fail $test }

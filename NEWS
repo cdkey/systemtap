@@ -1,5 +1,9 @@
 * What's new in version 4.4
 
+- Add @probewrite predicate. @probewrite(var) returns 1 if var has been
+  written to in the probe handler body and 0 otherwise. The check can
+  only be used with probes that have an epilogue or prologue.
+
 - Implicit thread local storage variables can now be accessed on
   x86_64, ppc, and s390.
 

@@ -1453,6 +1453,26 @@ probe syscall.read {
 }
 .ESAMPLE
 
+Probes with an alias can make use of the @probewrite predicate. This check
+is used to detect whether a script variable or target variable has been
+written to in the probe handler body.
+.TP
+@probewrite(var)
+expands to 1 iff var has been written to in the probe handler body, otherwise it
+expands to 0.
+.ETP
+.PP
+In the following example, @probewrite(var) expands to 1 because var has been
+written to in the probe handler body and consequently, the conditional statement
+will run.
+.SAMPLE
+probe foo = begin { var = 0 }, { if (@probewrite(var)) println(var) }
+
+probe foo {
+  var = 1
+}
+.ESAMPLE
+
 .SS FUNCTIONS
 Systemtap scripts may define subroutines to factor out common work.
 Functions take any number of scalar (integer or string) arguments, and

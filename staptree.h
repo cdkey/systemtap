@@ -432,6 +432,13 @@ struct defined_op: public expression
   void visit (visitor* u);
 };
 
+struct probewrite_op: public expression
+{
+  interned_string name;
+  void print (std::ostream& o) const;
+  void visit (visitor* u);
+};
+
 struct entry_op: public expression
 {
   expression *operand;
@@ -980,6 +987,7 @@ struct visitor
   virtual void visit_autocast_op (autocast_op* e) = 0;
   virtual void visit_atvar_op (atvar_op* e) = 0;
   virtual void visit_defined_op (defined_op* e) = 0;
+  virtual void visit_probewrite_op(probewrite_op* e) = 0;
   virtual void visit_entry_op (entry_op* e) = 0;
   virtual void visit_perf_op (perf_op* e) = 0;
 };
@@ -1033,6 +1041,7 @@ struct nop_visitor: public visitor
   virtual void visit_autocast_op (autocast_op*) {};
   virtual void visit_atvar_op (atvar_op*) {};
   virtual void visit_defined_op (defined_op*) {};
+  virtual void visit_probewrite_op(probewrite_op*) {};
   virtual void visit_entry_op (entry_op*) {};
   virtual void visit_perf_op (perf_op*) {};
 };
@@ -1086,6 +1095,7 @@ struct traversing_visitor: public visitor
   void visit_autocast_op (autocast_op* e);
   void visit_atvar_op (atvar_op* e);
   void visit_defined_op (defined_op* e);
+  void visit_probewrite_op(probewrite_op* e);
   void visit_entry_op (entry_op* e);
   void visit_perf_op (perf_op* e);
 };
@@ -1195,6 +1205,27 @@ struct varuse_collecting_visitor: public functioncall_traversing_visitor
 };
 
 
+// Similar to the varuse_collecting_visitor except that it operates
+// on symbol names (and symbol referents wherever possible). This is
+// useful in cases where we need to detect variable usage before
+// symbol resolution occurs, ex. @probewrite.
+struct
+symuse_collecting_visitor: public varuse_collecting_visitor
+{
+  std::set<interned_string> written_names;
+  std::set<interned_string> read_names;
+
+  symuse_collecting_visitor(systemtap_session& s):
+    varuse_collecting_visitor(s) {}
+
+  void visit_try_block(try_block* s);
+  void visit_embeddedcode(embeddedcode* s);
+  void visit_embedded_expr(embedded_expr* e);
+  void visit_target_symbol(target_symbol* e);
+  void visit_symbol(symbol* e);
+  void visit_probewrite_op(probewrite_op* e);
+};
+
 
 // A kind of visitor that throws an semantic_error exception
 // whenever a non-overridden method is called.
@@ -1249,6 +1280,7 @@ struct throwing_visitor: public visitor
   void visit_autocast_op (autocast_op* e);
   void visit_atvar_op (atvar_op* e);
   void visit_defined_op (defined_op* e);
+  void visit_probewrite_op(probewrite_op* e);
   void visit_entry_op (entry_op* e);
   void visit_perf_op (perf_op* e);
 };
@@ -1363,6 +1395,7 @@ struct update_visitor: public visitor
   virtual void visit_autocast_op (autocast_op* e);
   virtual void visit_atvar_op (atvar_op* e);
   virtual void visit_defined_op (defined_op* e);
+  virtual void visit_probewrite_op(probewrite_op* e);
   virtual void visit_entry_op (entry_op* e);
   virtual void visit_perf_op (perf_op* e);
 
