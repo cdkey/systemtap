@@ -946,7 +946,8 @@ __stp_utrace_attach_match_tsk(struct task_struct *path_tsk,
 	printk(KERN_ERR "%s:%d entry\n", __FUNCTION__, __LINE__);
 #endif
 	if (path_tsk == NULL || path_tsk->pid <= 0
-	    || match_tsk == NULL || match_tsk->pid <= 0)
+	    || match_tsk == NULL || match_tsk->pid <= 0
+	    || (_stp_target && match_tsk != path_tsk))
 		return;
 
 	// Grab the path associated with the path_tsk.
