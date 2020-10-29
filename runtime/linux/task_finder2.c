@@ -1803,8 +1803,11 @@ stap_start_task_finder(void)
 		mmpath = __stp_get_mm_path(tsk->mm, mmpath_buf, PATH_MAX);
 		task_unlock(tsk);
 		if (mmpath == NULL || IS_ERR(mmpath)) {
-			rc = -PTR_ERR(mmpath);
-			if (rc == ENOENT) {
+			rc = PTR_ERR(mmpath);
+			/* If this was our target then it's a fatal error */
+			if (!_stp_target && rc == -ENOENT) {
+				_stp_warn("Unable to get path (error %d) for pid %d",
+					   rc, (int)tsk->pid);
 				rc = 0;	/* ignore ENOENT */
 				continue;
 			}
