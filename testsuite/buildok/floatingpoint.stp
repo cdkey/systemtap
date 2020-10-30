@@ -1,0 +1,49 @@
+#! stap -p4
+
+#Test the floating point tapset.
+
+function printlnfp(a) { println(fp_to_string(a,5)) }
+
+probe process("stap").function("sdt_benchmark_thread") {
+    fp = user_long($fpointer)
+    printlnfp(fp)
+    exit()
+}
+
+probe begin {
+    a = 4614253070214989087 //3.14
+    b = 4622500287032611308 //11.21
+
+    println(fp_to_string(a, 5)) // 3.14
+    printlnfp(string_to_fp("3.14"))
+    printlnfp(string_to_fp("1.0"))
+    printlnfp(long_to_fp(3))
+    printlnfp(fp_to_long(a, 0, 0)) //3.14
+
+    printlnfp(fp_add(b, a)) //11.21 + 3.14 = 14.35
+    printlnfp(fp_sub(b, a)) //11.21 - 3.14 = 8.07
+    printlnfp(fp_mul(b, a)) //11.21 * 3.14 = 35.199
+    printlnfp(fp_div(b, a)) //11.21 / 3.14 = 3.570
+    //println(fp_rem(b, a)) //11.21 % 3.14 = 1.79
+    printlnfp(fp_sqrt(a)) //sqrt 3.14 = 1.772
+
+    println(fp_lt(b, a)) //11.21 < 3.14  0
+    println(fp_le(b, a)) //11.21 <= 3.14 0
+    println(fp_eq(b, a)) //11.21 == 3.14 0
+
+    println(fp_lt(a, b)) //3.14 < 11.21  1
+    println(fp_le(a, b)) //3.14 <= 11.21 1
+    println(fp_eq(a, a)) //3.14 == 3.14  1
+
+    println(fp_lt(a, a)) //3.14 < 3.14  0
+    println(fp_le(a, a)) //3.14 <= 3.14 1
+    println(fp_eq(a, a)) //3.14 == 3.14  1
+
+    try {
+    /* do something */
+    printlnfp(string_to_fp("deadbeef"))
+    } catch (msg) { /* omit (msg) entirely if not interested */
+        println("caught error: ", msg)
+    }
+}
+

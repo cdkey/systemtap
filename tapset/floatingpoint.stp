@@ -1,0 +1,268 @@
+// floating point operations
+// Copyright (C) 2005-2020 Red Hat Inc.
+//
+// This file is part of systemtap, and is free software.  You can
+// redistribute it and/or modify it under the terms of the GNU General
+// Public License (GPL); either version 2, or (at your option) any
+// later version.
+
+%{
+#include "softfloat.c"
+%}
+
+/**
+ * sfunction fp_to_string - Convert 64 bit floating point to string
+ *
+ * @infp: the 64 bit floating point stored in long
+ *
+ * @precision: number of digits after decimal point
+ *
+ * Description: Given a 64 bit floating point, which is stored in long,
+ * use the long value to initiate self-defined float64_t type, then
+ * apply the f64_to_i64 function to get the string representation.
+ */
+function fp_to_string:string (infp:long, precision:long)
+%{
+    float64_t fp;
+    fp.v = (unsigned long) STAP_ARG_infp;
+    f64_to_str(STAP_RETVALUE, MAXSTRINGLEN, fp, STAP_ARG_precision);
+%}
+
+/**
+ * sfunction string_to_fp - Convert the given string into floating point
+ *
+ * @input: the string representation of a decimal number
+ *
+ * Description: Given the string representation of a decimal number, convert
+ *              it to a floating point which is stored in 64 bit long.
+ */
+function string_to_fp:long (input:string)
+%{
+    float64_t fp;
+    fp = str_to_f64(STAP_ARG_input);
+    if (fp.v == defaultNaNF64UI)
+      STAP_ERROR ("invalid format");
+    else
+      STAP_RETVALUE = fp.v;
+%}
+
+/**
+ * sfunction long_to_fp - Convert long int to 64 bit floating point
+ *
+ * @input: a long integer
+ *
+ * Description: Convert from a long to a softfloat floating point, then 
+ *              print the floating point value.
+ */
+function long_to_fp:long (input:long)
+%{
+    float64_t fp;
+
+    fp = i64_to_f64(STAP_ARG_input);
+    STAP_RETVALUE = fp.v;
+%}
+
+/**
+ * sfunction fp_to_long - Convert fp to int64
+ *
+ * @infp: the 64 bit floating point stored in long
+ * @roundingMode: through 0-6, which are round to nearest even, minMag, 
+ * 		  min, max, near maxMag and round to odd
+ * @exact: the boolean value, if exact is 1 than raising inexact 
+ *         exception, otherwise ignore the exception.
+ *
+ * Description: Given a 64 bit floating point, which is stored in long,
+ * use the long value to initiate self-defined float64_t type, then 
+ * apply the f64_to_i64 function to get the string representation. 
+ */
+function fp_to_long:long (infp:long, roundingMode:long, exact:long)
+%{
+    float64_t fp;
+    fp.v = (unsigned long) STAP_ARG_infp;
+  
+    STAP_RETVALUE =
+   	 (long) f64_to_i64(
+		fp, 
+		(uint_fast8_t)STAP_ARG_roundingMode, 
+		(bool)STAP_ARG_exact); 
+%}
+
+/**
+ * sfunction fp_add - Addition between floating points
+ *
+ * @add1: the 64 bit floating point addend
+ * @add2: second 64 bit floating point addend
+ *
+ * Description: Given addend 1 and addend 2, apply floating point adding
+ */
+function fp_add:long (add1:long, add2:long)
+%{
+    float64_t fp1;
+    float64_t fp2;
+    float64_t result;
+
+    fp1.v = (unsigned long) STAP_ARG_add1;
+    fp2.v = (unsigned long) STAP_ARG_add2;
+
+    result = f64_add(fp1, fp2);
+    STAP_RETVALUE = result.v;
+%}
+
+/**
+ * sfunction fp_sub - Subtraction between floating points
+ *
+ * @sub1: the 64 bit floating point minuend
+ * @sub2: 64 bit floating point subtrahend
+ *
+ * Description: result would be minuend minus subtrahend
+ */
+function fp_sub:long (sub1:long, sub2:long)
+%{
+    float64_t fp1;
+    float64_t fp2;
+    float64_t result;
+
+    fp1.v = (unsigned long) STAP_ARG_sub1;
+    fp2.v = (unsigned long) STAP_ARG_sub2;
+
+    result = f64_sub(fp1, fp2);
+    STAP_RETVALUE = result.v;
+%}
+
+/**
+ * sfunction fp_mul - Multiplication between floating points
+ *
+ * @mul1: the 64 bit floating point multiplicand
+ * @mul2: 64 bit floating point multiplier
+ *
+ * Description: result is multiplicand times multiplier
+ */
+function fp_mul:long (mul1:long, mul2:long)
+%{
+    float64_t fp1;
+    float64_t fp2;
+    float64_t result;
+
+    fp1.v = (unsigned long) STAP_ARG_mul1;
+    fp2.v = (unsigned long) STAP_ARG_mul2;
+
+    result = f64_mul(fp1, fp2);
+    STAP_RETVALUE = result.v;
+%}
+
+/*
+ *function fp_div - fp divide
+ *
+ * @div1: the 64 bit floating point dividend
+ * @div2: 64 bit floating point divisor
+ *
+ * Description: result would be divisor divides dividend
+ */
+function fp_div:long (div1:long, div2:long)
+%{
+    float64_t fp1;
+    float64_t fp2;
+    float64_t result;
+
+    fp1.v = (unsigned long) STAP_ARG_div1;
+    fp2.v = (unsigned long) STAP_ARG_div2;
+
+    result = f64_div(fp1, fp2);
+    STAP_RETVALUE = result.v;
+%}
+
+/**
+ * sfunction fp_rem - Floating point division
+ *
+ * @div1: the 64 bit floating point dividend
+ * @div2: 64 bit floating point divisor
+ *
+ * Description: result would be the remainder after divisor divides dividend
+ */
+function fp_rem:long (div1:long, div2:long)
+%{
+    float64_t fp1;
+    float64_t fp2;
+    float64_t result;
+    
+    fp1.v = (unsigned long) STAP_ARG_div1;
+    fp2.v = (unsigned long) STAP_ARG_div2;
+
+    result = f64_rem(fp1, fp2);
+    STAP_RETVALUE = result.v;
+%}
+
+/**
+ * sfunction fp_sqrt - Floating point square root
+ *
+ * @infp: the 64 bit floating point input
+ *
+ * Description: apply sqrt to input floating point
+ */
+function fp_sqrt:long (infp:long)
+%{
+    float64_t fp;
+    float64_t result;
+
+    fp.v = (unsigned long) STAP_ARG_infp;
+
+    result = f64_sqrt(fp);
+    STAP_RETVALUE = result.v;
+%}
+
+/**
+ * sfunction fp_eq - fp comparison function equal
+ *
+ * @infp1: the 64 bit floating point input
+ * @infp2: second 64 bit floating point input
+ *
+ * Description: check if infp1 is equal to infp2
+ */
+function fp_eq:long (infp1:long, infp2:long)
+%{
+    float64_t fp1;
+    float64_t fp2;
+
+    fp1.v = (unsigned long) STAP_ARG_infp1;
+    fp2.v = (unsigned long) STAP_ARG_infp2;
+
+    STAP_RETVALUE = f64_eq(fp1, fp2);
+%}
+
+/**
+ * sfunction fp_le - Check if first fp is less than or equal to
+ *
+ * @infp1: the 64 bit floating point input
+ * @infp2: second 64 bit floating point input
+ *
+ * Description: check if infp1 is less than or equal to infp2
+ */
+function fp_le:long (infp1:long, infp2:long)
+%{
+    float64_t fp1;
+    float64_t fp2;
+
+    fp1.v = (unsigned long) STAP_ARG_infp1;
+    fp2.v = (unsigned long) STAP_ARG_infp2;
+
+    STAP_RETVALUE = f64_le(fp1, fp2);
+%}
+
+/**
+ * sfunction fp_le - fp comparison function less than
+ *
+ * @infp1: the 64 bit floating point input
+ * @infp2: second 64 bit floating point input
+ *
+ * Description: check if infp1 is strictly less than infp2
+ */
+function fp_lt:long (infp1:long, infp2:long)
+%{
+    float64_t fp1;
+    float64_t fp2;
+
+    fp1.v = (unsigned long) STAP_ARG_infp1;
+    fp2.v = (unsigned long) STAP_ARG_infp2;
+
+    STAP_RETVALUE = f64_lt(fp1, fp2);
+%}

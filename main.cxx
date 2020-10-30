@@ -375,9 +375,10 @@ setup_signals (sighandler_t handler)
 
 
 static void
-sdt_benchmark_thread(unsigned long i)
+sdt_benchmark_thread(unsigned long i, double *fpointer)
 {
   PROBE(stap, benchmark__thread__start);
+  *fpointer += 0.0;
   while (i--)
     PROBE1(stap, benchmark, i);
   PROBE(stap, benchmark__thread__end);
@@ -389,7 +390,7 @@ run_sdt_benchmark(systemtap_session& s)
 {
   unsigned long loops = s.benchmark_sdt_loops ?: 10000000;
   unsigned long threads = s.benchmark_sdt_threads ?: 1;
-
+  
   if (s.verbose > 0)
     clog << _F("Beginning SDT benchmark with %lu loops in %lu threads.",
                loops, threads) << endl;
@@ -403,8 +404,9 @@ run_sdt_benchmark(systemtap_session& s)
   PROBE(stap, benchmark__start);
     {
       vector<thread> handles;
+      double f = 2.71828;
       for (unsigned long i = 0; i < threads; ++i)
-        handles.push_back(thread(sdt_benchmark_thread, loops));
+        handles.push_back(thread(sdt_benchmark_thread, loops,&f));
       for (unsigned long i = 0; i < threads; ++i)
         handles[i].join();
     }

@@ -37,6 +37,7 @@ foreach file [lsort [glob -nocomplain $srcdir/$self/*.stp]] {
 	buildok/eighteen.stp -
 	buildok/fifteen.stp -
 	buildok/five.stp -
+        buildok/floatingpoint.stp -
 	buildok/fortyfive.stp -
 	buildok/fortysix.stp -
 	buildok/fortytwo.stp -
