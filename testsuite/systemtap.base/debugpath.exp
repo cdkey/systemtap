@@ -1,8 +1,9 @@
 
 set test "debugpath-bad"
-spawn env SYSTEMTAP_DEBUGINFO_PATH=/dev/null stap -u -e "probe kernel.function(\"vfs_read\") {}" -wp4
+spawn env SYSTEMTAP_DEBUGINFO_PATH=/dev/null DEBUGINFOD_URLS= stap -u -e "probe kernel.function(\"vfs_read\") {}" -wp4
 expect {
 	-re {^semantic error:.*missing.*debuginfo} { pass $test }
+	-re {^semantic error:.*no.* match} { pass $test }
 	timeout { fail "$test (timeout1)" }
 	eof { fail "$test (eof)" }
 }
