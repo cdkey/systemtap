@@ -539,7 +539,7 @@ stp_task_notify_resume(struct task_struct *target, struct utrace *utrace)
 	if (atomic_add_unless(&utrace->resume_work_added, 1, 1)) {
 		int rc = stp_task_work_add(target, &utrace->resume_work);
 		if (rc != 0) {
-			atomic_set(&utrace->report_work_added, 0);
+			atomic_set(&utrace->resume_work_added, 0);
 
 			/* stp_task_work_add() returns -ESRCH if the
 			 * task has already passed
