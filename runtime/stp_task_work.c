@@ -16,6 +16,7 @@ typedef typeof(&task_work_cancel) task_work_cancel_fn;
 /* To avoid a crash when a task_work callback gets called after the
  * module is unloaded, keep track of the number of current callbacks. */
 static atomic_t stp_task_work_callbacks = ATOMIC_INIT(0);
+static DECLARE_WAIT_QUEUE_HEAD(stp_task_work_waitq);
 
 /*
  * stp_task_work_init() should be called before any other
@@ -55,9 +56,28 @@ stp_task_work_init(void)
 static void
 stp_task_work_exit(void)
 {
-	while (atomic_read(&stp_task_work_callbacks))
-		schedule_timeout_uninterruptible(1);
-	return;
+	wait_event(stp_task_work_waitq, !atomic_read(&stp_task_work_callbacks));
+}
+
+static void
+stp_task_work_get(void)
+{
+	/*
+	 * We use atomic_inc_return() here instead of atomic_inc() because
+	 * atomic_inc_return() implies a full memory barrier and we need the
+	 * updates to stp_task_work_callbacks to be ordered correctly, otherwise
+	 * there could still be a task worker active after stp_task_work_exit()
+	 * returns (assuming that no task workers are added *after*
+	 * stp_task_work_exit() returns).
+	 */
+	atomic_inc_return(&stp_task_work_callbacks);
+}
+
+static void
+stp_task_work_put(void)
+{
+	if (atomic_dec_and_test(&stp_task_work_callbacks))
+		wake_up(&stp_task_work_waitq);
 }
 
 /*
@@ -71,7 +91,7 @@ stp_task_work_add(struct task_struct *task, struct task_work *twork)
 
 	rc = task_work_add(task, twork, true);
 	if (rc == 0)
-		atomic_inc(&stp_task_work_callbacks);	
+		stp_task_work_get();
 	return rc;
 }
 
@@ -86,7 +106,7 @@ stp_task_work_cancel(struct task_struct *task, task_work_func_t func)
 
 	twork = task_work_cancel(task, func);
 	if (twork != NULL)
-		atomic_dec(&stp_task_work_callbacks);
+		stp_task_work_put();
 	return twork;
 }
 
@@ -98,7 +118,7 @@ stp_task_work_cancel(struct task_struct *task, task_work_func_t func)
 static void
 stp_task_work_func_done(void)
 {
-	atomic_dec(&stp_task_work_callbacks);
+	stp_task_work_put();
 }
 
 
