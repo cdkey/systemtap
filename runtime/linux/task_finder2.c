@@ -1394,6 +1394,7 @@ __stp_utrace_task_finder_target_quiesce(u32 action,
 {
 	struct task_struct *tsk = current;
 	struct stap_task_finder_target *tgt = engine->data;
+	struct task_work *work;
 	int rc;
 
 	if (atomic_read(&__stp_task_finder_state) != __STP_TF_RUNNING) {
@@ -1434,58 +1435,27 @@ __stp_utrace_task_finder_target_quiesce(u32 action,
 		_stp_error("utrace_set_events returned error %d on pid %d",
 			   rc, (int)tsk->pid);
 
-	if (in_atomic() || irqs_disabled()) {
-		struct task_work *work;
-
-		/* If we can't sleep, arrange for the task to truly
-		 * stop so we can sleep. */
-		work = __stp_tf_alloc_task_work(tgt);
-		if (work == NULL) {
-			_stp_error("Unable to allocate space for task_work");
-			return UTRACE_RESUME;
-		}
-		stp_init_task_work(work, &__stp_tf_quiesce_worker);
-
-		rc = stp_task_work_add(tsk, work);
-		/* stp_task_work_add() returns -ESRCH if the task has
-		 * already passed exit_task_work(). Just ignore this
-		 * error. */
-		if (rc != 0 && rc != -ESRCH) {
-			printk(KERN_ERR "%s:%d - stp_task_work_add() returned %d\n",
-			       __FUNCTION__, __LINE__, rc);
-		}
+	/*
+	 * We could be in atomic context in a syscall tracepoint, which runs
+	 * in an RCU read-side critical section. We can't detect this with
+	 * in_atomic() on non-PREEMPT kernels (i.e., CONFIG_PREEMPT=n) so we
+	 * must always use a task worker here because there's no way to tell if
+	 * sleeping is okay.
+	 */
+	work = __stp_tf_alloc_task_work(tgt);
+	if (work == NULL) {
+		_stp_error("Unable to allocate space for task_work");
+		return UTRACE_RESUME;
 	}
-	else {
-                /* Like in __stp_tf_quiesce_worker(), verify build-id now if belated. */
-                if (tgt->build_id_len > 0) {
-                        int ok = __verify_build_id(current,
-                                                   tgt->build_id_vaddr,
-                                                   tgt->build_id,
-                                                   tgt->build_id_len);
-                        
-                        dbug_task(2, "verified2 buildid-target process pid=%ld ok=%d\n",
-                                  (long) current->tgid, ok);
-                        if (!ok) {
-                                __stp_tf_handler_end();
-                                return UTRACE_RESUME; // NB: not _DETACH; that interferes with other engines
-                        }
-                } 
-                
-		/* NB make sure we run mmap callbacks before other callbacks
-		 * like 'probe process.begin' handlers so that the vma tracker
-		 * is already initialized in the latter contexts */
+	stp_init_task_work(work, &__stp_tf_quiesce_worker);
 
-		/* If this is just a thread other than the thread
-		   group leader, don't bother inform map callback
-		   clients about its memory map, since they will
-		   simply duplicate each other. */
-		if (tgt->mmap_events == 1 && tsk->tgid == tsk->pid) {
-			__stp_call_mmap_callbacks_for_task(tgt, tsk);
-		}
-
-		/* Call the callbacks.  Assume that if the thread is a
-		 * thread group leader, it is a process. */
-		__stp_call_callbacks(tgt, tsk, 1, (tsk->pid == tsk->tgid));
+	rc = stp_task_work_add(tsk, work);
+	/* stp_task_work_add() returns -ESRCH if the task has
+	 * already passed exit_task_work(). Just ignore this
+	 * error. */
+	if (rc != 0 && rc != -ESRCH) {
+		printk(KERN_ERR "%s:%d - stp_task_work_add() returned %d\n",
+		       __FUNCTION__, __LINE__, rc);
 	}
 
 	__stp_tf_handler_end();
@@ -1631,6 +1601,8 @@ __stp_utrace_task_finder_target_syscall_exit(u32 action,
 	struct stap_task_finder_target *tgt = engine->data;
 	unsigned long rv;
 	struct __stp_tf_map_entry *entry;
+	struct task_work *work;
+	int rc;
 
 	if (atomic_read(&__stp_task_finder_state) != __STP_TF_RUNNING) {
 		debug_task_finder_detach();
@@ -1663,54 +1635,36 @@ __stp_utrace_task_finder_target_syscall_exit(u32 action,
 			    : "UNKNOWN")))),
 		  entry->arg0, rv);
 
-	if (in_atomic() || irqs_disabled()) {
-		struct task_work *work;
-		int rc;
-
-		/* If this is mmap()/mmap2(), we need to remember the
-		 * return value. We'll use entry->arg0, since
-		 * mmap()/mmap2() doesn't use that info. */
-		if (entry->syscall_no == MMAP_SYSCALL_NO(tsk)
-		    || entry->syscall_no == MMAP2_SYSCALL_NO(tsk)) {
-			entry->arg0 = rv;
-		}
-
-		/* If we can't sleep, arrange for the task to truly
-		 * stop so we can sleep. */
-		work = __stp_tf_alloc_task_work(tgt);
-		if (work == NULL) {
-			_stp_error("Unable to allocate space for task_work");
-			__stp_tf_remove_map_entry(entry);
-			__stp_tf_handler_end();
-			return UTRACE_RESUME;
-		}
-		stp_init_task_work(work, &__stp_tf_mmap_worker);
-		rc = stp_task_work_add(tsk, work);
-		/* stp_task_work_add() returns -ESRCH if the task has
-		 * already passed exit_task_work(). Just ignore this
-		 * error. */
-		if (rc != 0 && rc != -ESRCH) {
-			printk(KERN_ERR "%s:%d - stp_task_work_add() returned %d\n",
-			       __FUNCTION__, __LINE__, rc);
-		}
+	/* If this is mmap()/mmap2(), we need to remember the
+	 * return value. We'll use entry->arg0, since
+	 * mmap()/mmap2() doesn't use that info. */
+	if (entry->syscall_no == MMAP_SYSCALL_NO(tsk)
+	    || entry->syscall_no == MMAP2_SYSCALL_NO(tsk)) {
+		entry->arg0 = rv;
 	}
-	else {
-		if (entry->syscall_no == MUNMAP_SYSCALL_NO(tsk)) {
-			// Call the callbacks
-			__stp_call_munmap_callbacks(tgt, tsk, entry->arg0,
-						    entry->arg1);
-		}
-		else if (entry->syscall_no == MMAP_SYSCALL_NO(tsk)
-			 || entry->syscall_no == MMAP2_SYSCALL_NO(tsk)) {
-			// Call the callbacks
-			__stp_call_mmap_callbacks_with_addr(tgt, tsk, rv);
-		}
-		else {			// mprotect
-			// Call the callbacks
-			__stp_call_mprotect_callbacks(tgt, tsk, entry->arg0,
-						      entry->arg1, entry->arg2);
-		}
+
+	/*
+	 * We could be in atomic context in a syscall tracepoint, which runs
+	 * in an RCU read-side critical section. We can't detect this with
+	 * in_atomic() on non-PREEMPT kernels (i.e., CONFIG_PREEMPT=n) so we
+	 * must always use a task worker here because there's no way to tell if
+	 * sleeping is okay.
+	 */
+	work = __stp_tf_alloc_task_work(tgt);
+	if (work == NULL) {
+		_stp_error("Unable to allocate space for task_work");
 		__stp_tf_remove_map_entry(entry);
+		__stp_tf_handler_end();
+		return UTRACE_RESUME;
+	}
+	stp_init_task_work(work, &__stp_tf_mmap_worker);
+	rc = stp_task_work_add(tsk, work);
+	/* stp_task_work_add() returns -ESRCH if the task has
+	 * already passed exit_task_work(). Just ignore this
+	 * error. */
+	if (rc != 0 && rc != -ESRCH) {
+		printk(KERN_ERR "%s:%d - stp_task_work_add() returned %d\n",
+		       __FUNCTION__, __LINE__, rc);
 	}
 
 	__stp_tf_handler_end();
