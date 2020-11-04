@@ -6067,6 +6067,7 @@ c_unparser::visit_functioncall (functioncall* e)
         }
 
       // call function
+      o->newline() << "c->last_stmt = " << lex_cast_qstring(*e->tok) << ";";
       o->newline() << c_funcname (r->name) << " (c);";
       o->newline() << "if (unlikely(c->last_error || c->aborted)) goto out;";
 
