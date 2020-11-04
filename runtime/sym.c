@@ -662,22 +662,28 @@ static int _stp_build_id_check (struct _stp_module *m,
 
   memset(hexstring_practice, '\0', max_buildid_hexstring);
   for (i=0, j=0; j<buildid_len; j++) {
+#ifdef STAPCONF_SET_FS
     /* Use set_fs / get_user to access conceivably invalid addresses.
      * If loc2c-runtime.h were more easily usable, a deref() loop
      * could do it too. */
     mm_segment_t oldfs = get_fs();
+#endif
     int rc;
     unsigned char practice = 0;
 
 #ifdef STAPCONF_PROBE_KERNEL
     if (!tsk) {
+#ifdef STAPCONF_SET_FS
       set_fs(KERNEL_DS);
+#endif
       rc = probe_kernel_read(&practice, (void*)(notes_addr + j), 1);
     }
     else
 #endif
     {
+#ifdef STAPCONF_SET_FS
       set_fs (tsk ? USER_DS : KERNEL_DS);
+#endif
 
       /*
        * Why check CONFIG_UTRACE here? If we're using real in-kernel
@@ -687,20 +693,34 @@ static int _stp_build_id_check (struct _stp_module *m,
        * Since we're only reading here, we can call
        * __access_process_vm_noflush(), which only calls things that
        * are exported.
+       *
+       * PR26811: Kernel 5.10+ after set_fs() removal no longer supports
+       * reading kernel addresses with get_user.
        */
-#ifdef CONFIG_UTRACE
+#if defined(CONFIG_UTRACE) && !defined(STAPCONF_SET_FS)
       rc = get_user(practice, ((unsigned char*)(void*)(notes_addr + j)));
-#else
+#elif defined(STAPCONF_SET_FS)
       if (!tsk || tsk == current) {
 	rc = get_user(practice, ((unsigned char*)(void*)(notes_addr + j)));
       }
+#else
+      if (!tsk) {
+        /* XXX Just reading kernel memory should be sufficient
+           e.g. per Linux kernel commit ee6e00c8. */
+        practice = *((unsigned char*)(void*)(notes_addr + j));
+        rc = 0;
+      } else if (tsk == current) {
+	rc = get_user(practice, ((unsigned char*)(void*)(notes_addr + j)));
+      }
+#endif
       else {
 	rc = (__access_process_vm_noflush(tsk, (notes_addr + j), &practice,
 					  1, 0) != 1);
       }
-#endif
     }
+#ifdef STAPCONF_SET_FS
     set_fs(oldfs);
+#endif
 
     if (rc == 0) { // got actual data byte
             hexstring_practice[i++] = hexnibble[practice >> 4];

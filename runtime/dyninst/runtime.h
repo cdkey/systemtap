@@ -65,9 +65,11 @@ typedef uint64_t u64;
 
 
 // segments don't matter in dyninst...
+#define STAPCONF_SET_FS
 #define USER_DS (1)
 #define KERNEL_DS (-1)
 typedef int mm_segment_t;
+#define stp_mm_segment_t mm_segment_t
 static inline mm_segment_t get_fs(void) { return 0; }
 static inline void set_fs(mm_segment_t seg) { (void)seg; }
 

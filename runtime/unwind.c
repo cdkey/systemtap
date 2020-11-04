@@ -1120,7 +1120,7 @@ static int compute_expr(const u8 *expr, struct unwind_frame_info *frame,
 				switch (value) {
 #define CASE(n)     		case sizeof(u##n):			\
 					if (unlikely(_stp_deref_nofault(value, sizeof(u##n), (u##n *)addr, \
-									(user ? USER_DS : KERNEL_DS)))) \
+									(user ? STP_USER_DS : STP_KERNEL_DS)))) \
 						goto copy_failed;	\
 					break
 					CASES;
@@ -1440,7 +1440,7 @@ static int unwind_frame(struct unwind_context *context,
 			switch (reg_info[i].width) {
 #define CASE(n)     case sizeof(u##n):					\
 				if (unlikely(_stp_deref_nofault(FRAME_REG(i, u##n), sizeof(u##n), (u##n *)addr, \
-								(user ? USER_DS : KERNEL_DS)))) \
+								(user ? STP_USER_DS : STP_KERNEL_DS)))) \
 					goto copy_failed;		\
 				if (compat_task) FRAME_REG(i, u##n) &= 0xFFFFFFFF; \
 				dbug_unwind(1, "set register %d to %lx\n", i, (long)FRAME_REG(i,u##n)); \

@@ -226,9 +226,11 @@ static const char *processor_modes[]=
 };
 
 
+#ifdef STAPCONF_SET_FS
 /* get_ds() removed in 736706bee3298208343a76096370e4f6a5c55915 */
 #ifndef get_ds
 #define get_ds()	(KERNEL_DS)
+#endif
 #endif
 
 static void _stp_print_regs(struct pt_regs * regs)
@@ -258,12 +260,20 @@ static void _stp_print_regs(struct pt_regs * regs)
 		flags & PSR_Z_BIT ? 'Z' : 'z',
 		flags & PSR_C_BIT ? 'C' : 'c',
 		flags & PSR_V_BIT ? 'V' : 'v');
+#ifdef STAPCONF_SET_FS
 	_stp_printf("  IRQs o%s  FIQs o%s  Mode %s%s  Segment %s\n",
+#else
+	_stp_printf("  IRQs o%s  FIQs o%s  Mode %s%s\n",
+#endif
 		interrupts_enabled(regs) ? "n" : "ff",
 		fast_interrupts_enabled(regs) ? "n" : "ff",
 		processor_modes[processor_mode(regs)],
+#ifdef STAPCONF_SET_FS
 		thumb_mode(regs) ? " (T)" : "",
 		get_fs() == get_ds() ? "kernel" : "user");
+#else
+		thumb_mode(regs) ? " (T)" : "");
+#endif
 #ifdef CONFIG_CPU_CP15
 	{
 		unsigned int ctrl;

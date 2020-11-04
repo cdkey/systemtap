@@ -42,7 +42,7 @@
 static long _stp_strncpy_from_user(char *dst, const char __user *src,
 				   long count)
 {
-	return _stp_deref_string_nofault(dst, src, count, USER_DS);
+	return _stp_deref_string_nofault(dst, src, count, STP_USER_DS);
 }
 
 /** Copy a block of data from user space.
@@ -62,10 +62,12 @@ static long _stp_strncpy_from_user(char *dst, const char __user *src,
 static unsigned long _stp_copy_from_user(char *dst, const char __user *src, unsigned long count)
 {
 	if (count) {
+#ifdef STAPCONF_SET_FS
                 mm_segment_t _oldfs = get_fs();
                 set_fs(USER_DS);
+#endif
                 pagefault_disable();
-		if (!lookup_bad_addr(VERIFY_READ, (const unsigned long)src, count))
+		if (!lookup_bad_addr(VERIFY_READ, (const unsigned long)src, count, STP_USER_DS))
 			count = __copy_from_user_inatomic(dst, src, count);
 		else
 			/* Notice that if we fail, we don't modify
@@ -73,7 +75,9 @@ static unsigned long _stp_copy_from_user(char *dst, const char __user *src, unsi
 			 * can't trust 'count' to be reasonable. */
 			count = -EFAULT;
                 pagefault_enable();
+#ifdef STAPCONF_SET_FS
                 set_fs(_oldfs);
+#endif
 	}
 	return count;
 }

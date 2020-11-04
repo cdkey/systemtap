@@ -366,6 +366,7 @@ compile_pass (systemtap_session& s)
   output_dual_exportconf(s, o2, "alloc_vm_area", "free_vm_area", "STAPCONF_VM_AREA");
   output_autoconf(s, o, cs, "autoconf-procfs-owner.c", "STAPCONF_PROCFS_OWNER", NULL);
   output_autoconf(s, o, cs, "autoconf-alloc-percpu-align.c", "STAPCONF_ALLOC_PERCPU_ALIGN", NULL);
+  output_autoconf(s, o, cs, "autoconf-set_fs.c", "STAPCONF_SET_FS", NULL);
   output_autoconf(s, o, cs, "autoconf-x86-fs.c", "STAPCONF_X86_FS", NULL);
   output_autoconf(s, o, cs, "autoconf-x86-xfs.c", "STAPCONF_X86_XFS", NULL);
   output_autoconf(s, o, cs, "autoconf-x86-gs.c", "STAPCONF_X86_GS", NULL);

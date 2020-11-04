@@ -325,10 +325,17 @@ static void ursl_store64 (const struct usr_regset_lut* lut,unsigned lutsize,  in
    gracefully (as from corrupted data structures, stale pointers,
    etc), by doing a "goto deref_fault".
 
-   On most machines, the asm/uaccess.h macros __get_user and
-   __put_user macros do exactly the low-level work we need to access
-   memory with fault handling, and are not actually specific to
-   user-address access at all.  */
+   Prior to kernel 5.10, on most machines, the asm/uaccess.h macros
+   __get_user and __put_user macros do exactly the low-level work
+   we need to access memory with fault handling,
+   and are not actually specific to user-address access at all.
+
+   After kernel 5.10 on arches removing set_fs(), kernel
+   addresses should be read/written with get_kernel_nofault and
+   copy_to_kernel_nofault while user addresses are still read/written
+   with __get_user and __put_user. So we have wrapper macros
+   __stp_{get,put}_either which do the right thing on all kernel
+   versions. */
 
 /*
  * On most platforms, __get_user_inatomic() and __put_user_inatomic()
@@ -360,6 +367,43 @@ static void ursl_store64 (const struct usr_regset_lut* lut,unsigned lutsize,  in
 #define __stp_put_user_bad __put_user_bad
 #endif
 
+/*
+ * __stp_{get,put}_either take an stp_mm_segment_t parameter
+ * and use that to decide the correct address space
+ * on post-5.10 non-set_fs() kernels.
+ */
+#ifdef STAPCONF_SET_FS
+
+#define __stp_get_either(v, addr, seg) __stp_get_user((v), (addr))
+#define __stp_put_either(v, addr, seg) __stp_put_user((v), (addr))
+
+#else
+
+/* PR26811: Distinguish user- and kernel-space get and put operations.
+ *
+ * XXX There is slight redundancy between the size adjustments we
+ * do and the size adjustments done by {get,copy_to}_kernel_nofault. */
+
+/* XXX copy_to_kernel_nofault is what we need, but it's not exported.
+ * First typedef from the original decl, then #define it as a typecasted call.
+ */
+typedef typeof(&copy_to_kernel_nofault) copy_to_kernel_nofault_fn;
+#define copy_to_kernel_nofault(dst, src, size)                      \
+  (kallsyms_copy_to_kernel_nofault ?                                \
+   (* (copy_to_kernel_nofault_fn)(kallsyms_copy_to_kernel_nofault)) \
+   ((dst),(src),(size)) :                                           \
+   -EFAULT)
+
+#define __stp_get_either(v, addr, seg)          \
+  (MM_SEG_IS_KERNEL((seg)) ?                    \
+   get_kernel_nofault((v), (addr)) :            \
+   __stp_get_user((v), (addr)))
+#define __stp_put_either(v, addr, seg)                                  \
+  (MM_SEG_IS_KERNEL((seg)) ?                                            \
+   ({typeof(v) _v = (v); long rc = copy_to_kernel_nofault((void *)(addr), (void *)&_v, sizeof(v)); rc;}) : \
+   __stp_put_user((v), (addr)))
+
+#endif
 
 /* 
  * __stp_deref_nocheck(): reads a simple type from a
@@ -368,6 +412,8 @@ static void ursl_store64 (const struct usr_regset_lut* lut,unsigned lutsize,  in
  * value: read the simple type into this variable
  * size: number of bytes to read
  * addr: address to read from
+ * seg: memory segment to use, either kernel (STP_KERNEL_DS) or user
+ * (STP_USER_DS)
  *
  * Note that the caller *must* check the address for validity and do
  * any other checks necessary. This macro is designed to be used as
@@ -376,27 +422,28 @@ static void ursl_store64 (const struct usr_regset_lut* lut,unsigned lutsize,  in
  * that the kernel doesn't pagefault while reading.
  */
 
-static inline int __stp_deref_nocheck_(u64 *pv, size_t size, void *addr)
+static inline int __stp_deref_nocheck_(u64 *pv, size_t size,
+                                       void *addr, stp_mm_segment_t seg)
 {
   u64 v = 0;
   int r = -EFAULT;
 
   switch (size)
     {
-    case 1: { u8 b; r = __stp_get_user(b, (u8 *)addr); v = b; } break;
-    case 2: { u16 w; r = __stp_get_user(w, (u16 *)addr); v = w; } break;
-    case 4: { u32 l; r = __stp_get_user(l, (u32 *)addr); v = l; } break;
+    case 1: { u8 b; r = __stp_get_either(b, (u8 *)addr, seg); v = b; } break;
+    case 2: { u16 w; r = __stp_get_either(w, (u16 *)addr, seg); v = w; } break;
+    case 4: { u32 l; r = __stp_get_either(l, (u32 *)addr, seg); v = l; } break;
 #if defined(__i386__) || defined(__arm__)
     /* x86 and arm can't do 8-byte get_user, so we have to split it */
     case 8: { union { u32 l[2]; u64 ll; } val;
-	      r = __stp_get_user(val.l[0], &((u32 *)addr)[0]);
+	      r = __stp_get_either(val.l[0], &((u32 *)addr)[0], seg);
 	      if (! r)
-		  r = __stp_get_user(val.l[1], &((u32 *)addr)[1]);
+		  r = __stp_get_either(val.l[1], &((u32 *)addr)[1], seg);
 	      if (! r)
 		  v = val.ll;
 	    } break;
 #else
-    case 8: { r = __stp_get_user(v, (u64 *)addr); } break;
+    case 8: { r = __stp_get_either(v, (u64 *)addr, seg); } break;
 #endif
     }
 
@@ -404,13 +451,14 @@ static inline int __stp_deref_nocheck_(u64 *pv, size_t size, void *addr)
   return r;
 }
 
-#define __stp_deref_nocheck(value, size, addr)				\
+#define __stp_deref_nocheck(value, size, addr, seg)                     \
   ({									\
     u64 _v = 0; int _e = -EFAULT;					\
     switch (size)							\
       {									\
       case 1: case 2: case 4: case 8:					\
-	_e = __stp_deref_nocheck_(&_v, (size), (void *)(uintptr_t)(addr)); \
+	_e = __stp_deref_nocheck_                                       \
+          (&_v, (size), (void *)(uintptr_t)(addr), (seg));              \
 	(value) = _v;							\
 	break;								\
       default:								\
@@ -426,8 +474,8 @@ static inline int __stp_deref_nocheck_(u64 *pv, size_t size, void *addr)
  * type: memory access type (either VERIFY_READ or VERIFY_WRITE)
  * size: number of bytes to verify
  * addr: address to verify
- * seg: memory segment to use, either kernel (KERNEL_DS) or user
- * (USER_DS)
+ * seg: memory segment to use, either kernel (STP_KERNEL_DS) or user
+ * (STP_USER_DS)
  * 
  * The macro returns 0 if the address is valid, non-zero otherwise.
  * Note that the kernel will not pagefault when trying to verify the
@@ -436,16 +484,20 @@ static inline int __stp_deref_nocheck_(u64 *pv, size_t size, void *addr)
  */
 
 static inline int _stp_lookup_bad_addr_(int type, size_t size,
-                                        uintptr_t addr, mm_segment_t seg)
+                                        uintptr_t addr, stp_mm_segment_t seg)
 {
   int bad;
+#ifdef STAPCONF_SET_FS
   mm_segment_t oldfs = get_fs();
 
   set_fs(seg);
+#endif
   pagefault_disable();
-  bad = lookup_bad_addr(type, addr, size);
+  bad = lookup_bad_addr(type, addr, size, seg);
   pagefault_enable();
+#ifdef STAPCONF_SET_FS
   set_fs(oldfs);
+#endif
 
   return bad;
 }
@@ -461,8 +513,8 @@ static inline int _stp_lookup_bad_addr_(int type, size_t size,
  * value: read the simple type into this variable
  * size: number of bytes to read
  * addr: address to read from
- * seg: memory segment to use, either kernel (KERNEL_DS) or user
- * (USER_DS)
+ * seg: memory segment to use, either kernel (STP_KERNEL_DS) or user
+ * (STP_USER_DS)
  * 
  * If this macro gets an error while trying to read memory, nonzero is
  * returned. On success, 0 is return. Note that the kernel will not
@@ -470,19 +522,23 @@ static inline int _stp_lookup_bad_addr_(int type, size_t size,
  */
 
 static inline int _stp_deref_nofault_(u64 *pv, size_t size, void *addr,
-				      mm_segment_t seg)
+				      stp_mm_segment_t seg)
 {
   int r = -EFAULT;
+#ifdef STAPCONF_SET_FS
   mm_segment_t oldfs = get_fs();
 
   set_fs(seg);
+#endif
   pagefault_disable();
-  if (lookup_bad_addr(VERIFY_READ, (uintptr_t)addr, size))
+  if (lookup_bad_addr(VERIFY_READ, (uintptr_t)addr, size, seg))
     r = -EFAULT;
   else
-    r = __stp_deref_nocheck_(pv, size, addr);
+    r = __stp_deref_nocheck_(pv, size, addr, seg);
   pagefault_enable();
+#ifdef STAPCONF_SET_FS
   set_fs(oldfs);
+#endif
 
   return r;
 }
@@ -509,8 +565,8 @@ static inline int _stp_deref_nofault_(u64 *pv, size_t size, void *addr,
  *
  * size: number of bytes to read
  * addr: address to read from
- * seg: memory segment to use, either kernel (KERNEL_DS) or user
- * (USER_DS)
+ * seg: memory segment to use, either kernel (STP_KERNEL_DS) or user
+ * (STP_USER_DS)
  * 
  * The macro returns the value read. If this macro gets an error while
  * trying to read memory, a DEREF_FAULT will occur. Note that the
@@ -542,6 +598,8 @@ static inline int _stp_deref_nofault_(u64 *pv, size_t size, void *addr,
  * size: number of bytes to write
  * addr: address to write to
  * value: read the simple type from this variable
+ * seg: memory segment to use, either kernel (STP_KERNEL_DS) or user
+ * (STP_USER_DS)
  *
  * Note that the caller *must* check the address for validity and do
  * any other checks necessary. This macro is designed to be used as
@@ -550,37 +608,38 @@ static inline int _stp_deref_nofault_(u64 *pv, size_t size, void *addr,
  * that the kernel doesn't pagefault while writing.
  */
 
-static inline int __stp_store_deref_nocheck_(size_t size, void *addr, u64 v)
+static inline int __stp_store_deref_nocheck_(size_t size, void *addr,
+                                             u64 v, stp_mm_segment_t seg)
 {
   int r;
   switch (size)
     {
-    case 1: r = __stp_put_user((u8)v, (u8 *)addr); break;
-    case 2: r = __stp_put_user((u16)v, (u16 *)addr); break;
-    case 4: r = __stp_put_user((u32)v, (u32 *)addr); break;
+    case 1: r = __stp_put_either((u8)v, (u8 *)addr, seg); break;
+    case 2: r = __stp_put_either((u16)v, (u16 *)addr, seg); break;
+    case 4: r = __stp_put_either((u32)v, (u32 *)addr, seg); break;
 #if defined(__i386__) || defined(__arm__)
     /* x86 and arm can't do 8-byte put_user, so we have to split it */
     default: { union { u32 l[2]; u64 ll; } val;
 	       val.ll = v;
-	       r = __stp_put_user(val.l[0], &((u32 *)addr)[0]);
+	       r = __stp_put_either(val.l[0], &((u32 *)addr)[0], seg);
 	       if (! r)
-		   r = __stp_put_user(val.l[1], &((u32 *)addr)[1]);
+                 r = __stp_put_either(val.l[1], &((u32 *)addr)[1], seg);
 	     } break;
 #else
-    default: r = __stp_put_user(v, (u64 *)addr); break;
+    default: r = __stp_put_either(v, (u64 *)addr, seg); break;
 #endif
     }
   return r;
 }
 
-#define __stp_store_deref_nocheck(size, addr, value)			\
+#define __stp_store_deref_nocheck(size, addr, value, seg)               \
   ({									\
     int _e = -EFAULT;							\
     switch (size)							\
       {									\
       case 1: case 2: case 4: case 8:					\
 	_e = __stp_store_deref_nocheck_					\
-		((size), (void *)(uintptr_t)(addr), (value));		\
+          ((size), (void *)(uintptr_t)(addr), (value), (seg));		\
 	break;								\
       default:								\
         __stp_put_user_bad();						\
@@ -595,8 +654,8 @@ static inline int __stp_store_deref_nocheck_(size_t size, void *addr, u64 v)
  * size: number of bytes to write
  * addr: address to write to
  * value: read the simple type from this variable
- * seg: memory segment to use, either kernel (KERNEL_DS) or user
- * (USER_DS)
+ * seg: memory segment to use, either kernel (STP_KERNEL_DS) or user
+ * (STP_USER_DS)
  * 
  * The macro has no return value. If this macro gets an error while
  * trying to write, a STORE_DEREF_FAULT will occur. Note that the
@@ -604,19 +663,23 @@ static inline int __stp_store_deref_nocheck_(size_t size, void *addr, u64 v)
  */
 
 static inline int _stp_store_deref_(size_t size, void *addr, u64 v,
-				    mm_segment_t seg)
+				    stp_mm_segment_t seg)
 {
   int r;
+#ifdef STAPCONF_SET_FS
   mm_segment_t oldfs = get_fs();
 
   set_fs(seg);
+#endif
   pagefault_disable();
-  if (lookup_bad_addr(VERIFY_READ, (uintptr_t)addr, size))
+  if (lookup_bad_addr(VERIFY_READ, (uintptr_t)addr, size, seg))
     r = -EFAULT;
   else
-    r = __stp_store_deref_nocheck_(size, addr, v);
+    r = __stp_store_deref_nocheck_(size, addr, v, seg);
   pagefault_enable();
+#ifdef STAPCONF_SET_FS
   set_fs(oldfs);
+#endif
 
   return r;
 }
@@ -642,19 +705,19 @@ static inline int _stp_store_deref_(size_t size, void *addr, u64 v,
 /* Map kderef/uderef to the generic segment-aware deref macros. */ 
 
 #ifndef kderef
-#define kderef(s,a) _stp_deref(s,a,KERNEL_DS)
+#define kderef(s,a) _stp_deref(s,a,STP_KERNEL_DS)
 #endif
 
 #ifndef store_kderef
-#define store_kderef(s,a,v) _stp_store_deref(s,a,v,KERNEL_DS)
+#define store_kderef(s,a,v) _stp_store_deref(s,a,v,STP_KERNEL_DS)
 #endif
 
 #ifndef uderef
-#define uderef(s,a) _stp_deref(s,a,USER_DS)
+#define uderef(s,a) _stp_deref(s,a,STP_USER_DS)
 #endif
 
 #ifndef store_uderef
-#define store_uderef(s,a,v) _stp_store_deref(s,a,v,USER_DS)
+#define store_uderef(s,a,v) _stp_store_deref(s,a,v,STP_USER_DS)
 #endif
 
 #ifndef CONFIG_64BIT
@@ -714,24 +777,28 @@ static inline char *kderef_buffer_(char *dst, void *addr, size_t len)
 {
   int err = 0;
   size_t i;
+#ifdef STAPCONF_SET_FS
   mm_segment_t oldfs = get_fs();
 
   set_fs(KERNEL_DS);
+#endif
   pagefault_disable();
-  if (lookup_bad_addr(VERIFY_READ, (uintptr_t)addr, len))
+  if (lookup_bad_addr(VERIFY_READ, (uintptr_t)addr, len, STP_KERNEL_DS))
     err = 1;
   else
     for (i = 0; i < len; ++i)
       {
 	u8 v;
-	err = __stp_get_user(v, (u8 *)addr + i);
+	err = __stp_get_either(v, (u8 *)addr + i, STP_KERNEL_DS);
 	if (err)
 	  break;
 	if (dst)
 	  *dst++ = v;
       }
   pagefault_enable();
+#ifdef STAPCONF_SET_FS
   set_fs(oldfs);
+#endif
 
   return err ? (char *)-1 : dst;
 }
@@ -751,8 +818,8 @@ static inline char *kderef_buffer_(char *dst, void *addr, size_t len)
  * dst: read the string into this address
  * addr: address to read from
  * len: maximum number of bytes to store in dst, including the trailing NUL
- * seg: memory segment to use, either kernel (KERNEL_DS) or user
- * (USER_DS)
+ * seg: memory segment to use, either kernel (STP_KERNEL_DS) or user
+ * (STP_USER_DS)
  * 
  * If this function gets an error while trying to read memory, -EFAULT
  * is returned. On success, the number of bytes copied is returned
@@ -761,15 +828,17 @@ static inline char *kderef_buffer_(char *dst, void *addr, size_t len)
  */
 
 static inline long _stp_deref_string_nofault(char *dst, const char *addr,
-					     size_t len, mm_segment_t seg)
+					     size_t len, stp_mm_segment_t seg)
 {
   int err = 0;
   size_t i = 0;
+#ifdef STAPCONF_SET_FS
   mm_segment_t oldfs = get_fs();
 
   set_fs(seg);
+#endif
   pagefault_disable();
-  if (lookup_bad_addr(VERIFY_READ, (uintptr_t)addr, len))
+  if (lookup_bad_addr(VERIFY_READ, (uintptr_t)addr, len, seg))
     err = 1;
   else
     {
@@ -777,7 +846,7 @@ static inline long _stp_deref_string_nofault(char *dst, const char *addr,
       for (i = 0; i + 1 < len; ++i)
 	{
 	  u8 v;
-	  err = __stp_get_user(v, (u8 *)addr + i);
+	  err = __stp_get_either(v, (u8 *)addr + i, seg);
 	  if (err || v == '\0')
 	    break;
 	  if (dst)
@@ -787,14 +856,16 @@ static inline long _stp_deref_string_nofault(char *dst, const char *addr,
 	*dst = '\0';
     }
   pagefault_enable();
+#ifdef STAPCONF_SET_FS
   set_fs(oldfs);
+#endif
 
   return err ? -EFAULT : i;
 }
 
 #define kderef_string(dst, addr, maxbytes)				\
   ({									\
-    long _r = _stp_deref_string_nofault((dst), (void *)(uintptr_t)(addr), (maxbytes), KERNEL_DS); \
+    long _r = _stp_deref_string_nofault((dst), (void *)(uintptr_t)(addr), (maxbytes), STP_KERNEL_DS); \
     if (_r < 0)								\
       DEREF_FAULT(addr);						\
     _r;									\
@@ -806,8 +877,8 @@ static inline long _stp_deref_string_nofault(char *dst, const char *addr,
  * src: source string
  * addr: address to write to
  * maxbytes: maximum number of bytes to write
- * seg: memory segment to use, either kernel (KERNEL_DS) or user
- * (USER_DS)
+ * seg: memory segment to use, either kernel (STP_KERNEL_DS) or user
+ * (STP_USER_DS)
  * 
  * The macro has no return value. If this macro gets an error while
  * trying to write, a STORE_DEREF_FAULT will occur. Note that the
@@ -815,29 +886,33 @@ static inline long _stp_deref_string_nofault(char *dst, const char *addr,
  */
 
 static inline int _stp_store_deref_string_(char *src, void *addr, size_t len,
-					   mm_segment_t seg)
+					   stp_mm_segment_t seg)
 {
   int err = 0;
   size_t i;
+#ifdef STAPCONF_SET_FS
   mm_segment_t oldfs = get_fs();
 
   set_fs(seg);
+#endif
   pagefault_disable();
-  if (lookup_bad_addr(VERIFY_WRITE, (uintptr_t)addr, len))
+  if (lookup_bad_addr(VERIFY_WRITE, (uintptr_t)addr, len, seg))
     err = 1;
   else if (len > 0)
     {
       for (i = 0; i < len - 1; ++i)
 	{
-	  err = __stp_put_user(*src++, (u8 *)addr + i);
+	  err = __stp_put_either(*src++, (u8 *)addr + i, seg);
 	  if (err)
 	    goto out;
 	}
-      err = __stp_put_user('\0', (u8 *)addr + i);
+      err = __stp_put_either('\0', (u8 *)addr + i, seg);
     }
  out:
   pagefault_enable();
+#ifdef STAPCONF_SET_FS
   set_fs(oldfs);
+#endif
 
   return err;
 }
@@ -864,7 +939,7 @@ static inline int _stp_store_deref_string_(char *src, void *addr, size_t len,
  */
 
 #define store_kderef_string(src, addr, maxbytes)                              \
-  _stp_store_deref_string((src), (addr), (maxbytes), KERNEL_DS)
+  _stp_store_deref_string((src), (addr), (maxbytes), STP_KERNEL_DS)
 
 
 /* 
@@ -880,6 +955,6 @@ static inline int _stp_store_deref_string_(char *src, void *addr, size_t len,
  */
 
 #define store_uderef_string(src, addr, maxbytes)                              \
-  _stp_store_deref_string((src), (addr), (maxbytes), USER_DS)
+  _stp_store_deref_string((src), (addr), (maxbytes), STP_USER_DS)
 
 #endif /* _LINUX_LOC2C_RUNTIME_H_ */

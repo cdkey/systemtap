@@ -48,6 +48,23 @@
 #include <generated/compile.h>
 #endif
 
+// PR26811: Replace some declarations after set_fs() removal in kernel 5.10+.
+// Should use the STP_* prefixed defines outside of STAPCONF_SET_FS.
+#if defined(STAPCONF_SET_FS)
+#define stp_mm_segment_t mm_segment_t
+#define STP_KERNEL_DS KERNEL_DS
+#define STP_USER_DS USER_DS
+// XXX MM_SEG_IS_KERNEL only used #ifndef STAPCONF_SET_FS
+#else
+#define stp_mm_segment_t unsigned long
+#define STP_KERNEL_DS 0
+#define STP_USER_DS 1
+#define MM_SEG_IS_KERNEL(seg) ((seg)==STP_KERNEL_DS)
+
+// Required for kernel write operations:
+static void *kallsyms_copy_to_kernel_nofault;
+#endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
 #include <linux/user_namespace.h>
 #endif

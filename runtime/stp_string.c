@@ -70,7 +70,7 @@ static int _stp_decode_utf8(const char* buf, int size, int user, int* c_ret)
 	if (size <= 0)
 		return -EFAULT;
 
-	if (_stp_deref_nofault(b, 1, buf, (user ? USER_DS : KERNEL_DS)))
+	if (_stp_deref_nofault(b, 1, buf, (user ? STP_USER_DS : STP_KERNEL_DS)))
 		return -EFAULT;
 	++buf;
 	--size;
@@ -100,7 +100,7 @@ static int _stp_decode_utf8(const char* buf, int size, int user, int* c_ret)
 	/* Mix in the UTF-8 continuation bytes.  */
 	for (i = 1; i < n; ++i) {
 		char b2 = '\0';
-		if (_stp_deref_nofault(b2, 1, buf, (user ? USER_DS : KERNEL_DS)))
+		if (_stp_deref_nofault(b2, 1, buf, (user ? STP_USER_DS : STP_KERNEL_DS)))
 			return -EFAULT;
 		++buf;
 		--size;

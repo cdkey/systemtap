@@ -13,7 +13,8 @@
 #define _STAPDYN_ADDR_MAP_C_ 1
 
 static int
-lookup_bad_addr(const int type, const unsigned long addr, const size_t size)
+lookup_bad_addr(const int type, const unsigned long addr, const size_t size,
+                const mm_segment_t seg)
 {
 	return 0;
 }

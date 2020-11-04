@@ -41,9 +41,8 @@
 #define stp_access_ok(x,y,z) access_ok(x,y,z)
 #endif
 
-
 static int
-lookup_bad_addr(const int type, const unsigned long addr, const size_t size)
+lookup_bad_addr_user(const int type, const unsigned long addr, const size_t size)
 {
   /* Is this a valid memory access?
    * 
@@ -81,6 +80,47 @@ lookup_bad_addr(const int type, const unsigned long addr, const size_t size)
 #endif
 
   return 0;
+}
+
+static int
+lookup_bad_addr(const int type, const unsigned long addr, const size_t size,
+                const stp_mm_segment_t seg)
+{
+#ifndef STAPCONF_SET_FS
+  /* Is this a valid memory access?
+   *
+   * PR26811: Since kernel 5.10 due to set_fs() removal we need to
+   * distinguish kernel- and user-space addresses when asking this
+   * question.
+   */
+  if (!MM_SEG_IS_KERNEL(seg))
+    return lookup_bad_addr_user(type, addr, size);
+
+  /* For kernel addr, skip the in_task() portion of the address checks: */
+  if (size == 0 || ULONG_MAX - addr < size - 1)
+    return 1;
+
+  /* XXX: Kernel reads call copy_from_kernel_nofault() which also
+     checks copy_from_kernel_fault_allowed(),
+     currently a stub function returning true -- not worth invoking
+     ourselves through kallsyms. Keep an eye on this, though. */
+
+#if ! STP_PRIVILEGE_CONTAINS (STP_PRIVILEGE, STP_PR_STAPDEV) && \
+    ! STP_PRIVILEGE_CONTAINS (STP_PRIVILEGE, STP_PR_STAPSYS)
+  /* Unprivileged users must not access memory while the context
+     does not refer to their own process.  */
+  if (! is_myproc ())
+    return 1;
+  /* Unprivileged users must not access kernel space memory.  */
+  if (addr + size > TASK_SIZE)
+    return 1;
+#endif
+
+  return 0;
+#else
+  /* XXX: On earlier kernels the same logic works for kernel-space: */
+  return lookup_bad_addr_user(type, addr, size);
+#endif
 }
 
 #else /* PR12970 */
