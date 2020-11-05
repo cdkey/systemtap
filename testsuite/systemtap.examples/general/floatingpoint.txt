@@ -1,5 +1,6 @@
 % stap -v floatingpoint.stp -c "stap --benchmark-sdt"
 
+a : 2.71828, b : 3.14000, c : 2.00000
 round 3.14 to long : 3
 a + b * c = 8.99828
-sqrt(b) >= b / c : 0
+sqrt(b) < b / c : 0
