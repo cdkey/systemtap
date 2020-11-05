@@ -1,0 +1,7 @@
+title: SystemTap "Floating Point" Program
+name: floatingpoint.stp
+keywords: simple floatingpoint
+description: A basic "Floating Point" program implemented in SystemTap script. It extracts floating point from benchmark-sdt section in main.cxx and takes one pseudo floating point, printing out results of various simple floating point operations.
+test_check: stap -p4 floatingpoint.stp -c "stap --benchmark-sdt"
+test_installcheck: stap floatingpoint.stp -c "stap --benchmark-sdt"
+
