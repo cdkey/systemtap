@@ -105,7 +105,84 @@ struct __stp_tf_task_work {
 	struct task_struct *task;
 	void *data;
 	struct task_work work;
+	task_work_func_t func;
 };
+
+static void
+__stp_tf_task_worker_fn(struct task_work *work)
+{
+	unsigned long flags;
+
+	/* Go through all the queued task workers and dequeue them in order */
+	stp_spin_lock_irqsave(&__stp_tf_task_work_list_lock, flags);
+	while (1) {
+		struct __stp_tf_task_work *entry, *tf_work = NULL;
+
+		/* Search for task workers for this task */
+		list_for_each_entry(entry, &__stp_tf_task_work_list, list) {
+			if (entry->task == current) {
+				tf_work = entry;
+				break;
+			}
+		}
+
+		/* No more workers to execute for this task */
+		if (!tf_work)
+			break;
+
+		list_del(&tf_work->list);
+		stp_spin_unlock_irqrestore(&__stp_tf_task_work_list_lock, flags);
+
+		/* Run the task worker outside the spin lock so it can sleep */
+		tf_work->func(&tf_work->work);
+
+		stp_spin_lock_irqsave(&__stp_tf_task_work_list_lock, flags);
+	}
+	stp_spin_unlock_irqrestore(&__stp_tf_task_work_list_lock, flags);
+
+	/*
+	 * Free the tf_work associated with this task work. It's guaranteed to
+	 * not be on the task work list anymore because we drained all of the
+	 * workers for this task.
+	 */
+	_stp_kfree(container_of(work, struct __stp_tf_task_work, work));
+}
+
+static void
+__stp_tf_init_task_work(struct task_work *work, task_work_func_t func)
+{
+	struct __stp_tf_task_work *tf_work =
+		container_of(work, typeof(*tf_work), work);
+
+	tf_work->func = func;
+	stp_init_task_work(work, __stp_tf_task_worker_fn);
+}
+
+static int
+__stp_tf_task_work_add(struct task_struct *task, struct task_work *work)
+{
+	struct __stp_tf_task_work *tf_work =
+		container_of(work, typeof(*tf_work), work);
+	unsigned long flags;
+	int rc;
+
+	/* Associate this tf_work with the target task it'll run within */
+	tf_work->task = task;
+
+	/*
+	 * Queue the task worker onto the list. Once the tf_work is added to the
+	 * list, the pointer is only safe while the list lock is held. So we
+	 * need to add the task work while we're still holding the list lock.
+	 */
+	stp_spin_lock_irqsave(&__stp_tf_task_work_list_lock, flags);
+	list_add_tail(&tf_work->list, &__stp_tf_task_work_list);
+	rc = stp_task_work_add(task, work);
+	if (rc)
+		list_del(&tf_work->list);
+	stp_spin_unlock_irqrestore(&__stp_tf_task_work_list_lock, flags);
+
+	return rc;
+}
 
 /*
  * Allocate a 'struct task_work' for use.  Internally keeps track of
@@ -129,42 +206,9 @@ __stp_tf_alloc_task_work(void *data)
 		return NULL;
 	}
 
-	tf_work->task = current;
 	tf_work->data = data;
 
-	// Insert new item onto list.  This list could be a hashed
-	// list for easier lookup, but as short as the list should be
-	// (and as short lived as these items are) the extra overhead
-	// probably isn't worth the effort.
-	stp_spin_lock_irqsave(&__stp_tf_task_work_list_lock, flags);
-	list_add(&tf_work->list, &__stp_tf_task_work_list);
-	stp_spin_unlock_irqrestore(&__stp_tf_task_work_list_lock, flags);
-
 	return &tf_work->work;
-}
-
-/* 
- * Free a 'struct task_work' allocated by __stp_tf_alloc_task_work().
- */
-static void __stp_tf_free_task_work(struct task_work *work)
-{
-	struct __stp_tf_task_work *tf_work, *node;
-	unsigned long flags;
-
-	tf_work = container_of(work, struct __stp_tf_task_work, work);
-
-	// Remove the item from the list.
-	stp_spin_lock_irqsave(&__stp_tf_task_work_list_lock, flags);
-	list_for_each_entry(node, &__stp_tf_task_work_list, list) {
-		if (tf_work == node) {
-			list_del(&tf_work->list);
-			break;
-		}
-	}
-	stp_spin_unlock_irqrestore(&__stp_tf_task_work_list_lock, flags);
-
-	// Actually free the data.
-	_stp_kfree(tf_work);
 }
 
 /* 
@@ -172,29 +216,16 @@ static void __stp_tf_free_task_work(struct task_work *work)
  */
 static void __stp_tf_cancel_all_task_work(void)
 {
-	struct __stp_tf_task_work *node;
+	struct __stp_tf_task_work *node, *tmp;
 	unsigned long flags;
 
 	// Cancel all remaining requests.
 	stp_spin_lock_irqsave(&__stp_tf_task_work_list_lock, flags);
-	list_for_each_entry(node, &__stp_tf_task_work_list, list) {
-	    stp_task_work_cancel(node->task, node->work.func);
-	}
-	stp_spin_unlock_irqrestore(&__stp_tf_task_work_list_lock, flags);
-}
-
-static void __stp_tf_free_all_task_work(void)
-{
-	struct __stp_tf_task_work *node;
-	struct __stp_tf_task_work *tmp;
-	unsigned long flags;
-
-	// Free everything.
-	stp_spin_lock_irqsave(&__stp_tf_task_work_list_lock, flags);
 	list_for_each_entry_safe(node, tmp, &__stp_tf_task_work_list, list) {
-	    // Remove the item from the list, then free it.
-	    list_del(&node->list);
-	    _stp_kfree(node);
+		if (stp_task_work_cancel(node->task, node->work.func)) {
+			list_del(&node->list);
+			_stp_kfree(node);
+		}
 	}
 	stp_spin_unlock_irqrestore(&__stp_tf_task_work_list_lock, flags);
 }
@@ -1002,7 +1033,6 @@ __stp_tf_clone_worker(struct task_work *work)
 	int rc;
 
 	might_sleep();
-	__stp_tf_free_task_work(work);
 	if (atomic_read(&__stp_task_finder_state) != __STP_TF_RUNNING
 	    || current->flags & PF_EXITING) {
 		/* Remember that this task_work_func is finished. */
@@ -1055,8 +1085,8 @@ __stp_utrace_task_finder_report_clone(u32 action,
 		_stp_error("Unable to allocate space for task_work");
 		return UTRACE_RESUME;
 	}
-	stp_init_task_work(work, &__stp_tf_clone_worker);
-	rc = stp_task_work_add(child, work);
+	__stp_tf_init_task_work(work, &__stp_tf_clone_worker);
+	rc = __stp_tf_task_work_add(child, work);
 	// stp_task_work_add() returns -ESRCH if the task has already
 	// passed exit_task_work(). Just ignore this error.
 	if (rc != 0 && rc != -ESRCH) {
@@ -1327,7 +1357,6 @@ __stp_tf_quiesce_worker(struct task_work *work)
 		(struct stap_task_finder_target *)tf_work->data;
 
 	might_sleep();
-	__stp_tf_free_task_work(work);
 	if (atomic_read(&__stp_task_finder_state) != __STP_TF_RUNNING
 	    || current->flags & PF_EXITING) {
 		/* Remember that this task_work_func is finished. */
@@ -1447,9 +1476,9 @@ __stp_utrace_task_finder_target_quiesce(u32 action,
 		_stp_error("Unable to allocate space for task_work");
 		return UTRACE_RESUME;
 	}
-	stp_init_task_work(work, &__stp_tf_quiesce_worker);
+	__stp_tf_init_task_work(work, &__stp_tf_quiesce_worker);
 
-	rc = stp_task_work_add(tsk, work);
+	rc = __stp_tf_task_work_add(tsk, work);
 	/* stp_task_work_add() returns -ESRCH if the task has
 	 * already passed exit_task_work(). Just ignore this
 	 * error. */
@@ -1546,7 +1575,6 @@ __stp_tf_mmap_worker(struct task_work *work)
 	struct __stp_tf_map_entry *entry;
 
 	might_sleep();
-	__stp_tf_free_task_work(work);
 
 	// See if we can find saved syscall info.
 	entry = __stp_tf_get_map_entry(current);
@@ -1657,8 +1685,8 @@ __stp_utrace_task_finder_target_syscall_exit(u32 action,
 		__stp_tf_handler_end();
 		return UTRACE_RESUME;
 	}
-	stp_init_task_work(work, &__stp_tf_mmap_worker);
-	rc = stp_task_work_add(tsk, work);
+	__stp_tf_init_task_work(work, &__stp_tf_mmap_worker);
+	rc = __stp_tf_task_work_add(tsk, work);
 	/* stp_task_work_add() returns -ESRCH if the task has
 	 * already passed exit_task_work(). Just ignore this
 	 * error. */
@@ -1972,12 +2000,6 @@ stap_stop_task_finder(void)
 	/* Call utrace_exit(), which also calls stp_task_work_exit()
 	 * to wait on any running task_work items. */
 	utrace_exit();
-
-	/* After utrace_exit(), we're *sure* there are no tracepoint
-	 * probes or task work items running or scheduled to be
-	 * run. So, now would be a great time to actually free
-	 * everything. */
-	__stp_tf_free_all_task_work();
 
 #ifdef DEBUG_TASK_FINDER
 	printk(KERN_ERR "%s:%d - exit\n", __FUNCTION__, __LINE__);
