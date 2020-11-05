@@ -1,0 +1,20 @@
+#! /usr/bin/env stap
+
+function printlnfp(a) { println(fp_to_string(a,5)) }
+
+probe process("stap").function("sdt_benchmark_thread") {
+    a = user_long($fpointer)
+
+    b = string_to_fp("3.14")
+    c = long_to_fp(2)
+
+    printf("round 3.14 to long : %ld\n", fp_to_long(b, 0, 0))
+    
+    print("a + b * c = ")
+    printlnfp(fp_add(a, fp_mul(b, c)))
+
+    printf("sqrt(b) >= b / c : ")
+    println(fp_lt(fp_sqrt(b), fp_div(b, c)))
+
+    exit()
+}
