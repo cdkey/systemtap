@@ -1,10 +1,10 @@
 /* -*- linux-c -*- 
  *
- * This transport version uses relayfs on top of a debugfs file.  This
- * code started as a proposed relayfs interface called 'utt'.  It has
- * been modified and simplified for systemtap.
+ * This transport version uses relayfs on top of a debugfs or procfs
+ * file.  This code started as a proposed relayfs interface called
+ * 'utt'.  It has been modified and simplified for systemtap.
  *
- * Changes Copyright (C) 2009-2014 Red Hat Inc.
+ * Changes Copyright (C) 2009-2020 Red Hat Inc.
  *
  * Original utt code by:
  *   Copyright (C) 2006 Jens Axboe <axboe@suse.de>
@@ -44,10 +44,6 @@
 struct _stp_relay_data_type {
 	struct rchan *rchan;
 	atomic_t /* enum _stp_transport_state */ transport_state;
-#ifdef _STP_USE_DROPPED_FILE
-	struct dentry *dropped_file;
-	atomic_t dropped;
-#endif
 	atomic_t wakeup;
 	struct timer_list timer;
 	int overwrite_flag;
@@ -167,44 +163,6 @@ static void _stp_transport_data_fs_overwrite(int overwrite)
 	_stp_relay_data.overwrite_flag = overwrite;
 }
 
-#ifdef _STP_USE_DROPPED_FILE
-static int __stp_relay_dropped_open(struct inode *inode, struct file *filp)
-{
-	return 0;
-}
-
-static ssize_t __stp_relay_dropped_read(struct file *filp, char __user *buffer,
-				size_t count, loff_t *ppos)
-{
-	char buf[16];
-
-	snprintf(buf, sizeof(buf), "%u\n",
-		 atomic_read(&_stp_relay_data.dropped));
-
-	return simple_read_from_buffer(buffer, count, ppos, buf, strlen(buf));
-}
-
-static struct file_operations __stp_relay_dropped_fops = {
-	.owner =	THIS_MODULE,
-	.open =		__stp_relay_dropped_open,
-	.read =		__stp_relay_dropped_read,
-};
-#endif
-
-/*
- * Keep track of how many times we encountered a full subbuffer, to aid
- * the user space app in telling how many lost events there were.
- */
-static int __stp_relay_subbuf_start_callback(struct rchan_buf *buf,
-					     void *subbuf, void *prev_subbuf,
-					     size_t prev_padding)
-{
-	if (_stp_relay_data.overwrite_flag || !relay_buf_full(buf))
-		return 1;
-
-#ifdef _STP_USE_DROPPED_FILE
-	atomic_inc(&_stp_relay_data.dropped);
-#endif
 	return 0;
 }
 
@@ -329,10 +287,6 @@ static void _stp_transport_data_fs_stop(void)
 static void _stp_transport_data_fs_close(void)
 {
 	_stp_transport_data_fs_stop();
-#ifdef _STP_USE_DROPPED_FILE
-	if (_stp_relay_data.dropped_file)
-		debugfs_remove(_stp_relay_data.dropped_file);
-#endif
 	if (_stp_relay_data.rchan) {
 		relay_close(_stp_relay_data.rchan);
 		_stp_relay_data.rchan = NULL;
@@ -348,28 +302,6 @@ static int _stp_transport_data_fs_init(void)
 	atomic_set(&_stp_relay_data.transport_state, STP_TRANSPORT_STOPPED);
 	_stp_relay_data.overwrite_flag = 0;
 	_stp_relay_data.rchan = NULL;
-
-#ifdef _STP_USE_DROPPED_FILE
-	atomic_set(&_stp_relay_data.dropped, 0);
-	_stp_relay_data.dropped_file = NULL;
-
-	/* Create "dropped" file. */
-	_stp_relay_data.dropped_file
-		= debugfs_create_file("dropped", 0400, _stp_get_module_dir(),
-				      NULL, &__stp_relay_dropped_fops);
-	if (!_stp_relay_data.dropped_file) {
-		rc = -EIO;
-		goto err;
-	}
-	else if (IS_ERR(_stp_relay_data.dropped_file)) {
-		rc = PTR_ERR(_stp_relay_data.dropped_file);
-		_stp_relay_data.dropped_file = NULL;
-		goto err;
-	}
-
-	_stp_relay_data.dropped_file->d_inode->i_uid = KUIDT_INIT(_stp_uid);
-	_stp_relay_data.dropped_file->d_inode->i_gid = KGIDT_INIT(_stp_gid);
-#endif
 
 	/* Create "trace" file. */
 	npages = _stp_subbuf_size * _stp_nsubbufs;
