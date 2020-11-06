@@ -152,8 +152,7 @@ function user_string_n:string (addr:long, n:long)
 %)
 
 /**
- * sfunction user_string_n_nofault - Retrieves string of given length
- * from user space
+ * sfunction user_string_n_nofault - Retrieves string of given length from user space
  *
  * @addr: the user space address to retrieve the string from
  * @n: the maximum length of the string (if not null terminated)
