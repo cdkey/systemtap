@@ -2,12 +2,12 @@
 .\"     Title: probe::tcp.receive
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Networking Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::TCP\&.RECEIVE" "3stap" "June 2020" "SystemTap Tapset Reference" "Networking Tapset"
+.TH "PROBE::TCP\&.RECEIVE" "3stap" "November 2020" "SystemTap Tapset Reference" "Networking Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,44 +36,14 @@ tcp\&.receive
 .fi
 .SH "VALUES"
 .PP
+\fIdaddr\fR
+.RS 4
+A string representing the destination IP address
+.RE
+.PP
 \fIfamily\fR
 .RS 4
 IP address family
-.RE
-.PP
-\fIprotocol\fR
-.RS 4
-Packet protocol from driver
-.RE
-.PP
-\fIrst\fR
-.RS 4
-TCP RST flag
-.RE
-.PP
-\fIdport\fR
-.RS 4
-TCP destination port
-.RE
-.PP
-\fIurg\fR
-.RS 4
-TCP URG flag
-.RE
-.PP
-\fIfin\fR
-.RS 4
-TCP FIN flag
-.RE
-.PP
-\fIpsh\fR
-.RS 4
-TCP PSH flag
-.RE
-.PP
-\fIsaddr\fR
-.RS 4
-A string representing the source IP address
 .RE
 .PP
 \fIsyn\fR
@@ -81,19 +51,9 @@ A string representing the source IP address
 TCP SYN flag
 .RE
 .PP
-\fIname\fR
+\fIfin\fR
 .RS 4
-Name of the probe point
-.RE
-.PP
-\fIsport\fR
-.RS 4
-TCP source port
-.RE
-.PP
-\fIiphdr\fR
-.RS 4
-IP header address
+TCP FIN flag
 .RE
 .PP
 \fIack\fR
@@ -101,9 +61,49 @@ IP header address
 TCP ACK flag
 .RE
 .PP
-\fIdaddr\fR
+\fIdport\fR
 .RS 4
-A string representing the destination IP address
+TCP destination port
+.RE
+.PP
+\fIpsh\fR
+.RS 4
+TCP PSH flag
+.RE
+.PP
+\fIsport\fR
+.RS 4
+TCP source port
+.RE
+.PP
+\fIname\fR
+.RS 4
+Name of the probe point
+.RE
+.PP
+\fIprotocol\fR
+.RS 4
+Packet protocol from driver
+.RE
+.PP
+\fIsaddr\fR
+.RS 4
+A string representing the source IP address
+.RE
+.PP
+\fIurg\fR
+.RS 4
+TCP URG flag
+.RE
+.PP
+\fIiphdr\fR
+.RS 4
+IP header address
+.RE
+.PP
+\fIrst\fR
+.RS 4
+TCP RST flag
 .RE
 .SH SEE ALSO\n 
 .IR tapset::tcp (3stap)

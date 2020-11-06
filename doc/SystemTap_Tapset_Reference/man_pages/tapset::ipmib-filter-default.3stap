@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::IPMIB-FILTER-DEFAULT 3stap "June 2020" "SystemTap Tapset Reference"
+.TH TAPSET::IPMIB-FILTER-DEFAULT 3stap "November 2020" "SystemTap Tapset Reference"
 .SH NAME
 tapset::ipmib-filter-default \- systemtap ipmib-filter-default tapset
  

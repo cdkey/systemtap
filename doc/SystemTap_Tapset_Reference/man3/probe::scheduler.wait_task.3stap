@@ -2,12 +2,12 @@
 .\"     Title: probe::scheduler.wait_task
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Scheduler Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SCHEDULER\&.W" "3stap" "June 2020" "SystemTap Tapset Reference" "Scheduler Tapset"
+.TH "PROBE::SCHEDULER\&.W" "3stap" "November 2020" "SystemTap Tapset Reference" "Scheduler Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,11 +36,6 @@ scheduler\&.wait_task
 .fi
 .SH "VALUES"
 .PP
-\fItask_pid\fR
-.RS 4
-PID of the task the scheduler is waiting on
-.RE
-.PP
 \fIname\fR
 .RS 4
 name of the probe point
@@ -49,6 +44,11 @@ name of the probe point
 \fItask_priority\fR
 .RS 4
 priority of the task
+.RE
+.PP
+\fItask_pid\fR
+.RS 4
+PID of the task the scheduler is waiting on
 .RE
 .SH SEE ALSO\n 
 .IR tapset::scheduler (3stap)

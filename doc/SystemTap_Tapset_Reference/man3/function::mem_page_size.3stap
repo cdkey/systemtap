@@ -2,12 +2,12 @@
 .\"     Title: function::mem_page_size
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Memory Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::MEM_PAGE_S" "3stap" "June 2020" "SystemTap Tapset Reference" "Memory Tapset"
+.TH "FUNCTION::MEM_PAGE_S" "3stap" "November 2020" "SystemTap Tapset Reference" "Memory Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

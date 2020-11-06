@@ -2,12 +2,12 @@
 .\"     Title: function::ipmib_filter_key
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: SNMP Information Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::IPMIB_FILT" "3stap" "June 2020" "SystemTap Tapset Reference" "SNMP Information Tapset"
+.TH "FUNCTION::IPMIB_FILT" "3stap" "November 2020" "SystemTap Tapset Reference" "SNMP Information Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

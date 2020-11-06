@@ -2,12 +2,12 @@
 .\"     Title: function::reverse_path_walk
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Directory-entry (dentry) Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::REVERSE_PA" "3stap" "June 2020" "SystemTap Tapset Reference" "Directory-entry (dentry) Tapse"
+.TH "FUNCTION::REVERSE_PA" "3stap" "November 2020" "SystemTap Tapset Reference" "Directory-entry (dentry) Tapse"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

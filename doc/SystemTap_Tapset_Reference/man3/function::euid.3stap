@@ -2,12 +2,12 @@
 .\"     Title: function::euid
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Context Functions
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::EUID" "3stap" "June 2020" "SystemTap Tapset Reference" "Context Functions"
+.TH "FUNCTION::EUID" "3stap" "November 2020" "SystemTap Tapset Reference" "Context Functions"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

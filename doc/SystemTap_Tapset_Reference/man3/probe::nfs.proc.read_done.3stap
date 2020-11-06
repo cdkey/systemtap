@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.proc.read_done
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.PROC\&." "3stap" "June 2020" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.PROC\&." "3stap" "November 2020" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,6 +36,16 @@ nfs\&.proc\&.read_done
 .fi
 .SH "VALUES"
 .PP
+\fIversion\fR
+.RS 4
+NFS version
+.RE
+.PP
+\fIserver_ip\fR
+.RS 4
+IP address of server
+.RE
+.PP
 \fIcount\fR
 .RS 4
 number of bytes read
@@ -46,24 +56,14 @@ number of bytes read
 result of last operation
 .RE
 .PP
-\fIversion\fR
+\fIprot\fR
 .RS 4
-NFS version
+transfer protocol
 .RE
 .PP
 \fItimestamp\fR
 .RS 4
 V4 timestamp, which is used for lease renewal
-.RE
-.PP
-\fIserver_ip\fR
-.RS 4
-IP address of server
-.RE
-.PP
-\fIprot\fR
-.RS 4
-transfer protocol
 .RE
 .SH "DESCRIPTION"
 .PP

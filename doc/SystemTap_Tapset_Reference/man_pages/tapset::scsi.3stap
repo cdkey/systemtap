@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::SCSI 3stap "June 2020" "SystemTap Tapset Reference"
+.TH TAPSET::SCSI 3stap "November 2020" "SystemTap Tapset Reference"
 .SH NAME
 tapset::scsi \- systemtap scsi tapset
  

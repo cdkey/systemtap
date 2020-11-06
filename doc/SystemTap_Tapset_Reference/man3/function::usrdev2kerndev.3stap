@@ -2,12 +2,12 @@
 .\"     Title: function::usrdev2kerndev
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Device Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::USRDEV2KER" "3stap" "June 2020" "SystemTap Tapset Reference" "Device Tapset"
+.TH "FUNCTION::USRDEV2KER" "3stap" "November 2020" "SystemTap Tapset Reference" "Device Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

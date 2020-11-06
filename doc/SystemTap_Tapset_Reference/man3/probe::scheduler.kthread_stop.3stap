@@ -2,12 +2,12 @@
 .\"     Title: probe::scheduler.kthread_stop
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Scheduler Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SCHEDULER\&.K" "3stap" "June 2020" "SystemTap Tapset Reference" "Scheduler Tapset"
+.TH "PROBE::SCHEDULER\&.K" "3stap" "November 2020" "SystemTap Tapset Reference" "Scheduler Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,14 @@ scheduler\&.kthread_stop
 .fi
 .SH "VALUES"
 .PP
-\fIthread_pid\fR
-.RS 4
-PID of the thread being stopped
-.RE
-.PP
 \fIthread_priority\fR
 .RS 4
 priority of the thread
+.RE
+.PP
+\fIthread_pid\fR
+.RS 4
+PID of the thread being stopped
 .RE
 .SH SEE ALSO\n 
 .IR tapset::scheduler (3stap)

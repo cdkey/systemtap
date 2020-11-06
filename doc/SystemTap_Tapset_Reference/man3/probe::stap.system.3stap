@@ -2,12 +2,12 @@
 .\"     Title: probe::stap.system
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: SystemTap Translator Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::STAP\&.SYSTEM" "3stap" "June 2020" "SystemTap Tapset Reference" "SystemTap Translator Tapset"
+.TH "PROBE::STAP\&.SYSTEM" "3stap" "November 2020" "SystemTap Tapset Reference" "SystemTap Translator Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

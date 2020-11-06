@@ -2,12 +2,12 @@
 .\"     Title: function::user_string
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: String and data retrieving functions Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::USER_STRIN" "3stap" "June 2020" "SystemTap Tapset Reference" "String and data retrieving fun"
+.TH "FUNCTION::USER_STRIN" "3stap" "November 2020" "SystemTap Tapset Reference" "String and data retrieving fun"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -54,5 +54,7 @@ the error message to return when data isn\*(Aqt available
 1) Returns the null terminated C string from a given user space memory address\&. Reports an error on the rare cases when userspace data is not accessible\&.
 .PP
 2) Returns the null terminated C string from a given user space memory address\&. Reports the given error message on the rare cases when userspace data is not accessible\&.
+.SH SEE ALSO\n 
+.IR tapset::uconversions (3stap)
 .SH SEE ALSO\n 
 .IR tapset::uconversions (3stap)

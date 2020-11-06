@@ -2,12 +2,12 @@
 .\"     Title: function::error
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Logging Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::ERROR" "3stap" "June 2020" "SystemTap Tapset Reference" "Logging Tapset"
+.TH "FUNCTION::ERROR" "3stap" "November 2020" "SystemTap Tapset Reference" "Logging Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

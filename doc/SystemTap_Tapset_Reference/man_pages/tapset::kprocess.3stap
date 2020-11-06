@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::KPROCESS 3stap "June 2020" "SystemTap Tapset Reference"
+.TH TAPSET::KPROCESS 3stap "November 2020" "SystemTap Tapset Reference"
 .SH NAME
 tapset::kprocess \- systemtap kprocess tapset
  

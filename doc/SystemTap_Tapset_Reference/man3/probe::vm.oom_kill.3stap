@@ -2,12 +2,12 @@
 .\"     Title: probe::vm.oom_kill
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Memory Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::VM\&.OOM_KILL" "3stap" "June 2020" "SystemTap Tapset Reference" "Memory Tapset"
+.TH "PROBE::VM\&.OOM_KILL" "3stap" "November 2020" "SystemTap Tapset Reference" "Memory Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,14 @@ vm\&.oom_kill
 .fi
 .SH "VALUES"
 .PP
-\fIname\fR
-.RS 4
-name of the probe point
-.RE
-.PP
 \fItask\fR
 .RS 4
 the task being killed
+.RE
+.PP
+\fIname\fR
+.RS 4
+name of the probe point
 .RE
 .SH "CONTEXT"
 .PP

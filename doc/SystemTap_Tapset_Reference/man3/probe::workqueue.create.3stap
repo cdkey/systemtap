@@ -2,12 +2,12 @@
 .\"     Title: probe::workqueue.create
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Interrupt Request (IRQ) Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::WORKQUEUE\&.C" "3stap" "June 2020" "SystemTap Tapset Reference" "Interrupt Request (IRQ) Tapset"
+.TH "PROBE::WORKQUEUE\&.C" "3stap" "November 2020" "SystemTap Tapset Reference" "Interrupt Request (IRQ) Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,14 @@ workqueue\&.create
 .fi
 .SH "VALUES"
 .PP
-\fIcpu\fR
-.RS 4
-cpu for which the worker thread is created
-.RE
-.PP
 \fIwq_thread\fR
 .RS 4
 task_struct of the workqueue thread
+.RE
+.PP
+\fIcpu\fR
+.RS 4
+cpu for which the worker thread is created
 .RE
 .SH SEE ALSO\n 
 .IR tapset::irq (3stap)

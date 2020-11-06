@@ -2,12 +2,12 @@
 .\"     Title: probe::ioblock_trace.request
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: IO Scheduler and block IO Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::IOBLOCK_TRACE" "3stap" "June 2020" "SystemTap Tapset Reference" "IO Scheduler and block IO Taps"
+.TH "PROBE::IOBLOCK_TRACE" "3stap" "November 2020" "SystemTap Tapset Reference" "IO Scheduler and block IO Taps"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -41,39 +41,9 @@ ioblock_trace\&.request
 see below BIO_UPTODATE 0 ok after I/O completion BIO_RW_BLOCK 1 RW_AHEAD set, and read/write would block BIO_EOF 2 out\-out\-bounds error BIO_SEG_VALID 3 nr_hw_seg valid BIO_CLONED 4 doesn\*(Aqt own data BIO_BOUNCED 5 bio is a bounce bio BIO_USER_MAPPED 6 contains user pages BIO_EOPNOTSUPP 7 not supported
 .RE
 .PP
-\fIbdev\fR
-.RS 4
-target block device
-.RE
-.PP
-\fIsize\fR
-.RS 4
-total size in bytes
-.RE
-.PP
-\fIdevname\fR
-.RS 4
-block device name
-.RE
-.PP
 \fIino\fR
 .RS 4
 i\-node number of the mapped file
-.RE
-.PP
-\fIvcnt\fR
-.RS 4
-bio vector count which represents number of array element (page, offset, length) which make up this I/O request
-.RE
-.PP
-\fIopf\fR
-.RS 4
-operations and flags
-.RE
-.PP
-\fIbytes_done\fR
-.RS 4
-number of bytes transferred
 .RE
 .PP
 \fIp_start_sect\fR
@@ -81,26 +51,14 @@ number of bytes transferred
 points to the start sector of the partition structure of the device
 .RE
 .PP
-\fIbdev_contains\fR
+\fIdevname\fR
 .RS 4
-points to the device object which contains the partition (when bio structure represents a partition)
+block device name
 .RE
 .PP
 \fIrw\fR
 .RS 4
 binary trace for read/write request
-.RE
-.PP
-\fIname\fR
-.RS 4
-name of the probe point
-.RE
-.PP
-\fIidx\fR
-.RS 4
-offset into the bio vector array
-\fIphys_segments\fR
-\- number of segments in this bio after physical address coalescing is performed\&.
 .RE
 .PP
 \fIsector\fR
@@ -111,6 +69,48 @@ beginning sector for the entire bio
 \fIq\fR
 .RS 4
 request queue on which this bio was queued\&.
+.RE
+.PP
+\fIbdev_contains\fR
+.RS 4
+points to the device object which contains the partition (when bio structure represents a partition)
+.RE
+.PP
+\fIidx\fR
+.RS 4
+offset into the bio vector array
+\fIphys_segments\fR
+\- number of segments in this bio after physical address coalescing is performed\&.
+.RE
+.PP
+\fIvcnt\fR
+.RS 4
+bio vector count which represents number of array element (page, offset, length) which make up this I/O request
+.RE
+.PP
+\fIsize\fR
+.RS 4
+total size in bytes
+.RE
+.PP
+\fIopf\fR
+.RS 4
+operations and flags
+.RE
+.PP
+\fIname\fR
+.RS 4
+name of the probe point
+.RE
+.PP
+\fIbdev\fR
+.RS 4
+target block device
+.RE
+.PP
+\fIbytes_done\fR
+.RS 4
+number of bytes transferred
 .RE
 .SH "CONTEXT"
 .PP

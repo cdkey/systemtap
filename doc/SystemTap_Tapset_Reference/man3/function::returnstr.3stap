@@ -2,12 +2,12 @@
 .\"     Title: function::returnstr
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Errno Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::RETURNSTR" "3stap" "June 2020" "SystemTap Tapset Reference" "Errno Tapset"
+.TH "FUNCTION::RETURNSTR" "3stap" "November 2020" "SystemTap Tapset Reference" "Errno Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

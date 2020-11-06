@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::REGISTERS 3stap "June 2020" "SystemTap Tapset Reference"
+.TH TAPSET::REGISTERS 3stap "November 2020" "SystemTap Tapset Reference"
 .SH NAME
 tapset::registers \- systemtap registers tapset
  
@@ -31,11 +31,27 @@ See
  for details.
 .P
 .TP
+.B set_int_arg 
+Set function argument as signed int
+.IP
+See 
+.IR function::set_int_arg (3stap)
+ for details.
+.P
+.TP
 .B uint_arg 
 Return function argument as unsigned int
 .IP
 See 
 .IR function::uint_arg (3stap)
+ for details.
+.P
+.TP
+.B set_uint_arg 
+Set argument as unsigned int
+.IP
+See 
+.IR function::set_uint_arg (3stap)
  for details.
 .P
 .TP
@@ -47,11 +63,27 @@ See
  for details.
 .P
 .TP
+.B set_long_arg 
+Set argument as signed long
+.IP
+See 
+.IR function::set_long_arg (3stap)
+ for details.
+.P
+.TP
 .B ulong_arg 
 Return function argument as unsigned long
 .IP
 See 
 .IR function::ulong_arg (3stap)
+ for details.
+.P
+.TP
+.B set_ulong_arg 
+Set function argument as unsigned long
+.IP
+See 
+.IR function::set_ulong_arg (3stap)
  for details.
 .P
 .TP
@@ -63,11 +95,27 @@ See
  for details.
 .P
 .TP
+.B set_longlong_arg 
+Set function argument as 64-bit value
+.IP
+See 
+.IR function::set_longlong_arg (3stap)
+ for details.
+.P
+.TP
 .B ulonglong_arg 
 Return function argument as 64-bit value
 .IP
 See 
 .IR function::ulonglong_arg (3stap)
+ for details.
+.P
+.TP
+.B set_ulonglong_arg 
+Set function argument as 64-bit value
+.IP
+See 
+.IR function::set_ulonglong_arg (3stap)
  for details.
 .P
 .TP
@@ -79,11 +127,27 @@ See
  for details.
 .P
 .TP
+.B set_pointer_arg 
+Set function argument as pointer value
+.IP
+See 
+.IR function::set_pointer_arg (3stap)
+ for details.
+.P
+.TP
 .B s32_arg 
 Return function argument as signed 32-bit value
 .IP
 See 
 .IR function::s32_arg (3stap)
+ for details.
+.P
+.TP
+.B set_s32_arg 
+Set function argument as signed 32-bit value
+.IP
+See 
+.IR function::set_s32_arg (3stap)
  for details.
 .P
 .TP
@@ -95,6 +159,14 @@ See
  for details.
 .P
 .TP
+.B set_u32_arg 
+Set function argument as unsigned 32-bit value
+.IP
+See 
+.IR function::set_u32_arg (3stap)
+ for details.
+.P
+.TP
 .B s64_arg 
 Return function argument as signed 64-bit value
 .IP
@@ -103,11 +175,27 @@ See
  for details.
 .P
 .TP
+.B set_s64_arg 
+Set function argument as signed 64-bit value
+.IP
+See 
+.IR function::set_s64_arg (3stap)
+ for details.
+.P
+.TP
 .B u64_arg 
 Return function argument as unsigned 64-bit value
 .IP
 See 
 .IR function::u64_arg (3stap)
+ for details.
+.P
+.TP
+.B set_u64_arg 
+Set function argument as unsigned 64-bit value
+.IP
+See 
+.IR function::set_u64_arg (3stap)
  for details.
 .P
 .TP
@@ -142,25 +230,47 @@ See
 .BR
 .IR \%function::int_arg (3stap),
 .BR
+.IR \%function::set_int_arg (3stap),
+.BR
 .IR \%function::uint_arg (3stap),
+.BR
+.IR \%function::set_uint_arg (3stap),
 .BR
 .IR \%function::long_arg (3stap),
 .BR
+.IR \%function::set_long_arg (3stap),
+.BR
 .IR \%function::ulong_arg (3stap),
+.BR
+.IR \%function::set_ulong_arg (3stap),
 .BR
 .IR \%function::longlong_arg (3stap),
 .BR
+.IR \%function::set_longlong_arg (3stap),
+.BR
 .IR \%function::ulonglong_arg (3stap),
+.BR
+.IR \%function::set_ulonglong_arg (3stap),
 .BR
 .IR \%function::pointer_arg (3stap),
 .BR
+.IR \%function::set_pointer_arg (3stap),
+.BR
 .IR \%function::s32_arg (3stap),
+.BR
+.IR \%function::set_s32_arg (3stap),
 .BR
 .IR \%function::u32_arg (3stap),
 .BR
+.IR \%function::set_u32_arg (3stap),
+.BR
 .IR \%function::s64_arg (3stap),
 .BR
+.IR \%function::set_s64_arg (3stap),
+.BR
 .IR \%function::u64_arg (3stap),
+.BR
+.IR \%function::set_u64_arg (3stap),
 .BR
 .IR \%function::asmlinkage (3stap),
 .BR

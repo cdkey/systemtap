@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::UCONVERSIONS 3stap "June 2020" "SystemTap Tapset Reference"
+.TH TAPSET::UCONVERSIONS 3stap "November 2020" "SystemTap Tapset Reference"
 .SH NAME
 tapset::uconversions \- systemtap uconversions tapset
  
@@ -12,6 +12,14 @@ Retrieves string from user space
 .IP
 See 
 .IR function::user_string (3stap)
+ for details.
+.P
+.TP
+.B user_string_nofault 
+Retrieves string from user space
+.IP
+See 
+.IR function::user_string_nofault (3stap)
  for details.
 .P
 .TP
@@ -52,6 +60,14 @@ Retrieves string of given length from user space
 .IP
 See 
 .IR function::user_string_n (3stap)
+ for details.
+.P
+.TP
+.B user_string_n_nofault 
+Retrieves string of given length from user space
+.IP
+See 
+.IR function::user_string_n_nofault (3stap)
  for details.
 .P
 .TP
@@ -434,9 +450,17 @@ See
 .BR
 .IR \%function::user_string (3stap),
 .BR
+.IR \%function::user_string_nofault (3stap),
+.BR
+.IR \%function::user_string (3stap),
+.BR
 .IR \%function::user_string_warn (3stap),
 .BR
 .IR \%function::user_string_quoted (3stap),
+.BR
+.IR \%function::user_string_n (3stap),
+.BR
+.IR \%function::user_string_n_nofault (3stap),
 .BR
 .IR \%function::user_string_n (3stap),
 .BR

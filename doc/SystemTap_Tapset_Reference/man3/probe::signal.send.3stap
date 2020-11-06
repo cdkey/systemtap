@@ -2,12 +2,12 @@
 .\"     Title: probe::signal.send
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Signal Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SIGNAL\&.SEND" "3stap" "June 2020" "SystemTap Tapset Reference" "Signal Tapset"
+.TH "PROBE::SIGNAL\&.SEND" "3stap" "November 2020" "SystemTap Tapset Reference" "Signal Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,24 +36,14 @@ signal\&.send
 .fi
 .SH "VALUES"
 .PP
-\fIshared\fR
-.RS 4
-Indicates whether the signal is shared by the thread group
-.RE
-.PP
-\fIname\fR
-.RS 4
-The name of the function used to send out the signal
-.RE
-.PP
-\fIpid_name\fR
-.RS 4
-The name of the signal recipient
-.RE
-.PP
 \fIsig_name\fR
 .RS 4
 A string representation of the signal
+.RE
+.PP
+\fIshared\fR
+.RS 4
+Indicates whether the signal is shared by the thread group
 .RE
 .PP
 \fIsend2queue\fR
@@ -61,9 +51,14 @@ A string representation of the signal
 Indicates whether the signal is sent to an existing sigqueue (deprecated in SystemTap 2\&.1)
 .RE
 .PP
-\fIsig\fR
+\fIsi_code\fR
 .RS 4
-The number of the signal
+Indicates the signal type
+.RE
+.PP
+\fIname\fR
+.RS 4
+The name of the function used to send out the signal
 .RE
 .PP
 \fIsinfo\fR
@@ -71,14 +66,19 @@ The number of the signal
 The address of siginfo struct
 .RE
 .PP
-\fIsi_code\fR
+\fIpid_name\fR
 .RS 4
-Indicates the signal type
+The name of the signal recipient
 .RE
 .PP
 \fIsig_pid\fR
 .RS 4
 The PID of the process receiving the signal
+.RE
+.PP
+\fIsig\fR
+.RS 4
+The number of the signal
 .RE
 .PP
 \fItask\fR

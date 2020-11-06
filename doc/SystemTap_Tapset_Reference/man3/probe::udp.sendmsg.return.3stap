@@ -2,12 +2,12 @@
 .\"     Title: probe::udp.sendmsg.return
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Networking Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::UDP\&.SENDMSG" "3stap" "June 2020" "SystemTap Tapset Reference" "Networking Tapset"
+.TH "PROBE::UDP\&.SENDMSG" "3stap" "November 2020" "SystemTap Tapset Reference" "Networking Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,14 @@ udp\&.sendmsg\&.return
 .fi
 .SH "VALUES"
 .PP
-\fIsize\fR
-.RS 4
-Number of bytes sent by the process
-.RE
-.PP
 \fIname\fR
 .RS 4
 The name of this probe
+.RE
+.PP
+\fIsize\fR
+.RS 4
+Number of bytes sent by the process
 .RE
 .SH "CONTEXT"
 .PP

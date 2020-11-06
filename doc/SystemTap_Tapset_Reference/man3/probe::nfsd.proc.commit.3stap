@@ -2,12 +2,12 @@
 .\"     Title: probe::nfsd.proc.commit
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFSD\&.PROC\&" "3stap" "June 2020" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFSD\&.PROC\&" "3stap" "November 2020" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,24 +36,9 @@ nfsd\&.proc\&.commit
 .fi
 .SH "VALUES"
 .PP
-\fIoffset\fR
-.RS 4
-the offset of file
-.RE
-.PP
-\fIcount\fR
-.RS 4
-read bytes
-.RE
-.PP
 \fIclient_ip\fR
 .RS 4
 the ip address of client
-.RE
-.PP
-\fIfh\fR
-.RS 4
-file handle (the first part is the length of the file handle)
 .RE
 .PP
 \fIproto\fR
@@ -66,7 +51,27 @@ transfer protocol
 nfs version
 .RE
 .PP
+\fIoffset\fR
+.RS 4
+the offset of file
+.RE
+.PP
+\fIuid\fR
+.RS 4
+requester\*(Aqs user id
+.RE
+.PP
+\fIfh\fR
+.RS 4
+file handle (the first part is the length of the file handle)
+.RE
+.PP
 \fIsize\fR
+.RS 4
+read bytes
+.RE
+.PP
+\fIcount\fR
 .RS 4
 read bytes
 .RE
@@ -74,11 +79,6 @@ read bytes
 \fIgid\fR
 .RS 4
 requester\*(Aqs group id
-.RE
-.PP
-\fIuid\fR
-.RS 4
-requester\*(Aqs user id
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfsd (3stap)

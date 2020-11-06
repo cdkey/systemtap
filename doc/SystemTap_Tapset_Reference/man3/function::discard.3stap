@@ -2,12 +2,12 @@
 .\"     Title: function::discard
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Speculation
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::DISCARD" "3stap" "June 2020" "SystemTap Tapset Reference" "Speculation"
+.TH "FUNCTION::DISCARD" "3stap" "November 2020" "SystemTap Tapset Reference" "Speculation"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

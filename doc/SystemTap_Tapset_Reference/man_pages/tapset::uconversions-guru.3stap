@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::UCONVERSIONS-GURU 3stap "June 2020" "SystemTap Tapset Reference"
+.TH TAPSET::UCONVERSIONS-GURU 3stap "November 2020" "SystemTap Tapset Reference"
 .SH NAME
 tapset::uconversions-guru \- systemtap uconversions-guru tapset
  
@@ -20,6 +20,14 @@ Writes a string of given length to user memory
 .IP
 See 
 .IR function::set_user_string_n (3stap)
+ for details.
+.P
+.TP
+.B set_user_string_arg 
+Writes a string to user memory.
+.IP
+See 
+.IR function::set_user_string_arg (3stap)
  for details.
 .P
 .TP
@@ -67,6 +75,8 @@ See
 .IR \%function::set_user_string (3stap),
 .BR
 .IR \%function::set_user_string_n (3stap),
+.BR
+.IR \%function::set_user_string_arg (3stap),
 .BR
 .IR \%function::set_user_long (3stap),
 .BR

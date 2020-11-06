@@ -2,12 +2,12 @@
 .\"     Title: function::format_ipaddr
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Networking Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::FORMAT_IPA" "3stap" "June 2020" "SystemTap Tapset Reference" "Networking Tapset"
+.TH "FUNCTION::FORMAT_IPA" "3stap" "November 2020" "SystemTap Tapset Reference" "Networking Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

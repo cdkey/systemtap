@@ -2,12 +2,12 @@
 .\"     Title: probe::tcp.setsockopt.return
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Networking Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::TCP\&.SETSOCK" "3stap" "June 2020" "SystemTap Tapset Reference" "Networking Tapset"
+.TH "PROBE::TCP\&.SETSOCK" "3stap" "November 2020" "SystemTap Tapset Reference" "Networking Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,14 @@ tcp\&.setsockopt\&.return
 .fi
 .SH "VALUES"
 .PP
-\fIret\fR
-.RS 4
-Error code (0: no error)
-.RE
-.PP
 \fIname\fR
 .RS 4
 Name of this probe
+.RE
+.PP
+\fIret\fR
+.RS 4
+Error code (0: no error)
 .RE
 .SH "CONTEXT"
 .PP

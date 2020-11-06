@@ -2,12 +2,12 @@
 .\"     Title: probe::socket.sendmsg
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Socket Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SOCKET\&.SEND" "3stap" "June 2020" "SystemTap Tapset Reference" "Socket Tapset"
+.TH "PROBE::SOCKET\&.SEND" "3stap" "November 2020" "SystemTap Tapset Reference" "Socket Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,6 +36,16 @@ socket\&.sendmsg
 .fi
 .SH "VALUES"
 .PP
+\fIname\fR
+.RS 4
+Name of this probe
+.RE
+.PP
+\fIfamily\fR
+.RS 4
+Protocol family value
+.RE
+.PP
 \fItype\fR
 .RS 4
 Socket type value
@@ -46,9 +56,9 @@ Socket type value
 Socket flags value
 .RE
 .PP
-\fIprotocol\fR
+\fIsize\fR
 .RS 4
-Protocol value
+Message size in bytes
 .RE
 .PP
 \fIstate\fR
@@ -56,19 +66,9 @@ Protocol value
 Socket state value
 .RE
 .PP
-\fIsize\fR
+\fIprotocol\fR
 .RS 4
-Message size in bytes
-.RE
-.PP
-\fIname\fR
-.RS 4
-Name of this probe
-.RE
-.PP
-\fIfamily\fR
-.RS 4
-Protocol family value
+Protocol value
 .RE
 .SH "CONTEXT"
 .PP

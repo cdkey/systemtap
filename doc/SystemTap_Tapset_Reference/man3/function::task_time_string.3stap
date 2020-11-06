@@ -2,12 +2,12 @@
 .\"     Title: function::task_time_string
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Task Time Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::TASK_TIME_" "3stap" "June 2020" "SystemTap Tapset Reference" "Task Time Tapset"
+.TH "FUNCTION::TASK_TIME_" "3stap" "November 2020" "SystemTap Tapset Reference" "Task Time Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

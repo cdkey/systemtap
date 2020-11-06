@@ -2,12 +2,12 @@
 .\"     Title: function::tz_ctime
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Time utility functions
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::TZ_CTIME" "3stap" "June 2020" "SystemTap Tapset Reference" "Time utility functions"
+.TH "FUNCTION::TZ_CTIME" "3stap" "November 2020" "SystemTap Tapset Reference" "Time utility functions"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

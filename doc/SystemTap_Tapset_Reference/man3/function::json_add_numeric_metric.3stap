@@ -2,12 +2,12 @@
 .\"     Title: function::json_add_numeric_metric
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: JSON Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::JSON_ADD_N" "3stap" "June 2020" "SystemTap Tapset Reference" "JSON Tapset"
+.TH "FUNCTION::JSON_ADD_N" "3stap" "November 2020" "SystemTap Tapset Reference" "JSON Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

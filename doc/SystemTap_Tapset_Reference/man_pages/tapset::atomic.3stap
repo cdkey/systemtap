@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::ATOMIC 3stap "June 2020" "SystemTap Tapset Reference"
+.TH TAPSET::ATOMIC 3stap "November 2020" "SystemTap Tapset Reference"
 .SH NAME
 tapset::atomic \- systemtap atomic tapset
  

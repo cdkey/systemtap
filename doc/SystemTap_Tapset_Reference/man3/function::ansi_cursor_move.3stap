@@ -2,12 +2,12 @@
 .\"     Title: function::ansi_cursor_move
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Utility functions for using ansi control chars in logs
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::ANSI_CURSO" "3stap" "June 2020" "SystemTap Tapset Reference" "Utility functions for using an"
+.TH "FUNCTION::ANSI_CURSO" "3stap" "November 2020" "SystemTap Tapset Reference" "Utility functions for using an"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

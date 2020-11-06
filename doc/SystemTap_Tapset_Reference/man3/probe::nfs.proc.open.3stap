@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.proc.open
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.PROC\&." "3stap" "June 2020" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.PROC\&." "3stap" "November 2020" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,9 +36,14 @@ nfs\&.proc\&.open
 .fi
 .SH "VALUES"
 .PP
-\fImode\fR
+\fIprot\fR
 .RS 4
-file mode
+transfer protocol
+.RE
+.PP
+\fIflag\fR
+.RS 4
+file flag
 .RE
 .PP
 \fIfilename\fR
@@ -46,9 +51,9 @@ file mode
 file name
 .RE
 .PP
-\fIflag\fR
+\fImode\fR
 .RS 4
-file flag
+file mode
 .RE
 .PP
 \fIversion\fR
@@ -59,11 +64,6 @@ NFS version (the function is used for all NFS version)
 \fIserver_ip\fR
 .RS 4
 IP address of server
-.RE
-.PP
-\fIprot\fR
-.RS 4
-transfer protocol
 .RE
 .SH "DESCRIPTION"
 .PP

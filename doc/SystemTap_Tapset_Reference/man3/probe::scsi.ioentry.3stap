@@ -2,12 +2,12 @@
 .\"     Title: probe::scsi.ioentry
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: SCSI Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SCSI\&.IOENTR" "3stap" "June 2020" "SystemTap Tapset Reference" "SCSI Tapset"
+.TH "PROBE::SCSI\&.IOENTR" "3stap" "November 2020" "SystemTap Tapset Reference" "SCSI Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -41,9 +41,9 @@ scsi\&.ioentry
 The current state of the device, as a string
 .RE
 .PP
-\fIdevice_state\fR
+\fIreq_addr\fR
 .RS 4
-The current state of the device
+The current struct request pointer, as a number
 .RE
 .PP
 \fIdisk_major\fR
@@ -56,9 +56,9 @@ The major number of the disk (\-1 if no information)
 The minor number of the disk (\-1 if no information)
 .RE
 .PP
-\fIreq_addr\fR
+\fIdevice_state\fR
 .RS 4
-The current struct request pointer, as a number
+The current state of the device
 .RE
 .SH SEE ALSO\n 
 .IR tapset::scsi (3stap)

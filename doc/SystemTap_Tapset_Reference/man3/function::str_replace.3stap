@@ -2,12 +2,12 @@
 .\"     Title: function::str_replace
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: A collection of standard string functions
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::STR_REPLAC" "3stap" "June 2020" "SystemTap Tapset Reference" "A collection of standard strin"
+.TH "FUNCTION::STR_REPLAC" "3stap" "November 2020" "SystemTap Tapset Reference" "A collection of standard strin"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

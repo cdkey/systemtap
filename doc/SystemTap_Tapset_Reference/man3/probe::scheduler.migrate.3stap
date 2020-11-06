@@ -2,12 +2,12 @@
 .\"     Title: probe::scheduler.migrate
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Scheduler Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SCHEDULER\&.M" "3stap" "June 2020" "SystemTap Tapset Reference" "Scheduler Tapset"
+.TH "PROBE::SCHEDULER\&.M" "3stap" "November 2020" "SystemTap Tapset Reference" "Scheduler Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,9 +36,9 @@ scheduler\&.migrate
 .fi
 .SH "VALUES"
 .PP
-\fIpriority\fR
+\fIpid\fR
 .RS 4
-priority of the task being migrated
+PID of the task being migrated
 .RE
 .PP
 \fIcpu_to\fR
@@ -51,19 +51,19 @@ the destination cpu
 name of the probe point
 .RE
 .PP
-\fIcpu_from\fR
-.RS 4
-the original cpu
-.RE
-.PP
 \fItask\fR
 .RS 4
 the process that is being migrated
 .RE
 .PP
-\fIpid\fR
+\fIpriority\fR
 .RS 4
-PID of the task being migrated
+priority of the task being migrated
+.RE
+.PP
+\fIcpu_from\fR
+.RS 4
+the original cpu
 .RE
 .SH SEE ALSO\n 
 .IR tapset::scheduler (3stap)

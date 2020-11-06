@@ -2,12 +2,12 @@
 .\"     Title: function::sprint_loadavg
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Kernel Process Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::SPRINT_LOA" "3stap" "June 2020" "SystemTap Tapset Reference" "Kernel Process Tapset"
+.TH "FUNCTION::SPRINT_LOA" "3stap" "November 2020" "SystemTap Tapset Reference" "Kernel Process Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

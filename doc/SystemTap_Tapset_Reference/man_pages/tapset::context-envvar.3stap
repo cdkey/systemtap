@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::CONTEXT-ENVVAR 3stap "June 2020" "SystemTap Tapset Reference"
+.TH TAPSET::CONTEXT-ENVVAR 3stap "November 2020" "SystemTap Tapset Reference"
 .SH NAME
 tapset::context-envvar \- systemtap context-envvar tapset
  

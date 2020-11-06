@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.aop.writepages
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: June 2020
+.\"      Date: November 2020
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.AOP\&.W" "3stap" "June 2020" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.AOP\&.W" "3stap" "November 2020" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,29 +36,19 @@ nfs\&.aop\&.writepages
 .fi
 .SH "VALUES"
 .PP
-\fIwsize\fR
+\fIdev\fR
 .RS 4
-write size
+device identifier
 .RE
 .PP
-\fIfor_kupdate\fR
-.RS 4
-a flag of writeback_control, indicates if it\*(Aqs a kupdate writeback
-.RE
-.PP
-\fIsize\fR
+\fInr_to_write\fR
 .RS 4
 number of pages attempted to be written in this execution
 .RE
 .PP
-\fIwpages\fR
+\fIwsize\fR
 .RS 4
-write size (in pages)
-.RE
-.PP
-\fIdev\fR
-.RS 4
-device identifier
+write size
 .RE
 .PP
 \fIfor_reclaim\fR
@@ -71,9 +61,19 @@ a flag of writeback_control, indicates if it\*(Aqs invoked from the page allocat
 inode number
 .RE
 .PP
-\fInr_to_write\fR
+\fIsize\fR
 .RS 4
 number of pages attempted to be written in this execution
+.RE
+.PP
+\fIwpages\fR
+.RS 4
+write size (in pages)
+.RE
+.PP
+\fIfor_kupdate\fR
+.RS 4
+a flag of writeback_control, indicates if it\*(Aqs a kupdate writeback
 .RE
 .SH "DESCRIPTION"
 .PP
