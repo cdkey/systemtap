@@ -109,43 +109,47 @@ struct __stp_tf_task_work {
 };
 
 static void
+__stp_tf_task_work_free(struct task_work *work)
+{
+	struct __stp_tf_task_work *tf_work =
+		container_of(work, typeof(*tf_work), work);
+
+	_stp_kfree(tf_work);
+}
+
+static void
 __stp_tf_task_worker_fn(struct task_work *work)
 {
-	unsigned long flags;
-
 	/* Go through all the queued task workers and dequeue them in order */
-	stp_spin_lock_irqsave(&__stp_tf_task_work_list_lock, flags);
 	while (1) {
 		struct __stp_tf_task_work *entry, *tf_work = NULL;
+		unsigned long flags;
 
 		/* Search for task workers for this task */
+		stp_spin_lock_irqsave(&__stp_tf_task_work_list_lock, flags);
 		list_for_each_entry(entry, &__stp_tf_task_work_list, list) {
 			if (entry->task == current) {
 				tf_work = entry;
+				list_del(&tf_work->list);
 				break;
 			}
 		}
+		stp_spin_unlock_irqrestore(&__stp_tf_task_work_list_lock, flags);
 
 		/* No more workers to execute for this task */
 		if (!tf_work)
 			break;
 
-		list_del(&tf_work->list);
-		stp_spin_unlock_irqrestore(&__stp_tf_task_work_list_lock, flags);
-
 		/* Run the task worker outside the spin lock so it can sleep */
 		tf_work->func(&tf_work->work);
-
-		stp_spin_lock_irqsave(&__stp_tf_task_work_list_lock, flags);
 	}
-	stp_spin_unlock_irqrestore(&__stp_tf_task_work_list_lock, flags);
 
 	/*
 	 * Free the tf_work associated with this task work. It's guaranteed to
 	 * not be on the task work list anymore because we drained all of the
 	 * workers for this task.
 	 */
-	_stp_kfree(container_of(work, struct __stp_tf_task_work, work));
+	__stp_tf_task_work_free(work);
 }
 
 static void
@@ -1087,11 +1091,13 @@ __stp_utrace_task_finder_report_clone(u32 action,
 	}
 	__stp_tf_init_task_work(work, &__stp_tf_clone_worker);
 	rc = __stp_tf_task_work_add(child, work);
-	// stp_task_work_add() returns -ESRCH if the task has already
-	// passed exit_task_work(). Just ignore this error.
-	if (rc != 0 && rc != -ESRCH) {
-		printk(KERN_ERR "%s:%d - stp_task_work_add() returned %d\n",
-		       __FUNCTION__, __LINE__, rc);
+	if (rc) {
+		__stp_tf_task_work_free(work);
+		// stp_task_work_add() returns -ESRCH if the task has already
+		// passed exit_task_work(). Just ignore this error.
+		if (rc != -ESRCH)
+			printk(KERN_ERR "%s:%d - stp_task_work_add() returned %d\n",
+			       __FUNCTION__, __LINE__, rc);
 	}
 
 	__stp_tf_handler_end();
@@ -1479,12 +1485,14 @@ __stp_utrace_task_finder_target_quiesce(u32 action,
 	__stp_tf_init_task_work(work, &__stp_tf_quiesce_worker);
 
 	rc = __stp_tf_task_work_add(tsk, work);
-	/* stp_task_work_add() returns -ESRCH if the task has
-	 * already passed exit_task_work(). Just ignore this
-	 * error. */
-	if (rc != 0 && rc != -ESRCH) {
-		printk(KERN_ERR "%s:%d - stp_task_work_add() returned %d\n",
-		       __FUNCTION__, __LINE__, rc);
+	if (rc) {
+		__stp_tf_task_work_free(work);
+		/* stp_task_work_add() returns -ESRCH if the task has
+		 * already passed exit_task_work(). Just ignore this
+		 * error. */
+		if (rc != -ESRCH)
+			printk(KERN_ERR "%s:%d - stp_task_work_add() returned %d\n",
+			       __FUNCTION__, __LINE__, rc);
 	}
 
 	__stp_tf_handler_end();
@@ -1687,12 +1695,14 @@ __stp_utrace_task_finder_target_syscall_exit(u32 action,
 	}
 	__stp_tf_init_task_work(work, &__stp_tf_mmap_worker);
 	rc = __stp_tf_task_work_add(tsk, work);
-	/* stp_task_work_add() returns -ESRCH if the task has
-	 * already passed exit_task_work(). Just ignore this
-	 * error. */
-	if (rc != 0 && rc != -ESRCH) {
-		printk(KERN_ERR "%s:%d - stp_task_work_add() returned %d\n",
-		       __FUNCTION__, __LINE__, rc);
+	if (rc) {
+		__stp_tf_task_work_free(work);
+		/* stp_task_work_add() returns -ESRCH if the task has
+		 * already passed exit_task_work(). Just ignore this
+		 * error. */
+		if (rc != -ESRCH)
+			printk(KERN_ERR "%s:%d - stp_task_work_add() returned %d\n",
+			       __FUNCTION__, __LINE__, rc);
 	}
 
 	__stp_tf_handler_end();
