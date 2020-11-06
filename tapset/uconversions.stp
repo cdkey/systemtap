@@ -159,8 +159,8 @@ function user_string_n:string (addr:long, n:long)
  * @n: the maximum length of the string (if not null terminated)
  *
  * Description: Returns the C string of a maximum given length from a
- * given user space address. Reports an error on the rare cases
- * when userspace data is not accessible at the given address.
+ * given user space address. Returns the empty string when userspace
+ * data is not accessible at the given address.
  */
 function user_string_n_nofault (addr:long, n:long) {
   try { return user_string_n(addr, n) } catch { return "" }
