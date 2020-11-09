@@ -129,7 +129,7 @@ void
      uint32_t *zPtr
  )
 {
-    uint32_t wordJam, wordDist, *ptr;
+    uint32_t wordJam, wordDist, *ptr=0;
     uint_fast8_t i, innerDist;
 
     wordJam = 0;
