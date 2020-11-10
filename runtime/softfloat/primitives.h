@@ -57,6 +57,27 @@ uint64_t softfloat_shortShiftRightJam64( uint64_t a, uint_fast8_t dist );
 #endif
 #endif
 
+#ifndef softfloat_shiftRightJam32
+/*----------------------------------------------------------------------------
+| Shifts 'a' right by the number of bits given in 'dist', which must not
+| be zero.  If any nonzero bits are shifted off, they are "jammed" into the
+| least-significant bit of the shifted value by setting the least-significant
+| bit to 1.  This shifted-and-jammed value is returned.
+|   The value of 'dist' can be arbitrarily large.  In particular, if 'dist' is
+| greater than 32, the result will be either 0 or 1, depending on whether 'a'
+| is zero or nonzero.
+*----------------------------------------------------------------------------*/
+#if defined INLINE_LEVEL && (2 <= INLINE_LEVEL)
+INLINE uint32_t softfloat_shiftRightJam32( uint32_t a, uint_fast16_t dist )
+{
+    return
+        (dist < 31) ? a>>dist | ((uint32_t) (a<<(-dist & 31)) != 0) : (a != 0);
+}
+#else
+uint32_t softfloat_shiftRightJam32( uint32_t a, uint_fast16_t dist );
+#endif
+#endif
+
 #ifndef softfloat_shiftRightJam64
 /*----------------------------------------------------------------------------
 | Shifts 'a' right by the number of bits given in 'dist', which must not

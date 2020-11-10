@@ -7,12 +7,20 @@ function printlnfp(a) { println(fp_to_string(a,5)) }
 probe process("stap").function("sdt_benchmark_thread") {
     fp = user_long($fpointer)
     printlnfp(fp)
+    fp32 = user_int($fpointer2)
+    printlnfp(fp32_to_fp64(fp32))
     exit()
 }
 
 probe begin {
     a = 4614253070214989087 //3.14
     b = 4622500287032611308 //11.21
+    
+    a32 = 1078523331 //3.14
+    b32 = 3219463864 //-1.79
+
+    printlnfp(fp32_to_fp64(a32))
+    printlnfp(fp32_to_fp64(b32))
 
     println(fp_to_string(a, 5)) // 3.14
     printlnfp(string_to_fp("3.14"))

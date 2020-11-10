@@ -41,6 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "softfloat/primitives.h"
 #include "softfloat/softfloat_types.h"
 
+union ui32_f32 { uint32_t ui; float32_t f; };
 union ui64_f64 { uint64_t ui; float64_t f; };
 
 enum {
@@ -65,8 +66,22 @@ int_fast64_t
 int_fast64_t softfloat_roundMToI64( bool, uint32_t *, uint_fast8_t, bool );
 #endif
 
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+*----------------------------------------------------------------------------*/
+#define signF32UI( a ) ((bool) ((uint32_t) (a)>>31))
+#define expF32UI( a ) ((int_fast16_t) ((a)>>23) & 0xFF)
+#define fracF32UI( a ) ((a) & 0x007FFFFF)
+#define packToF32UI( sign, exp, sig ) (((uint32_t) (sign)<<31) + ((uint32_t) (exp)<<23) + (sig))
 
+#define isNaNF32UI( a ) (((~(a) & 0x7F800000) == 0) && ((a) & 0x007FFFFF))
+
+struct exp16_sig32 { int_fast16_t exp; uint_fast32_t sig; };
+struct exp16_sig32 softfloat_normSubnormalF32Sig( uint_fast32_t );
+
+float32_t softfloat_roundPackToF32( bool, int_fast16_t, uint_fast32_t );
+float32_t softfloat_normRoundPackToF32( bool, int_fast16_t, uint_fast32_t );
+
+/*----------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------*/
 #define signF64UI( a ) ((bool) ((uint64_t) (a)>>63))
 #define expF64UI( a ) ((int_fast16_t) ((a)>>52) & 0x7FF)

@@ -51,8 +51,7 @@ function string_to_fp:long (input:string)
  *
  * @input: a long integer
  *
- * Description: Convert from a long to a softfloat floating point, then 
- *              print the floating point value.
+ * Description: Convert from a long to a 64 bit softfloat floating point.
  */
 function long_to_fp:long (input:long)
 %{
@@ -151,7 +150,7 @@ function fp_mul:long (mul1:long, mul2:long)
 %}
 
 /*
- *function fp_div - fp divide
+ * sfunction fp_div - fp divide
  *
  * @div1: the 64 bit floating point dividend
  * @div2: 64 bit floating point divisor
@@ -249,7 +248,7 @@ function fp_le:long (infp1:long, infp2:long)
 %}
 
 /**
- * sfunction fp_le - fp comparison function less than
+ * sfunction fp_lt - fp comparison function less than
  *
  * @infp1: the 64 bit floating point input
  * @infp2: second 64 bit floating point input
@@ -266,3 +265,21 @@ function fp_lt:long (infp1:long, infp2:long)
 
     STAP_RETVALUE = f64_lt(fp1, fp2);
 %}
+
+/**
+ * sfunction fp32_to_fp64 - Convert fp32 to 64 bit floating point
+ *
+ * @input: a long integer
+ *
+ * Description: Convert from 32 bit floating point to a 64 bit softfloat floating point.
+ */
+function fp32_to_fp64:long (input:long)
+%{
+    float64_t fp64;
+    float32_t fp32;
+    fp32.v = STAP_ARG_input;
+
+    fp64 = f32_to_f64(fp32);
+    STAP_RETVALUE = fp64.v;
+%}
+

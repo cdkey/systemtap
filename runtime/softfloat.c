@@ -52,6 +52,30 @@ THREAD_LOCAL uint_fast8_t softfloat_exceptionFlags = 0;
 
 THREAD_LOCAL uint_fast8_t extF80_roundingPrecision = 80;
 
+#ifndef softfloat_countLeadingZeros32
+
+#define softfloat_countLeadingZeros32 softfloat_countLeadingZeros32
+
+uint_fast8_t softfloat_countLeadingZeros32( uint32_t a )
+{
+    uint_fast8_t count;
+
+    count = 0;
+    if ( a < 0x10000 ) {
+        count = 16;
+        a <<= 16;
+    }
+    if ( a < 0x1000000 ) {
+        count += 8;
+        a <<= 8;
+    }
+    count += softfloat_countLeadingZeros8[a>>24];
+    return count;
+
+}
+
+#endif
+
 #ifndef softfloat_countLeadingZeros64
 
 #define softfloat_countLeadingZeros64 softfloat_countLeadingZeros64
@@ -177,7 +201,6 @@ void
 }
 
 #endif
-
 
 #ifndef softfloat_shiftRightJam64
 
@@ -502,6 +525,17 @@ int_fast64_t f64_to_i64( float64_t a, uint_fast8_t roundingMode, bool exact )
 }
 
 /*----------------------------------------------------------------------------
+| Converts the common NaN pointed to by 'aPtr' into a 32-bit floating-point
+| NaN, and returns the bit pattern of this value as an unsigned integer.
+*----------------------------------------------------------------------------*/
+uint_fast32_t softfloat_commonNaNToF32UI( const struct commonNaN *aPtr )
+{
+
+    return (uint_fast32_t) aPtr->sign<<31 | 0x7FC00000 | aPtr->v64>>41;
+
+}
+
+/*----------------------------------------------------------------------------
 | Converts the common NaN pointed to by 'aPtr' into a 64-bit floating-point
 | NaN, and returns the bit pattern of this value as an unsigned integer.
 *----------------------------------------------------------------------------*/
@@ -510,6 +544,24 @@ uint_fast64_t softfloat_commonNaNToF64UI( const struct commonNaN *aPtr )
     return
         (uint_fast64_t) aPtr->sign<<63 | UINT64_C( 0x7FF8000000000000 )
             | aPtr->v64>>12;
+}
+
+/*----------------------------------------------------------------------------
+| Assuming 'uiA' has the bit pattern of a 32-bit floating-point NaN, converts
+| this NaN to the common NaN form, and stores the resulting common NaN at the
+| location pointed to by 'zPtr'.  If the NaN is a signaling NaN, the invalid
+| exception is raised.
+*----------------------------------------------------------------------------*/
+void softfloat_f32UIToCommonNaN( uint_fast32_t uiA, struct commonNaN *zPtr )
+{
+
+    if ( softfloat_isSigNaNF32UI( uiA ) ) {
+        softfloat_raiseFlags( softfloat_flag_invalid );
+    }
+    zPtr->sign = uiA>>31;
+    zPtr->v64  = (uint_fast64_t) uiA<<41;
+    zPtr->v0   = 0;
+
 }
 
 /*----------------------------------------------------------------------------
@@ -977,7 +1029,7 @@ float64_t
     *------------------------------------------------------------------------*/
     if ( ! expA ) {
         if ( ! sigA ) goto zeroProd;
-        normExpSig = softfloat_normSubnormalF64Sig( sigA );
+
         expA = normExpSig.exp;
         sigA = normExpSig.sig;
     }
@@ -1657,6 +1709,18 @@ void softfloat_mul64To128M( uint64_t a, uint64_t b, uint32_t *zPtr )
 
 #endif
 
+struct exp16_sig32 softfloat_normSubnormalF32Sig( uint_fast32_t sig )
+{
+    int_fast8_t shiftDist;
+    struct exp16_sig32 z;
+
+    shiftDist = softfloat_countLeadingZeros32( sig ) - 8;
+    z.exp = 1 - shiftDist;
+    z.sig = sig<<shiftDist;
+    return z;
+
+}
+
 struct exp16_sig64 softfloat_normSubnormalF64Sig( uint_fast64_t sig )
 {
     int_fast8_t shiftDist;
@@ -2300,3 +2364,56 @@ bool f64_lt( float64_t a, float64_t b )
             ? signA && ((uiA | uiB) & UINT64_C( 0x7FFFFFFFFFFFFFFF ))
             : (uiA != uiB) && (signA ^ (uiA < uiB));
 }
+
+/*------------------------------------------------------------------------
+| float32_t conversions
+*------------------------------------------------------------------------*/
+float64_t f32_to_f64( float32_t a )
+{
+    union ui32_f32 uA;
+    uint_fast32_t uiA;
+    bool sign;
+    int_fast16_t exp;
+    uint_fast32_t frac;
+    struct commonNaN commonNaN;
+    uint_fast64_t uiZ;
+    struct exp16_sig32 normExpSig;
+    union ui64_f64 uZ;
+
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    uA.f = a;
+    uiA = uA.ui;
+    sign = signF32UI( uiA );
+    exp  = expF32UI( uiA );
+    frac = fracF32UI( uiA );
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    if ( exp == 0xFF ) {
+        if ( frac ) {
+            softfloat_f32UIToCommonNaN( uiA, &commonNaN );
+            uiZ = softfloat_commonNaNToF64UI( &commonNaN );
+        } else {
+            uiZ = packToF64UI( sign, 0x7FF, 0 );
+        }
+        goto uiZ;
+    }
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    if ( ! exp ) {
+        if ( ! frac ) {
+            uiZ = packToF64UI( sign, 0, 0 );
+            goto uiZ;
+        }
+        normExpSig = softfloat_normSubnormalF32Sig( frac );
+        exp = normExpSig.exp - 1;
+        frac = normExpSig.sig;
+    }
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    uiZ = packToF64UI( sign, exp + 0x380, (uint_fast64_t) frac<<29 );
+ uiZ:
+    uZ.ui = uiZ;
+    return uZ.f;
+}
+

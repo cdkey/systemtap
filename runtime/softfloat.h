@@ -91,6 +91,7 @@ void softfloat_raiseFlags( uint_fast8_t );
 | Integer/String-to-floating-point conversion routines.
 *----------------------------------------------------------------------------*/
 float64_t i64_to_f64( int64_t );
+float32_t i64_to_f32( int64_t );
 float64_t str_to_f64( const char *);
 
 /*----------------------------------------------------------------------------
@@ -109,5 +110,10 @@ float64_t f64_sqrt( float64_t );
 bool f64_eq( float64_t, float64_t );
 bool f64_le( float64_t, float64_t );
 bool f64_lt( float64_t, float64_t );
+
+/*----------------------------------------------------------------------------
+| 32-bit (single-precision) floating-point operations.
+*----------------------------------------------------------------------------*/
+float64_t f32_to_f64( float32_t );
 
 #endif

@@ -83,6 +83,46 @@ struct commonNaN {
 };
 
 /*----------------------------------------------------------------------------
+| The bit pattern for a default generated 32-bit floating-point NaN.
+*----------------------------------------------------------------------------*/
+#define defaultNaNF32UI 0x7FC00000
+
+/*----------------------------------------------------------------------------
+| Returns true when 32-bit unsigned integer 'uiA' has the bit pattern of a
+| 32-bit floating-point signaling NaN.
+| Note:  This macro evaluates its argument more than once.
+*----------------------------------------------------------------------------*/
+#define softfloat_isSigNaNF32UI( uiA ) ((((uiA) & 0x7FC00000) == 0x7F800000) && ((uiA) & 0x003FFFFF))
+
+/*----------------------------------------------------------------------------
+| Assuming 'uiA' has the bit pattern of a 32-bit floating-point NaN, converts
+| this NaN to the common NaN form, and stores the resulting common NaN at the
+| location pointed to by 'zPtr'.  If the NaN is a signaling NaN, the invalid
+| exception is raised.
+*----------------------------------------------------------------------------*/
+void softfloat_f32UIToCommonNaN( uint_fast32_t uiA, struct commonNaN *zPtr );
+
+/*----------------------------------------------------------------------------
+| Converts the common NaN pointed to by 'aPtr' into a 32-bit floating-point
+| NaN, and returns the bit pattern of this value as an unsigned integer.
+*----------------------------------------------------------------------------*/
+uint_fast32_t softfloat_commonNaNToF32UI( const struct commonNaN *aPtr );
+
+/*----------------------------------------------------------------------------
+| Interpreting 'uiA' and 'uiB' as the bit patterns of two 32-bit floating-
+| point values, at least one of which is a NaN, returns the bit pattern of
+| the combined NaN result.  If either 'uiA' or 'uiB' has the pattern of a
+| signaling NaN, the invalid exception is raised.
+*----------------------------------------------------------------------------*/
+uint_fast32_t
+ softfloat_propagateNaNF32UI( uint_fast32_t uiA, uint_fast32_t uiB );
+
+/*----------------------------------------------------------------------------
+| The bit pattern for a default generated 64-bit floating-point NaN.
+*----------------------------------------------------------------------------*/
+#define defaultNaNF64UI UINT64_C( 0x7FF8000000000000 )
+
+/*----------------------------------------------------------------------------
 | The bit pattern for a default generated 64-bit floating-point NaN.
 *----------------------------------------------------------------------------*/
 #define defaultNaNF64UI UINT64_C( 0x7FF8000000000000 )
