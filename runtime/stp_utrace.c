@@ -490,9 +490,9 @@ static int utrace_exit(void)
 		rcu_read_lock();
 		stap_hlist_for_each_entry_rcu(utrace, node, &bucket->head, hlist) {
 			utrace->freed = true;
-			stp_spin_lock(&bucket->lock);
+			stp_spin_lock_irqsave(&bucket->lock, flags);
 			hlist_del_rcu(&utrace->hlist);
-			stp_spin_unlock(&bucket->lock);
+			stp_spin_unlock_irqrestore(&bucket->lock, flags);
 
 			utrace_cleanup(utrace);
 		}
@@ -724,6 +724,7 @@ static struct utrace *utrace_task_alloc(struct utrace_bucket *bucket,
 					struct task_struct *task)
 {
 	struct utrace *utrace;
+	unsigned long flags;
 
 	utrace = kmem_cache_zalloc(utrace_cachep, STP_ALLOC_FLAGS);
 	if (unlikely(!utrace))
@@ -739,9 +740,9 @@ static struct utrace *utrace_task_alloc(struct utrace_bucket *bucket,
 	atomic_set(&utrace->resume_work_added, 0);
 	atomic_set(&utrace->report_work_added, 0);
 
-	stp_spin_lock(&bucket->lock);
+	stp_spin_lock_irqsave(&bucket->lock, flags);
 	hlist_add_head_rcu(&utrace->hlist, &bucket->head);
-	stp_spin_unlock(&bucket->lock);
+	stp_spin_unlock_irqrestore(&bucket->lock, flags);
 	return utrace;
 }
 
@@ -768,15 +769,17 @@ static struct utrace *utrace_task_alloc(struct utrace_bucket *bucket,
  */
 static void utrace_free(struct utrace_bucket *bucket, struct utrace *utrace)
 {
+	unsigned long flags;
+
 	if (unlikely(!utrace))
 		return;
 
 	/* Remove this utrace from the mapping list of tasks to
 	 * struct utrace. */
 	utrace->freed = true;
-	stp_spin_lock(&bucket->lock);
+	stp_spin_lock_irqsave(&bucket->lock, flags);
 	hlist_del_rcu(&utrace->hlist);
-	stp_spin_unlock(&bucket->lock);
+	stp_spin_unlock_irqrestore(&bucket->lock, flags);
 
 	/* Free the utrace struct. */
 #ifdef STP_TF_DEBUG
