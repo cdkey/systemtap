@@ -21,6 +21,9 @@
 #include <linux/namei.h>
 #include <linux/delay.h>
 #include <linux/mutex.h>
+#ifdef CONFIG_SECURITY_LOCKDOWN_LSM
+#include <linux/security.h>
+#endif
 #include "../uidgid_compatibility.h"
 
 static int _stp_exit_flag = 0;
@@ -55,10 +58,16 @@ static inline void _stp_unlock_inode(struct inode *inode);
 #define STP_CTL_TIMER_INTERVAL		((HZ+49)/50)
 #endif
 
+/* Defines the number of buffers allocated in control.c (which #includes
+   this file) for the _stp_pool_q.  This is the number of .cmd messages
+   the module can store before they have to be read by stapio.
+   40 is somewhat arbitrary, 8 pre-allocated messages, 32 dynamic.  */
+#define STP_DEFAULT_BUFFERS 256
 
 #include "control.h"
 #include "relay_v2.c"
 #include "debugfs.c"
+#include "procfs.c"
 #include "control.c"
 
 static unsigned _stp_nsubbufs = 8;
@@ -96,6 +105,99 @@ static struct notifier_block _stp_module_panic_notifier_nb = {
 };
 
 static struct timer_list _stp_ctl_work_timer;
+
+
+
+// ------------------------------------------------------------------------
+
+// Dispatching functions to choose between procfs and debugfs variants
+// of the transport.  PR26665
+
+static int _stp_transport_fs_init(const char *module_name)
+{
+        // BTW: testing the other !FOO_p first is to protect against repeated
+        // invocations of this function with security_locked_down() changing
+#ifdef STAPCONF_LOCKDOWN_DEBUGFS
+        if (!debugfs_p && security_locked_down (LOCKDOWN_DEBUGFS)) {
+                procfs_p = 1;
+		dbug_trans(1, "choosing procfs_p=1\n");
+        }
+#endif
+        if (!procfs_p) {
+                debugfs_p = 1;
+		dbug_trans(1, "choosing debugfs_p=1\n");
+        }
+
+#ifdef STAP_TRANS_PROCFS
+        procfs_p = 1;
+        debugfs_p = 0;
+        dbug_trans(1, "forcing procfs_p=1\n");
+#endif
+#ifdef STAP_TRANS_DEBUGFS
+        procfs_p = 0;
+        debugfs_p = 1;
+        dbug_trans(1, "forcing debugfs_p=1\n");        
+#endif        
+        
+        if (debugfs_p)
+                return _stp_debugfs_transport_fs_init(module_name);        
+        if (procfs_p)
+                return _stp_procfs_transport_fs_init(module_name);
+        return -ENOSYS;
+}
+
+static void _stp_transport_fs_close(void)
+{
+        if (debugfs_p)
+                _stp_debugfs_transport_fs_close();
+        if (procfs_p)
+                _stp_procfs_transport_fs_close();
+}
+
+
+static int _stp_ctl_write_fs(int type, void *data, unsigned len)
+{
+        if (procfs_p)
+                return _stp_procfs_ctl_write_fs (type, data, len);
+        if (debugfs_p)
+                return _stp_debugfs_ctl_write_fs (type, data, len);
+        return -ENOSYS;
+}
+
+
+static int _stp_register_ctl_channel_fs(void)
+{
+        if (debugfs_p)
+                return _stp_debugfs_register_ctl_channel_fs();
+        if (procfs_p)
+                return _stp_procfs_register_ctl_channel_fs();
+
+        return -ENOSYS;
+}
+
+
+static void _stp_unregister_ctl_channel_fs(void)
+{
+        if (procfs_p)
+                _stp_procfs_unregister_ctl_channel_fs();
+        if (debugfs_p)
+                _stp_debugfs_unregister_ctl_channel_fs();
+}
+
+
+
+static struct dentry *_stp_get_module_dir(void)
+{
+        if (procfs_p)
+                return _stp_procfs_get_module_dir();
+        if (debugfs_p)
+                return _stp_debugfs_get_module_dir();
+        return NULL;
+}
+
+
+
+// ------------------------------------------------------------------------
 
 /*
  *	_stp_handle_start - handle STP_START
@@ -579,173 +681,6 @@ static inline void _stp_unlock_inode(struct inode *inode)
 #endif
 }
 
-static struct dentry *_stp_lockfile = NULL;
-
-static int _stp_lock_transport_dir(void)
-{
-	int numtries = 0;
-
-	while ((_stp_lockfile = debugfs_create_dir("systemtap_lock", NULL)) == NULL) {
-		if (numtries++ >= 50)
-			return 0;
-		msleep(50);
-	}
-	return 1;
-}
-
-static void _stp_unlock_transport_dir(void)
-{
-	if (_stp_lockfile) {
-		debugfs_remove(_stp_lockfile);
-		_stp_lockfile = NULL;
-	}
-}
-
-static struct dentry *__stp_root_dir = NULL;
-
-/* _stp_get_root_dir() - creates root directory or returns
- * a pointer to it if it already exists.
- *
- * The caller *must* lock the transport directory.
- */
-
-static struct dentry *_stp_get_root_dir(void)
-{
-	struct file_system_type *fs;
-	struct super_block *sb;
-	const char *name = "systemtap";
-
-	if (__stp_root_dir != NULL) {
-		return __stp_root_dir;
-	}
-
-	fs = get_fs_type("debugfs");
-	if (!fs) {
-		errk("Couldn't find debugfs filesystem.\n");
-		return NULL;
-	}
-
-	__stp_root_dir = debugfs_create_dir(name, NULL);
-	if (__stp_root_dir == ERR_PTR(-EEXIST)) /* some kernels signal duplication this way */
-	  __stp_root_dir = NULL;
-	if (!__stp_root_dir) {
-		/* Couldn't create it because it is already there, so
-		 * find it. */
-#ifdef STAPCONF_FS_SUPERS_HLIST
-		sb = hlist_entry(fs->fs_supers.first, struct super_block,
-	 			 s_instances);
-#else
-		sb = list_entry(fs->fs_supers.next, struct super_block,
-				s_instances);
-#endif
-		_stp_lock_inode(sb->s_root->d_inode);
-		__stp_root_dir = lookup_one_len(name, sb->s_root,
-						strlen(name));
-		_stp_unlock_inode(sb->s_root->d_inode);
-		if (!IS_ERR(__stp_root_dir))
-			dput(__stp_root_dir);
-		else {
-			__stp_root_dir = NULL;
-			errk("Could not create or find transport directory.\n");
-		}
-	}
-	else if (IS_ERR(__stp_root_dir)) {
-	    __stp_root_dir = NULL;
-	    errk("Could not create root directory \"%s\", error %ld\n", name,
-		 -PTR_ERR(__stp_root_dir));
-	}
-
-	return __stp_root_dir;
-}
-
-/* _stp_remove_root_dir() - removes root directory (if empty)
- *
- * The caller *must* lock the transport directory.
- */
-
-static void _stp_remove_root_dir(void)
-{
-	if (__stp_root_dir) {
-		if (simple_empty(__stp_root_dir)) {
-			debugfs_remove(__stp_root_dir);
-		}
-		__stp_root_dir = NULL;
-	}
-}
-
-static struct dentry *__stp_module_dir = NULL;
-
-static struct dentry *_stp_get_module_dir(void)
-{
-	return __stp_module_dir;
-}
-
-static int _stp_transport_fs_init(const char *module_name)
-{
-	struct dentry *root_dir;
-    
-	dbug_trans(1, "entry\n");
-	if (module_name == NULL)
-		return -1;
-
-	if (!_stp_lock_transport_dir()) {
-		errk("Couldn't lock transport directory.\n");
-		return -1;
-	}
-
-	root_dir = _stp_get_root_dir();
-	if (root_dir == NULL) {
-		_stp_unlock_transport_dir();
-		return -1;
-	}
-
-        __stp_module_dir = debugfs_create_dir(module_name, root_dir);
-        if (!__stp_module_dir) {
-		errk("Could not create module directory \"%s\"\n",
-		     module_name);
-		_stp_remove_root_dir();
-		_stp_unlock_transport_dir();
-		return -1;
-	}
-	else if (IS_ERR(__stp_module_dir)) {
-		errk("Could not create module directory \"%s\", error %ld\n",
-		     module_name, -PTR_ERR(__stp_module_dir));
-		_stp_remove_root_dir();
-		_stp_unlock_transport_dir();
-		return -1;
-	}
-
-	if (_stp_transport_data_fs_init() != 0) {
-		debugfs_remove(__stp_module_dir);
-		__stp_module_dir = NULL;
-		_stp_remove_root_dir();
-		_stp_unlock_transport_dir();
-		return -1;
-	}
-	_stp_unlock_transport_dir();
-	dbug_trans(1, "returning 0\n");
-	return 0;
-}
-
-static void _stp_transport_fs_close(void)
-{
-	dbug_trans(1, "stp_transport_fs_close\n");
-
-	_stp_transport_data_fs_close();
-
-	if (__stp_module_dir) {
-		if (!_stp_lock_transport_dir()) {
-			errk("Couldn't lock transport directory.\n");
-			return;
-		}
-
-		debugfs_remove(__stp_module_dir);
-		__stp_module_dir = NULL;
-
-		_stp_remove_root_dir();
-		_stp_unlock_transport_dir();
-	}
-}
 
 
 /* NB: Accessed from tzinfo.stp tapset */

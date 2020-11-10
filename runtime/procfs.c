@@ -50,123 +50,10 @@
 static int _stp_num_pde = 0;
 static struct proc_dir_entry *_stp_pde[STP_MAX_PROCFS_FILES];
 
-/* _stp_proc_root is the '/proc/systemtap/{module_name}' directory. */
-static struct proc_dir_entry *_stp_proc_root = NULL;
-
 static void _stp_close_procfs(void);
 
 
-/*
- * Removes '/proc/systemtap/{module_name}'. Notice we're leaving
- * '/proc/systemtap' behind.  There is no way on newer kernels to know
- * if a procfs directory is empty.
- *
- * NB: this is suitable to call late in the module cleanup function,
- * and does not rely on any other facilities in the runtime.  PR19833.
- * See also PR15408.
- */
-static void _stp_rmdir_proc_module(void)
-{
-	if (_stp_proc_root) {
-		proc_remove(_stp_proc_root);
-		_stp_proc_root = NULL;
-	}
-}
 
-
-/*
- * Safely creates '/proc/systemtap' (if necessary) and
- * '/proc/systemtap/{module_name}'.
- *
- * NB: this function is suitable to call from early in the the
- * module-init function, and doesn't rely on any other facilities
- * in our runtime.  PR19833.  See also PR15408.
- */
-static int _stp_mkdir_proc_module(void)
-{	
-	int found = 0;
-	static char proc_root_name[STP_MODULE_NAME_LEN + sizeof("systemtap/")];
-#if defined(STAPCONF_PATH_LOOKUP) || defined(STAPCONF_KERN_PATH_PARENT)
-	struct nameidata nd;
-#else  /* STAPCONF_VFS_PATH_LOOKUP or STAPCONF_KERN_PATH */
-	struct path path;
-#if defined(STAPCONF_VFS_PATH_LOOKUP)
-	struct vfsmount *mnt;
-#endif
-	int rc;
-#endif	/* STAPCONF_VFS_PATH_LOOKUP or STAPCONF_KERN_PATH */
-
-        if (_stp_proc_root != NULL)
-		return 0;
-
-#if defined(STAPCONF_PATH_LOOKUP) || defined(STAPCONF_KERN_PATH_PARENT)
-	/* Why "/proc/systemtap/foo"?  kern_path_parent() is basically
-	 * the same thing as calling the old path_lookup() with flags
-	 * set to LOOKUP_PARENT, which means to look up the parent of
-	 * the path, which in this case is "/proc/systemtap". */
-	if (! kern_path_parent("/proc/systemtap/foo", &nd)) {
-		found = 1;
-#ifdef STAPCONF_NAMEIDATA_CLEANUP
-		path_put(&nd.path);
-#else  /* !STAPCONF_NAMEIDATA_CLEANUP */
-		path_release(&nd);
-#endif	/* !STAPCONF_NAMEIDATA_CLEANUP */
-	}
-
-#elif defined(STAPCONF_KERN_PATH)
-	/* Prefer kern_path() over vfs_path_lookup(), since on some
-	 * kernels the declaration for vfs_path_lookup() was moved to
-	 * a private header. */
-
-	/* See if '/proc/systemtap' exists. */
-	rc = kern_path("/proc/systemtap", 0, &path);
-	if (rc == 0) {
-		found = 1;
-		path_put (&path);
-	}
-
-#else  /* STAPCONF_VFS_PATH_LOOKUP */
-	/* See if '/proc/systemtap' exists. */
-	if (! init_pid_ns.proc_mnt) {
-		errk("Unable to create '/proc/systemap':"
-		     " '/proc' doesn't exist.\n");
-		goto done;
-	}
-	mnt = init_pid_ns.proc_mnt;
-	rc = vfs_path_lookup(mnt->mnt_root, mnt, "systemtap", 0, &path);
-	if (rc == 0) {
-		found = 1;
-		path_put (&path);
-	}
-#endif	/* STAPCONF_VFS_PATH_LOOKUP */
-
-	/* If we couldn't find "/proc/systemtap", create it. */
-	if (!found) {
-		struct proc_dir_entry *de;
-
-		de = proc_mkdir ("systemtap", NULL);
-		if (de == NULL) {
-			errk("Unable to create '/proc/systemap':"
-			     " proc_mkdir failed.\n");
-			goto done;
- 		}
-	}
-
-	/* Create the "systemtap/{module_name} directory in procfs. */
-	strlcpy(proc_root_name, "systemtap/", sizeof(proc_root_name));
-	strlcat(proc_root_name, THIS_MODULE->name, sizeof(proc_root_name));
-	_stp_proc_root = proc_mkdir(proc_root_name, NULL);
-#ifdef STAPCONF_PROCFS_OWNER
-	if (_stp_proc_root != NULL)
-		_stp_proc_root->owner = THIS_MODULE;
-#endif
-	if (_stp_proc_root == NULL)
-		errk("Unable to create '/proc/systemap/%s':"
-		     " proc_mkdir failed.\n", THIS_MODULE->name);
-
-done:
-	return (_stp_proc_root) ? 0 : -EINVAL;
-}
 
 #ifdef _STP_ALLOW_PROCFS_PATH_SUBDIRS
 /*
@@ -199,7 +86,7 @@ static int _stp_create_procfs(const char *path,
 	if (_stp_num_pde >= STP_MAX_PROCFS_FILES)
 		goto too_many;
 
-	last_dir = _stp_proc_root;
+	last_dir = _stp_procfs_module_dir;
 
 	/* if no path, use default one */
 	if (strlen(path) == 0)

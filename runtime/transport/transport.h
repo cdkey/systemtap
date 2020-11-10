@@ -5,6 +5,7 @@
  * @brief Header file for stp transport
  */
 
+#include "relay_compat.h"
 #include "transport_msgs.h"
 
 /* The size of print buffers. This limits the maximum */
@@ -19,17 +20,53 @@ static unsigned _stp_nsubbufs;
 static unsigned _stp_subbuf_size;
 static pid_t _stp_target;
 
+// flags to indicate choice of host filesystem for the relayfs
+// pseudofiles; chosen within _stp_transport_fs_init
+static unsigned procfs_p = 0;
+static unsigned debugfs_p = 0;
+
 static int _stp_transport_init(void);
 static void _stp_transport_close(void);
 
 static int _stp_lock_transport_dir(void);
 static void _stp_unlock_transport_dir(void);
 
-static struct dentry *_stp_get_root_dir(void);
+static struct dentry *_stp_debugfs_get_root_dir(void);
+static void _stp_debugfs_remove_root_dir(void);
+
 static struct dentry *_stp_get_module_dir(void);
+static struct dentry *_stp_procfs_get_module_dir(void);
+static struct dentry *_stp_debugfs_get_module_dir(void);
 
 static int _stp_transport_fs_init(const char *module_name);
 static void _stp_transport_fs_close(void);
+static int _stp_debugfs_transport_fs_init(const char *module_name);
+static void _stp_debugfs_transport_fs_close(void);
+static int _stp_procfs_transport_fs_init(const char *module_name);
+static void _stp_procfs_transport_fs_close(void);
+
+static int __stp_debugfs_relay_remove_buf_file_callback(struct dentry *dentry);
+static int __stp_procfs_relay_remove_buf_file_callback(struct dentry *dentry);
+struct rchan_buf;
+static struct dentry * __stp_debugfs_relay_create_buf_file_callback(const char *filename,
+                                                                    struct dentry *parent,
+#ifdef STAPCONF_RELAY_UMODE_T
+                                                                    umode_t mode,
+#else
+                                                                    int mode,
+#endif
+                                                                    struct rchan_buf *buf,
+                                                                    int *is_global);
+static struct dentry * __stp_procfs_relay_create_buf_file_callback(const char *filename,
+                                                                   struct dentry *parent,
+#ifdef STAPCONF_RELAY_UMODE_T
+                                                                   umode_t mode,
+#else
+                                                                   int mode,
+#endif
+                                                                   struct rchan_buf *buf,
+                                                                   int *is_global);
+        
 
 static void _stp_attach(void);
 static void _stp_detach(void);

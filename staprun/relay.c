@@ -338,6 +338,13 @@ int init_relayfs(void)
                         dbug(2, "attempting to open %s\n", buf);
                         relay_fd[i] = open_cloexec(buf, O_RDONLY | O_NONBLOCK, 0);
                 }
+                if (relay_fd[i] < 0) {
+                        if (sprintf_chk(buf, "/proc/systemtap/%s/trace%d",
+                                        modname, i))
+                                return -1;
+                        dbug(2, "attempting to open %s\n", buf);
+                        relay_fd[i] = open_cloexec(buf, O_RDONLY | O_NONBLOCK, 0);
+                }
 		if (relay_fd[i] >= 0) {
 			avail_cpus[cpui++] = i;
 		}

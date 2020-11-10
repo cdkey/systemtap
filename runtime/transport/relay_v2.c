@@ -29,7 +29,6 @@
 #include <linux/init.h>
 #include <linux/debugfs.h>
 #include <linux/mm.h>
-#include <linux/relay.h>
 #include "../linux/timer_compatibility.h"
 #include "../uidgid_compatibility.h"
 #include "relay_compat.h"
@@ -163,14 +162,36 @@ static void _stp_transport_data_fs_overwrite(int overwrite)
 	_stp_relay_data.overwrite_flag = overwrite;
 }
 
-	return 0;
+
+/*
+ * Keep track of how many times we encountered a full subbuffer, to aid
+ * the user space app in telling how many lost events there were.
+ */
+static int __stp_relay_subbuf_start_callback(struct rchan_buf *buf,
+                                             void *subbuf, void *prev_subbuf,
+                                             size_t prev_padding)
+{
+        if (_stp_relay_data.overwrite_flag || !relay_buf_full(buf))
+                return 1;
+        
+#ifdef _STP_USE_DROPPED_FILE
+        atomic_inc(&_stp_relay_data.dropped);
+#endif
+        return 0;
 }
+
+
+// PR26665: demultiplex debugfs vs procfs host
 
 static int __stp_relay_remove_buf_file_callback(struct dentry *dentry)
 {
-	debugfs_remove(dentry);
+        if (debugfs_p)
+                return __stp_debugfs_relay_remove_buf_file_callback(dentry);
+        if (procfs_p)
+                return __stp_procfs_relay_remove_buf_file_callback(dentry);
 	return 0;
 }
+
 
 static struct dentry *
 __stp_relay_create_buf_file_callback(const char *filename,
@@ -183,38 +204,20 @@ __stp_relay_create_buf_file_callback(const char *filename,
 				     struct rchan_buf *buf,
 				     int *is_global)
 {
-	struct dentry *file = debugfs_create_file(filename, mode, parent, buf,
-	                                          &relay_file_operations_w_owner);
-	/*
-	 * Here's what 'is_global' does (from linux/relay.h):
-	 *
-	 * Setting the is_global outparam to a non-zero value will
-	 * cause relay_open() to create a single global buffer rather
-	 * than the default set of per-cpu buffers.
-	 */
-	if (is_global) {
-#ifdef STP_BULKMODE
-		*is_global = 0;
-#else
-		*is_global = 1;
-#endif
-	}
-
-	if (IS_ERR(file)) {
-		file = NULL;
-	}
-	else if (file) {
-		file->d_inode->i_uid = KUIDT_INIT(_stp_uid);
-		file->d_inode->i_gid = KGIDT_INIT(_stp_gid);
-	}
-	return file;
+        if (debugfs_p)
+                return __stp_debugfs_relay_create_buf_file_callback(filename, parent, mode, buf, is_global);
+        if (procfs_p)
+                return __stp_procfs_relay_create_buf_file_callback(filename, parent, mode, buf, is_global);
+        return NULL;
 }
+
 
 static struct rchan_callbacks __stp_relay_callbacks = {
 	.subbuf_start		= __stp_relay_subbuf_start_callback,
 	.create_buf_file	= __stp_relay_create_buf_file_callback,
 	.remove_buf_file	= __stp_relay_remove_buf_file_callback,
 };
+
 
 static void _stp_transport_data_fs_start(void)
 {

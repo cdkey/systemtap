@@ -16,7 +16,8 @@
 
 int init_ctl_channel(const char *name, int verb)
 {
-	char buf[PATH_MAX];
+	char buf[PATH_MAX] = ""; // the .ctl file name
+        char buf2[PATH_MAX] = ""; // other tmp stuff
 	struct statfs st;
 
         (void) verb;
@@ -48,30 +49,44 @@ int init_ctl_channel(const char *name, int verb)
            early in staprun), or if errors out for some reason. */
 #endif
 
-	if (statfs("/sys/kernel/debug", &st) == 0 && (int)st.f_type == (int)DEBUGFS_MAGIC) {
+
+        // See if we have the .ctl file in debugfs
+        if (sprintf_chk(buf2, "/sys/kernel/debug/systemtap/%s/%s", 
+                        name, CTL_CHANNEL_NAME))
+                return -1;
+	if (statfs("/sys/kernel/debug", &st) == 0 && (int)st.f_type == (int)DEBUGFS_MAGIC &&
+            (access (buf2, W_OK)==0)) {
                 /* PR14245: allow subsequent operations, and if
                    necessary, staprun->stapio forks, to reuse an fd for 
                    directory lookups (even if some parent directories have
                    perms 0700. */
+                strcpy(buf, buf2); // committed
+
 #ifdef HAVE_OPENAT
-                if (! sprintf_chk(buf, "/sys/kernel/debug/systemtap/%s", name)) {
-                        relay_basedir_fd = open (buf, O_DIRECTORY | O_RDONLY);
-                        /* If this fails, we don't much care; the
-                           negative return value will just keep us
-                           looking up by name again next time. */
-                        /* NB: we don't plan to close this fd, so that we can pass
-                           it across staprun->stapio fork/execs. */
+                if (! sprintf_chk(buf2, "/sys/kernel/debug/systemtap/%s", name)) {
+                        relay_basedir_fd = open (buf2, O_DIRECTORY | O_RDONLY);
                 }
 #endif
-		if (sprintf_chk(buf, "/sys/kernel/debug/systemtap/%s/%s", 
-                                name, CTL_CHANNEL_NAME))
-			return -1;
-                /*
-                STP_TRANSPORT_VERSION=1 used this:
-		if (sprintf_chk(buf, "/proc/systemtap/%s/%s", name, CTL_CHANNEL_NAME))
-			return -2;
-                */
         }
+
+        // PR26665: try /proc/systemtap/... also
+        // (STP_TRANSPORT_1 used to use this for other purposes.)
+        if (sprintf_chk(buf2, "/proc/systemtap/%s/%s", 
+                        name, CTL_CHANNEL_NAME))
+                return -1;
+        if (relay_basedir_fd < 0 && (access(buf2, W_OK)==0)) {
+                strcpy(buf, buf2); // committed
+                
+#ifdef HAVE_OPENAT
+                if (! sprintf_chk(buf2, "/proc/systemtap/%s", name)) {
+                        relay_basedir_fd = open (buf2, O_DIRECTORY | O_RDONLY);
+                }
+#endif
+        }
+
+        /* At this point, we have buf, which is the full path to the .ctl file,
+           and we may have a relay_basedir_fd, which is useful to pass across
+           staprun->stapio fork/execs. */
         
 	control_channel = open_cloexec(buf, O_RDWR, 0);
 	dbug(2, "Opened %s (%d)\n", buf, control_channel);

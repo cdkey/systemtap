@@ -737,7 +737,7 @@ static int _stp_register_ctl_channel(void)
 	if (unlikely(_stp_ctl_alloc_special_buffers() != 0))
 		goto err0;
 
-	if (_stp_register_ctl_channel_fs() != 0)
+	if (_stp_register_ctl_channel_fs() != 0) // procfs or debugfs decision time
 		goto err0;
 
 	return 0;

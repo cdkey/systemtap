@@ -516,7 +516,8 @@ compile_pass (systemtap_session& s)
 		  "STAPCONF_MMAP_LOCK", NULL);
   output_autoconf(s, o, cs, "autoconf-atomic_fetch_add_unless.c",
 		  "STAPCONF_ATOMIC_FETCH_ADD_UNLESS", NULL);
-
+  output_autoconf(s, o, cs, "autoconf-lockdown-debugfs.c", "STAPCONF_LOCKDOWN_DEBUGFS", NULL);
+  
   // used by runtime/linux/netfilter.c
   output_exportconf(s, o2, "nf_register_hook", "STAPCONF_NF_REGISTER_HOOK");
 
