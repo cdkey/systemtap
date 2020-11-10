@@ -1,4 +1,4 @@
-* What's new in version 4.4
+* What's new in version 4.4, 2020-11-09
 
 - Make syscall arguments writable again in non-DWARF probes on kernels
   that use syscall wrappers to pass arguments via pt_regs (currently
@@ -29,9 +29,17 @@
   Lock pushdown means much greater potential concurrency between
   probes running on different CPUs.
 
-- Systemtap now supports extracting floating point and stored in long type.
-  Also basic floating point arithmetic and comparison functions are provided
-  in tapset.
+- Systemtap now supports kernel-lockdown configurations that disable
+  debugfs, by instead using procfs to carry relayfs transport files.
+
+- Systemtap now supports extracting 64-bit floating point and stored
+  in long type.  Also basic floating point arithmetic and comparison
+  functions are provided in a tapset.  More automated syntax coming
+  soon.  e.g.:
+     probe process.function("foo") {
+           fp = user_long(& $fp_variable)
+           println (fp_to_string (fp_add (string_to_fp("3.14"), fp)))
+     }
 
 * What's new in version 4.3, 2020-06-11
 
