@@ -38,7 +38,7 @@
            		<li><a href="keyword-index.html">By Keyword</a></li>
          	</ul>
 
-<p><em>For systemtap version 4.3.</em></p><h2>Best Examples</h2>
+<p><em>For systemtap version 4.4.</em></p><h2>Best Examples</h2>
 <ul>
 <li><a href="#general/helloworld.stp">general/helloworld.stp - SystemTap "Hello World" Program</a></li>
 <li><a href="#general/para-callgraph.stp">general/para-callgraph.stp - Callgraph Tracing with Arguments</a></li>
@@ -59,7 +59,7 @@
 <li><a href="#virtualization/kvm_service_time.stp">virtualization/kvm_service_time.stp - Time Statistics on KVM Exit Reasons</a></li>
 </ul>
 
-<h2>All 189 Examples</h2>
+<h2>All 190 Examples</h2>
 <ul>
 <li><a name="apps/gmalloc_watch.stp"></a><a href="#apps/gmalloc_watch.stp">&para;</a> <a href="apps/gmalloc_watch.stp">apps/gmalloc_watch.stp</a> - Tracing glib2 memory allocations<br>
 keywords: <a href="keyword-index.html#TRACE">TRACE</a> <br>
@@ -97,6 +97,9 @@ keywords: <a href="keyword-index.html#PROMETHEUS">PROMETHEUS</a> <a href="keywor
 </li><li><a name="general/eventcount.stp"></a><a href="#general/eventcount.stp">&para;</a> <a href="general/eventcount.stp">general/eventcount.stp</a> - Interactive Count Specified Events<br>
 keywords: <a href="keyword-index.html#INTERACTIVE">INTERACTIVE</a> <a href="keyword-index.html#STATISTICS">STATISTICS</a> <a href="keyword-index.html#THREAD">THREAD</a> <a href="keyword-index.html#PROCESS">PROCESS</a> <br>
 <p>The script periodically prints a count of specified events and their related tid&#39;s over the course of execution. Numerous configuration options exist to control filtering / reporting, some of which can be modified at runtime. See the script source for more information.</p><p><i><a href="general/eventcount.txt">sample usage in general/eventcount.txt</i></font></p>
+</li><li><a name="general/floatingpoint.stp"></a><a href="#general/floatingpoint.stp">&para;</a> <a href="general/floatingpoint.stp">general/floatingpoint.stp</a> - SystemTap "Floating Point" Program<br>
+keywords: <a href="keyword-index.html#SIMPLE">SIMPLE</a> <a href="keyword-index.html#FLOATINGPOINT">FLOATINGPOINT</a> <br>
+<p>A basic &quot;Floating Point&quot; program implemented in SystemTap script. It extracts floating point from benchmark-sdt section in main.cxx and takes one pseudo floating point, printing out results of various simple floating point operations.</p><p><i><a href="general/floatingpoint.txt">sample usage in general/floatingpoint.txt</i></font></p>
 </li><li><a name="general/func_time_stats.stp"></a><a href="#general/func_time_stats.stp">&para;</a> <a href="general/func_time_stats.stp">general/func_time_stats.stp</a> - Function Time Statistics<br>
 keywords: <a href="keyword-index.html#FUNCTION">FUNCTION</a> <a href="keyword-index.html#STATISTICS">STATISTICS</a> <br>
 <p>The func_time_stats.stp script tracks the wall clock time for each invocation of the function probe listed as the first command line argument. When the script exits it prints out the minimum, average, and maximum times in microseconds followed by a count of times that the function was called and a histogram showing the distributions of times.</p><p><i><a href="general/func_time_stats.txt">sample usage in general/func_time_stats.txt</i></font></p>
@@ -134,7 +137,7 @@ pyexample.py 35&#39; py3example.stp</pre></font></p>
 keywords: <a href="keyword-index.html#REGEX">REGEX</a> <br>
 <p>Uses the regex functionality to detect opened files whose names match a pattern given on the command line. If no command line parameter is given, demonstrate by filtering for files that end with an extension showing them to be an archive.</p><p><font size="-2"><pre># stap regex.stp -T 1</pre></font></p>
 </li><li><a name="general/sizeof.stp"></a><a href="#general/sizeof.stp">&para;</a> <a href="general/sizeof.stp">general/sizeof.stp</a> - Print the Size of a C Type<br>
-keywords: <a href="keyword-index.html#STATISTICS">STATISTICS</a> <a href="keyword-index.html#MEMORY">MEMORY</a> <br>
+keywords: <a href="keyword-index.html#STATISTICS">STATISTICS</a> <a href="keyword-index.html#MEMORY">MEMORY</a> <a href="keyword-index.html#BPF">BPF</a> <br>
 <p>This script prints the size of a type, based on dwarf debuginfo for any kernel or userspace module, or trial-compilation of a given header file name.</p><p><i><a href="general/sizeof.txt">sample usage in general/sizeof.txt</i></font></p>
 </li><li><a name="general/sizeof_interactive.stp"></a><a href="#general/sizeof_interactive.stp">&para;</a> <a href="general/sizeof_interactive.stp">general/sizeof_interactive.stp</a> - Interactive Print the Size of a C Type<br>
 keywords: <a href="keyword-index.html#STATISTICS">STATISTICS</a> <a href="keyword-index.html#MEMORY">MEMORY</a> <a href="keyword-index.html#INTERACTIVE">INTERACTIVE</a> <br>

@@ -2,7 +2,7 @@ SYSTEMTAP EXAMPLES INDEX
 (see also keyword-index.txt)
 
 
-For systemtap version 4.3.
+For systemtap version 4.4.
 
 apps/gmalloc_watch.stp - Tracing glib2 memory allocations
 keywords: trace
@@ -142,6 +142,17 @@ keywords: interactive statistics thread process
   # stap eventcount.stp 'syscall_any' -c 'sleep 3'
 
 
+general/floatingpoint.stp - SystemTap "Floating Point" Program
+keywords: simple floatingpoint
+
+  A basic "Floating Point" program implemented in SystemTap script. It
+  extracts floating point from benchmark-sdt section in main.cxx and
+  takes one pseudo floating point, printing out results of various
+  simple floating point operations.
+
+  # stap floatingpoint.stp -c "stap --benchmark-sdt"
+
+
 general/func_time_stats.stp - Function Time Statistics
 keywords: function statistics
 
@@ -275,7 +286,7 @@ keywords: regex
 
 
 general/sizeof.stp - Print the Size of a C Type
-keywords: statistics memory
+keywords: statistics memory bpf
 
   This script prints the size of a type, based on dwarf debuginfo for
   any kernel or userspace module, or trial-compilation of a given

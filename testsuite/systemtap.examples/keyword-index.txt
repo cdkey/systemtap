@@ -2,7 +2,7 @@ SYSTEMTAP EXAMPLES INDEX BY KEYWORD
 (see also index.txt)
 
 
-For systemtap version 4.3.
+For systemtap version 4.4.
 
 = _BEST =
 
@@ -377,6 +377,16 @@ keywords: _best simple bpf
   # stap helloworld.stp
 
 
+general/sizeof.stp - Print the Size of a C Type
+keywords: statistics memory bpf
+
+  This script prints the size of a type, based on dwarf debuginfo for
+  any kernel or userspace module, or trial-compilation of a given
+  header file name.
+
+  # stap sizeof.stp FILE '</usr/include/stdio.h>'
+
+
 memory/cachestat.stp - Count Page Cache Hits and Misses
 keywords: memory bpf
 
@@ -646,6 +656,19 @@ keywords: io filesystem
   of suffered file system latency.
 
   # stap fsslower-nd.stp -T 1
+
+
+= FLOATINGPOINT =
+
+general/floatingpoint.stp - SystemTap "Floating Point" Program
+keywords: simple floatingpoint
+
+  A basic "Floating Point" program implemented in SystemTap script. It
+  extracts floating point from benchmark-sdt section in main.cxx and
+  takes one pseudo floating point, printing out results of various
+  simple floating point operations.
+
+  # stap floatingpoint.stp -c "stap --benchmark-sdt"
 
 
 = FORMAT =
@@ -1485,7 +1508,7 @@ keywords: process locking
 = MEMORY =
 
 general/sizeof.stp - Print the Size of a C Type
-keywords: statistics memory
+keywords: statistics memory bpf
 
   This script prints the size of a type, based on dwarf debuginfo for
   any kernel or userspace module, or trial-compilation of a given
@@ -3214,6 +3237,17 @@ keywords: simple trace callgraph
   /proc/sys/vm/* || true"
 
 
+general/floatingpoint.stp - SystemTap "Floating Point" Program
+keywords: simple floatingpoint
+
+  A basic "Floating Point" program implemented in SystemTap script. It
+  extracts floating point from benchmark-sdt section in main.cxx and
+  takes one pseudo floating point, printing out results of various
+  simple floating point operations.
+
+  # stap floatingpoint.stp -c "stap --benchmark-sdt"
+
+
 general/helloworld.stp - SystemTap "Hello World" Program
 keywords: _best simple bpf
 
@@ -3491,7 +3525,7 @@ keywords: function statistics
 
 
 general/sizeof.stp - Print the Size of a C Type
-keywords: statistics memory
+keywords: statistics memory bpf
 
   This script prints the size of a type, based on dwarf debuginfo for
   any kernel or userspace module, or trial-compilation of a given
