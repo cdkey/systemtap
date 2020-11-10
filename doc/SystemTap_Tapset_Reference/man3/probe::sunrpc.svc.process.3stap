@@ -36,19 +36,14 @@ sunrpc\&.svc\&.process
 .fi
 .SH "VALUES"
 .PP
+\fIsv_nrthreads\fR
+.RS 4
+the number of concurrent threads
+.RE
+.PP
 \fIrq_proc\fR
 .RS 4
 the procedure number in the request
-.RE
-.PP
-\fIpeer_ip\fR
-.RS 4
-the peer address where the request is from
-.RE
-.PP
-\fIrq_vers\fR
-.RS 4
-the program version in the request
 .RE
 .PP
 \fIrq_prot\fR
@@ -56,19 +51,9 @@ the program version in the request
 the IP protocol of the reqeust
 .RE
 .PP
-\fIsv_prog\fR
+\fIrq_vers\fR
 .RS 4
-the number of the program
-.RE
-.PP
-\fIrq_xid\fR
-.RS 4
-the transmission id in the request
-.RE
-.PP
-\fIsv_nrthreads\fR
-.RS 4
-the number of concurrent threads
+the program version in the request
 .RE
 .PP
 \fIrq_prog\fR
@@ -79,6 +64,21 @@ the program number in the request
 \fIsv_name\fR
 .RS 4
 the service name
+.RE
+.PP
+\fIpeer_ip\fR
+.RS 4
+the peer address where the request is from
+.RE
+.PP
+\fIrq_xid\fR
+.RS 4
+the transmission id in the request
+.RE
+.PP
+\fIsv_prog\fR
+.RS 4
+the number of the program
 .RE
 .SH SEE ALSO\n 
 .IR tapset::rpc (3stap)

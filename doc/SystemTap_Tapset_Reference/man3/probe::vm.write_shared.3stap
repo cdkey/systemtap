@@ -36,14 +36,14 @@ vm\&.write_shared
 .fi
 .SH "VALUES"
 .PP
-\fIaddress\fR
-.RS 4
-the address of the shared write
-.RE
-.PP
 \fIname\fR
 .RS 4
 name of the probe point
+.RE
+.PP
+\fIaddress\fR
+.RS 4
+the address of the shared write
 .RE
 .SH "CONTEXT"
 .PP

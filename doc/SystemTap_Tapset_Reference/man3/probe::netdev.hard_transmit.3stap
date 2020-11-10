@@ -36,6 +36,11 @@ netdev\&.hard_transmit
 .fi
 .SH "VALUES"
 .PP
+\fIprotocol\fR
+.RS 4
+The protocol used in the transmission
+.RE
+.PP
 \fItruesize\fR
 .RS 4
 The size of the data to be transmitted\&.
@@ -49,11 +54,6 @@ The length of the transmit buffer\&.
 \fIdev_name\fR
 .RS 4
 The device scheduled to transmit
-.RE
-.PP
-\fIprotocol\fR
-.RS 4
-The protocol used in the transmission
 .RE
 .SH SEE ALSO\n 
 .IR tapset::networking (3stap)

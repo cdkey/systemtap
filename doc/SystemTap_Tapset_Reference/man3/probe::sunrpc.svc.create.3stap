@@ -36,6 +36,11 @@ sunrpc\&.svc\&.create
 .fi
 .SH "VALUES"
 .PP
+\fIprog\fR
+.RS 4
+the number of the program
+.RE
+.PP
 \fIpg_nvers\fR
 .RS 4
 the number of supported versions
@@ -44,11 +49,6 @@ the number of supported versions
 \fIbufsize\fR
 .RS 4
 the buffer size
-.RE
-.PP
-\fIprog\fR
-.RS 4
-the number of the program
 .RE
 .PP
 \fIprogname\fR

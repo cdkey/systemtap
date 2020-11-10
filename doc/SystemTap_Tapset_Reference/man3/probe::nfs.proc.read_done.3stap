@@ -41,21 +41,6 @@ nfs\&.proc\&.read_done
 NFS version
 .RE
 .PP
-\fIserver_ip\fR
-.RS 4
-IP address of server
-.RE
-.PP
-\fIcount\fR
-.RS 4
-number of bytes read
-.RE
-.PP
-\fIstatus\fR
-.RS 4
-result of last operation
-.RE
-.PP
 \fIprot\fR
 .RS 4
 transfer protocol
@@ -64,6 +49,21 @@ transfer protocol
 \fItimestamp\fR
 .RS 4
 V4 timestamp, which is used for lease renewal
+.RE
+.PP
+\fIserver_ip\fR
+.RS 4
+IP address of server
+.RE
+.PP
+\fIstatus\fR
+.RS 4
+result of last operation
+.RE
+.PP
+\fIcount\fR
+.RS 4
+number of bytes read
 .RE
 .SH "DESCRIPTION"
 .PP

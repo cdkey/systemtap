@@ -36,11 +36,6 @@ workqueue\&.insert
 .fi
 .SH "VALUES"
 .PP
-\fIwork\fR
-.RS 4
-work_struct* being queued
-.RE
-.PP
 \fIwork_func\fR
 .RS 4
 pointer to handler function
@@ -49,6 +44,11 @@ pointer to handler function
 \fIwq_thread\fR
 .RS 4
 task_struct of the workqueue thread
+.RE
+.PP
+\fIwork\fR
+.RS 4
+work_struct* being queued
 .RE
 .SH SEE ALSO\n 
 .IR tapset::irq (3stap)

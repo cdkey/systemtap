@@ -36,14 +36,14 @@ ioscheduler_trace\&.unplug_io
 .fi
 .SH "VALUES"
 .PP
-\fIname\fR
-.RS 4
-Name of the probe point
-.RE
-.PP
 \fIrq_queue\fR
 .RS 4
 request queue
+.RE
+.PP
+\fIname\fR
+.RS 4
+Name of the probe point
 .RE
 .SH "DESCRIPTION"
 .PP

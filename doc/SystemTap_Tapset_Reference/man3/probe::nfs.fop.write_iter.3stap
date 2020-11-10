@@ -36,19 +36,14 @@ nfs\&.fop\&.write_iter
 .fi
 .SH "VALUES"
 .PP
-\fIpos\fR
-.RS 4
-offset of the file
-.RE
-.PP
 \fIcount\fR
 .RS 4
 read bytes
 .RE
 .PP
-\fIparent_name\fR
+\fIpos\fR
 .RS 4
-parent dir name
+offset of the file
 .RE
 .PP
 \fIdev\fR
@@ -56,14 +51,19 @@ parent dir name
 device identifier
 .RE
 .PP
+\fIino\fR
+.RS 4
+inode number
+.RE
+.PP
 \fIfile_name\fR
 .RS 4
 file name
 .RE
 .PP
-\fIino\fR
+\fIparent_name\fR
 .RS 4
-inode number
+parent dir name
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfs (3stap)

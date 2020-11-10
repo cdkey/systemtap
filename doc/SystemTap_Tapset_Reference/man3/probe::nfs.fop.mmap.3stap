@@ -36,14 +36,9 @@ nfs\&.fop\&.mmap
 .fi
 .SH "VALUES"
 .PP
-\fIvm_start\fR
+\fIcache_time\fR
 .RS 4
-start address within vm_mm
-.RE
-.PP
-\fIparent_name\fR
-.RS 4
-parent dir name
+when we started read\-caching this inode
 .RE
 .PP
 \fIdev\fR
@@ -56,6 +51,16 @@ device identifier
 inode number
 .RE
 .PP
+\fIattrtimeo\fR
+.RS 4
+how long the cached information is assumed to be valid\&. We need to revalidate the cached attrs for this inode if jiffies \- read_cache_jiffies > attrtimeo\&.
+.RE
+.PP
+\fIvm_end\fR
+.RS 4
+the first byte after end address within vm_mm
+.RE
+.PP
 \fIbuf\fR
 .RS 4
 the address of buf in user space
@@ -66,19 +71,9 @@ the address of buf in user space
 cache related bit mask flag
 .RE
 .PP
-\fIvm_end\fR
+\fIparent_name\fR
 .RS 4
-the first byte after end address within vm_mm
-.RE
-.PP
-\fIcache_time\fR
-.RS 4
-when we started read\-caching this inode
-.RE
-.PP
-\fIattrtimeo\fR
-.RS 4
-how long the cached information is assumed to be valid\&. We need to revalidate the cached attrs for this inode if jiffies \- read_cache_jiffies > attrtimeo\&.
+parent dir name
 .RE
 .PP
 \fIfile_name\fR
@@ -89,6 +84,11 @@ file name
 \fIvm_flag\fR
 .RS 4
 vm flags
+.RE
+.PP
+\fIvm_start\fR
+.RS 4
+start address within vm_mm
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfs (3stap)

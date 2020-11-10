@@ -41,39 +41,14 @@ scsi\&.ioexecute
 The data buffer address
 .RE
 .PP
-\fIdev_id\fR
-.RS 4
-The scsi device id
-.RE
-.PP
-\fIretries\fR
-.RS 4
-Number of times to retry request
-.RE
-.PP
-\fIdevice_state\fR
-.RS 4
-The current state of the device
-.RE
-.PP
-\fIrequest_bufflen\fR
-.RS 4
-The data buffer buffer length
-.RE
-.PP
 \fIhost_no\fR
 .RS 4
 The host number
 .RE
 .PP
-\fIlun\fR
+\fIdevice_state_str\fR
 .RS 4
-The lun number
-.RE
-.PP
-\fIdata_direction_str\fR
-.RS 4
-Data direction, as a string
+The current state of the device, as a string
 .RE
 .PP
 \fItimeout\fR
@@ -81,9 +56,9 @@ Data direction, as a string
 Request timeout in seconds
 .RE
 .PP
-\fIdata_direction\fR
+\fIlun\fR
 .RS 4
-The data_direction specifies whether this command is from/to the device\&.
+The lun number
 .RE
 .PP
 \fIchannel\fR
@@ -91,9 +66,34 @@ The data_direction specifies whether this command is from/to the device\&.
 The channel number
 .RE
 .PP
-\fIdevice_state_str\fR
+\fIrequest_bufflen\fR
 .RS 4
-The current state of the device, as a string
+The data buffer buffer length
+.RE
+.PP
+\fIretries\fR
+.RS 4
+Number of times to retry request
+.RE
+.PP
+\fIdata_direction_str\fR
+.RS 4
+Data direction, as a string
+.RE
+.PP
+\fIdevice_state\fR
+.RS 4
+The current state of the device
+.RE
+.PP
+\fIdev_id\fR
+.RS 4
+The scsi device id
+.RE
+.PP
+\fIdata_direction\fR
+.RS 4
+The data_direction specifies whether this command is from/to the device\&.
 .RE
 .SH SEE ALSO\n 
 .IR tapset::scsi (3stap)

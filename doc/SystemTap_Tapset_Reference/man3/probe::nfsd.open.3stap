@@ -36,11 +36,6 @@ nfsd\&.open
 .fi
 .SH "VALUES"
 .PP
-\fIfh\fR
-.RS 4
-file handle (the first part is the length of the file handle)
-.RE
-.PP
 \fItype\fR
 .RS 4
 type of file (regular file or dir)
@@ -54,6 +49,11 @@ the ip address of client
 \fIaccess\fR
 .RS 4
 indicates the type of open (read/write/commit/readdir\&.\&.\&.)
+.RE
+.PP
+\fIfh\fR
+.RS 4
+file handle (the first part is the length of the file handle)
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfsd (3stap)

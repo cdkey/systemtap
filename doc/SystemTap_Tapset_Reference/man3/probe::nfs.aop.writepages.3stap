@@ -46,9 +46,9 @@ device identifier
 number of pages attempted to be written in this execution
 .RE
 .PP
-\fIwsize\fR
+\fIino\fR
 .RS 4
-write size
+inode number
 .RE
 .PP
 \fIfor_reclaim\fR
@@ -56,9 +56,9 @@ write size
 a flag of writeback_control, indicates if it\*(Aqs invoked from the page allocator
 .RE
 .PP
-\fIino\fR
+\fIwsize\fR
 .RS 4
-inode number
+write size
 .RE
 .PP
 \fIsize\fR

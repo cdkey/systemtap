@@ -36,19 +36,9 @@ nfs\&.fop\&.lock
 .fi
 .SH "VALUES"
 .PP
-\fIfl_flag\fR
+\fIcmd\fR
 .RS 4
-lock flags
-.RE
-.PP
-\fIfl_type\fR
-.RS 4
-lock type
-.RE
-.PP
-\fIino\fR
-.RS 4
-inode number
+cmd arguments
 .RE
 .PP
 \fIdev\fR
@@ -56,9 +46,19 @@ inode number
 device identifier
 .RE
 .PP
-\fIcmd\fR
+\fIino\fR
 .RS 4
-cmd arguments
+inode number
+.RE
+.PP
+\fIfl_type\fR
+.RS 4
+lock type
+.RE
+.PP
+\fIfl_end\fR
+.RS 4
+ending offset of locked region
 .RE
 .PP
 \fIi_mode\fR
@@ -66,9 +66,9 @@ cmd arguments
 file type and access rights
 .RE
 .PP
-\fIfl_end\fR
+\fIfl_flag\fR
 .RS 4
-ending offset of locked region
+lock flags
 .RE
 .PP
 \fIfl_start\fR

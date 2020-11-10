@@ -36,14 +36,14 @@ ioscheduler\&.elv_completed_request
 .fi
 .SH "VALUES"
 .PP
-\fIrq_flags\fR
-.RS 4
-Request flags
-.RE
-.PP
 \fIelevator_name\fR
 .RS 4
 The type of I/O elevator currently enabled
+.RE
+.PP
+\fIrq_flags\fR
+.RS 4
+Request flags
 .RE
 .PP
 \fIrq\fR

@@ -41,6 +41,11 @@ nfs\&.fop\&.llseek
 the position to seek from
 .RE
 .PP
+\fIwhence_str\fR
+.RS 4
+symbolic string representation of the position to seek from
+.RE
+.PP
 \fIdev\fR
 .RS 4
 device identifier
@@ -49,11 +54,6 @@ device identifier
 \fIoffset\fR
 .RS 4
 the offset of the file will be repositioned
-.RE
-.PP
-\fIwhence_str\fR
-.RS 4
-symbolic string representation of the position to seek from
 .RE
 .PP
 \fIino\fR

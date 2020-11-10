@@ -1,0 +1,47 @@
+'\" t
+.\"     Title: function::string_to_fp
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: November 2020
+.\"    Manual: Floating point processing Tapset
+.\"    Source: SystemTap Tapset Reference
+.\"  Language: English
+.\"
+.TH "FUNCTION::STRING_TO_" "3stap" "November 2020" "SystemTap Tapset Reference" "Floating point processing Taps"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+function::string_to_fp \- Convert the given string into floating point
+.SH "SYNOPSIS"
+.sp
+.nf
+    string_to_fp:long(input:string)
+.fi
+.SH "ARGUMENTS"
+.PP
+\fIinput\fR
+.RS 4
+the string representation of a decimal number
+.RE
+.SH "DESCRIPTION"
+.PP
+Given the string representation of a decimal number, convert it to a floating point which is stored in 64 bit long\&.
+.SH SEE ALSO\n 
+.IR tapset::floatingpoint (3stap)

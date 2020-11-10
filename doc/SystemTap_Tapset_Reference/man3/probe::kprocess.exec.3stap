@@ -41,14 +41,14 @@ kprocess\&.exec
 The arguments to pass to the new executable, including the 0th arg (SystemTap v2\&.5+)
 .RE
 .PP
-\fIname\fR
-.RS 4
-Name of the system call (\(lqexecve\(rq) (SystemTap v2\&.5+)
-.RE
-.PP
 \fIfilename\fR
 .RS 4
 The path to the new executable
+.RE
+.PP
+\fIname\fR
+.RS 4
+Name of the system call (\(lqexecve\(rq) (SystemTap v2\&.5+)
 .RE
 .PP
 \fIargstr\fR

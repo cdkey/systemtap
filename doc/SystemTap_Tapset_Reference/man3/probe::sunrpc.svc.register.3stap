@@ -41,14 +41,9 @@ sunrpc\&.svc\&.register
 the name of the program
 .RE
 .PP
-\fIprot\fR
+\fIsv_name\fR
 .RS 4
-the IP protocol number
-.RE
-.PP
-\fIprog\fR
-.RS 4
-the number of the program
+the service name
 .RE
 .PP
 \fIport\fR
@@ -56,9 +51,14 @@ the number of the program
 the port number
 .RE
 .PP
-\fIsv_name\fR
+\fIprog\fR
 .RS 4
-the service name
+the number of the program
+.RE
+.PP
+\fIprot\fR
+.RS 4
+the IP protocol number
 .RE
 .SH "DESCRIPTION"
 .PP

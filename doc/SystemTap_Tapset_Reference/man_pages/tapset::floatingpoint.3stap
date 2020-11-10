@@ -1,0 +1,130 @@
+.\" -*- nroff -*-
+.TH TAPSET::FLOATINGPOINT 3stap "November 2020" "SystemTap Tapset Reference"
+.SH NAME
+tapset::floatingpoint \- systemtap floatingpoint tapset
+ 
+.SH DESCRIPTION
+.TP
+.P
+.TP
+.B fp_to_string 
+Convert 64 bit floating point to string
+.IP
+See 
+.IR function::fp_to_string (3stap)
+ for details.
+.P
+.TP
+.B string_to_fp 
+Convert the given string into floating point
+.IP
+See 
+.IR function::string_to_fp (3stap)
+ for details.
+.P
+.TP
+.B long_to_fp 
+Convert long int to 64 bit floating point
+.IP
+See 
+.IR function::long_to_fp (3stap)
+ for details.
+.P
+.TP
+.B fp_to_long 
+Convert fp to int64
+.IP
+See 
+.IR function::fp_to_long (3stap)
+ for details.
+.P
+.TP
+.B fp_add 
+Addition between floating points
+.IP
+See 
+.IR function::fp_add (3stap)
+ for details.
+.P
+.TP
+.B fp_sub 
+Subtraction between floating points
+.IP
+See 
+.IR function::fp_sub (3stap)
+ for details.
+.P
+.TP
+.B fp_mul 
+Multiplication between floating points
+.IP
+See 
+.IR function::fp_mul (3stap)
+ for details.
+.P
+.TP
+.B fp_rem 
+Floating point division
+.IP
+See 
+.IR function::fp_rem (3stap)
+ for details.
+.P
+.TP
+.B fp_sqrt 
+Floating point square root
+.IP
+See 
+.IR function::fp_sqrt (3stap)
+ for details.
+.P
+.TP
+.B fp_eq 
+fp comparison function equal
+.IP
+See 
+.IR function::fp_eq (3stap)
+ for details.
+.P
+.TP
+.B fp_le 
+Check if first fp is less than or equal to
+.IP
+See 
+.IR function::fp_le (3stap)
+ for details.
+.P
+.TP
+.B fp_le 
+fp comparison function less than
+.IP
+See 
+.IR function::fp_le (3stap)
+ for details.
+
+.SH SEE ALSO
+.BR
+.IR \%function::fp_to_string (3stap),
+.BR
+.IR \%function::string_to_fp (3stap),
+.BR
+.IR \%function::long_to_fp (3stap),
+.BR
+.IR \%function::fp_to_long (3stap),
+.BR
+.IR \%function::fp_add (3stap),
+.BR
+.IR \%function::fp_sub (3stap),
+.BR
+.IR \%function::fp_mul (3stap),
+.BR
+.IR \%function::fp_rem (3stap),
+.BR
+.IR \%function::fp_sqrt (3stap),
+.BR
+.IR \%function::fp_eq (3stap),
+.BR
+.IR \%function::fp_le (3stap),
+.BR
+.IR \%stap (1),
+.IR \%stapprobes (3stap)

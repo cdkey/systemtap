@@ -36,14 +36,14 @@ scheduler\&.wait_task
 .fi
 .SH "VALUES"
 .PP
-\fIname\fR
-.RS 4
-name of the probe point
-.RE
-.PP
 \fItask_priority\fR
 .RS 4
 priority of the task
+.RE
+.PP
+\fIname\fR
+.RS 4
+name of the probe point
 .RE
 .PP
 \fItask_pid\fR

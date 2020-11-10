@@ -36,11 +36,6 @@ nfsd\&.unlink
 .fi
 .SH "VALUES"
 .PP
-\fIfilename\fR
-.RS 4
-file name
-.RE
-.PP
 \fIclient_ip\fR
 .RS 4
 the ip address of client
@@ -49,6 +44,11 @@ the ip address of client
 \fIfh\fR
 .RS 4
 file handle (the first part is the length of the file handle)
+.RE
+.PP
+\fIfilename\fR
+.RS 4
+file name
 .RE
 .PP
 \fItype\fR

@@ -41,14 +41,19 @@ socket\&.readv
 Name of this probe
 .RE
 .PP
+\fIfamily\fR
+.RS 4
+Protocol family value
+.RE
+.PP
 \fIprotocol\fR
 .RS 4
 Protocol value
 .RE
 .PP
-\fIstate\fR
+\fIflags\fR
 .RS 4
-Socket state value
+Socket flags value
 .RE
 .PP
 \fIsize\fR
@@ -56,14 +61,9 @@ Socket state value
 Message size in bytes
 .RE
 .PP
-\fIfamily\fR
+\fIstate\fR
 .RS 4
-Protocol family value
-.RE
-.PP
-\fIflags\fR
-.RS 4
-Socket flags value
+Socket state value
 .RE
 .PP
 \fItype\fR

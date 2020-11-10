@@ -36,19 +36,19 @@ nfsd\&.proc\&.read
 .fi
 .SH "VALUES"
 .PP
-\fIversion\fR
-.RS 4
-nfs version
-.RE
-.PP
-\fIproto\fR
-.RS 4
-transfer protocol
-.RE
-.PP
 \fIclient_ip\fR
 .RS 4
 the ip address of client
+.RE
+.PP
+\fIgid\fR
+.RS 4
+requester\*(Aqs group id
+.RE
+.PP
+\fIversion\fR
+.RS 4
+nfs version
 .RE
 .PP
 \fIvlen\fR
@@ -56,9 +56,14 @@ the ip address of client
 read blocks
 .RE
 .PP
-\fIvec\fR
+\fIcount\fR
 .RS 4
-struct kvec, includes buf address in kernel address and length of each buffer
+read bytes
+.RE
+.PP
+\fIfh\fR
+.RS 4
+file handle (the first part is the length of the file handle)
 .RE
 .PP
 \fIuid\fR
@@ -71,19 +76,14 @@ requester\*(Aqs user id
 the offset of file
 .RE
 .PP
-\fIfh\fR
+\fIproto\fR
 .RS 4
-file handle (the first part is the length of the file handle)
+transfer protocol
 .RE
 .PP
-\fIcount\fR
+\fIvec\fR
 .RS 4
-read bytes
-.RE
-.PP
-\fIgid\fR
-.RS 4
-requester\*(Aqs group id
+struct kvec, includes buf address in kernel address and length of each buffer
 .RE
 .PP
 \fIsize\fR

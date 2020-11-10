@@ -36,14 +36,9 @@ sunrpc\&.sched\&.delay
 .fi
 .SH "VALUES"
 .PP
-\fIdelay\fR
+\fIxid\fR
 .RS 4
-the time delayed
-.RE
-.PP
-\fItk_pid\fR
-.RS 4
-the debugging id of the task
+the transmission id in the RPC call
 .RE
 .PP
 \fIvers\fR
@@ -51,9 +46,19 @@ the debugging id of the task
 the program version in the RPC call
 .RE
 .PP
-\fIprot\fR
+\fItk_flags\fR
 .RS 4
-the IP protocol in the RPC call
+the flags of the task
+.RE
+.PP
+\fItk_pid\fR
+.RS 4
+the debugging id of the task
+.RE
+.PP
+\fIdelay\fR
+.RS 4
+the time delayed
 .RE
 .PP
 \fIprog\fR
@@ -61,14 +66,9 @@ the IP protocol in the RPC call
 the program number in the RPC call
 .RE
 .PP
-\fItk_flags\fR
+\fIprot\fR
 .RS 4
-the flags of the task
-.RE
-.PP
-\fIxid\fR
-.RS 4
-the transmission id in the RPC call
+the IP protocol in the RPC call
 .RE
 .SH SEE ALSO\n 
 .IR tapset::rpc (3stap)

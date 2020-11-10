@@ -39,8 +39,7 @@ function::caller \- Return name and address of calling function
 None
 .SH "DESCRIPTION"
 .PP
-This function returns the address and name of the calling function\&. This is equivalent to calling: sprintf("\fBs\fR
-0x\fBx\fR", symname(\fBcaller_addr\fR),
+This function returns the address and name of the calling function\&. This is equivalent to calling: sprintf(\(lq\fBs\fR 0x\fBx\fR\(rq, symname(\fBcaller_addr\fR),
 \fBcaller_addr\fR)
 .SH SEE ALSO\n 
 .IR tapset::context-caller (3stap)

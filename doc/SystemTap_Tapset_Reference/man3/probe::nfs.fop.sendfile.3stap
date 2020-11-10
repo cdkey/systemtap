@@ -36,16 +36,6 @@ nfs\&.fop\&.sendfile
 .fi
 .SH "VALUES"
 .PP
-\fIdev\fR
-.RS 4
-device identifier
-.RE
-.PP
-\fIcount\fR
-.RS 4
-read bytes
-.RE
-.PP
 \fIppos\fR
 .RS 4
 current position of file
@@ -56,9 +46,14 @@ current position of file
 cache related bit mask flag
 .RE
 .PP
-\fIino\fR
+\fIcount\fR
 .RS 4
-inode number
+read bytes
+.RE
+.PP
+\fIattrtimeo\fR
+.RS 4
+how long the cached information is assumed to be valid\&. We need to revalidate the cached attrs for this inode if jiffies \- read_cache_jiffies > attrtimeo\&.
 .RE
 .PP
 \fIcache_time\fR
@@ -66,9 +61,14 @@ inode number
 when we started read\-caching this inode
 .RE
 .PP
-\fIattrtimeo\fR
+\fIino\fR
 .RS 4
-how long the cached information is assumed to be valid\&. We need to revalidate the cached attrs for this inode if jiffies \- read_cache_jiffies > attrtimeo\&.
+inode number
+.RE
+.PP
+\fIdev\fR
+.RS 4
+device identifier
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfs (3stap)

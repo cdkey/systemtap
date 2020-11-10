@@ -36,9 +36,9 @@ syscall_any\&.return
 .fi
 .SH "VALUES"
 .PP
-\fIsyscall_nr\fR
+\fIretval\fR
 .RS 4
-number of the syscall
+return value of the syscall
 .RE
 .PP
 \fIname\fR
@@ -46,9 +46,9 @@ number of the syscall
 name of the syscall
 .RE
 .PP
-\fIretval\fR
+\fIsyscall_nr\fR
 .RS 4
-return value of the syscall
+number of the syscall
 .RE
 .SH "CONTEXT"
 .PP

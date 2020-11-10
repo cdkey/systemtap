@@ -1,0 +1,47 @@
+'\" t
+.\"     Title: function::long_to_fp
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: November 2020
+.\"    Manual: Floating point processing Tapset
+.\"    Source: SystemTap Tapset Reference
+.\"  Language: English
+.\"
+.TH "FUNCTION::LONG_TO_FP" "3stap" "November 2020" "SystemTap Tapset Reference" "Floating point processing Taps"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+function::long_to_fp \- Convert long int to 64 bit floating point
+.SH "SYNOPSIS"
+.sp
+.nf
+    long_to_fp:long(input:long)
+.fi
+.SH "ARGUMENTS"
+.PP
+\fIinput\fR
+.RS 4
+a long integer
+.RE
+.SH "DESCRIPTION"
+.PP
+Convert from a long to a softfloat floating point, then print the floating point value\&.
+.SH SEE ALSO\n 
+.IR tapset::floatingpoint (3stap)

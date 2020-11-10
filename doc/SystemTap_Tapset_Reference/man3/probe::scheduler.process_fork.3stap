@@ -36,9 +36,9 @@ scheduler\&.process_fork
 .fi
 .SH "VALUES"
 .PP
-\fIparent_pid\fR
+\fIchild_pid\fR
 .RS 4
-PID of the parent process
+PID of the child process
 .RE
 .PP
 \fIname\fR
@@ -46,9 +46,9 @@ PID of the parent process
 name of the probe point
 .RE
 .PP
-\fIchild_pid\fR
+\fIparent_pid\fR
 .RS 4
-PID of the child process
+PID of the parent process
 .RE
 .SH SEE ALSO\n 
 .IR tapset::scheduler (3stap)

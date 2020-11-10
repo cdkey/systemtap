@@ -41,11 +41,6 @@ vm\&.kfree
 name of the probe point
 .RE
 .PP
-\fIptr\fR
-.RS 4
-pointer to the kmemory allocated which is returned by kmalloc
-.RE
-.PP
 \fIcaller_function\fR
 .RS 4
 name of the caller function\&.
@@ -54,6 +49,11 @@ name of the caller function\&.
 \fIcall_site\fR
 .RS 4
 address of the function calling this kmemory function
+.RE
+.PP
+\fIptr\fR
+.RS 4
+pointer to the kmemory allocated which is returned by kmalloc
 .RE
 .SH SEE ALSO\n 
 .IR tapset::memory (3stap)

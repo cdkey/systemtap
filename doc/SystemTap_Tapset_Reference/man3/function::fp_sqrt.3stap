@@ -1,0 +1,47 @@
+'\" t
+.\"     Title: function::fp_sqrt
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: November 2020
+.\"    Manual: Floating point processing Tapset
+.\"    Source: SystemTap Tapset Reference
+.\"  Language: English
+.\"
+.TH "FUNCTION::FP_SQRT" "3stap" "November 2020" "SystemTap Tapset Reference" "Floating point processing Taps"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+function::fp_sqrt \- Floating point square root
+.SH "SYNOPSIS"
+.sp
+.nf
+    fp_sqrt:long(infp:long)
+.fi
+.SH "ARGUMENTS"
+.PP
+\fIinfp\fR
+.RS 4
+the 64 bit floating point input
+.RE
+.SH "DESCRIPTION"
+.PP
+apply sqrt to input floating point
+.SH SEE ALSO\n 
+.IR tapset::floatingpoint (3stap)

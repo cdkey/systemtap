@@ -36,14 +36,9 @@ socket\&.send
 .fi
 .SH "VALUES"
 .PP
-\fItype\fR
+\fIname\fR
 .RS 4
-Socket type value
-.RE
-.PP
-\fIflags\fR
-.RS 4
-Socket flags value
+Name of this probe
 .RE
 .PP
 \fIfamily\fR
@@ -51,14 +46,9 @@ Socket flags value
 Protocol family value
 .RE
 .PP
-\fIsize\fR
+\fIprotocol\fR
 .RS 4
-Size of message sent (in bytes) or error code if success = 0
-.RE
-.PP
-\fIstate\fR
-.RS 4
-Socket state value
+Protocol value
 .RE
 .PP
 \fIsuccess\fR
@@ -66,14 +56,24 @@ Socket state value
 Was send successful? (1 = yes, 0 = no)
 .RE
 .PP
-\fIprotocol\fR
+\fIsize\fR
 .RS 4
-Protocol value
+Size of message sent (in bytes) or error code if success = 0
 .RE
 .PP
-\fIname\fR
+\fIflags\fR
 .RS 4
-Name of this probe
+Socket flags value
+.RE
+.PP
+\fItype\fR
+.RS 4
+Socket type value
+.RE
+.PP
+\fIstate\fR
+.RS 4
+Socket state value
 .RE
 .SH "CONTEXT"
 .PP

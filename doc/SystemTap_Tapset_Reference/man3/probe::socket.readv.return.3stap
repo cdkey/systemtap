@@ -41,19 +41,9 @@ socket\&.readv\&.return
 Name of this probe
 .RE
 .PP
-\fIsize\fR
+\fIsuccess\fR
 .RS 4
-Size of message received (in bytes) or error code if success = 0
-.RE
-.PP
-\fItype\fR
-.RS 4
-Socket type value
-.RE
-.PP
-\fIflags\fR
-.RS 4
-Socket flags value
+Was receive successful? (1 = yes, 0 = no)
 .RE
 .PP
 \fIfamily\fR
@@ -66,14 +56,24 @@ Protocol family value
 Protocol value
 .RE
 .PP
-\fIsuccess\fR
+\fIflags\fR
 .RS 4
-Was receive successful? (1 = yes, 0 = no)
+Socket flags value
+.RE
+.PP
+\fIsize\fR
+.RS 4
+Size of message received (in bytes) or error code if success = 0
 .RE
 .PP
 \fIstate\fR
 .RS 4
 Socket state value
+.RE
+.PP
+\fItype\fR
+.RS 4
+Socket type value
 .RE
 .SH "CONTEXT"
 .PP

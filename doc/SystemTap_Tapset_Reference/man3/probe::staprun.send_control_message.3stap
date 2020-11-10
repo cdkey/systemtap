@@ -41,14 +41,14 @@ staprun\&.send_control_message
 a ptr to a binary blob of data sent as the control message
 .RE
 .PP
-\fItype\fR
-.RS 4
-type of message being send; defined in runtime/transport/transport_msgs\&.h
-.RE
-.PP
 \fIlen\fR
 .RS 4
 the length (in bytes) of the data blob
+.RE
+.PP
+\fItype\fR
+.RS 4
+type of message being send; defined in runtime/transport/transport_msgs\&.h
 .RE
 .SH "DESCRIPTION"
 .PP

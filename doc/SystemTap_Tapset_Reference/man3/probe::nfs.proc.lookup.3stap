@@ -36,9 +36,9 @@ nfs\&.proc\&.lookup
 .fi
 .SH "VALUES"
 .PP
-\fIversion\fR
+\fIbitmask0\fR
 .RS 4
-NFS version
+V4 bitmask representing the set of attributes supported on this filesystem
 .RE
 .PP
 \fIbitmask1\fR
@@ -46,9 +46,14 @@ NFS version
 V4 bitmask representing the set of attributes supported on this filesystem
 .RE
 .PP
-\fIserver_ip\fR
+\fIversion\fR
 .RS 4
-IP address of server
+NFS version
+.RE
+.PP
+\fIprot\fR
+.RS 4
+transfer protocol
 .RE
 .PP
 \fIfilename\fR
@@ -56,14 +61,9 @@ IP address of server
 the name of file which client opens/searches on server
 .RE
 .PP
-\fIbitmask0\fR
+\fIserver_ip\fR
 .RS 4
-V4 bitmask representing the set of attributes supported on this filesystem
-.RE
-.PP
-\fIprot\fR
-.RS 4
-transfer protocol
+IP address of server
 .RE
 .PP
 \fIname_len\fR

@@ -36,14 +36,19 @@ sunrpc\&.svc\&.drop
 .fi
 .SH "VALUES"
 .PP
+\fIsv_name\fR
+.RS 4
+the service name
+.RE
+.PP
 \fIrq_prog\fR
 .RS 4
 the program number in the request
 .RE
 .PP
-\fIsv_name\fR
+\fIpeer_ip\fR
 .RS 4
-the service name
+the peer address where the request is from
 .RE
 .PP
 \fIrq_xid\fR
@@ -51,9 +56,9 @@ the service name
 the transmission id in the request
 .RE
 .PP
-\fIpeer_ip\fR
+\fIrq_prot\fR
 .RS 4
-the peer address where the request is from
+the IP protocol of the reqeust
 .RE
 .PP
 \fIrq_proc\fR
@@ -64,11 +69,6 @@ the procedure number in the request
 \fIrq_vers\fR
 .RS 4
 the program version in the request
-.RE
-.PP
-\fIrq_prot\fR
-.RS 4
-the IP protocol of the reqeust
 .RE
 .SH SEE ALSO\n 
 .IR tapset::rpc (3stap)

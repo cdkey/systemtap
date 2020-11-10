@@ -36,11 +36,6 @@ vm\&.munmap
 .fi
 .SH "VALUES"
 .PP
-\fIlength\fR
-.RS 4
-the length of the memory segment
-.RE
-.PP
 \fIname\fR
 .RS 4
 name of the probe point
@@ -49,6 +44,11 @@ name of the probe point
 \fIaddress\fR
 .RS 4
 the requested address
+.RE
+.PP
+\fIlength\fR
+.RS 4
+the length of the memory segment
 .RE
 .SH "CONTEXT"
 .PP

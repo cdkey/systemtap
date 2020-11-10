@@ -41,19 +41,19 @@ tty\&.open
 the file mode
 .RE
 .PP
+\fIfile_name\fR
+.RS 4
+the file name
+.RE
+.PP
 \fIinode_number\fR
 .RS 4
 the inode number
 .RE
 .PP
-\fIinode_flags\fR
+\fIinode_state\fR
 .RS 4
-the inode flags
-.RE
-.PP
-\fIfile_name\fR
-.RS 4
-the file name
+the inode state
 .RE
 .PP
 \fIfile_flags\fR
@@ -61,9 +61,9 @@ the file name
 the file flags
 .RE
 .PP
-\fIinode_state\fR
+\fIinode_flags\fR
 .RS 4
-the inode state
+the inode flags
 .RE
 .SH SEE ALSO\n 
 .IR tapset::tty (3stap)

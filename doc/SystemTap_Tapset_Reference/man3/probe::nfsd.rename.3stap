@@ -36,19 +36,19 @@ nfsd\&.rename
 .fi
 .SH "VALUES"
 .PP
-\fItname\fR
+\fIfh\fR
 .RS 4
-new file name
-.RE
-.PP
-\fItfh\fR
-.RS 4
-file handler of new path
+file handler of old path
 .RE
 .PP
 \fIclient_ip\fR
 .RS 4
 the ip address of client
+.RE
+.PP
+\fItfh\fR
+.RS 4
+file handler of new path
 .RE
 .PP
 \fIfilename\fR
@@ -61,14 +61,14 @@ old file name
 length of old file name
 .RE
 .PP
+\fItname\fR
+.RS 4
+new file name
+.RE
+.PP
 \fItlen\fR
 .RS 4
 length of new file name
-.RE
-.PP
-\fIfh\fR
-.RS 4
-file handler of old path
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfsd (3stap)

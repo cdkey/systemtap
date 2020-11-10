@@ -41,14 +41,14 @@ workqueue\&.execute
 pointer to handler function
 .RE
 .PP
-\fIwork\fR
-.RS 4
-work_struct* being executed
-.RE
-.PP
 \fIwq_thread\fR
 .RS 4
 task_struct of the workqueue thread
+.RE
+.PP
+\fIwork\fR
+.RS 4
+work_struct* being executed
 .RE
 .SH SEE ALSO\n 
 .IR tapset::irq (3stap)

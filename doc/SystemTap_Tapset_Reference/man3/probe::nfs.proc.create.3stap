@@ -41,19 +41,14 @@ nfs\&.proc\&.create
 file name
 .RE
 .PP
-\fIflag\fR
-.RS 4
-indicates create mode (only for NFSv3 and NFSv4)
-.RE
-.PP
 \fIprot\fR
 .RS 4
 transfer protocol
 .RE
 .PP
-\fIfilelen\fR
+\fIflag\fR
 .RS 4
-length of file name
+indicates create mode (only for NFSv3 and NFSv4)
 .RE
 .PP
 \fIversion\fR
@@ -61,14 +56,19 @@ length of file name
 NFS version (the function is used for all NFS version)
 .RE
 .PP
+\fIserver_ip\fR
+.RS 4
+IP address of server
+.RE
+.PP
 \fIfh\fR
 .RS 4
 file handle of parent dir
 .RE
 .PP
-\fIserver_ip\fR
+\fIfilelen\fR
 .RS 4
-IP address of server
+length of file name
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfs_proc (3stap)

@@ -36,9 +36,24 @@ scheduler\&.migrate
 .fi
 .SH "VALUES"
 .PP
+\fIpriority\fR
+.RS 4
+priority of the task being migrated
+.RE
+.PP
+\fIcpu_from\fR
+.RS 4
+the original cpu
+.RE
+.PP
 \fIpid\fR
 .RS 4
 PID of the task being migrated
+.RE
+.PP
+\fItask\fR
+.RS 4
+the process that is being migrated
 .RE
 .PP
 \fIcpu_to\fR
@@ -49,21 +64,6 @@ the destination cpu
 \fIname\fR
 .RS 4
 name of the probe point
-.RE
-.PP
-\fItask\fR
-.RS 4
-the process that is being migrated
-.RE
-.PP
-\fIpriority\fR
-.RS 4
-priority of the task being migrated
-.RE
-.PP
-\fIcpu_from\fR
-.RS 4
-the original cpu
 .RE
 .SH SEE ALSO\n 
 .IR tapset::scheduler (3stap)

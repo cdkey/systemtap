@@ -36,14 +36,19 @@ nfs\&.aop\&.readpage
 .fi
 .SH "VALUES"
 .PP
-\fIi_flag\fR
+\fIdev\fR
 .RS 4
-file flags
+device identifier
 .RE
 .PP
-\fIsize\fR
+\fIpage_index\fR
 .RS 4
-number of pages to be read in this execution
+offset within mapping, can used a page identifier and position identifier in the page frame
+.RE
+.PP
+\fIino\fR
+.RS 4
+inode number
 .RE
 .PP
 \fI__page\fR
@@ -56,29 +61,24 @@ the address of page
 super block flags
 .RE
 .PP
+\fIfile\fR
+.RS 4
+file argument
+.RE
+.PP
 \fIrsize\fR
 .RS 4
 read size (in bytes)
 .RE
 .PP
-\fIpage_index\fR
+\fIsize\fR
 .RS 4
-offset within mapping, can used a page identifier and position identifier in the page frame
+number of pages to be read in this execution
 .RE
 .PP
-\fIdev\fR
+\fIi_flag\fR
 .RS 4
-device identifier
-.RE
-.PP
-\fIino\fR
-.RS 4
-inode number
-.RE
-.PP
-\fIfile\fR
-.RS 4
-file argument
+file flags
 .RE
 .PP
 \fIi_size\fR

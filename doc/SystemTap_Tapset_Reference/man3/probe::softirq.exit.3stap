@@ -36,24 +36,24 @@ softirq\&.exit
 .fi
 .SH "VALUES"
 .PP
-\fIvec_nr\fR
-.RS 4
-softirq vector number
-.RE
-.PP
 \fIh\fR
 .RS 4
 struct softirq_action* for just executed softirq
 .RE
 .PP
-\fIvec\fR
+\fIvec_nr\fR
 .RS 4
-softirq_action vector
+softirq vector number
 .RE
 .PP
 \fIaction\fR
 .RS 4
 pointer to softirq handler that just finished execution
+.RE
+.PP
+\fIvec\fR
+.RS 4
+softirq_action vector
 .RE
 .SH SEE ALSO\n 
 .IR tapset::irq (3stap)

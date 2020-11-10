@@ -36,9 +36,14 @@ signal\&.send_sig_queue
 .fi
 .SH "VALUES"
 .PP
-\fIsig\fR
+\fIpid_name\fR
 .RS 4
-The queued signal
+Name of the process to which the signal is queued
+.RE
+.PP
+\fIsigqueue_addr\fR
+.RS 4
+The address of the signal queue
 .RE
 .PP
 \fIname\fR
@@ -46,19 +51,14 @@ The queued signal
 Name of the probe point
 .RE
 .PP
-\fIpid_name\fR
-.RS 4
-Name of the process to which the signal is queued
-.RE
-.PP
 \fIsig_pid\fR
 .RS 4
 The PID of the process to which the signal is queued
 .RE
 .PP
-\fIsigqueue_addr\fR
+\fIsig\fR
 .RS 4
-The address of the signal queue
+The queued signal
 .RE
 .PP
 \fIsig_name\fR

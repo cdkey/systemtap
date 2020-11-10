@@ -36,9 +36,19 @@ tty\&.receive
 .fi
 .SH "VALUES"
 .PP
-\fIcount\fR
+\fIcp\fR
 .RS 4
-The amount of characters received
+the buffer that was received
+.RE
+.PP
+\fIindex\fR
+.RS 4
+The tty Index
+.RE
+.PP
+\fIname\fR
+.RS 4
+the name of the module file
 .RE
 .PP
 \fIfp\fR
@@ -51,24 +61,14 @@ The flag buffer
 the driver name
 .RE
 .PP
-\fIcp\fR
+\fIcount\fR
 .RS 4
-the buffer that was received
+The amount of characters received
 .RE
 .PP
 \fIid\fR
 .RS 4
 the tty id
-.RE
-.PP
-\fIname\fR
-.RS 4
-the name of the module file
-.RE
-.PP
-\fIindex\fR
-.RS 4
-The tty Index
 .RE
 .SH SEE ALSO\n 
 .IR tapset::tty (3stap)

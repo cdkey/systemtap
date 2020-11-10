@@ -36,21 +36,6 @@ ioblock_trace\&.end
 .fi
 .SH "VALUES"
 .PP
-\fIrw\fR
-.RS 4
-binary trace for read/write request
-.RE
-.PP
-\fIsector\fR
-.RS 4
-beginning sector for the entire bio
-.RE
-.PP
-\fIq\fR
-.RS 4
-request queue on which this bio was queued\&.
-.RE
-.PP
 \fIidx\fR
 .RS 4
 offset into the bio vector array
@@ -58,24 +43,9 @@ offset into the bio vector array
 \- number of segments in this bio after physical address coalescing is performed\&.
 .RE
 .PP
-\fIbdev_contains\fR
+\fIsector\fR
 .RS 4
-points to the device object which contains the partition (when bio structure represents a partition)
-.RE
-.PP
-\fIsize\fR
-.RS 4
-total size in bytes
-.RE
-.PP
-\fIopf\fR
-.RS 4
-operations and flags
-.RE
-.PP
-\fIvcnt\fR
-.RS 4
-bio vector count which represents number of array element (page, offset, length) which makes up this I/O request
+beginning sector for the entire bio
 .RE
 .PP
 \fIname\fR
@@ -83,9 +53,9 @@ bio vector count which represents number of array element (page, offset, length)
 name of the probe point
 .RE
 .PP
-\fIflags\fR
+\fIrw\fR
 .RS 4
-see below BIO_UPTODATE 0 ok after I/O completion BIO_RW_BLOCK 1 RW_AHEAD set, and read/write would block BIO_EOF 2 out\-out\-bounds error BIO_SEG_VALID 3 nr_hw_seg valid BIO_CLONED 4 doesn\*(Aqt own data BIO_BOUNCED 5 bio is a bounce bio BIO_USER_MAPPED 6 contains user pages BIO_EOPNOTSUPP 7 not supported
+binary trace for read/write request
 .RE
 .PP
 \fIino\fR
@@ -93,9 +63,29 @@ see below BIO_UPTODATE 0 ok after I/O completion BIO_RW_BLOCK 1 RW_AHEAD set, an
 i\-node number of the mapped file
 .RE
 .PP
-\fIp_start_sect\fR
+\fIsize\fR
 .RS 4
-points to the start sector of the partition structure of the device
+total size in bytes
+.RE
+.PP
+\fIbdev_contains\fR
+.RS 4
+points to the device object which contains the partition (when bio structure represents a partition)
+.RE
+.PP
+\fIopf\fR
+.RS 4
+operations and flags
+.RE
+.PP
+\fIbytes_done\fR
+.RS 4
+number of bytes transferred
+.RE
+.PP
+\fIflags\fR
+.RS 4
+see below BIO_UPTODATE 0 ok after I/O completion BIO_RW_BLOCK 1 RW_AHEAD set, and read/write would block BIO_EOF 2 out\-out\-bounds error BIO_SEG_VALID 3 nr_hw_seg valid BIO_CLONED 4 doesn\*(Aqt own data BIO_BOUNCED 5 bio is a bounce bio BIO_USER_MAPPED 6 contains user pages BIO_EOPNOTSUPP 7 not supported
 .RE
 .PP
 \fIdevname\fR
@@ -103,9 +93,19 @@ points to the start sector of the partition structure of the device
 block device name
 .RE
 .PP
-\fIbytes_done\fR
+\fIp_start_sect\fR
 .RS 4
-number of bytes transferred
+points to the start sector of the partition structure of the device
+.RE
+.PP
+\fIq\fR
+.RS 4
+request queue on which this bio was queued\&.
+.RE
+.PP
+\fIvcnt\fR
+.RS 4
+bio vector count which represents number of array element (page, offset, length) which makes up this I/O request
 .RE
 .PP
 \fIbdev\fR

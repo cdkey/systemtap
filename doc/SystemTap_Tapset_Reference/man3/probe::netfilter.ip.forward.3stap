@@ -36,32 +36,29 @@ netfilter\&.ip\&.forward
 .fi
 .SH "VALUES"
 .PP
-\fIpf\fR
-.RS 4
-Protocol family \-\- either
-\(lqipv4\(rq
-or
-\(lqipv6\(rq
-.RE
-.PP
-\fIindev_name\fR
-.RS 4
-Name of network device packet was received on (if known)
-.RE
-.PP
 \fIrst\fR
 .RS 4
 TCP RST flag (if protocol is TCP; ipv4 only)
 .RE
 .PP
-\fIdata_hex\fR
+\fInf_stop\fR
 .RS 4
-A hexadecimal string representing the packet buffer contents
+Constant used to signify a \*(Aqstop\*(Aq verdict
 .RE
 .PP
-\fIsyn\fR
+\fIprotocol\fR
 .RS 4
-TCP SYN flag (if protocol is TCP; ipv4 only)
+Packet protocol from driver (ipv4 only)
+.RE
+.PP
+\fIsaddr\fR
+.RS 4
+A string representing the source IP address
+.RE
+.PP
+\fIiphdr\fR
+.RS 4
+Address of IP header
 .RE
 .PP
 \fIindev\fR
@@ -74,9 +71,9 @@ Address of net_device representing input device, 0 if unknown
 A string representing the packet buffer contents
 .RE
 .PP
-\fIpsh\fR
+\fIipproto_udp\fR
 .RS 4
-TCP PSH flag (if protocol is TCP; ipv4 only)
+Constant used to signify that the packet protocol is UDP
 .RE
 .PP
 \fIack\fR
@@ -84,69 +81,9 @@ TCP PSH flag (if protocol is TCP; ipv4 only)
 TCP ACK flag (if protocol is TCP; ipv4 only)
 .RE
 .PP
-\fInf_drop\fR
-.RS 4
-Constant used to signify a \*(Aqdrop\*(Aq verdict
-.RE
-.PP
-\fIoutdev_name\fR
-.RS 4
-Name of network device packet will be routed to (if known)
-.RE
-.PP
-\fIfamily\fR
-.RS 4
-IP address family
-.RE
-.PP
-\fIurg\fR
-.RS 4
-TCP URG flag (if protocol is TCP; ipv4 only)
-.RE
-.PP
-\fIsport\fR
-.RS 4
-TCP or UDP source port (ipv4 only)
-.RE
-.PP
-\fIdport\fR
-.RS 4
-TCP or UDP destination port (ipv4 only)
-.RE
-.PP
-\fInf_repeat\fR
-.RS 4
-Constant used to signify a \*(Aqrepeat\*(Aq verdict
-.RE
-.PP
-\fIipproto_udp\fR
-.RS 4
-Constant used to signify that the packet protocol is UDP
-.RE
-.PP
-\fInf_queue\fR
-.RS 4
-Constant used to signify a \*(Aqqueue\*(Aq verdict
-.RE
-.PP
-\fInf_accept\fR
-.RS 4
-Constant used to signify an \*(Aqaccept\*(Aq verdict
-.RE
-.PP
-\fIsaddr\fR
-.RS 4
-A string representing the source IP address
-.RE
-.PP
 \fIdaddr\fR
 .RS 4
 A string representing the destination IP address
-.RE
-.PP
-\fIiphdr\fR
-.RS 4
-Address of IP header
 .RE
 .PP
 \fIoutdev\fR
@@ -154,9 +91,12 @@ Address of IP header
 Address of net_device representing output device, 0 if unknown
 .RE
 .PP
-\fIipproto_tcp\fR
+\fIpf\fR
 .RS 4
-Constant used to signify that the packet protocol is TCP
+Protocol family \-\- either
+\(lqipv4\(rq
+or
+\(lqipv6\(rq
 .RE
 .PP
 \fInf_stolen\fR
@@ -164,9 +104,39 @@ Constant used to signify that the packet protocol is TCP
 Constant used to signify a \*(Aqstolen\*(Aq verdict
 .RE
 .PP
-\fIprotocol\fR
+\fIdata_hex\fR
 .RS 4
-Packet protocol from driver (ipv4 only)
+A hexadecimal string representing the packet buffer contents
+.RE
+.PP
+\fIsport\fR
+.RS 4
+TCP or UDP source port (ipv4 only)
+.RE
+.PP
+\fIsyn\fR
+.RS 4
+TCP SYN flag (if protocol is TCP; ipv4 only)
+.RE
+.PP
+\fIoutdev_name\fR
+.RS 4
+Name of network device packet will be routed to (if known)
+.RE
+.PP
+\fIipproto_tcp\fR
+.RS 4
+Constant used to signify that the packet protocol is TCP
+.RE
+.PP
+\fIindev_name\fR
+.RS 4
+Name of network device packet was received on (if known)
+.RE
+.PP
+\fIdport\fR
+.RS 4
+TCP or UDP destination port (ipv4 only)
 .RE
 .PP
 \fIfin\fR
@@ -174,14 +144,44 @@ Packet protocol from driver (ipv4 only)
 TCP FIN flag (if protocol is TCP; ipv4 only)
 .RE
 .PP
+\fInf_drop\fR
+.RS 4
+Constant used to signify a \*(Aqdrop\*(Aq verdict
+.RE
+.PP
+\fIurg\fR
+.RS 4
+TCP URG flag (if protocol is TCP; ipv4 only)
+.RE
+.PP
+\fIfamily\fR
+.RS 4
+IP address family
+.RE
+.PP
+\fInf_accept\fR
+.RS 4
+Constant used to signify an \*(Aqaccept\*(Aq verdict
+.RE
+.PP
+\fIpsh\fR
+.RS 4
+TCP PSH flag (if protocol is TCP; ipv4 only)
+.RE
+.PP
+\fInf_repeat\fR
+.RS 4
+Constant used to signify a \*(Aqrepeat\*(Aq verdict
+.RE
+.PP
 \fIlength\fR
 .RS 4
 The length of the packet buffer contents, in bytes
 .RE
 .PP
-\fInf_stop\fR
+\fInf_queue\fR
 .RS 4
-Constant used to signify a \*(Aqstop\*(Aq verdict
+Constant used to signify a \*(Aqqueue\*(Aq verdict
 .RE
 .SH SEE ALSO\n 
 .IR tapset::netfilter (3stap)

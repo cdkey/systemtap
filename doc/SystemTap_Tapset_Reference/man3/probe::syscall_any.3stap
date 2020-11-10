@@ -36,14 +36,14 @@ syscall_any
 .fi
 .SH "VALUES"
 .PP
-\fIname\fR
-.RS 4
-name of the syscall
-.RE
-.PP
 \fIsyscall_nr\fR
 .RS 4
 number of the syscall
+.RE
+.PP
+\fIname\fR
+.RS 4
+name of the syscall
 .RE
 .SH "CONTEXT"
 .PP

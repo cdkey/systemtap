@@ -36,64 +36,9 @@ netfilter\&.bridge\&.forward
 .fi
 .SH "VALUES"
 .PP
-\fInf_repeat\fR
+\fIbr_msg\fR
 .RS 4
-Constant used to signify a \*(Aqrepeat\*(Aq verdict
-.RE
-.PP
-\fIbrhdr\fR
-.RS 4
-Address of bridge header
-.RE
-.PP
-\fInf_accept\fR
-.RS 4
-Constant used to signify an \*(Aqaccept\*(Aq verdict
-.RE
-.PP
-\fInf_queue\fR
-.RS 4
-Constant used to signify a \*(Aqqueue\*(Aq verdict
-.RE
-.PP
-\fIbr_vid\fR
-.RS 4
-Protocol version identifier
-.RE
-.PP
-\fIbr_cost\fR
-.RS 4
-Total cost from transmitting bridge to root
-.RE
-.PP
-\fIllcproto_stp\fR
-.RS 4
-Constant used to signify Bridge Spanning Tree Protocol packet
-.RE
-.PP
-\fIoutdev\fR
-.RS 4
-Address of net_device representing output device, 0 if unknown
-.RE
-.PP
-\fIbr_poid\fR
-.RS 4
-Port identifier
-.RE
-.PP
-\fInf_stolen\fR
-.RS 4
-Constant used to signify a \*(Aqstolen\*(Aq verdict
-.RE
-.PP
-\fInf_stop\fR
-.RS 4
-Constant used to signify a \*(Aqstop\*(Aq verdict
-.RE
-.PP
-\fIlength\fR
-.RS 4
-The length of the packet buffer contents, in bytes
+Message age in 1/256 secs
 .RE
 .PP
 \fIbr_type\fR
@@ -101,29 +46,9 @@ The length of the packet buffer contents, in bytes
 BPDU type
 .RE
 .PP
-\fIprotocol\fR
+\fInf_stolen\fR
 .RS 4
-Packet protocol
-.RE
-.PP
-\fIbr_flags\fR
-.RS 4
-BPDU flags
-.RE
-.PP
-\fIbr_max\fR
-.RS 4
-Max age in 1/256 secs
-.RE
-.PP
-\fIindev_name\fR
-.RS 4
-Name of network device packet was received on (if known)
-.RE
-.PP
-\fIbr_bid\fR
-.RS 4
-Identity of bridge
+Constant used to signify a \*(Aqstolen\*(Aq verdict
 .RE
 .PP
 \fIpf\fR
@@ -132,14 +57,119 @@ Protocol family \-\- always
 \(lqbridge\(rq
 .RE
 .PP
-\fIdata_hex\fR
+\fIoutdev\fR
 .RS 4
-A hexadecimal string representing the packet buffer contents
+Address of net_device representing output device, 0 if unknown
+.RE
+.PP
+\fIbr_rmac\fR
+.RS 4
+Root bridge MAC address
+.RE
+.PP
+\fIbr_rid\fR
+.RS 4
+Identity of root bridge
+.RE
+.PP
+\fIbr_bid\fR
+.RS 4
+Identity of bridge
+.RE
+.PP
+\fIdata_str\fR
+.RS 4
+A string representing the packet buffer contents
+.RE
+.PP
+\fIbrhdr\fR
+.RS 4
+Address of bridge header
+.RE
+.PP
+\fInf_stop\fR
+.RS 4
+Constant used to signify a \*(Aqstop\*(Aq verdict
+.RE
+.PP
+\fIprotocol\fR
+.RS 4
+Packet protocol
+.RE
+.PP
+\fIindev\fR
+.RS 4
+Address of net_device representing input device, 0 if unknown
+.RE
+.PP
+\fIbr_poid\fR
+.RS 4
+Port identifier
+.RE
+.PP
+\fIlength\fR
+.RS 4
+The length of the packet buffer contents, in bytes
+.RE
+.PP
+\fInf_repeat\fR
+.RS 4
+Constant used to signify a \*(Aqrepeat\*(Aq verdict
+.RE
+.PP
+\fIllcproto_stp\fR
+.RS 4
+Constant used to signify Bridge Spanning Tree Protocol packet
+.RE
+.PP
+\fInf_queue\fR
+.RS 4
+Constant used to signify a \*(Aqqueue\*(Aq verdict
+.RE
+.PP
+\fInf_accept\fR
+.RS 4
+Constant used to signify an \*(Aqaccept\*(Aq verdict
+.RE
+.PP
+\fIbr_max\fR
+.RS 4
+Max age in 1/256 secs
+.RE
+.PP
+\fInf_drop\fR
+.RS 4
+Constant used to signify a \*(Aqdrop\*(Aq verdict
+.RE
+.PP
+\fIbr_vid\fR
+.RS 4
+Protocol version identifier
+.RE
+.PP
+\fIbr_mac\fR
+.RS 4
+Bridge MAC address
+.RE
+.PP
+\fIindev_name\fR
+.RS 4
+Name of network device packet was received on (if known)
+.RE
+.PP
+\fIllcpdu\fR
+.RS 4
+Address of LLC Protocol Data Unit
 .RE
 .PP
 \fIbr_fd\fR
 .RS 4
 Forward delay in 1/256 secs
+.RE
+.PP
+\fIoutdev_name\fR
+.RS 4
+Name of network device packet will be routed to (if known)
 .RE
 .PP
 \fIbr_htime\fR
@@ -152,49 +182,19 @@ Hello time in 1/256 secs
 Protocol identifier
 .RE
 .PP
-\fIbr_mac\fR
+\fIbr_flags\fR
 .RS 4
-Bridge MAC address
+BPDU flags
 .RE
 .PP
-\fIbr_msg\fR
+\fIbr_cost\fR
 .RS 4
-Message age in 1/256 secs
+Total cost from transmitting bridge to root
 .RE
 .PP
-\fIbr_rid\fR
+\fIdata_hex\fR
 .RS 4
-Identity of root bridge
-.RE
-.PP
-\fIdata_str\fR
-.RS 4
-A string representing the packet buffer contents
-.RE
-.PP
-\fIindev\fR
-.RS 4
-Address of net_device representing input device, 0 if unknown
-.RE
-.PP
-\fIllcpdu\fR
-.RS 4
-Address of LLC Protocol Data Unit
-.RE
-.PP
-\fInf_drop\fR
-.RS 4
-Constant used to signify a \*(Aqdrop\*(Aq verdict
-.RE
-.PP
-\fIoutdev_name\fR
-.RS 4
-Name of network device packet will be routed to (if known)
-.RE
-.PP
-\fIbr_rmac\fR
-.RS 4
-Root bridge MAC address
+A hexadecimal string representing the packet buffer contents
 .RE
 .SH SEE ALSO\n 
 .IR tapset::netfilter (3stap)

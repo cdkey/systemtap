@@ -36,14 +36,14 @@ sunrpc\&.clnt\&.restart_call
 .fi
 .SH "VALUES"
 .PP
+\fItk_flags\fR
+.RS 4
+the task flags
+.RE
+.PP
 \fItk_pid\fR
 .RS 4
 the debugging aid of task
-.RE
-.PP
-\fItk_priority\fR
-.RS 4
-the task priority
 .RE
 .PP
 \fIservername\fR
@@ -56,19 +56,19 @@ the server machine name
 the RPC program number
 .RE
 .PP
-\fItk_flags\fR
+\fItk_priority\fR
 .RS 4
-the task flags
-.RE
-.PP
-\fItk_runstate\fR
-.RS 4
-the task run status
+the task priority
 .RE
 .PP
 \fIxid\fR
 .RS 4
 the transmission id
+.RE
+.PP
+\fItk_runstate\fR
+.RS 4
+the task run status
 .RE
 .SH SEE ALSO\n 
 .IR tapset::rpc (3stap)

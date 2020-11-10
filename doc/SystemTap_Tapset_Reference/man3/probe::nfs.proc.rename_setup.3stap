@@ -46,14 +46,14 @@ transfer protocol
 NFS version
 .RE
 .PP
-\fIfh\fR
-.RS 4
-file handle of parent dir
-.RE
-.PP
 \fIserver_ip\fR
 .RS 4
 IP address of server
+.RE
+.PP
+\fIfh\fR
+.RS 4
+file handle of parent dir
 .RE
 .SH "DESCRIPTION"
 .PP

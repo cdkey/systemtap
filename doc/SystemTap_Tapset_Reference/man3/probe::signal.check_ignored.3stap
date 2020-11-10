@@ -36,24 +36,24 @@ signal\&.check_ignored
 .fi
 .SH "VALUES"
 .PP
-\fIsig_name\fR
-.RS 4
-A string representation of the signal
-.RE
-.PP
-\fIsig\fR
-.RS 4
-The number of the signal
-.RE
-.PP
 \fIpid_name\fR
 .RS 4
 Name of the process receiving the signal
 .RE
 .PP
+\fIsig_name\fR
+.RS 4
+A string representation of the signal
+.RE
+.PP
 \fIsig_pid\fR
 .RS 4
 The PID of the process receiving the signal
+.RE
+.PP
+\fIsig\fR
+.RS 4
+The number of the signal
 .RE
 .SH SEE ALSO\n 
 .IR tapset::signal (3stap)

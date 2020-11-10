@@ -1,0 +1,52 @@
+'\" t
+.\"     Title: function::fp_sub
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: November 2020
+.\"    Manual: Floating point processing Tapset
+.\"    Source: SystemTap Tapset Reference
+.\"  Language: English
+.\"
+.TH "FUNCTION::FP_SUB" "3stap" "November 2020" "SystemTap Tapset Reference" "Floating point processing Taps"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+function::fp_sub \- Subtraction between floating points
+.SH "SYNOPSIS"
+.sp
+.nf
+    fp_sub:long(sub1:long,sub2:long)
+.fi
+.SH "ARGUMENTS"
+.PP
+\fIsub1\fR
+.RS 4
+the 64 bit floating point minuend
+.RE
+.PP
+\fIsub2\fR
+.RS 4
+64 bit floating point subtrahend
+.RE
+.SH "DESCRIPTION"
+.PP
+result would be minuend minus subtrahend
+.SH SEE ALSO\n 
+.IR tapset::floatingpoint (3stap)

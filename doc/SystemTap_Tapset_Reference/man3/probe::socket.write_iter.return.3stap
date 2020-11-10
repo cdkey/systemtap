@@ -36,14 +36,9 @@ socket\&.write_iter\&.return
 .fi
 .SH "VALUES"
 .PP
-\fIsize\fR
+\fIstate\fR
 .RS 4
-Size of message received (in bytes) or error code if success = 0
-.RE
-.PP
-\fIflags\fR
-.RS 4
-Socket flags value
+Socket state value
 .RE
 .PP
 \fItype\fR
@@ -51,14 +46,14 @@ Socket flags value
 Socket type value
 .RE
 .PP
-\fIfamily\fR
+\fIflags\fR
 .RS 4
-Protocol family value
+Socket flags value
 .RE
 .PP
-\fIprotocol\fR
+\fIsize\fR
 .RS 4
-Protocol value
+Size of message received (in bytes) or error code if success = 0
 .RE
 .PP
 \fIsuccess\fR
@@ -66,9 +61,14 @@ Protocol value
 Was receive successful? (1 = yes, 0 = no)
 .RE
 .PP
-\fIstate\fR
+\fIprotocol\fR
 .RS 4
-Socket state value
+Protocol value
+.RE
+.PP
+\fIfamily\fR
+.RS 4
+Protocol family value
 .RE
 .PP
 \fIname\fR

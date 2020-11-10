@@ -41,9 +41,19 @@ nfsd\&.dispatch
 procedure number
 .RE
 .PP
+\fIversion\fR
+.RS 4
+nfs version
+.RE
+.PP
 \fIclient_ip\fR
 .RS 4
 the ip address of client
+.RE
+.PP
+\fIproto\fR
+.RS 4
+transfer protocol
 .RE
 .PP
 \fIxid\fR
@@ -54,16 +64,6 @@ transmission id
 \fIprog\fR
 .RS 4
 program number
-.RE
-.PP
-\fIproto\fR
-.RS 4
-transfer protocol
-.RE
-.PP
-\fIversion\fR
-.RS 4
-nfs version
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfsd (3stap)

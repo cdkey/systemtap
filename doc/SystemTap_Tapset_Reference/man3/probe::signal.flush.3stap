@@ -41,6 +41,11 @@ signal\&.flush
 The task handler of the process performing the flush
 .RE
 .PP
+\fIpid_name\fR
+.RS 4
+The name of the process associated with the task performing the flush
+.RE
+.PP
 \fIsig_pid\fR
 .RS 4
 The PID of the process associated with the task performing the flush
@@ -49,11 +54,6 @@ The PID of the process associated with the task performing the flush
 \fIname\fR
 .RS 4
 Name of the probe point
-.RE
-.PP
-\fIpid_name\fR
-.RS 4
-The name of the process associated with the task performing the flush
 .RE
 .SH SEE ALSO\n 
 .IR tapset::signal (3stap)

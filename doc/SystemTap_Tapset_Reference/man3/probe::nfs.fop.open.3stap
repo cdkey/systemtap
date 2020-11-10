@@ -36,14 +36,14 @@ nfs\&.fop\&.open
 .fi
 .SH "VALUES"
 .PP
-\fIfile_name\fR
-.RS 4
-file name
-.RE
-.PP
 \fIflag\fR
 .RS 4
 file flag
+.RE
+.PP
+\fIino\fR
+.RS 4
+inode number
 .RE
 .PP
 \fIdev\fR
@@ -51,9 +51,9 @@ file flag
 device identifier
 .RE
 .PP
-\fIino\fR
+\fIfile_name\fR
 .RS 4
-inode number
+file name
 .RE
 .PP
 \fIi_size\fR

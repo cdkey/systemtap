@@ -36,19 +36,9 @@ socket\&.close
 .fi
 .SH "VALUES"
 .PP
-\fIprotocol\fR
-.RS 4
-Protocol value
-.RE
-.PP
 \fIstate\fR
 .RS 4
 Socket state value
-.RE
-.PP
-\fIflags\fR
-.RS 4
-Socket flags value
 .RE
 .PP
 \fItype\fR
@@ -56,9 +46,19 @@ Socket flags value
 Socket type value
 .RE
 .PP
+\fIflags\fR
+.RS 4
+Socket flags value
+.RE
+.PP
 \fIfamily\fR
 .RS 4
 Protocol family value
+.RE
+.PP
+\fIprotocol\fR
+.RS 4
+Protocol value
 .RE
 .PP
 \fIname\fR

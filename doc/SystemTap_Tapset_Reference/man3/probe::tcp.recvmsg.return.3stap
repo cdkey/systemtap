@@ -36,29 +36,19 @@ tcp\&.recvmsg\&.return
 .fi
 .SH "VALUES"
 .PP
-\fIsize\fR
-.RS 4
-Number of bytes received or error code if an error occurred\&.
-.RE
-.PP
-\fIname\fR
-.RS 4
-Name of this probe
-.RE
-.PP
 \fIsaddr\fR
 .RS 4
 A string representing the source IP address
 .RE
 .PP
-\fIdport\fR
-.RS 4
-TCP destination port
-.RE
-.PP
 \fIsport\fR
 .RS 4
 TCP source port
+.RE
+.PP
+\fIsize\fR
+.RS 4
+Number of bytes received or error code if an error occurred\&.
 .RE
 .PP
 \fIfamily\fR
@@ -69,6 +59,16 @@ IP address family
 \fIdaddr\fR
 .RS 4
 A string representing the destination IP address
+.RE
+.PP
+\fIname\fR
+.RS 4
+Name of this probe
+.RE
+.PP
+\fIdport\fR
+.RS 4
+TCP destination port
 .RE
 .SH "CONTEXT"
 .PP

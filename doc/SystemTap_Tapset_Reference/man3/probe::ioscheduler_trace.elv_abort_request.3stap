@@ -36,16 +36,6 @@ ioscheduler_trace\&.elv_abort_request
 .fi
 .SH "VALUES"
 .PP
-\fIrq\fR
-.RS 4
-Address of request\&.
-.RE
-.PP
-\fIelevator_name\fR
-.RS 4
-The type of I/O elevator currently enabled\&.
-.RE
-.PP
 \fIdisk_major\fR
 .RS 4
 Disk major no of request\&.
@@ -64,6 +54,16 @@ Name of the probe point
 \fIrq_flags\fR
 .RS 4
 Request flags\&.
+.RE
+.PP
+\fIrq\fR
+.RS 4
+Address of request\&.
+.RE
+.PP
+\fIelevator_name\fR
+.RS 4
+The type of I/O elevator currently enabled\&.
 .RE
 .SH SEE ALSO\n 
 .IR tapset::ioscheduler (3stap)

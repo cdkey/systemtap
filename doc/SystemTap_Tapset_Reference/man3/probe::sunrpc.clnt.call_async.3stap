@@ -36,9 +36,9 @@ sunrpc\&.clnt\&.call_async
 .fi
 .SH "VALUES"
 .PP
-\fIport\fR
+\fIprocname\fR
 .RS 4
-the port number
+the procedure name in this RPC call
 .RE
 .PP
 \fIprog\fR
@@ -51,24 +51,14 @@ the RPC program number
 the IP protocol number
 .RE
 .PP
-\fIflags\fR
-.RS 4
-flags
-.RE
-.PP
 \fIservername\fR
 .RS 4
 the server machine name
 .RE
 .PP
-\fIvers\fR
+\fIport\fR
 .RS 4
-the RPC program version number
-.RE
-.PP
-\fIprogname\fR
-.RS 4
-the RPC program name
+the port number
 .RE
 .PP
 \fIproc\fR
@@ -81,14 +71,24 @@ the procedure number in this RPC call
 current transmission id
 .RE
 .PP
-\fIprocname\fR
+\fIflags\fR
 .RS 4
-the procedure name in this RPC call
+flags
+.RE
+.PP
+\fIprogname\fR
+.RS 4
+the RPC program name
 .RE
 .PP
 \fIdead\fR
 .RS 4
 whether this client is abandoned
+.RE
+.PP
+\fIvers\fR
+.RS 4
+the RPC program version number
 .RE
 .SH SEE ALSO\n 
 .IR tapset::rpc (3stap)
