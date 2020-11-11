@@ -2337,11 +2337,11 @@ static void utrace_report_syscall_entry(void *cb_data __attribute__ ((unused)),
 
 	/* Defer the report_syscall_entry work so it doesn't happen in atomic context: */
 	work = __stp_utrace_alloc_task_work(utrace, NULL);
-	__stp_utrace_save_regs(work, regs);
 	if (work == NULL) {
 		_stp_error("Unable to allocate space for task_work");
 		return;
 	}
+	__stp_utrace_save_regs(work, regs);
 	stp_init_task_work(work, &utrace_syscall_entry_work);
 	rc = stp_task_work_add(task, work);
 	// stp_task_work_add() returns -ESRCH if the task has already
@@ -2444,11 +2444,11 @@ static void utrace_report_syscall_exit(void *cb_data __attribute__ ((unused)),
 
 	/* Defer the report_syscall_exit work so it doesn't happen in atomic context: */
 	work = __stp_utrace_alloc_task_work(utrace, NULL);
-	__stp_utrace_save_regs(work, regs);
 	if (work == NULL) {
 		_stp_error("Unable to allocate space for task_work");
 		return;
 	}
+	__stp_utrace_save_regs(work, regs);
 	stp_init_task_work(work, &utrace_syscall_exit_work);
 	rc = stp_task_work_add(task, work);
 	// stp_task_work_add() returns -ESRCH if the task has already
