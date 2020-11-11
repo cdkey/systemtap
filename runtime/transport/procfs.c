@@ -10,7 +10,12 @@
  */
 
 #include "relay_compat.h"
+#include "proc_fs_compatibility.h"
 
+#if defined(STAPCONF_PATH_LOOKUP) && !defined(STAPCONF_KERN_PATH_PARENT)
+#define kern_path_parent(name, nameidata) \
+	path_lookup(name, LOOKUP_PARENT, nameidata)
+#endif
 
 /* _stp_procfs_module_dir is the '/proc/systemtap/{module_name}' directory. */
 static struct proc_dir_entry *_stp_procfs_module_dir = NULL;
@@ -27,6 +32,7 @@ static struct path _stp_procfs_module_dir_path;
 static int _stp_mkdir_proc_module(void)
 {	
 	int found = 0;
+	int rc;
 	static char proc_root_name[STP_MODULE_NAME_LEN + sizeof("systemtap/")];
 #if defined(STAPCONF_PATH_LOOKUP) || defined(STAPCONF_KERN_PATH_PARENT)
 	struct nameidata nd;
@@ -35,7 +41,6 @@ static int _stp_mkdir_proc_module(void)
 #if defined(STAPCONF_VFS_PATH_LOOKUP)
 	struct vfsmount *mnt;
 #endif
-	int rc;
 #endif	/* STAPCONF_VFS_PATH_LOOKUP or STAPCONF_KERN_PATH */
 
         if (_stp_procfs_module_dir != NULL)

@@ -27,10 +27,6 @@
 #include "proc_fs_compatibility.h"
 #include "uidgid_compatibility.h"
 
-#if defined(STAPCONF_PATH_LOOKUP) && !defined(STAPCONF_KERN_PATH_PARENT)
-#define kern_path_parent(name, nameidata) \
-	path_lookup(name, LOOKUP_PARENT, nameidata)
-#endif
 
 /* If STAPCONF_PDE_DATA isn't defined, we're using the original /proc
  * interface (where 'struct proc_dir_entry' isn't opaque). In this
