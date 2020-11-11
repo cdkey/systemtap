@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: systemtap 3.0\n"
 "Report-Msgid-Bugs-To: systemtap@sourceware.org\n"
-"POT-Creation-Date: 2020-11-06 12:52-0500\n"
+"POT-Creation-Date: 2020-11-10 17:57-0500\n"
 "PO-Revision-Date: \n"
 "Last-Translator: \n"
 "Language-Team: Czech\n"
@@ -486,22 +486,22 @@ msgstr "neplatný odkaz do pole"
 msgid "bpf translation failure: %s"
 msgstr "Chyba zpracování symbolu "
 
-#: buildrun.cxx:665
+#: buildrun.cxx:666
 #, c-format
 msgid ""
 "Checking \" %s \" failed with error: %s\n"
 "Ensure kernel development headers & makefiles are installed."
 msgstr ""
 
-#: buildrun.cxx:705
+#: buildrun.cxx:706
 msgid "Pass 4, preamble: (re)building SystemTap's version of uprobes."
 msgstr "Fáze 4, úvod: sestavuji SystemTap verzi mechanizmu 'uprobe'."
 
-#: buildrun.cxx:751
+#: buildrun.cxx:752
 msgid "uprobes rebuild exit code: "
 msgstr "návratový kód sestavení vlastního 'uprobe' mechanizmu:"
 
-#: buildrun.cxx:811
+#: buildrun.cxx:812
 msgid ""
 "user-space process-tracking facilities not available [man error::process-"
 "tracking]"
@@ -509,7 +509,7 @@ msgstr ""
 "nástroje pro sledování uživatelských procesů jsou nedostupné [man error::"
 "process-tracking]"
 
-#: buildrun.cxx:1046
+#: buildrun.cxx:1047
 #, c-format
 msgid "Processing tracepoint header %s with query %s"
 msgstr ""
@@ -5117,7 +5117,7 @@ msgstr "Jméno modulu ('%s') je příliš dlouhé.\n"
 msgid "exceeded maximum send_request size.\n"
 msgstr "maximální velikost send_request překročena.\n"
 
-#: staprun/ctl.c:104
+#: staprun/ctl.c:119
 #, c-format
 msgid "Cannot attach to module %s control channel; not running?\n"
 msgstr "Chyba připojení k řídícímu kanálu modulu %s; Běží?\n"

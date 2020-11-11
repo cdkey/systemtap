@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: systemtap 4.4\n"
 "Report-Msgid-Bugs-To: systemtap@sourceware.org\n"
-"POT-Creation-Date: 2020-11-06 12:52-0500\n"
+"POT-Creation-Date: 2020-11-10 17:57-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -446,28 +446,28 @@ msgstr ""
 msgid "bpf translation failure: %s"
 msgstr ""
 
-#: buildrun.cxx:665
+#: buildrun.cxx:666
 #, c-format
 msgid ""
 "Checking \" %s \" failed with error: %s\n"
 "Ensure kernel development headers & makefiles are installed."
 msgstr ""
 
-#: buildrun.cxx:705
+#: buildrun.cxx:706
 msgid "Pass 4, preamble: (re)building SystemTap's version of uprobes."
 msgstr ""
 
-#: buildrun.cxx:751
+#: buildrun.cxx:752
 msgid "uprobes rebuild exit code: "
 msgstr ""
 
-#: buildrun.cxx:811
+#: buildrun.cxx:812
 msgid ""
 "user-space process-tracking facilities not available [man error::process-"
 "tracking]"
 msgstr ""
 
-#: buildrun.cxx:1046
+#: buildrun.cxx:1047
 #, c-format
 msgid "Processing tracepoint header %s with query %s"
 msgstr ""
@@ -4795,7 +4795,7 @@ msgstr ""
 msgid "exceeded maximum send_request size.\n"
 msgstr ""
 
-#: staprun/ctl.c:104
+#: staprun/ctl.c:119
 #, c-format
 msgid "Cannot attach to module %s control channel; not running?\n"
 msgstr ""
