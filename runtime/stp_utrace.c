@@ -141,7 +141,7 @@ struct __stp_utrace_task_work { /* NB: about 216 bytes, 18 per page: */
    TODO: UTRACE_TASK_WORK_POOL_SIZE can be specified on the Systemtap
    command line. Experiment to find the best default value. */
 #ifndef UTRACE_TASK_WORK_POOL_SIZE
-#define UTRACE_TASK_WORK_POOL_SIZE 288
+#define UTRACE_TASK_WORK_POOL_SIZE 576
 #endif
 static DECLARE_BITMAP(__stp_utrace_task_work_pool_bitmap, UTRACE_TASK_WORK_POOL_SIZE);
 static struct __stp_utrace_task_work __stp_utrace_task_work_pool[UTRACE_TASK_WORK_POOL_SIZE];
