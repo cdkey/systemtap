@@ -2859,6 +2859,9 @@ systemtap_session::get_mok_info()
       // PR26665: but only Systemtap MOK keys; there may be others.
       getline(out, line);
 
+      if (verbose > 3)
+        clog << "MOK parse state: " << state << " line: " << line << endl;
+      
       if (state == "SHA1") { // look for a new key fingerprint
 	if (! regexp_match(line, "^SHA1 Fingerprint: ([0-9a-f:]+)$", matches))
 	  {
@@ -2871,11 +2874,14 @@ systemtap_session::get_mok_info()
 	  }
 	// else stay in SHA1 state
       } else if (state == "Issuer") { // validate issuer
-	if (! regexp_match(line, "^[ \t]*Issuer: O=(.*)$", matches)) {
+	if (! regexp_match(line, "^[ \t]*Issuer: [A-Z]*=(.*)$", matches)) {
 	  if (verbose > 2)
 	    clog << "Issuer found: " << matches[1] << endl;
-	  if (! regexp_match(matches[1], "Systemtap", matches))
+	  if (! regexp_match(matches[1], "Systemtap", matches)) {
+            if (verbose > 2)
+              clog << "Recognized Systemtap MOK fingerprint: " << fingerprint << endl;
 	    mok_fingerprints.push_back(fingerprint);
+          }
 	  state = "SHA1"; // start looking for another key
 	}
       } else { // some other line in mokutil output ... there are plenty
