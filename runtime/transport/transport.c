@@ -123,6 +123,12 @@ static int _stp_transport_fs_init(const char *module_name)
 		dbug_trans(1, "choosing procfs_p=1\n");
         }
 #endif
+#ifdef STAPCONF_LOCKDOWN_KERNEL
+        if (!debugfs_p && kernel_is_locked_down ("debugfs")) {
+                procfs_p = 1;
+		dbug_trans(1, "choosing procfs_p=1\n");
+        }
+#endif
         if (!procfs_p) {
                 debugfs_p = 1;
 		dbug_trans(1, "choosing debugfs_p=1\n");

@@ -2804,7 +2804,9 @@ systemtap_session::modules_must_be_signed()
 
   if (getenv("SYSTEMTAP_SIGN"))
     return true;
-
+  if (getenv("SYSTEMTAP_NOSIGN"))
+    return false;
+  
   statm >> status;
   if (status == 'Y')
     return true;
