@@ -66,6 +66,7 @@ task_finder_derived_probe_group::emit_module_init (systemtap_session& s)
 
   s.op->newline() << "if (rc) {";
   s.op->newline(1) << "stap_stop_task_finder();";
+  s.op->newline() << "_stp_vma_done();";
   s.op->newline(-1) << "}";
   s.op->newline(-1) << "}";
 }
