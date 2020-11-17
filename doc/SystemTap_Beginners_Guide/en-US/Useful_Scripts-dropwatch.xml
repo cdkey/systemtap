@@ -85,14 +85,17 @@ each tracepoint location with either the function name or the address.
 	<title><xref linkend="dropwatch"/> Sample Output</title>
 <screen>Monitoring for dropped packets
 
+Tue Nov 17 00:26:51 2020
 1762 packets dropped at unix_stream_recvmsg
 4 packets dropped at tun_do_read
 2 packets dropped at nf_hook_slow
 
+Tue Nov 17 00:26:56 2020
 467 packets dropped at unix_stream_recvmsg
 20 packets dropped at nf_hook_slow
 6 packets dropped at tun_do_read
 
+Tue Nov 17 00:27:01 2020
 446 packets dropped at unix_stream_recvmsg
 4 packets dropped at tun_do_read
 4 packets dropped at nf_hook_slow
