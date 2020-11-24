@@ -11,15 +11,14 @@
 #ifndef _LINUX_RUNTIME_CONTEXT_H_
 #define _LINUX_RUNTIME_CONTEXT_H_
 
-#ifndef __rcu
-#define __rcu
-#endif
-
-static struct context __rcu *contexts[NR_CPUS] = { NULL };
+/* Can't use STP_DEFINE_RWLOCK() or this might be replaced with a spin lock */
+static DEFINE_RWLOCK(_stp_context_lock);
+static DEFINE_PER_CPU(struct context *, contexts);
+static atomic_t _stp_context_stop = ATOMIC_INIT(0);
 
 static int _stp_runtime_contexts_alloc(void)
 {
-	int cpu;
+	unsigned int cpu;
 
 	for_each_possible_cpu(cpu) {
 		/* Module init, so in user context, safe to use
@@ -31,91 +30,67 @@ static int _stp_runtime_contexts_alloc(void)
 				    (unsigned long) sizeof (struct context));
 			return -ENOMEM;
 		}
-		rcu_assign_pointer(contexts[cpu], c);
+		per_cpu(contexts, cpu) = c;
 	}
 	return 0;
 }
 
 /* We should be free of all probes by this time, but for example the timer for
  * _stp_ctl_work_callback may still be running and looking for contexts.  We
- * use RCU-sched synchronization to be sure its safe to free them.  */
+ * use _stp_context_stop and a write lock to be sure its safe to free them.  */
 static void _stp_runtime_contexts_free(void)
 {
-	// Note that 'free_contexts' is static because it is
-	// (probably) too big to fit on a kernel function's stack.
-	static struct context *free_contexts[NR_CPUS] = { NULL };
-	int cpu;
+	unsigned long flags;
+	unsigned int cpu;
 
-	/* First, save all the pointers.  */
-	rcu_read_lock_sched();
-	for_each_possible_cpu(cpu) {
-		free_contexts[cpu] = rcu_dereference_sched(contexts[cpu]);
-	}
-	rcu_read_unlock_sched();
+	/* Sync to make sure existing readers are done */
+	atomic_set(&_stp_context_stop, 1);
+	write_lock_irqsave(&_stp_context_lock, flags);
+	write_unlock_irqrestore(&_stp_context_lock, flags);
 
-	/* Now clear all pointers to prevent new readers.  */
-	for_each_possible_cpu(cpu) {
-		rcu_assign_pointer(contexts[cpu], NULL);
-	}
-
-	/* Sync to make sure existing readers are done.  */
-	stp_synchronize_sched();
-
-	/* Now we can actually free the contexts.  */
-	for_each_possible_cpu(cpu) {
-		struct context *c = free_contexts[cpu];
-		if (c != NULL) {
-			free_contexts[cpu] = NULL;
-			_stp_vfree(c);
-		}
-	}
+	/* Now we can actually free the contexts */
+	for_each_possible_cpu(cpu)
+		_stp_vfree(per_cpu(contexts, cpu));
 }
 
 static inline struct context * _stp_runtime_get_context(void)
 {
-	// RHBZ1788662 rcu operations are rejected in idle-cpu contexts
-	// in effect: skip probe if it's in rcu-idle state
-#if defined(STAPCONF_RCU_IS_WATCHING) || LINUX_VERSION_CODE >= KERNEL_VERSION(3,13,0) // linux commit #5c173eb8
-        if (! rcu_is_watching())
-		return 0;
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0) // linux commit #9b2e4f18
-        if (! rcu_is_cpu_idle())
-		return 0;
-#else
-	; // XXX older kernels didn't put tracepoints in idle-cpu
-#endif
-	return rcu_dereference_sched(contexts[smp_processor_id()]);
+	if (atomic_read(&_stp_context_stop))
+		return NULL;
+
+	return per_cpu(contexts, smp_processor_id());
 }
 
 static struct context * _stp_runtime_entryfn_get_context(void)
+	__acquires(&_stp_context_lock)
 {
 	struct context* __restrict__ c = NULL;
-	preempt_disable ();
+
+	if (!read_trylock(&_stp_context_lock))
+		return NULL;
+
 	c = _stp_runtime_get_context();
 	if (c != NULL) {
-		if (atomic_inc_return(&c->busy) == 1) {
-			// NB: Notice we're not re-enabling preemption
+		if (!atomic_cmpxchg(&c->busy, 0, 1)) {
+			// NB: Notice we're not releasing _stp_context_lock
 			// here. We exepect the calling code to call
 			// _stp_runtime_entryfn_get_context() and
 			// _stp_runtime_entryfn_put_context() as a
 			// pair.
 			return c;
 		}
-		atomic_dec(&c->busy);
 	}
-	preempt_enable_no_resched();
+	read_unlock(&_stp_context_lock);
 	return NULL;
 }
 
 static inline void _stp_runtime_entryfn_put_context(struct context *c)
+	__releases(&_stp_context_lock)
 {
 	if (c) {
-		if (c == _stp_runtime_get_context())
-			atomic_dec(&c->busy);
-		/* else, warn about bad state? */
-		preempt_enable_no_resched();
+		atomic_set(&c->busy, 0);
+		read_unlock(&_stp_context_lock);
 	}
-	return;
 }
 
 static void _stp_runtime_context_wait(void)
@@ -130,9 +105,13 @@ static void _stp_runtime_context_wait(void)
 		int i;
 
 		holdon = 0;
-		rcu_read_lock_sched();
+		read_lock(&_stp_context_lock);
+		if (atomic_read(&_stp_context_stop)) {
+			read_unlock(&_stp_context_lock);
+			break;
+		}
 		for_each_possible_cpu(i) {
-			struct context *c = rcu_dereference_sched(contexts[i]);
+			struct context *c = per_cpu(contexts, i);
 			if (c != NULL
 			    && atomic_read (& c->busy)) {
 				holdon = 1;
@@ -146,7 +125,7 @@ static void _stp_runtime_context_wait(void)
 				}
 			}
 		}
-		rcu_read_unlock_sched();
+		read_unlock(&_stp_context_lock);
 
 		/*
 		 * Just in case things are really really stuck, a
