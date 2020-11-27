@@ -1401,32 +1401,32 @@ msgstr ""
 
 #: dwflpp.cxx:4379
 #, fuzzy
-msgid " - blacklisted"
-msgstr "expression régulière de la blacklist :"
+msgid " - blocklisted"
+msgstr "expression régulière de la blocklist :"
 
 #: dwflpp.cxx:4384
 msgid " but not skipped (guru mode enabled)"
 msgstr ""
 
 #: dwflpp.cxx:4548 dwflpp.cxx:4597
-msgid "blacklist regexps:"
-msgstr "expression régulière de la blacklist :"
+msgid "blocklist regexps:"
+msgstr "expression régulière de la blocklist :"
 
 #: dwflpp.cxx:4556 dwflpp.cxx:4605
-msgid "blacklist_func regcomp failed"
+msgid "blocklist_func regcomp failed"
 msgstr ""
 
 #: dwflpp.cxx:4558 dwflpp.cxx:4607
-msgid "blacklist_func_ret regcomp failed"
-msgstr "regcomp(blacklist_func_ret) a échoué"
+msgid "blocklist_func_ret regcomp failed"
+msgstr "regcomp(blocklist_func_ret) a échoué"
 
 #: dwflpp.cxx:4560 dwflpp.cxx:4609
-msgid "blacklist_file regcomp failed"
-msgstr "regcomp(blacklist_file) a échoué"
+msgid "blocklist_file regcomp failed"
+msgstr "regcomp(blocklist_file) a échoué"
 
 #: dwflpp.cxx:4562 dwflpp.cxx:4611
-msgid "blacklist_section regcomp failed"
-msgstr "regcomp(blacklist_section) a échoué"
+msgid "blocklist_section regcomp failed"
+msgstr "regcomp(blocklist_section) a échoué"
 
 #: dwflpp.cxx:4795
 msgid "not found cfa"
@@ -6338,28 +6338,28 @@ msgstr ""
 
 #: tapsets.cxx:1577
 #, c-format
-msgid "function %s is in blacklisted section"
+msgid "function %s is in blocklisted section"
 msgstr ""
 
 #: tapsets.cxx:1581
 #, c-format
-msgid "kprobes function %s is blacklisted"
+msgid "kprobes function %s is blocklisted"
 msgstr ""
 
 #: tapsets.cxx:1585
 #, c-format
-msgid "function %s return probe is blacklisted"
+msgid "function %s return probe is blocklisted"
 msgstr ""
 
 #: tapsets.cxx:1589
 #, c-format
-msgid "function %s is in blacklisted file"
+msgid "function %s is in blocklisted file"
 msgstr ""
 
 #: tapsets.cxx:1594
 #, fuzzy, c-format
-msgid "function %s is blacklisted"
-msgstr "expression régulière de la blacklist :"
+msgid "function %s is blocklisted"
+msgstr "expression régulière de la blocklist :"
 
 #: tapsets.cxx:1897
 #, c-format
@@ -6959,7 +6959,7 @@ msgstr ""
 
 #: tapsets.cxx:12400
 #, c-format
-msgid "tracepoint %s is blacklisted on architecture %s"
+msgid "tracepoint %s is blocklisted on architecture %s"
 msgstr ""
 
 #: tapsets.cxx:12434

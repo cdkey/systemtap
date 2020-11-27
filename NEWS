@@ -1482,7 +1482,7 @@
 - On 2.6.29+ kernels, systemtap can now probe kernel modules that
   arrive and/or depart during the run-time of a session.  This allows
   probing of device driver initialization functions, which had formerly been
-  blacklisted.
+  blocklisted.
 
 - New tapset functions for cpu_clock and local_clock access were added.
 
@@ -2309,8 +2309,8 @@
   than 1024MB and keep last 3 logs, in background.
     % stap -F -o /tmp/staplog -S 1024,3 script.stp
 
-- In guru mode (-g), the kernel probing blacklist is disabled, leaving 
-  only a subset - the kernel's own internal kprobe blacklist - to attempt
+- In guru mode (-g), the kernel probing blocklist is disabled, leaving 
+  only a subset - the kernel's own internal kprobe blocklist - to attempt
   to filter out areas unsafe to probe.  The differences may be enough to
   probe more interrupt handlers.
 

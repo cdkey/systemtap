@@ -1,4 +1,4 @@
-set test "retblacklist"
+set test "retblocklist"
 
 set res [target_compile $srcdir/$subdir/$test.c $test.exe executable "-g"]
 if { $res != "" } {

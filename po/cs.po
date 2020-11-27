@@ -1356,32 +1356,32 @@ msgid "literal_stmt_for_pointer: finding value for %s (%s)\n"
 msgstr ""
 
 #: dwflpp.cxx:4379
-msgid " - blacklisted"
-msgstr " - na blacklistu"
+msgid " - blocklisted"
+msgstr " - na blocklistu"
 
 #: dwflpp.cxx:4384
 msgid " but not skipped (guru mode enabled)"
 msgstr " ale nepřeskočeno, neboť jsme v 'guru mode'"
 
 #: dwflpp.cxx:4548 dwflpp.cxx:4597
-msgid "blacklist regexps:"
-msgstr "regulární výrazy pro blacklist:"
+msgid "blocklist regexps:"
+msgstr "regulární výrazy pro blocklist:"
 
 #: dwflpp.cxx:4556 dwflpp.cxx:4605
-msgid "blacklist_func regcomp failed"
-msgstr "sonda je v blacklistu pro funkce"
+msgid "blocklist_func regcomp failed"
+msgstr "sonda je v blocklistu pro funkce"
 
 #: dwflpp.cxx:4558 dwflpp.cxx:4607
-msgid "blacklist_func_ret regcomp failed"
-msgstr "sonda je v blacklistu pro návrat z funkcí"
+msgid "blocklist_func_ret regcomp failed"
+msgstr "sonda je v blocklistu pro návrat z funkcí"
 
 #: dwflpp.cxx:4560 dwflpp.cxx:4609
-msgid "blacklist_file regcomp failed"
-msgstr "sonda je v blacklistu pro soubory"
+msgid "blocklist_file regcomp failed"
+msgstr "sonda je v blocklistu pro soubory"
 
 #: dwflpp.cxx:4562 dwflpp.cxx:4611
-msgid "blacklist_section regcomp failed"
-msgstr "sonda je v blacklistu pro sekce"
+msgid "blocklist_section regcomp failed"
+msgstr "sonda je v blocklistu pro sekce"
 
 #: dwflpp.cxx:4795
 msgid "not found cfa"
@@ -6318,28 +6318,28 @@ msgstr "nemám k dispozici tabulku symbolů"
 
 #: tapsets.cxx:1577
 #, c-format
-msgid "function %s is in blacklisted section"
+msgid "function %s is in blocklisted section"
 msgstr ""
 
 #: tapsets.cxx:1581
 #, c-format
-msgid "kprobes function %s is blacklisted"
+msgid "kprobes function %s is blocklisted"
 msgstr ""
 
 #: tapsets.cxx:1585
 #, c-format
-msgid "function %s return probe is blacklisted"
+msgid "function %s return probe is blocklisted"
 msgstr ""
 
 #: tapsets.cxx:1589
 #, c-format
-msgid "function %s is in blacklisted file"
+msgid "function %s is in blocklisted file"
 msgstr ""
 
 #: tapsets.cxx:1594
 #, fuzzy, c-format
-msgid "function %s is blacklisted"
-msgstr " - na blacklistu"
+msgid "function %s is blocklisted"
+msgstr " - na blocklistu"
 
 #: tapsets.cxx:1897
 #, c-format
@@ -6937,7 +6937,7 @@ msgstr "neplatný 'tracepoint' string"
 
 #: tapsets.cxx:12400
 #, c-format
-msgid "tracepoint %s is blacklisted on architecture %s"
+msgid "tracepoint %s is blocklisted on architecture %s"
 msgstr ""
 
 #: tapsets.cxx:12434

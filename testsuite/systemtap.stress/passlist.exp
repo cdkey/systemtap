@@ -1,4 +1,4 @@
-# An implementation of generating whitelist for safe-probes 
+# An implementation of generating passlist for safe-probes 
 # in systemtap based on the discussion in thread:
 #   http://sourceware.org/ml/systemtap/2006-q3/msg00574.html
 #  
@@ -31,7 +31,7 @@
 # http://sourceware.org/ml/systemtap/2006-q4/msg00143.html
 # http://sourceware.org/ml/systemtap/2006-q4/msg00435.html
 #
-set TESTNAME "whitelist"
+set TESTNAME "passlist"
 
 # Because this test will take several hours (depends on workloads
 # and max_running_level) and probably cause more than once system 
@@ -46,7 +46,7 @@ return
 #################################################################
 set MAX_RUNNING_LEVEL 2
 
-set STP_GENWHITELIST_RUNNING "/stp_genwhitelist_running"
+set STP_GENWHITELIST_RUNNING "/stp_genpasslist_running"
 set STAP_RESULT "probe.out"
 set PROBES_ALL "probes.all"
 set PROBES_PENDING "probes.pending"
@@ -132,7 +132,7 @@ proc do_current_test {} {
     set testname "L[get_running_level]_Grp_[string range $probepoint 0 32]..."
     if [probe_ok $probepoint] {
         set script [format $systemtap_script $probepoint]
-        whitelist_run $testname runbenchs -e $script -o $STAP_RESULT
+        passlist_run $testname runbenchs -e $script -o $STAP_RESULT
     } else {
         puts "ERROR no match in probe_ok() $testname no match"
         set script [format $systemtap_script $probepoint]
@@ -222,9 +222,9 @@ proc incr_running_level {} {
 proc init_probes_all {} {
     global PROBES_ALL
     global init_probes_all_script
-    catch {exec stap -p2 -e $init_probes_all_script > /tmp/whitelist_tmpfile}
-    catch {exec grep "^kernel.function" /tmp/whitelist_tmpfile > $PROBES_ALL }
-    catch {exec rm -f /tmp/whitelist_tmpfile}
+    catch {exec stap -p2 -e $init_probes_all_script > /tmp/passlist_tmpfile}
+    catch {exec grep "^kernel.function" /tmp/passlist_tmpfile > $PROBES_ALL }
+    catch {exec rm -f /tmp/passlist_tmpfile}
     if {[get_linesize $PROBES_ALL] == 0} {
         return 1
     }
@@ -282,22 +282,22 @@ proc proper_current_size {level inputfile} {
      return $currentsize
 }
 
-set startup_line_in_RCLOCAL "cd $env(PWD); runtest whitelist.exp&"
+set startup_line_in_RCLOCAL "cd $env(PWD); runtest passlist.exp&"
 set RCLOCAL "/etc/rc.d/rc.local"
 
 proc register_service {} {
     global startup_line_in_RCLOCAL
     global RCLOCAL
-    exec sed -i -n -e "/runtest whitelist.exp/!p" $RCLOCAL
+    exec sed -i -n -e "/runtest passlist.exp/!p" $RCLOCAL
     exec echo $startup_line_in_RCLOCAL >> $RCLOCAL
 }
 
 proc unregister_service {} {
     global RCLOCAL
-    exec sed -i -n -e "/runtest whitelist.exp/!p" $RCLOCAL
+    exec sed -i -n -e "/runtest passlist.exp/!p" $RCLOCAL
 }
 
-proc whitelist_run { TEST_NAME {LOAD_GEN_FUNCTION ""} args } {
+proc passlist_run { TEST_NAME {LOAD_GEN_FUNCTION ""} args } {
     set cmd [concat {stap -DMAXSKIPPED=200000 -v } $args]
     catch {eval spawn $cmd}
     set stap_id $spawn_id
@@ -323,7 +323,7 @@ proc whitelist_run { TEST_NAME {LOAD_GEN_FUNCTION ""} args } {
     }
     catch {close -i $stap_id}
     wait -i $stap_id
-    if {$failed} { puts "whitelist_run failure \($detail\)" }
+    if {$failed} { puts "passlist_run failure \($detail\)" }
 }
 
 proc runbenchs {} {
@@ -389,7 +389,7 @@ if {[get_running_level] == 0} {
     exec rm -f $PROBES_PASSED $PROBES_UNTRIGGERED $PROBES_FAILED
     file copy $PROBES_ALL $PROBES_PENDING
     exec touch $PROBES_PASSED $PROBES_UNTRIGGERED $PROBES_FAILED
-    puts "Start a fresh stp_genwhitelist test."
+    puts "Start a fresh stp_genpasslist test."
 } else {
     # Maybe started already, so do some cleaning if necessary
     garbage_collect $ALREADY_CRASHED
@@ -442,8 +442,8 @@ while {1} {
     # Generate probes.current
     exec rm -f $PROBES_CURRENT
     exec head -n $current_size_const $PROBES_PENDING > $PROBES_CURRENT
-    exec tail -n+[expr $current_size_const+1] $PROBES_PENDING > /tmp/whitelist_tmpfile
-    exec mv /tmp/whitelist_tmpfile $PROBES_PENDING
+    exec tail -n+[expr $current_size_const+1] $PROBES_PENDING > /tmp/passlist_tmpfile
+    exec mv /tmp/passlist_tmpfile $PROBES_PENDING
 
     puts "Start a probe test..."
     # Do actual probe test
@@ -458,7 +458,7 @@ while {1} {
 # Remove all temporary files and unregister myself
 puts "Remove all temporary files, unregister the service and return."
 exec rm -f $PROBES_PENDING $PROBES_CURRENT $STP_GENWHITELIST_RUNNING 
-exec rm -f $STAP_RESULT /tmp/whitelist_tmpfile
+exec rm -f $STAP_RESULT /tmp/passlist_tmpfile
 unregister_service
 
 pass "$TESTNAME completed"

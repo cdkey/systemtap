@@ -113,7 +113,7 @@ struct stap_kprobe_probe {
 };
 
 
-// Forward declare the master entry functions (stap-generated)
+// Forward declare the main entry functions (stap-generated)
 static int
 enter_kprobe_probe(struct kprobe *inst,
                    struct pt_regs *regs);

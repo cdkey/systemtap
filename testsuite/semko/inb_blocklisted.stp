@@ -1,0 +1,9 @@
+#! stap -p2
+
+/* PR13112 (and PR13108)
+   probing functions from blocklisted files shouldn't be possible. */
+probe kernel.function("inb@*.h")
+{
+  log("blocklisted")
+
+}

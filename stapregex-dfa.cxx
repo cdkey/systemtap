@@ -131,7 +131,7 @@ stapregex_compile (regexp *re, const std::string& match_snippet,
 
 /* Now follows the heart of the tagged-DFA algorithm. This is a basic
    implementation of the algorithm described in Ville Laurikari's
-   Masters thesis and summarized in the paper "NFAs with Tagged
+   Main thesis and summarized in the paper "NFAs with Tagged
    Transitions, their Conversion to Deterministic Automata and
    Application to Regular Expressions"
    (http://laurikari.net/ville/spire2000-tnfa.pdf).

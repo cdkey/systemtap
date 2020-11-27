@@ -34,7 +34,7 @@ expect {
 		exp_continue
 	    }
 	    {^powerpc:hcall_(entry|exit)$} {
-		# Skip ppc64-specific tracepoints on the blacklist.
+		# Skip ppc64-specific tracepoints on the blocklist.
 		exp_continue
 	    }
 	    default {

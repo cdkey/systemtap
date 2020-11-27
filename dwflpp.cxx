@@ -75,8 +75,8 @@ static string TOK_KERNEL("kernel");
 dwflpp::dwflpp(systemtap_session & session, const string& name, bool kernel_p, bool debuginfo_needed):
   sess(session), module(NULL), module_bias(0), mod_info(NULL),
   module_start(0), module_end(0), cu(NULL), dwfl(NULL),
-  module_dwarf(NULL), function(NULL), blacklist_func(), blacklist_func_ret(),
-  blacklist_file(),  blacklist_enabled(false)
+  module_dwarf(NULL), function(NULL), blocklist_func(), blocklist_func_ret(),
+  blocklist_file(),  blocklist_enabled(false)
 {
   if (kernel_p)
     setup_kernel(name, session, debuginfo_needed);
@@ -92,7 +92,7 @@ dwflpp::dwflpp(systemtap_session & session, const vector<string>& names,
 	       bool kernel_p):
   sess(session), module(NULL), module_bias(0), mod_info(NULL),
   module_start(0), module_end(0), cu(NULL), dwfl(NULL),
-  module_dwarf(NULL), function(NULL), blacklist_enabled(false)
+  module_dwarf(NULL), function(NULL), blocklist_enabled(false)
 {
   if (kernel_p)
     setup_kernel(names);
@@ -353,7 +353,7 @@ dwflpp::setup_kernel(const string& name, systemtap_session & s, bool debuginfo_n
       DWFL_ASSERT("dwfl_getmodules", off == 0);
     }
 
-  build_kernel_blacklist();
+  build_kernel_blocklist();
 }
 
 void
@@ -379,7 +379,7 @@ dwflpp::setup_kernel(const vector<string> &names, bool debuginfo_needed)
       }
     }
 
-  build_kernel_blacklist();
+  build_kernel_blocklist();
 }
 
 
@@ -396,7 +396,7 @@ dwflpp::setup_user(const vector<string>& modules, bool debuginfo_needed)
                            (*it).c_str(), sess.architecture.c_str())),
                            dwfl);
 
-  build_user_blacklist();
+  build_user_blocklist();
 }
 
 template<> void
@@ -1337,7 +1337,7 @@ dwflpp::iterate_over_libraries<void>(void (*callback)(void*, const char*),
 
   if (interpreter.length() == 0)
     return;
-  // If it gets cumbersome to maintain this whitelist, we could just check for
+  // If it gets cumbersome to maintain this passlist, we could just check for
   // startswith("/lib/ld") || startswith("/lib64/ld"), and trust that no admin
   // would install untrustworthy loaders in those paths.
   // See also http://sourceware.org/git/?p=glibc.git;a=blob;f=shlib-versions;hb=HEAD
@@ -4337,61 +4337,61 @@ in_kprobes_function(systemtap_session& sess, Dwarf_Addr addr)
 }
 
 
-enum dwflpp::blacklisted_type
-dwflpp::blacklisted_p(interned_string funcname,
+enum dwflpp::blocklisted_type
+dwflpp::blocklisted_p(interned_string funcname,
                       interned_string filename,
                       int,
                       interned_string module,
                       Dwarf_Addr addr,
                       bool has_return)
 {
-  if (!blacklist_enabled)
-    return dwflpp::blacklisted_none;
+  if (!blocklist_enabled)
+    return dwflpp::blocklisted_none;
 
-  enum dwflpp::blacklisted_type blacklisted = dwflpp::blacklisted_none;
+  enum dwflpp::blocklisted_type blocklisted = dwflpp::blocklisted_none;
 
-  // check against section blacklist
-  string section = get_blacklist_section(addr);
+  // check against section blocklist
+  string section = get_blocklist_section(addr);
 
   // PR6503: modules don't need special init/exit treatment
-  if (module == TOK_KERNEL && !regexec (&blacklist_section, section.c_str(), 0, NULL, 0))
-    blacklisted = dwflpp::blacklisted_section;
+  if (module == TOK_KERNEL && !regexec (&blocklist_section, section.c_str(), 0, NULL, 0))
+    blocklisted = dwflpp::blocklisted_section;
 
   // Check for function marked '__kprobes'.
   else if (module == TOK_KERNEL && in_kprobes_function(sess, addr))
-    blacklisted = dwflpp::blacklisted_kprobes;
+    blocklisted = dwflpp::blocklisted_kprobes;
 
-  // Check probe point against function blacklist
-  else if (!regexec(&blacklist_func, funcname.to_string().c_str(), 0, NULL, 0))
-    blacklisted = dwflpp::blacklisted_function;
+  // Check probe point against function blocklist
+  else if (!regexec(&blocklist_func, funcname.to_string().c_str(), 0, NULL, 0))
+    blocklisted = dwflpp::blocklisted_function;
 
-  // Check probe point against function return blacklist
-  else if (has_return && !regexec(&blacklist_func_ret, funcname.to_string().c_str(), 0, NULL, 0))
-    blacklisted = dwflpp::blacklisted_function_return;
+  // Check probe point against function return blocklist
+  else if (has_return && !regexec(&blocklist_func_ret, funcname.to_string().c_str(), 0, NULL, 0))
+    blocklisted = dwflpp::blocklisted_function_return;
 
-  // Check probe point against file blacklist
-  else if (!regexec(&blacklist_file, filename.to_string().c_str(), 0, NULL, 0))
-    blacklisted = dwflpp::blacklisted_file;
+  // Check probe point against file blocklist
+  else if (!regexec(&blocklist_file, filename.to_string().c_str(), 0, NULL, 0))
+    blocklisted = dwflpp::blocklisted_file;
 
-  if (blacklisted)
+  if (blocklisted)
     {
       if (sess.verbose>1)
-        clog << _(" - blacklisted");
+        clog << _(" - blocklisted");
       if (sess.guru_mode)
         {
-          blacklisted = dwflpp::blacklisted_none;
+          blocklisted = dwflpp::blocklisted_none;
           if (sess.verbose>1)
             clog << _(" but not skipped (guru mode enabled)");
         }
     }
 
-  // This probe point is not blacklisted.
-  return blacklisted;
+  // This probe point is not blocklisted.
+  return blocklisted;
 }
 
 
 void
-dwflpp::build_kernel_blacklist()
+dwflpp::build_kernel_blocklist()
 {
   // We build up the regexps in these strings
 
@@ -4424,7 +4424,7 @@ dwflpp::build_kernel_blacklist()
   blfile += "|arch/.*/kernel/paravirt\\.c";
   blfile += "|.*/include/asm/paravirt\\.h";
 
-  // XXX: it would be nice if these blacklisted functions were pulled
+  // XXX: it would be nice if these blocklisted functions were pulled
   // in dynamically, instead of being statically defined here.
   // Perhaps it could be populated from script files.  A "noprobe
   // kernel.function("...")"  construct might do the trick.
@@ -4545,28 +4545,28 @@ dwflpp::build_kernel_blacklist()
 
   if (sess.verbose > 2)
     {
-      clog << _("blacklist regexps:") << endl;
+      clog << _("blocklist regexps:") << endl;
       clog << "blfn: " << blfn << endl;
       clog << "blfn_ret: " << blfn_ret << endl;
       clog << "blfile: " << blfile << endl;
       clog << "blsection: " << blsection << endl;
     }
 
-  int rc = regcomp (& blacklist_func, blfn.c_str(), REG_NOSUB|REG_EXTENDED);
-  if (rc) throw SEMANTIC_ERROR (_("blacklist_func regcomp failed"));
-  rc = regcomp (& blacklist_func_ret, blfn_ret.c_str(), REG_NOSUB|REG_EXTENDED);
-  if (rc) throw SEMANTIC_ERROR (_("blacklist_func_ret regcomp failed"));
-  rc = regcomp (& blacklist_file, blfile.c_str(), REG_NOSUB|REG_EXTENDED);
-  if (rc) throw SEMANTIC_ERROR (_("blacklist_file regcomp failed"));
-  rc = regcomp (& blacklist_section, blsection.c_str(), REG_NOSUB|REG_EXTENDED);
-  if (rc) throw SEMANTIC_ERROR (_("blacklist_section regcomp failed"));
+  int rc = regcomp (& blocklist_func, blfn.c_str(), REG_NOSUB|REG_EXTENDED);
+  if (rc) throw SEMANTIC_ERROR (_("blocklist_func regcomp failed"));
+  rc = regcomp (& blocklist_func_ret, blfn_ret.c_str(), REG_NOSUB|REG_EXTENDED);
+  if (rc) throw SEMANTIC_ERROR (_("blocklist_func_ret regcomp failed"));
+  rc = regcomp (& blocklist_file, blfile.c_str(), REG_NOSUB|REG_EXTENDED);
+  if (rc) throw SEMANTIC_ERROR (_("blocklist_file regcomp failed"));
+  rc = regcomp (& blocklist_section, blsection.c_str(), REG_NOSUB|REG_EXTENDED);
+  if (rc) throw SEMANTIC_ERROR (_("blocklist_section regcomp failed"));
 
-  blacklist_enabled = true;
+  blocklist_enabled = true;
 }
 
 
 void
-dwflpp::build_user_blacklist()
+dwflpp::build_user_blocklist()
 {
   // We build up the regexps in these strings
 
@@ -4594,30 +4594,30 @@ dwflpp::build_user_blacklist()
 
   if (sess.verbose > 2)
     {
-      clog << _("blacklist regexps:") << endl;
+      clog << _("blocklist regexps:") << endl;
       clog << "blfn: " << blfn << endl;
       clog << "blfn_ret: " << blfn_ret << endl;
       clog << "blfile: " << blfile << endl;
       clog << "blsection: " << blsection << endl;
     }
 
-  int rc = regcomp (& blacklist_func, blfn.c_str(), REG_NOSUB|REG_EXTENDED);
-  if (rc) throw SEMANTIC_ERROR (_("blacklist_func regcomp failed"));
-  rc = regcomp (& blacklist_func_ret, blfn_ret.c_str(), REG_NOSUB|REG_EXTENDED);
-  if (rc) throw SEMANTIC_ERROR (_("blacklist_func_ret regcomp failed"));
-  rc = regcomp (& blacklist_file, blfile.c_str(), REG_NOSUB|REG_EXTENDED);
-  if (rc) throw SEMANTIC_ERROR (_("blacklist_file regcomp failed"));
-  rc = regcomp (& blacklist_section, blsection.c_str(), REG_NOSUB|REG_EXTENDED);
-  if (rc) throw SEMANTIC_ERROR (_("blacklist_section regcomp failed"));
+  int rc = regcomp (& blocklist_func, blfn.c_str(), REG_NOSUB|REG_EXTENDED);
+  if (rc) throw SEMANTIC_ERROR (_("blocklist_func regcomp failed"));
+  rc = regcomp (& blocklist_func_ret, blfn_ret.c_str(), REG_NOSUB|REG_EXTENDED);
+  if (rc) throw SEMANTIC_ERROR (_("blocklist_func_ret regcomp failed"));
+  rc = regcomp (& blocklist_file, blfile.c_str(), REG_NOSUB|REG_EXTENDED);
+  if (rc) throw SEMANTIC_ERROR (_("blocklist_file regcomp failed"));
+  rc = regcomp (& blocklist_section, blsection.c_str(), REG_NOSUB|REG_EXTENDED);
+  if (rc) throw SEMANTIC_ERROR (_("blocklist_section regcomp failed"));
 
-  blacklist_enabled = true;
+  blocklist_enabled = true;
 }
 
 
 string
-dwflpp::get_blacklist_section(Dwarf_Addr addr)
+dwflpp::get_blocklist_section(Dwarf_Addr addr)
 {
-  string blacklist_section;
+  string blocklist_section;
   Dwarf_Addr bias;
   // We prefer dwfl_module_getdwarf to dwfl_module_getelf here,
   // because dwfl_module_getelf can force costly section relocations
@@ -4646,11 +4646,12 @@ dwflpp::get_blacklist_section(Dwarf_Addr addr)
           if (! (offset >= start && offset < end))
             continue;
 
-          blacklist_section = elf_strptr (elf, shstrndx, shdr->sh_name);
+          blocklist_section = elf_strptr (elf, shstrndx, shdr->sh_name);
+
           break;
         }
     }
-  return blacklist_section;
+  return blocklist_section;
 }
 
 

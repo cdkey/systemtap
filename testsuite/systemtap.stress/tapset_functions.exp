@@ -34,24 +34,24 @@ set debugmode 0
 
 set opts "--compatible=2.9"
 
-# Blacklist. Following functions must not be tested:
-set blacklist {}
-lappend blacklist mdelay
-lappend blacklist udelay
+# Blocklist. Following functions must not be tested:
+set blocklist {}
+lappend blocklist mdelay
+lappend blocklist udelay
 # ^ These would cause 'sof lockup' (PR19001).
-lappend blacklist panic
+lappend blocklist panic
 # ^ This would panic the kernel.
-lappend blacklist raise
+lappend blocklist raise
 # ^ This would terminate the test.
-lappend blacklist commit
+lappend blocklist commit
 # ^ It only makes sense to test this one along with others from speculate.stp
 #   tapset. If called alone 'counter' type can't be resolved. But it also doesn't
 #   make much sense to call commit() alone, just like that. Covered by speculate.exp.
-lappend blacklist discard
+lappend blocklist discard
 # ^ Ditto; standalone call to discard() will cause unresolved type : identifier
 #   '_spec_buff' test-covered by speculate.exp.
-lappend blacklist start_stopwatch
-lappend blacklist delete_stopwatch
+lappend blocklist start_stopwatch
+lappend blocklist delete_stopwatch
 # ^ Similar to the above. The *stapwatch functions come from tapset/stopwatch.stp
 #   and are being tested within buildok/stopwatches.stp. standalone call to
 #   delete_stopwatch() will cause unresolved type : identifier
@@ -117,7 +117,7 @@ proc get_fnargtypes { line } {
 
 # Write a probe into a test script
 proc write_probe { fname rtype fargs } {
-    upvar whitelist __whitelist
+    upvar passlist __passlist
     global debugmode
     global probeorder
     global testscript
@@ -203,8 +203,8 @@ foreach line [split $outputv "\n"] {
     set fnargtypes [get_fnargtypes $line]
     set fnargcount [llength $fnargtypes]
     if { $fnargcount == 0 } { continue }
-    if { [lsearch $blacklist $fname] >= 0 } {
-        untested "$test (${fname}() blacklisted)"
+    if { [lsearch $blocklist $fname] >= 0 } {
+        untested "$test (${fname}() blocklisted)"
         continue
     }
     for { set i 0 } { $i < $fnargcount } { incr i } {

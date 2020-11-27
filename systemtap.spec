@@ -1001,7 +1001,7 @@ done
 # ------------------------------------------------------------------------
 
 %files
-# The master "systemtap" rpm doesn't include any files.
+# The main "systemtap" rpm doesn't include any files.
 
 %files server -f systemtap.lang
 %{_bindir}/stap-server
@@ -1269,7 +1269,7 @@ done
 - Upstream release.
 
 * Mon Jul 07 2014 Josh Stone <jistone@redhat.com>
-- Flip with_dyninst to an %%ifarch whitelist.
+- Flip with_dyninst to an %%ifarch passlist.
 
 * Wed Apr 30 2014 Jonathan Lebon <jlebon@redhat.com> - 2.5-1
 - Upstream release.

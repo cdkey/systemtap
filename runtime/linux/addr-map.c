@@ -12,7 +12,7 @@
 #define _STAPLINUX_ADDR_MAP_C_ 1
 
 /** @file addr-map
- * @brief Implements functions used by the deref macro to blacklist
+ * @brief Implements functions used by the deref macro to blocklist
  * certain addresses.
  */
 
@@ -138,7 +138,7 @@ struct addr_map
 };
 
 static STP_DEFINE_RWLOCK(addr_map_lock);
-static struct addr_map* blackmap;
+static struct addr_map* blockmap;
 
 /* Find address of entry where we can insert a new one. */
 static size_t
@@ -236,9 +236,9 @@ lookup_bad_addr(const int type, const unsigned long addr, const size_t size)
     return 1;
 #endif
 
-  /* Search for the given range in the black-listed map.  */
+  /* Search for the given range in the block-listed map.  */
   stp_read_lock_irqsave(&addr_map_lock, flags);
-  result = lookup_addr_aux(addr, size, blackmap);
+  result = lookup_addr_aux(addr, size, blockmap);
   stp_read_unlock_irqrestore(&addr_map_lock, flags);
   if (result)
     return 1;
@@ -265,7 +265,7 @@ add_bad_addr_entry(unsigned long min_addr, unsigned long max_addr,
     {
       size_t old_size = 0;
       stp_write_lock_irqsave(&addr_map_lock, flags);
-      old_map = blackmap;
+      old_map = blockmap;
       if (old_map)
         old_size = old_map->size;
       /* Either this is the first time through the loop, or we
@@ -288,14 +288,14 @@ add_bad_addr_entry(unsigned long min_addr, unsigned long max_addr,
       else
         break;
     }
-  if (!blackmap)
+  if (!blockmap)
     {
       existing = 0;
     }
   else
     {
-      min_entry = lookup_addr_aux(min_addr, 1, blackmap);
-      max_entry = lookup_addr_aux(max_addr, 1, blackmap);
+      min_entry = lookup_addr_aux(min_addr, 1, blockmap);
+      max_entry = lookup_addr_aux(max_addr, 1, blockmap);
       if (min_entry || max_entry)
         {
           if (existing_min)
@@ -319,7 +319,7 @@ add_bad_addr_entry(unsigned long min_addr, unsigned long max_addr,
         memcpy(new_entry + 1, &old_map->entries[existing],
                (old_map->size - existing) * sizeof(*new_entry));
     }
-  blackmap = new_map;
+  blockmap = new_map;
   stp_write_unlock_irqrestore(&addr_map_lock, flags);
   if (old_map)
     _stp_kfree(old_map);

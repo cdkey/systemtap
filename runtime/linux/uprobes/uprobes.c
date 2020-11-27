@@ -449,11 +449,11 @@ static int quiesce_all_threads(struct uprobe_process *uproc,
 			if (utask->tsk == current)
 				*cur_utask_quiescing = utask;
 			else if (utask->state == UPTASK_RUNNING) {
-				utask->quiesce_master = current;
+				utask->quiesce_primary = current;
 				utask_adjust_flags(utask, SET_ENGINE_FLAGS,
 					UTRACE_ACTION_QUIESCE
 					| UTRACE_EVENT(QUIESCE));
-				utask->quiesce_master = NULL;
+				utask->quiesce_primary = NULL;
 			}
 		}
 	}
@@ -1989,7 +1989,7 @@ static u32 uprobe_report_quiesce(struct utrace_attached_engine *engine,
 	if (!uproc)
 		return UTRACE_ACTION_DETACH|UTRACE_ACTION_RESUME;
 
-	if (current == utask->quiesce_master) {
+	if (current == utask->quiesce_primary) {
 		/*
 		 * tsk was already quiescent when quiesce_all_threads()
 		 * called utrace_set_flags(), which in turned called

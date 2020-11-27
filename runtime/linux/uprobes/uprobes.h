@@ -402,7 +402,7 @@ struct uprobe_task {
 	int quiescing;
 
 	/* Task currently running quiesce_all_threads() */
-	struct task_struct *quiesce_master;
+	struct task_struct *quiesce_primary;
 
 	/* Set before running handlers; cleared after single-stepping. */
 	struct uprobe_probept *active_probe;

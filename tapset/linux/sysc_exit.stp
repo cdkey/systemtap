@@ -1,7 +1,7 @@
 # exit _______________________________________________________
 # long sys_exit(int error_code)
 #
-# sys_exit() never returns, and is blacklisted for return probes,
+# sys_exit() never returns, and is blocklisted for return probes,
 # so no alias here.  See bz6588.
 # NB: the explicit .call ensures that alias suffixes can't infer .return
 

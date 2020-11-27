@@ -728,8 +728,8 @@ of writing.  Putting probes indiscriminately into unusually sensitive
 parts of the kernel (low level context switching, interrupt
 dispatching) has reportedly caused crashes in the past.  We are
 fixing these bugs as they are found, and
-constructing a probe point ``blacklist'', but it is not complete.
-\nomenclature{blacklist}{A list of probe point patterns encoded into
+constructing a probe point ``blocklist'', but it is not complete.
+\nomenclature{blocklist}{A list of probe point patterns encoded into
 the translator or the kernel, where probing is prohibited for safety
 reasons.}  \nomenclature{kprobes}{A breakpoint dispatching system for
 dynamic kernel probes, used by systemtap to implement some families of

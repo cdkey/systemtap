@@ -1505,7 +1505,7 @@ dwarf_query::add_probe_point(interned_string dw_funcname,
       clog << " pc=0x" << hex << addr << dec;
     }
 
-  dwflpp::blacklisted_type blacklisted = dw.blacklisted_p (funcname, filename,
+  dwflpp::blocklisted_type blocklisted = dw.blocklisted_p (funcname, filename,
                                                            line, module, addr,
                                                            has_return);
   if (sess.verbose > 1)
@@ -1518,7 +1518,7 @@ dwarf_query::add_probe_point(interned_string dw_funcname,
       reloc_section = "_stext"; // a message to runtime's _stp_module_relocate
     }
 
-  if (!blacklisted)
+  if (!blocklisted)
     {
       sess.unwindsym_modules.insert (module);
 
@@ -1571,27 +1571,27 @@ dwarf_query::add_probe_point(interned_string dw_funcname,
     }
   else
     {
-      switch (blacklisted)
+      switch (blocklisted)
         {
-        case dwflpp::blacklisted_section:
-          sess.print_warning(_F("function %s is in blacklisted section",
+        case dwflpp::blocklisted_section:
+          sess.print_warning(_F("function %s is in blocklisted section",
                                 funcname.to_string().c_str()), base_probe->tok);
           break;
-        case dwflpp::blacklisted_kprobes:
-          sess.print_warning(_F("kprobes function %s is blacklisted",
+        case dwflpp::blocklisted_kprobes:
+          sess.print_warning(_F("kprobes function %s is blocklisted",
                                 funcname.to_string().c_str()), base_probe->tok);
           break;
-        case dwflpp::blacklisted_function_return:
-          sess.print_warning(_F("function %s return probe is blacklisted",
+        case dwflpp::blocklisted_function_return:
+          sess.print_warning(_F("function %s return probe is blocklisted",
                                 funcname.to_string().c_str()), base_probe->tok);
           break;
-        case dwflpp::blacklisted_file:
-          sess.print_warning(_F("function %s is in blacklisted file",
+        case dwflpp::blocklisted_file:
+          sess.print_warning(_F("function %s is in blocklisted file",
                                 funcname.to_string().c_str()), base_probe->tok);
           break;
-        case dwflpp::blacklisted_function:
+        case dwflpp::blocklisted_function:
         default:
-          sess.print_warning(_F("function %s is blacklisted",
+          sess.print_warning(_F("function %s is blocklisted",
                                 funcname.to_string().c_str()), base_probe->tok);
           break;
         }
@@ -1814,7 +1814,7 @@ query_addr(Dwarf_Addr addr, dwarf_query *q)
   addr -= dw.module_bias;
 
   // Per PR5787, we look up the scope die even for
-  // statement_num's, for blacklist sensitivity and $var
+  // statement_num's, for blocklist sensitivity and $var
   // resolution purposes.
 
   // Find the scopes containing this address
@@ -9132,7 +9132,7 @@ symbol_table::lookup_symbol_address(interned_string name)
 // in the kernel symbol table.  Following the precedent of dwarfful stap,
 // we refuse to consider such symbols.  Here we delete them from our
 // symbol table.
-// TODO: Consider generalizing this and/or making it part of blacklist
+// TODO: Consider generalizing this and/or making it part of blocklist
 // processing.
 void
 symbol_table::purge_syscall_stubs()
@@ -10652,7 +10652,7 @@ hwbkpt_derived_probe_group::emit_module_decls (systemtap_session& s)
   s.op->newline() << "#include <linux/hw_breakpoint.h>";
   s.op->newline();
 
-  // Forward declare the master entry functions
+  // Forward declare the main entry functions
   s.op->newline() << "#ifdef STAPCONF_PERF_HANDLER_NMI";
   s.op->newline() << "static void enter_hwbkpt_probe (struct perf_event *bp,";
   s.op->line() << " int nmi,";
@@ -12388,7 +12388,7 @@ tracepoint_query::handle_query_func(Dwarf_Die * func)
   if (!probed_names.insert(tracepoint_instance).second)
     return DWARF_CB_OK;
 
-  // PR17126: blacklist
+  // PR17126: blocklist
   if (!sess.guru_mode)
     {
       if ((sess.architecture.substr(0,3) == "ppc" ||
@@ -12397,7 +12397,7 @@ tracepoint_query::handle_query_func(Dwarf_Die * func)
            tracepoint_instance == "hcall_exit" ||
 	   tracepoint_instance == "hash_fault"))
         {
-          sess.print_warning(_F("tracepoint %s is blacklisted on architecture %s",
+          sess.print_warning(_F("tracepoint %s is blocklisted on architecture %s",
                                 tracepoint_instance.c_str(), sess.architecture.c_str()));
           return DWARF_CB_OK;
         }

@@ -180,9 +180,9 @@ the <systemtap@sourceware.org> mailing list.
   git show # to check that the last commit included all changes
   git pull # to make sure your copy is up to date & merged
   # last minute rebuild; retest
-  git rebase origin/master # clean git commit of merge history
-  git diff origin/master # final visual check
+  git rebase origin/main # clean git commit of merge history
+  git diff origin/main # final visual check
   
     git push # to the central one, if you have access
-OR  git format-patch -s origin/master..
+OR  git format-patch -s origin/main..
         then email the resulting files to the mailing list

@@ -21,7 +21,7 @@ trap 'rm -fr $tmp' 0 1 2 3 5 9 15
 # Notice we're ignoring several tracepoints:
 #  sys_enter_*/sys_exit_*: "virtual" tracepoints unusable by stap
 #  hcall_entry/hcall_exit: ppc64-specific tracepoints that are on the
-#    blacklist
+#    blocklist
 #  ftrace:function: "virtual" tracepoint unusable by stap
 echo gathering perf tracepoint list
 ${PERF-perf} list tracepoint | grep Tracepoint | egrep -v 'sys_(enter|exit)_' \

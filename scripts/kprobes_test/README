@@ -42,16 +42,16 @@ finishes, you'll see the following output files.
   that caused a crash.
 
 
-Here are the original instructions for 'gen_whitelist', which tested
+Here are the original instructions for 'gen_passlist', which tested
 systemtap probe safety.
 
 ====
 
 To start a kprobes test run:
-   runtest whitelist.exp
+   runtest passlist.exp
 
 ----
-Here is an implementation of generating whitelist for safe-mode probes
+Here is an implementation of generating passlist for safe-mode probes
 based on the discussion in former thread
 (http://sourceware.org/ml/systemtap/2006-q3/msg00574.html).
 
@@ -96,7 +96,7 @@ Instructions:
  4) Define the group size for different iteration level by changing 
     proper_current_size() function; otherwise, they will be set in 
     a decreasing order based on the length of probes.all
- 5) Remove /stp_genwhitelist_running if you want to start a test from
+ 5) Remove /stp_genpasslist_running if you want to start a test from
     the beginning after a system crash
  6) Start a test:
-      runtest whitelist.exp
+      runtest passlist.exp

@@ -6,7 +6,7 @@ if {! [installtest_p]} { return }
 # To make sure "sudo stap" works correctly, use the full path.
 set installed_stap "$env(SYSTEMTAP_PATH)/stap"
 
-# We use -w in the stap invocations so that warnings re. blacklisted functions
+# We use -w in the stap invocations so that warnings re. blocklisted functions
 # are not emitted (due to rlimit.stp using a broad wildcard).
 
 # Unlimited

@@ -488,16 +488,16 @@ struct dwflpp
                                    Dwarf_Die *die_mem,
 				   bool lvalue);
 
-  enum blacklisted_type
-    {  blacklisted_none, // not blacklisted
-       blacklisted_section,
-       blacklisted_kprobes,
-       blacklisted_function,
-       blacklisted_function_return,
-       blacklisted_file
+  enum blocklisted_type
+    {  blocklisted_none, // not blocklisted
+       blocklisted_section,
+       blocklisted_kprobes,
+       blocklisted_function,
+       blocklisted_function_return,
+       blocklisted_file
     };
 
-  blacklisted_type blacklisted_p(interned_string funcname,
+  blocklisted_type blocklisted_p(interned_string funcname,
                                  interned_string filename,
                                  int line,
                                  interned_string module,
@@ -675,14 +675,14 @@ private:
   void translate_pointer(location_context &ctx, Dwarf_Die *typedie,
 			 bool lvalue);
 
-  regex_t blacklist_func; // function/statement probes
-  regex_t blacklist_func_ret; // only for .return probes
-  regex_t blacklist_file; // file name
-  regex_t blacklist_section; // init/exit sections
-  bool blacklist_enabled;
-  void build_kernel_blacklist();
-  void build_user_blacklist();
-  std::string get_blacklist_section(Dwarf_Addr addr);
+  regex_t blocklist_func; // function/statement probes
+  regex_t blocklist_func_ret; // only for .return probes
+  regex_t blocklist_file; // file name
+  regex_t blocklist_section; // init/exit sections
+  bool blocklist_enabled;
+  void build_kernel_blocklist();
+  void build_user_blocklist();
+  std::string get_blocklist_section(Dwarf_Addr addr);
 
   // Returns the call frame address operations for the given program counter.
   Dwarf_Op *get_cfa_ops (Dwarf_Addr pc);

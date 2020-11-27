@@ -1896,7 +1896,7 @@ semantic_pass_symbols (systemtap_session& s)
       assert_no_interrupts();
       stapfile* dome = s.files[i];
 
-      // Pass 1: add globals and functions to systemtap-session master list,
+      // Pass 1: add globals and functions to systemtap-session primart list,
       //         so the find_* functions find them
       //
       // NB: tapset global/function definitions may duplicate or conflict
@@ -2959,7 +2959,7 @@ symresolution_info::visit_functioncall (functioncall* e)
     }
 
   // In monitor mode, tapset functions used in the synthetic probe are not resolved and added
-  // to the master list at the same time as the other functions so we must add them here to
+  // to the primary list at the same time as the other functions so we must add them here to
   // allow the translator to generate the functions in the module.
   if (session.monitor && session.functions.find(e->function) == session.functions.end())
     session.functions[e->function] = fds[0]; // no overload
