@@ -735,7 +735,7 @@ static int _stp_build_id_check (struct _stp_module *m,
 	  // we make sure below is really a warning.
           _stp_warn ("Build-id mismatch [man warning::buildid]: \"%s\" pid %ld address "
 		     "%#lx, expected %s actual %s\n",
-                     m->path, (long) tsk->tgid,
+                     m->path, (long) (tsk ? tsk->tgid : 0),
                      notes_addr, hexstring_theory, hexstring_practice);
       return 1;
   }
