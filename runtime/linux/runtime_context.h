@@ -14,7 +14,7 @@
 /* Can't use STP_DEFINE_RWLOCK() or this might be replaced with a spin lock */
 static DEFINE_RWLOCK(_stp_context_lock);
 static DEFINE_PER_CPU(struct context *, contexts);
-static atomic_t _stp_context_stop = ATOMIC_INIT(0);
+static bool _stp_context_stop;
 
 static int _stp_runtime_contexts_alloc(void)
 {
@@ -40,13 +40,12 @@ static int _stp_runtime_contexts_alloc(void)
  * use _stp_context_stop and a write lock to be sure its safe to free them.  */
 static void _stp_runtime_contexts_free(void)
 {
-	unsigned long flags;
 	unsigned int cpu;
 
 	/* Sync to make sure existing readers are done */
-	atomic_set(&_stp_context_stop, 1);
-	write_lock_irqsave(&_stp_context_lock, flags);
-	write_unlock_irqrestore(&_stp_context_lock, flags);
+	write_lock(&_stp_context_lock);
+	_stp_context_stop = true;
+	write_unlock(&_stp_context_lock);
 
 	/* Now we can actually free the contexts */
 	for_each_possible_cpu(cpu)
@@ -55,7 +54,7 @@ static void _stp_runtime_contexts_free(void)
 
 static inline struct context * _stp_runtime_get_context(void)
 {
-	if (atomic_read(&_stp_context_stop))
+	if (_stp_context_stop)
 		return NULL;
 
 	return per_cpu(contexts, smp_processor_id());
@@ -106,7 +105,7 @@ static void _stp_runtime_context_wait(void)
 
 		holdon = 0;
 		read_lock(&_stp_context_lock);
-		if (atomic_read(&_stp_context_stop)) {
+		if (_stp_context_stop) {
 			read_unlock(&_stp_context_lock);
 			break;
 		}
