@@ -11,10 +11,9 @@
 #ifndef _LINUX_RUNTIME_CONTEXT_H_
 #define _LINUX_RUNTIME_CONTEXT_H_
 
-/* Can't use STP_DEFINE_RWLOCK() or this might be replaced with a spin lock */
-static DEFINE_RWLOCK(_stp_context_lock);
+/* Can't use a lock primitive for this because lock_acquire() has tracepoints */
+static atomic_t _stp_contexts_busy_ctr = ATOMIC_INIT(0);
 static DEFINE_PER_CPU(struct context *, contexts);
-static bool _stp_context_stop;
 
 static int _stp_runtime_contexts_alloc(void)
 {
@@ -37,15 +36,14 @@ static int _stp_runtime_contexts_alloc(void)
 
 /* We should be free of all probes by this time, but for example the timer for
  * _stp_ctl_work_callback may still be running and looking for contexts.  We
- * use _stp_context_stop and a write lock to be sure its safe to free them.  */
+ * use _stp_contexts_busy_ctr to be sure its safe to free them.  */
 static void _stp_runtime_contexts_free(void)
 {
 	unsigned int cpu;
 
 	/* Sync to make sure existing readers are done */
-	write_lock(&_stp_context_lock);
-	_stp_context_stop = true;
-	write_unlock(&_stp_context_lock);
+	while (atomic_cmpxchg(&_stp_contexts_busy_ctr, 0, INT_MAX))
+		cpu_relax();
 
 	/* Now we can actually free the contexts */
 	for_each_possible_cpu(cpu)
@@ -54,24 +52,20 @@ static void _stp_runtime_contexts_free(void)
 
 static inline struct context * _stp_runtime_get_context(void)
 {
-	if (_stp_context_stop)
-		return NULL;
-
 	return per_cpu(contexts, smp_processor_id());
 }
 
 static struct context * _stp_runtime_entryfn_get_context(void)
-	__acquires(&_stp_context_lock)
 {
 	struct context* __restrict__ c = NULL;
 
-	if (!read_trylock(&_stp_context_lock))
+	if (!atomic_add_unless(&_stp_contexts_busy_ctr, 1, INT_MAX))
 		return NULL;
 
 	c = _stp_runtime_get_context();
 	if (c != NULL) {
 		if (!atomic_cmpxchg(&c->busy, 0, 1)) {
-			// NB: Notice we're not releasing _stp_context_lock
+			// NB: Notice we're not releasing _stp_contexts_busy_ctr
 			// here. We exepect the calling code to call
 			// _stp_runtime_entryfn_get_context() and
 			// _stp_runtime_entryfn_put_context() as a
@@ -79,16 +73,15 @@ static struct context * _stp_runtime_entryfn_get_context(void)
 			return c;
 		}
 	}
-	read_unlock(&_stp_context_lock);
+	atomic_dec(&_stp_contexts_busy_ctr);
 	return NULL;
 }
 
 static inline void _stp_runtime_entryfn_put_context(struct context *c)
-	__releases(&_stp_context_lock)
 {
 	if (c) {
 		atomic_set(&c->busy, 0);
-		read_unlock(&_stp_context_lock);
+		atomic_dec(&_stp_contexts_busy_ctr);
 	}
 }
 
@@ -104,11 +97,9 @@ static void _stp_runtime_context_wait(void)
 		int i;
 
 		holdon = 0;
-		read_lock(&_stp_context_lock);
-		if (_stp_context_stop) {
-			read_unlock(&_stp_context_lock);
+		if (!atomic_add_unless(&_stp_contexts_busy_ctr, 1, INT_MAX))
 			break;
-		}
+
 		for_each_possible_cpu(i) {
 			struct context *c = per_cpu(contexts, i);
 			if (c != NULL
@@ -124,7 +115,7 @@ static void _stp_runtime_context_wait(void)
 				}
 			}
 		}
-		read_unlock(&_stp_context_lock);
+		atomic_dec(&_stp_contexts_busy_ctr);
 
 		/*
 		 * Just in case things are really really stuck, a
