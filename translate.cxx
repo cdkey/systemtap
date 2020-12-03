@@ -1354,6 +1354,9 @@ c_unparser::emit_compiled_printfs ()
       o->newline() << "unsigned long ptr_value;";
       o->newline() << "int num_bytes;";
 
+      if (print_to_stream)
+	  o->newline() << "unsigned long irqflags;";
+
       o->newline() << "(void) width;";
       o->newline() << "(void) precision;";
       o->newline() << "(void) ptr_value;";
@@ -1452,7 +1455,9 @@ c_unparser::emit_compiled_printfs ()
 	    }
 
 	  o->newline() << "num_bytes = clamp(num_bytes, 0, STP_BUFFER_SIZE);";
-	  o->newline() << "str = (char*)_stp_reserve_bytes(num_bytes);";
+	  o->newline() << "if (!_stp_print_trylock_irqsave(&irqflags))";
+	  o->newline(1) << "return;";
+	  o->newline(-1) << "str = (char*)_stp_reserve_bytes(num_bytes);";
 	  o->newline() << "end = str ? str + num_bytes - 1 : 0;";
         }
       else // !print_to_stream
@@ -1547,8 +1552,14 @@ c_unparser::emit_compiled_printfs ()
 	      o->newline() << "if (unlikely(str == NULL)) {";
 	      o->indent(1);
 	      if (print_to_stream)
+                {
 		  o->newline() << "_stp_unreserve_bytes(num_bytes);";
-	      o->newline() << "return;";
+	          o->newline() << "goto err_unlock;";
+                }
+              else
+                {
+	          o->newline() << "return;";
+                }
 	      o->newline(-1) << "}";
 	      break;
 
@@ -1575,6 +1586,11 @@ c_unparser::emit_compiled_printfs ()
 
       o->newline(-1) << "}";
 
+      if (print_to_stream)
+        {
+          o->newline(-1) << "err_unlock:";
+          o->newline(1) << "_stp_print_unlock_irqrestore(&irqflags);";
+        }
       o->newline(-1) << "}";
     }
   o->newline() << "#endif // STP_LEGACY_PRINT";

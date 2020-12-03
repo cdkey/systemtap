@@ -540,8 +540,8 @@ static void _stp_transport_close(void)
 		   current->pid);
 	_stp_cleanup_and_exit(0);
 	_stp_unregister_ctl_channel();
+	_stp_print_cleanup(); /* Requires the transport, so free this first */
 	_stp_transport_fs_close();
-	_stp_print_cleanup();	/* free print buffers */
 	_stp_mem_debug_done();
 
 	dbug_trans(1, "---- CLOSED ----\n");

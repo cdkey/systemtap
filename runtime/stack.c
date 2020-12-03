@@ -690,13 +690,20 @@ static void _stp_stack_kernel_sprint(char *str, int size, struct context* c,
 	 * then call _stp_stack_print,
 	 * then copy the result into the output string
 	 * and clear the print buffer. */
-	_stp_pbuf *pb = per_cpu_ptr(Stp_pbuf, smp_processor_id());
-	_stp_print_flush();
+	struct _stp_log *log;
+	unsigned long flags;
 
+	if (!_stp_print_trylock_irqsave(&flags)) {
+		*str = '\0';
+		return;
+	}
+
+	log = per_cpu_ptr(_stp_log_pcpu, raw_smp_processor_id());
+	__stp_print_flush(log);
 	_stp_stack_kernel_print(c, sym_flags);
-
-	strlcpy(str, pb->buf, size < (int)pb->len ? size : (int)pb->len);
-	pb->len = 0;
+	strlcpy(str, log->buf, min_t(int, size, log->len));
+	log->len = 0;
+	_stp_print_unlock_irqrestore(&flags);
 }
 
 static void _stp_stack_user_sprint(char *str, int size, struct context* c,
@@ -707,13 +714,20 @@ static void _stp_stack_user_sprint(char *str, int size, struct context* c,
 	 * then call _stp_stack_print,
 	 * then copy the result into the output string
 	 * and clear the print buffer. */
-	_stp_pbuf *pb = per_cpu_ptr(Stp_pbuf, smp_processor_id());
-	_stp_print_flush();
+	struct _stp_log *log;
+	unsigned long flags;
 
+	if (!_stp_print_trylock_irqsave(&flags)) {
+		*str = '\0';
+		return;
+	}
+
+	log = per_cpu_ptr(_stp_log_pcpu, raw_smp_processor_id());
+	__stp_print_flush(log);
 	_stp_stack_user_print(c, sym_flags);
-
-	strlcpy(str, pb->buf, size < (int)pb->len ? size : (int)pb->len);
-	pb->len = 0;
+	strlcpy(str, log->buf, min_t(int, size, log->len));
+	log->len = 0;
+	_stp_print_unlock_irqrestore(&flags);
 }
 
 #endif /* _STACK_C_ */

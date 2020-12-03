@@ -13,40 +13,31 @@
  * is filled, or this is called. This MUST be called before returning
  * from a probe or accumulated output in the print buffer will be lost.
  *
- * @note Preemption must be disabled to use this.
+ * @note Interrupts must be disabled to use this.
  */
 
-static STP_DEFINE_SPINLOCK(_stp_print_lock);
-
-void stp_print_flush(_stp_pbuf *pb)
+static void __stp_print_flush(struct _stp_log *log)
 {
-	size_t len = pb->len;
+	size_t len = log->len;
 	void *entry = NULL;
 
 	/* check to see if there is anything in the buffer */
 	if (likely(len == 0))
 		return;
 
-	pb->len = 0;
-
-	if (unlikely(_stp_transport_get_state() != STP_TRANSPORT_RUNNING))
-		return;
+	log->len = 0;
 
 	dbug_trans(1, "len = %zu\n", len);
 
 #ifdef STP_BULKMODE
 #ifdef NO_PERCPU_HEADERS
 	{
-		struct context* __restrict__ c = NULL;
-		char *bufp = pb->buf;
+		char *bufp = log->buf;
 		int inode_locked;
-
-		c = _stp_runtime_entryfn_get_context();
 
 		if (!(inode_locked = _stp_transport_trylock_relay_inode())) {
 			atomic_inc (&_stp_transport_failures);
 #ifndef STP_TRANSPORT_RISKY
-			_stp_runtime_entryfn_put_context(c);
 			return;
 #endif
 		}
@@ -70,26 +61,20 @@ void stp_print_flush(_stp_pbuf *pb)
 
 		if (inode_locked)
 			_stp_transport_unlock_relay_inode();
-
-		_stp_runtime_entryfn_put_context(c);
 	}
 
 #else  /* !NO_PERCPU_HEADERS */
 
 	{
-		struct context* __restrict__ c = NULL;
-		char *bufp = pb->buf;
+		char *bufp = log->buf;
 		struct _stp_trace t = {	.sequence = _stp_seq_inc(),
 					.pdu_len = len};
 		size_t bytes_reserved;
 		int inode_locked;
 
-		c = _stp_runtime_entryfn_get_context();
-
 		if (!(inode_locked = _stp_transport_trylock_relay_inode())) {
 			atomic_inc (&_stp_transport_failures);
 #ifndef STP_TRANSPORT_RISKY
-			_stp_runtime_entryfn_put_context(c);
 			return;
 #endif
 		}
@@ -124,48 +109,24 @@ void stp_print_flush(_stp_pbuf *pb)
 
 		if (inode_locked)
 			_stp_transport_unlock_relay_inode();
-
-		_stp_runtime_entryfn_put_context(c);
 	}
 #endif /* !NO_PERCPU_HEADERS */
 
 #else  /* !STP_BULKMODE */
 
 	{
-		unsigned long flags;
-		struct context* __restrict__ c = NULL;
-		char *bufp = pb->buf;
+		char *bufp = log->buf;
 		int inode_locked;
-
-		/* Prevent probe reentrancy on _stp_print_lock.
-		 *
-		 * Since stp_print_flush may be called from probe context, we
-		 * have to make sure that its lock, _stp_print_lock, can't
-		 * possibly be held outside probe context too.  We ensure this
-		 * by grabbing the context here, so any probe triggered by this
-		 * region will appear reentrant and be skipped rather than
-		 * deadlock.  Failure to get_context just means we're already
-		 * in a probe, which is fine.
-		 *
-		 * (see also _stp_ctl_send for a similar situation)
-                 *
-                 * A better solution would be to replace this
-                 * concurrency-control-laden effort with a lockless
-                 * algorithm.
-		 */
-		c = _stp_runtime_entryfn_get_context();
 
 		if (!(inode_locked = _stp_transport_trylock_relay_inode())) {
 			atomic_inc (&_stp_transport_failures);
 #ifndef STP_TRANSPORT_RISKY
 			dbug_trans(0, "discarding %zu bytes of data\n", len);
-			_stp_runtime_entryfn_put_context(c);
 			return;
 #endif
 		}
 
 		dbug_trans(1, "calling _stp_data_write...\n");
-		stp_spin_lock_irqsave(&_stp_print_lock, flags);
 		while (len > 0) {
 			size_t bytes_reserved;
 
@@ -182,12 +143,9 @@ void stp_print_flush(_stp_pbuf *pb)
 			    break;
 			}
 		}
-		stp_spin_unlock_irqrestore(&_stp_print_lock, flags);
 
 		if (inode_locked)
 			_stp_transport_unlock_relay_inode();
-
-		_stp_runtime_entryfn_put_context(c);
 	}
 #endif /* !STP_BULKMODE */
 }

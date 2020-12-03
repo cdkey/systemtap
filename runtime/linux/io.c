@@ -20,9 +20,6 @@
 
 #define WARN_STRING "WARNING: "
 #define ERR_STRING "ERROR: "
-#if (STP_LOG_BUF_LEN < 10) /* sizeof(WARN_STRING) */
-#error "STP_LOG_BUF_LEN is too short"
-#endif
 
 enum code { INFO=0, WARN, ERROR, DBUG };
 
@@ -31,25 +28,37 @@ static void _stp_vlog (enum code type, const char *func, int line, const char *f
 
 static void _stp_vlog (enum code type, const char *func, int line, const char *fmt, va_list args)
 {
+	struct _stp_log *log;
+	unsigned long flags;
+	size_t bytes_avail;
 	int num;
-	char *buf = per_cpu_ptr(Stp_lbuf, get_cpu());
+	char *buf;
 	int start = 0;
 
+	if (!_stp_print_trylock_irqsave(&flags))
+		return;
+
+	log = per_cpu_ptr(_stp_log_pcpu, raw_smp_processor_id());
+	bytes_avail = STP_BUFFER_SIZE - log->len;
+	if (unlikely(!bytes_avail))
+		goto err_unlock;
+
+	buf = &log->buf[log->len];
 	if (type == DBUG) {
-		start = _stp_snprintf(buf, STP_LOG_BUF_LEN, "%s:%d: ", func, line);
+		start = _stp_snprintf(buf, bytes_avail, "%s:%d: ", func, line);
 	} else if (type == WARN) {
-		/* This strcpy() is OK, since we know STP_LOG_BUF_LEN
-		 * is > sizeof(WARN_STRING). */
-		strcpy (buf, WARN_STRING);
-		start = sizeof(WARN_STRING) - 1;
+		strncpy(buf, WARN_STRING, bytes_avail);
+		start = min(bytes_avail, sizeof(WARN_STRING) - 1);
 	} else if (type == ERROR) {
-		/* This strcpy() is OK, since we know STP_LOG_BUF_LEN
-		 * is > sizeof(ERR_STRING) (which is < sizeof(WARN_STRING). */
-		strcpy (buf, ERR_STRING);
-		start = sizeof(ERR_STRING) - 1;
+		strncpy(buf, ERR_STRING, bytes_avail);
+		start = min(bytes_avail, sizeof(ERR_STRING) - 1);
 	}
 
-	num = vscnprintf (buf + start, STP_LOG_BUF_LEN - start - 1, fmt, args);
+	bytes_avail -= start;
+	if (unlikely(!bytes_avail))
+		goto err_unlock;
+
+	num = vscnprintf(buf + start, bytes_avail - 1, fmt, args);
 	if (num + start) {
 		if (buf[num + start - 1] != '\n') {
 			buf[num + start] = '\n';
@@ -66,12 +75,13 @@ static void _stp_vlog (enum code type, const char *func, int line, const char *f
 		if (type != DBUG) {
 			_stp_ctl_send(STP_OOB_DATA, buf, start + num + 1);
 		} else {
-			_stp_print(buf);
-			_stp_print_flush();
+			log->len += start + num;
+			__stp_print_flush(log);
 		}
 #endif
 	}
-	put_cpu();
+err_unlock:
+	_stp_print_unlock_irqrestore(&flags);
 }
 
 /** Prints warning.

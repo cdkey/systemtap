@@ -542,6 +542,8 @@ _stp_vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
 				   number of chars for from string */
 	int qualifier;		/* 'h', 'l', or 'L' for integer fields */
 	int num_bytes = 0;
+	unsigned long irqflags = 0;
+	bool got_print_lock = false;
 
 	/* Reject out-of-range values early */
 	if (unlikely((int) size < 0))
@@ -724,11 +726,14 @@ _stp_vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
 	    num_bytes = STP_BUFFER_SIZE;
 	  }
 
+	  if (!_stp_print_trylock_irqsave(&irqflags))
+	    return 0;
 	  str = (char*)_stp_reserve_bytes(num_bytes);
 	  if (str == NULL) {
 	    _stp_error("Couldn't reserve any print buffer space\n");
-	    return 0;
+	    goto err_unlock;
 	  }
+	  got_print_lock = true;
 	  size = num_bytes;
 	  end = str + size - 1;
 
@@ -820,8 +825,10 @@ _stp_vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
 					field_width, precision,
 					*fmt, flags);
 			if (unlikely(str == NULL)) {
-				if (num_bytes > 0)
+				if (num_bytes > 0) {
 					_stp_unreserve_bytes(num_bytes);
+					goto err_unlock;
+				}
 				return 0;
 			}
 			continue;
@@ -923,7 +930,14 @@ _stp_vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
                   /* don't write out a null byte if the buf size is zero */
                   *end = '\0';
 	}
+
+	if (got_print_lock)
+		_stp_print_unlock_irqrestore(&irqflags);
 	return str-buf;
+
+err_unlock:
+	_stp_print_unlock_irqrestore(&irqflags);
+	return 0;
 }
 
 #endif /* _VSPRINTF_C_ */

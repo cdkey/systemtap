@@ -10,6 +10,9 @@
 #ifndef _STP_PRINT_H_
 #define _STP_PRINT_H_
 
+/* The lock must be held with IRQs disabled to do any printing */
+static bool _stp_print_trylock_irqsave(unsigned long *flags);
+static void _stp_print_unlock_irqrestore(unsigned long *flags);
 static int _stp_print_init(void);
 static void _stp_print_cleanup(void);
 static void *_stp_reserve_bytes(int numbytes);
