@@ -87,6 +87,15 @@ __stp_tf_vma_new_entry(void)
 	return entry;
 }
 
+#ifndef kfree_rcu
+static void __stp_tf_vma_free_entry(struct rcu_head *rcu)
+{
+	struct __stp_tf_vma_entry *entry = container_of(rcu, typeof(*entry), rcu);
+
+	kfree(entry);
+}
+#endif
+
 // __stp_tf_vma_put_entry(): Put a specified number of references on the entry.
 static void
 __stp_tf_vma_put_entry(struct __stp_tf_vma_bucket *bucket,
@@ -106,7 +115,11 @@ __stp_tf_vma_put_entry(struct __stp_tf_vma_bucket *bucket,
 	hlist_del_rcu(&entry->hlist);
 	stp_spin_unlock_irqrestore(&bucket->lock, flags);
 
+#ifdef kfree_rcu
 	kfree_rcu(entry, rcu);
+#else
+	call_rcu(&entry->rcu, __stp_tf_vma_free_entry);
+#endif
 }
 
 // stap_initialize_vma_map():  Initialize the free list.  Grabs the

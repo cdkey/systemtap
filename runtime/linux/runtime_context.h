@@ -34,6 +34,24 @@ static int _stp_runtime_contexts_alloc(void)
 	return 0;
 }
 
+static bool _stp_runtime_context_trylock(void)
+{
+	bool locked;
+
+	preempt_disable();
+	locked = atomic_add_unless(&_stp_contexts_busy_ctr, 1, INT_MAX);
+	if (!locked)
+		preempt_enable_no_resched();
+
+	return locked;
+}
+
+static void _stp_runtime_context_unlock(void)
+{
+	atomic_dec(&_stp_contexts_busy_ctr);
+	preempt_enable_no_resched();
+}
+
 /* We should be free of all probes by this time, but for example the timer for
  * _stp_ctl_work_callback may still be running and looking for contexts.  We
  * use _stp_contexts_busy_ctr to be sure its safe to free them.  */
@@ -59,7 +77,7 @@ static struct context * _stp_runtime_entryfn_get_context(void)
 {
 	struct context* __restrict__ c = NULL;
 
-	if (!atomic_add_unless(&_stp_contexts_busy_ctr, 1, INT_MAX))
+	if (!_stp_runtime_context_trylock())
 		return NULL;
 
 	c = _stp_runtime_get_context();
@@ -73,7 +91,7 @@ static struct context * _stp_runtime_entryfn_get_context(void)
 			return c;
 		}
 	}
-	atomic_dec(&_stp_contexts_busy_ctr);
+	_stp_runtime_context_unlock();
 	return NULL;
 }
 
@@ -81,7 +99,7 @@ static inline void _stp_runtime_entryfn_put_context(struct context *c)
 {
 	if (c) {
 		atomic_set(&c->busy, 0);
-		atomic_dec(&_stp_contexts_busy_ctr);
+		_stp_runtime_context_unlock();
 	}
 }
 
@@ -97,7 +115,7 @@ static void _stp_runtime_context_wait(void)
 		int i;
 
 		holdon = 0;
-		if (!atomic_add_unless(&_stp_contexts_busy_ctr, 1, INT_MAX))
+		if (!_stp_runtime_context_trylock())
 			break;
 
 		for_each_possible_cpu(i) {
@@ -115,7 +133,7 @@ static void _stp_runtime_context_wait(void)
 				}
 			}
 		}
-		atomic_dec(&_stp_contexts_busy_ctr);
+		_stp_runtime_context_unlock();
 
 		/*
 		 * Just in case things are really really stuck, a
