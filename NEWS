@@ -1,3 +1,5 @@
+* What's new in version 4.5
+
 * What's new in version 4.4, 2020-11-09
 
 - Make syscall arguments writable again in non-DWARF probes on kernels
