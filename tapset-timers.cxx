@@ -391,11 +391,11 @@ hrtimer_derived_probe_group::emit_module_refresh (systemtap_session& s)
   s.op->newline(+1) <<   "struct stap_hrtimer_probe* stp = &stap_hrtimer_probes[i];";
   // timer disabled, but condition says enabled?
   s.op->newline( 0) <<   "if (!stp->enabled && stp->probe->cond_enabled) {";
-  s.op->newline(+1) <<     "dbug_otf(\"enabling (hrtimer) pidx %zu\\n\", stp->probe->index);";
+  s.op->newline(+1) <<     "//dbug_otf(\"enabling (hrtimer) pidx %zu\\n\", stp->probe->index);";
   s.op->newline( 0) <<     "_stp_hrtimer_start(stp);";
   // timer enabled, but condition says disabled?
   s.op->newline(-1) <<   "} else if (stp->enabled && !stp->probe->cond_enabled) {";
-  s.op->newline(+1) <<     "dbug_otf(\"disabling (hrtimer) pidx %zu\\n\", stp->probe->index);";
+  s.op->newline(+1) <<     "//dbug_otf(\"disabling (hrtimer) pidx %zu\\n\", stp->probe->index);";
   s.op->newline( 0) <<     "_stp_hrtimer_cancel(stp);";
   s.op->newline(-1) <<   "}";
   s.op->newline( 0) <<   "stp->enabled = stp->probe->cond_enabled;";
