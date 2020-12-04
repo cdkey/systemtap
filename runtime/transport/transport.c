@@ -21,7 +21,7 @@
 #include <linux/namei.h>
 #include <linux/delay.h>
 #include <linux/mutex.h>
-#ifdef CONFIG_SECURITY_LOCKDOWN_LSM
+#ifdef STAPCONF_LOCKDOWN_DEBUGFS
 #include <linux/security.h>
 #endif
 #include "../uidgid_compatibility.h"
