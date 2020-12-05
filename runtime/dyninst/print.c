@@ -107,4 +107,18 @@ static void _stp_print_char (const char c)
 	}
 }
 
+
+/* no-op stub synchronization */
+static bool _stp_print_trylock_irqsave(unsigned long *flags)
+{
+        (void) flags;
+        return true;
+}
+
+static void _stp_print_unlock_irqrestore(unsigned long *flags)
+{
+        (void) flags;
+}
+
+
 #endif /* _STAPDYN_PRINT_C_ */

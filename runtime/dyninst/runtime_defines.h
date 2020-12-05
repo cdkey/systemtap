@@ -7,3 +7,6 @@
 #define STAPCONF_PAGEFAULT_DISABLE  1
 #define pagefault_disable()
 #define pagefault_enable()
+
+typedef int bool;
+enum { false=0, true=1 };
