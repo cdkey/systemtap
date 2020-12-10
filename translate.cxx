@@ -2969,21 +2969,21 @@ c_unparser::emit_probe (derived_probe* v)
         {
           // PR26296
           // emit all read/write locks for global variables ... if somehow still not done by now
+          // emit a local out: label, for error catching in these condition exprs
+          o->newline() << "{";
+          o->newline(1) << "__label__ out, deref_fault;";
           if (v->needs_global_locks ())
             emit_lock ();
 
           for (set<derived_probe*>::const_iterator
-                it  = v->probes_with_affected_conditions.begin();
-                it != v->probes_with_affected_conditions.end(); ++it)
+                 it  = v->probes_with_affected_conditions.begin();
+               it != v->probes_with_affected_conditions.end(); ++it)
             {
-              // emit a local out: label, for error catching in these condition exprs
-              o->newline() << "{";
-              o->newline(1) << "__label__ out, deref_fault;";
               emit_probe_condition_update(*it);
-              o->newline(-1) << "deref_fault: __attribute__((unused));";
-              o->newline() << "out: __attribute__((unused));";
-              o->newline() << "}";
             }
+          o->newline(-1) << "deref_fault: __attribute__((unused));";
+          o->newline() << "out: __attribute__((unused));";
+          o->newline() << "}";
         }
 
       // PR26296
