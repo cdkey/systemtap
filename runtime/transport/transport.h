@@ -99,24 +99,6 @@ enum _stp_transport_state {
 static enum _stp_transport_state _stp_transport_get_state(void);
 
 /*
- * _stp_transport_trylock_relay_inode
- *
- * This function locks the relay file inode to protect against relay readers
- * (i.e., staprun/stapio).
- * Returns whether the lock is successfully obtained.
- */
-static noinline int _stp_transport_trylock_relay_inode(void);
-
-/*
- * _stp_transport_unlock_relay_inode
- *
- * This function releases the lock obtained by
- * _stp_transport_trylock_relay_inode.
- * should only call this when the lock is indeed obtained.
- */
-static void _stp_transport_unlock_relay_inode(void);
-
-/*
  * _stp_transport_data_fs_init
  *
  * This function allocates any buffers needed, creates files,

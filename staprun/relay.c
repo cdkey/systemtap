@@ -131,6 +131,7 @@ static void *reader_thread(void *data)
 	sigset_t sigs;
 	off_t wsize = 0;
 	int fnum = 0;
+	cpu_set_t cpu_mask;
 
 	sigemptyset(&sigs);
 	sigaddset(&sigs,SIGUSR2);
@@ -139,21 +140,18 @@ static void *reader_thread(void *data)
 	sigfillset(&sigs);
 	sigdelset(&sigs,SIGUSR2);
 
-	if (bulkmode) {
-		cpu_set_t cpu_mask;
-		CPU_ZERO(&cpu_mask);
-		CPU_SET(cpu, &cpu_mask);
-		if( sched_setaffinity( 0, sizeof(cpu_mask), &cpu_mask ) < 0 )
-			_perr("sched_setaffinity");
+	CPU_ZERO(&cpu_mask);
+	CPU_SET(cpu, &cpu_mask);
+	if( sched_setaffinity( 0, sizeof(cpu_mask), &cpu_mask ) < 0 )
+		_perr("sched_setaffinity");
 #ifdef NEED_PPOLL
-		/* Without a real ppoll, there is a small race condition that could */
-		/* block ppoll(). So use a timeout to prevent that. */
-		timeout->tv_sec = 10;
-		timeout->tv_nsec = 0;
+	/* Without a real ppoll, there is a small race condition that could */
+	/* block ppoll(). So use a timeout to prevent that. */
+	timeout->tv_sec = 10;
+	timeout->tv_nsec = 0;
 #else
-		timeout = NULL;
+	timeout = NULL;
 #endif
-	}
 
         if (reader_timeout_ms && timeout) {
                 timeout->tv_sec = reader_timeout_ms / 1000;
@@ -356,11 +354,6 @@ int init_relayfs(void)
 
 	if (ncpus == 0) {
 		_err("couldn't open %s.\n", buf);
-		return -1;
-	}
-	if (ncpus > 1 && bulkmode == 0) {
-		_err("ncpus=%d, bulkmode = %d\n", ncpus, bulkmode);
-		_err("This is inconsistent! Please file a bug report. Exiting now.\n");
 		return -1;
 	}
 

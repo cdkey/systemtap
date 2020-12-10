@@ -18,6 +18,7 @@
 
 static void __stp_print_flush(struct _stp_log *log)
 {
+	char *bufp = log->buf;
 	size_t len = log->len;
 	void *entry = NULL;
 
@@ -26,126 +27,20 @@ static void __stp_print_flush(struct _stp_log *log)
 		return;
 
 	log->len = 0;
-
 	dbug_trans(1, "len = %zu\n", len);
-
-#ifdef STP_BULKMODE
-#ifdef NO_PERCPU_HEADERS
-	{
-		char *bufp = log->buf;
-		int inode_locked;
-
-		if (!(inode_locked = _stp_transport_trylock_relay_inode())) {
-			atomic_inc (&_stp_transport_failures);
-#ifndef STP_TRANSPORT_RISKY
-			return;
-#endif
-		}
-
-		while (len > 0) {
-			size_t bytes_reserved;
-
-			bytes_reserved = _stp_data_write_reserve(len, &entry);
-			if (likely(entry && bytes_reserved > 0)) {
-				memcpy(_stp_data_entry_data(entry), bufp,
-				       bytes_reserved);
-				_stp_data_write_commit(entry);
-				bufp += bytes_reserved;
-				len -= bytes_reserved;
-			}
-			else {
-				atomic_inc(&_stp_transport_failures);
-				break;
-			}
-		}
-
-		if (inode_locked)
-			_stp_transport_unlock_relay_inode();
-	}
-
-#else  /* !NO_PERCPU_HEADERS */
-
-	{
-		char *bufp = log->buf;
-		struct _stp_trace t = {	.sequence = _stp_seq_inc(),
-					.pdu_len = len};
+	do {
 		size_t bytes_reserved;
-		int inode_locked;
 
-		if (!(inode_locked = _stp_transport_trylock_relay_inode())) {
-			atomic_inc (&_stp_transport_failures);
-#ifndef STP_TRANSPORT_RISKY
-			return;
-#endif
-		}
-
-		bytes_reserved = _stp_data_write_reserve(sizeof(struct _stp_trace), &entry);
-		if (likely(entry && bytes_reserved > 0)) {
-			/* prevent unaligned access by using memcpy() */
-			memcpy(_stp_data_entry_data(entry), &t, sizeof(t));
+		bytes_reserved = _stp_data_write_reserve(len, &entry);
+		if (likely(entry && bytes_reserved)) {
+			memcpy(_stp_data_entry_data(entry), bufp,
+			       bytes_reserved);
 			_stp_data_write_commit(entry);
-		}
-		else {
+			bufp += bytes_reserved;
+			len -= bytes_reserved;
+		} else {
 			atomic_inc(&_stp_transport_failures);
-			goto done;
+			break;
 		}
-
-		while (len > 0) {
-			bytes_reserved = _stp_data_write_reserve(len, &entry);
-			if (likely(entry && bytes_reserved > 0)) {
-				memcpy(_stp_data_entry_data(entry), bufp,
-				       bytes_reserved);
-				_stp_data_write_commit(entry);
-				bufp += bytes_reserved;
-				len -= bytes_reserved;
-			}
-			else {
-				atomic_inc(&_stp_transport_failures);
-				break;
-			}
-		}
-
-	done:
-
-		if (inode_locked)
-			_stp_transport_unlock_relay_inode();
-	}
-#endif /* !NO_PERCPU_HEADERS */
-
-#else  /* !STP_BULKMODE */
-
-	{
-		char *bufp = log->buf;
-		int inode_locked;
-
-		if (!(inode_locked = _stp_transport_trylock_relay_inode())) {
-			atomic_inc (&_stp_transport_failures);
-#ifndef STP_TRANSPORT_RISKY
-			dbug_trans(0, "discarding %zu bytes of data\n", len);
-			return;
-#endif
-		}
-
-		dbug_trans(1, "calling _stp_data_write...\n");
-		while (len > 0) {
-			size_t bytes_reserved;
-
-			bytes_reserved = _stp_data_write_reserve(len, &entry);
-			if (likely(entry && bytes_reserved > 0)) {
-				memcpy(_stp_data_entry_data(entry), bufp,
-				       bytes_reserved);
-				_stp_data_write_commit(entry);
-				bufp += bytes_reserved;
-				len -= bytes_reserved;
-			}
-			else {
-			    atomic_inc(&_stp_transport_failures);
-			    break;
-			}
-		}
-
-		if (inode_locked)
-			_stp_transport_unlock_relay_inode();
-	}
-#endif /* !STP_BULKMODE */
+	} while (len > 0);
 }
