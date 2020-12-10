@@ -552,6 +552,8 @@ static void _stp_transport_close(void)
  */
 static int _stp_transport_init(void)
 {
+	int ret;
+
 	dbug_trans(1, "transport_init\n");
 #ifdef STAPCONF_TASK_UID
 	_stp_uid = current->uid;
@@ -603,20 +605,28 @@ static int _stp_transport_init(void)
 		dbug_trans(1, "Using %d subbufs of size %d\n", _stp_nsubbufs, _stp_subbuf_size);
 	}
 
-	if (_stp_transport_fs_init(THIS_MODULE->name) != 0)
+	ret = _stp_transport_fs_init(THIS_MODULE->name);
+	if (ret)
 		goto err0;
 
 	/* create control channel */
-	if (_stp_register_ctl_channel() < 0)
+	ret = _stp_register_ctl_channel();
+	if (ret < 0)
 		goto err1;
 
 	/* create print buffers */
-	if (_stp_print_init() < 0)
+	ret = _stp_print_init();
+	if (ret < 0) {
+		errk("%s: can't create print buffers!", THIS_MODULE->name);
 		goto err2;
+	}
 
 	/* set _stp_module_self dynamic info */
-	if (_stp_module_update_self() < 0)
+	ret = _stp_module_update_self();
+	if (ret < 0) {
+		errk("%s: can't update dynamic info!", THIS_MODULE->name);
 		goto err3;
+	}
 
 	/* start transport */
 	_stp_transport_data_fs_start();
@@ -639,7 +649,7 @@ err2:
 err1:
 	_stp_transport_fs_close();
 err0:
-	return -1;
+	return ret;
 }
 
 static inline void _stp_lock_inode(struct inode *inode)

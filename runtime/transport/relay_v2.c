@@ -277,6 +277,7 @@ static int _stp_transport_data_fs_init(void)
 #endif  /* (RELAYFS_CHANNEL_VERSION < 7) */
 	if (!_stp_relay_data.rchan) {
 		rc = -ENOENT;
+		errk("%s: relay_open() failed: %d\n", THIS_MODULE->name, rc);
 		goto err;
 	}
         /* Increment _stp_allocated_memory and _stp_allocated_net_memory to account for buffers
