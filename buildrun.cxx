@@ -1,5 +1,5 @@
 // build/run probes
-// Copyright (C) 2005-2019 Red Hat Inc.
+// Copyright (C) 2005-2020 Red Hat Inc.
 //
 // This file is part of systemtap, and is free software.  You can
 // redistribute it and/or modify it under the terms of the GNU General
@@ -242,6 +242,10 @@ compile_dyninst (systemtap_session& s)
     cmd.push_back("-march=i586");
 
   cmd.push_back("-Wno-pragmas");
+  // unlike kernel build, --dyninst builds with WERROR
+  // which can flag some runtime constructs
+  cmd.push_back("-Wno-pointer-sign");
+  cmd.push_back("-Wno-format");
 
   for (size_t i = 0; i < s.c_macros.size(); ++i)
     cmd.push_back("-D" + s.c_macros[i]);

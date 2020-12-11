@@ -195,23 +195,23 @@ function _stp_arg2:long (argnum:long, sign_extend:long, truncate:long,
           /* NB: kread() is probably unnecessary paranoia w.r.t. the sregs pointer. */
           if (is_32bit) switch (STAP_ARG_argnum) {
             /* SC_IA32_REGS_TO_ARGS / SC_X86_64_REGS_TO_ARGS */
-            case 1: valptr = &(regs->bx); break;
-            case 2: valptr = &(regs->cx); break;
-            case 3: valptr = &(regs->dx); break;
-            case 4: valptr = &(regs->si); break;
-            case 5: valptr = &(regs->di); break;
-            case 6: valptr = &(regs->bp); break;
+	    case 1: valptr = &(RREG(bx, regs)); break;
+	    case 2: valptr = &(RREG(cx, regs)); break;
+	    case 3: valptr = &(RREG(dx, regs)); break;
+	    case 4: valptr = &(RREG(si, regs)); break;
+	    case 5: valptr = &(RREG(di, regs)); break;
+	    case 6: valptr = &(RREG(bp, regs)); break;
             default:
               goto bad_argnum;
           }
           else switch (STAP_ARG_argnum) {
             /* SC_IA32_REGS_TO_ARGS / SC_X86_64_REGS_TO_ARGS */
-            case 1: valptr = &(regs->di); break;
-            case 2: valptr = &(regs->si); break;
-            case 3: valptr = &(regs->dx); break;
-            case 4: valptr = &(regs->r10); break;
-            case 5: valptr = &(regs->r8); break;
-            case 6: valptr = &(regs->r9); break;
+	    case 1: valptr = &(RREG(di, regs)); break;
+	    case 2: valptr = &(RREG(si, regs)); break;
+	    case 3: valptr = &(RREG(dx, regs)); break;
+	    case 4: valptr = &(regs->r10); break;
+	    case 5: valptr = &(regs->r8); break;
+	    case 6: valptr = &(regs->r9); break;
             default:
               goto bad_argnum;
           }
@@ -327,19 +327,19 @@ function _stp_get_arg_ptr:long (argnum:long) %{
         regs = CONTEXT->sregs;
 
 	if (is_32bit) switch (STAP_ARG_argnum) {
-            case 1: regptr = &(regs->bx); break;
-            case 2: regptr = &(regs->cx); break;
-            case 3: regptr = &(regs->dx); break;
-            case 4: regptr = &(regs->si); break;
-            case 5: regptr = &(regs->di); break;
-            case 6: regptr = &(regs->bp); break;
+            case 1: regptr = &(RREG(bx, regs)); break;
+	    case 2: regptr = &(RREG(cx, regs)); break;
+	    case 3: regptr = &(RREG(dx, regs)); break;
+	    case 4: regptr = &(RREG(si, regs)); break;
+	    case 5: regptr = &(RREG(di, regs)); break;
+	    case 6: regptr = &(RREG(bp, regs)); break;
             default:
               goto bad_argnum;
 	}
 	else switch (STAP_ARG_argnum) {
-            case 1: regptr = &(regs->di); break;
-            case 2: regptr = &(regs->si); break;
-            case 3: regptr = &(regs->dx); break;
+            case 1: regptr = &(RREG(di, regs)); break;
+	    case 2: regptr = &(RREG(si, regs)); break;
+	    case 3: regptr = &(RREG(dx, regs)); break;
             case 4: regptr = &(regs->r10); break;
             case 5: regptr = &(regs->r8); break;
             case 6: regptr = &(regs->r9); break;
