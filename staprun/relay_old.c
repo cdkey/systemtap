@@ -14,12 +14,12 @@
 #include "staprun.h"
 
 /* temporary per-cpu output written here for relayfs, filebase0...N */
-static int relay_fd[NR_CPUS];
-static int proc_fd[NR_CPUS];
-static FILE *percpu_tmpfile[NR_CPUS];
-static char *relay_buffer[NR_CPUS];
-static pthread_t reader[NR_CPUS];
-static int switch_file[NR_CPUS];
+static int relay_fd[MAX_NR_CPUS];
+static int proc_fd[MAX_NR_CPUS];
+static FILE *percpu_tmpfile[MAX_NR_CPUS];
+static char *relay_buffer[MAX_NR_CPUS];
+static pthread_t reader[MAX_NR_CPUS];
+static int switch_file[MAX_NR_CPUS];
 static int bulkmode = 0;
 unsigned subbuf_size = 0;
 unsigned n_subbufs = 0;
@@ -37,7 +37,7 @@ static struct buf_status
 {
 	struct _stp_buf_info info;
 	unsigned max_backlog; /* max # sub-buffers ready at one time */
-} status[NR_CPUS];
+} status[MAX_NR_CPUS];
 
 
 /**
@@ -461,7 +461,13 @@ int init_oldrelayfs(void)
 	relay_fd[0] = -1;
 	out_fd[0] = 0;
 
-	for (i = 0; i < NR_CPUS; i++) {
+        int nprocs = get_nprocs_conf();
+        if (nprocs > MAX_NR_CPUS) {
+                err("Too many CPUs: get_nprocs_conf()=%d vs MAX_NR_CPUS=%d\n", nprocs, MAX_NR_CPUS);
+                goto err;
+        }
+        
+	for (i = 0; i < nprocs; i++) {
 		int ret = open_relayfs_files(i, relay_filebase, proc_filebase);
 		if (ret == 0)
 			break;
@@ -472,7 +478,8 @@ int init_oldrelayfs(void)
 	}
 
 	ncpus = i;
-	dbug(2, "ncpus=%d\n", ncpus);
+        /* ncpus could be smaller than nprocs if some cpus are offline */
+	dbug(2, "ncpus=%d, nprocs=%d\n", ncpus, nprocs);
 
 	if (ncpus == 0) {
 		err("Couldn't open relayfs files.\n");

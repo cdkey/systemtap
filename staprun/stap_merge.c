@@ -31,15 +31,15 @@ static void usage (char *prog)
 }
 
 #define TIMESTAMP_SIZE (sizeof(int))
-#define NR_CPUS 256
+#define MAX_NR_CPUS 1024
 
 int main (int argc, char *argv[])
 {
 	char *buf, *outfile_name = NULL;
 	int c, i, j, rc, dropped=0;
-	long count=0, min, num[NR_CPUS] = { 0 };
+	long count=0, min, num[MAX_NR_CPUS] = { 0 };
 	FILE *ofp = NULL;
-	FILE *fp[NR_CPUS] = { 0 };
+	FILE *fp[MAX_NR_CPUS] = { 0 };
 	int ncpus, len, verbose = 0;
 	int bufsize = 65536;
 
@@ -67,6 +67,10 @@ int main (int argc, char *argv[])
 
 	i = 0;
 	while (optind < argc) {
+                if (i >= MAX_NR_CPUS) {
+                        fprintf(stderr, "too many files (MAX_NR_CPUS=%d)\n", MAX_NR_CPUS);
+			return -1;
+		}                  
 		fp[i] = fopen(argv[optind++], "r");
 		if (!fp[i]) {
 			fprintf(stderr, "error opening file %s.\n", argv[optind - 1]);

@@ -37,6 +37,7 @@
 #include <sys/wait.h>
 #include <sys/statfs.h>
 #include <syslog.h>
+#include <sys/sysinfo.h>
 
 /* Include config.h to pick up dependency for --prefix usage. */
 #include "../config.h"
@@ -285,10 +286,10 @@ extern int optopt;
 extern int optind;
 
 /* maximum number of CPUs we can handle */
-#define NR_CPUS 256
+#define MAX_NR_CPUS 1024
 
 /* relay*.c uses these */
-extern int out_fd[NR_CPUS];
+extern int out_fd[MAX_NR_CPUS];
 
 /* relay_old uses these. Set in ctl.c */
 extern unsigned subbuf_size;

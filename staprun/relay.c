@@ -12,16 +12,16 @@
 
 #include "staprun.h"
 
-int out_fd[NR_CPUS];
+int out_fd[MAX_NR_CPUS];
 int monitor_end = 0;
-static pthread_t reader[NR_CPUS];
-static int relay_fd[NR_CPUS];
-static int avail_cpus[NR_CPUS];
-static int switch_file[NR_CPUS];
-static pthread_mutex_t mutex[NR_CPUS];
+static pthread_t reader[MAX_NR_CPUS];
+static int relay_fd[MAX_NR_CPUS];
+static int avail_cpus[MAX_NR_CPUS];
+static int switch_file[MAX_NR_CPUS];
+static pthread_mutex_t mutex[MAX_NR_CPUS];
 static int bulkmode = 0;
 static volatile int stop_threads = 0;
-static time_t *time_backlog[NR_CPUS];
+static time_t *time_backlog[MAX_NR_CPUS];
 static int backlog_order=0;
 #define BACKLOG_MASK ((1 << backlog_order) - 1)
 #define MONITORLINELENGTH 4096
@@ -313,12 +313,19 @@ int init_relayfs(void)
 	if (send_request(STP_BULK, rqbuf, sizeof(rqbuf)) == 0)
 		bulkmode = 1;
 
-	/* Try to open a slew of per-cpu trace%d files.  Per PR19241, we
-	   need to go through all potentially present CPUs up to NR_CPUS, that
-	   we hope is a reasonable limit.  For !bulknode, "trace0" will be
-	   typically used. */
+	/* Try to open a slew of per-cpu trace%d files.  Per PR19241,
+	   we need to go through all potentially present CPUs up to
+	   get_nprocs_conf(), up to MAX_NR_CPUS (used for array
+	   allocations).  For !bulknode, "trace0" will be typically
+	   used, prior to systemtap 4.5; after, all are used. */
 
-	for (i = 0; i < NR_CPUS; i++) {
+        int nprocs = get_nprocs_conf();
+        if (nprocs > MAX_NR_CPUS) {
+                err("Too many CPUs: get_nprocs_conf()=%d vs MAX_NR_CPUS=%d\n", nprocs, MAX_NR_CPUS);
+                return -1;
+        }
+        
+	for (i = 0; i < nprocs; i++) {
                 relay_fd[i] = -1;
 
 #ifdef HAVE_OPENAT
@@ -348,7 +355,8 @@ int init_relayfs(void)
 		}
 	}
 	ncpus = cpui;
-	dbug(2, "ncpus=%d, bulkmode = %d\n", ncpus, bulkmode);
+        /* ncpus could be smaller than nprocs if some cpus are offline */
+	dbug(2, "ncpus=%d, nprocs=%d, bulkmode=%d\n", ncpus, nprocs, bulkmode);
 	for (i = 0; i < ncpus; i++)
 		dbug(2, "cpui=%d, relayfd=%d\n", i, avail_cpus[i]);
 
