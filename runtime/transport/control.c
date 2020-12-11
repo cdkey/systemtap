@@ -88,6 +88,9 @@ static ssize_t _stp_ctl_write_cmd(struct file *file, const char __user *buf, siz
 		break;
 
 	case STP_BULK:
+                // NB: this signals the runtime to save separate
+                // per-cpu files; our kernel->userspace files are now
+                // always bulkmode (trace$N files).
 #ifdef STP_BULKMODE
                 // no action needed
                 break;
