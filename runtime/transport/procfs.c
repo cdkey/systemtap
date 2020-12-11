@@ -328,13 +328,8 @@ __stp_procfs_relay_create_buf_file_callback(const char *filename,
   unsigned i = 0;
   struct inode* in;
   
-  if (is_global) {
-#ifdef STP_BULKMODE
+  if (is_global)
           *is_global = 0;
-#else
-          *is_global = 1;
-#endif
-  }
   
   if (parent != _stp_procfs_module_dir_path.dentry)
     goto out;

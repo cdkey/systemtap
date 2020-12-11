@@ -256,13 +256,8 @@ __stp_debugfs_relay_create_buf_file_callback(const char *filename,
 	 * cause relay_open() to create a single global buffer rather
 	 * than the default set of per-cpu buffers.
 	 */
-	if (is_global) {
-#ifdef STP_BULKMODE
+	if (is_global)
 		*is_global = 0;
-#else
-		*is_global = 1;
-#endif
-	}
 
 	if (IS_ERR(file)) {
 		file = NULL;
