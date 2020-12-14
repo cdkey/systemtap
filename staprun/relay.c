@@ -232,10 +232,17 @@ static void *reader_thread(void *data)
 					wbuf += bytes;
 					wsize += bytes;
 				} else {
-	                                rc = write(out_fd[cpu], wbuf, wbytes);
+					int fd;
+					/* Only bulkmode and fsize_max use per-cpu output files. Otherwise,
+					   there's just a single output fd stored at out_fd[avail_cpus[0]]. */
+					if (bulkmode || fsize_max)
+						fd = out_fd[cpu];
+					else
+						fd = out_fd[avail_cpus[0]];
+	                                rc = write(fd, wbuf, wbytes);
 	                                if (rc <= 0) {
 						perr("Couldn't write to output %d for cpu %d, exiting.",
-	                                             out_fd[cpu], cpu);
+	                                             fd, cpu);
 	                                        goto error_out;
 	                                }
 	                                wbytes -= rc;
