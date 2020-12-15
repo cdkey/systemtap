@@ -1,5 +1,5 @@
 // bpf translation pass
-// Copyright (C) 2016-2019 Red Hat Inc.
+// Copyright (C) 2016-2020 Red Hat Inc.
 //
 // This file is part of systemtap, and is free software.  You can
 // redistribute it and/or modify it under the terms of the GNU General
@@ -818,8 +818,10 @@ spill(unsigned reg, unsigned num_spills, program &p)
   unsigned nblocks = p.blocks.size();
   value *frame = p.lookup_reg(BPF_REG_10);
 
-  // reg's stack offset.
+  // Reserve reg's stack offset.
   int off = BPF_REG_SIZE * (num_spills + 1) + p.max_tmp_space;
+  if (off > (int)p.max_reg_space)
+    p.max_reg_space = (unsigned)off;
 
   // Ensure double word alignment.
   if (off % BPF_REG_SIZE)
@@ -1009,6 +1011,20 @@ zero_stack(program &p)
     p.mk_st(ins, BPF_W, frame, (int32_t)ofs, p.new_imm(0));
 }
 
+// XXX: Also zero the spilled registers that are loaded but not saved.
+// This is a degenerate case but it happens on some programs with the
+// current register allocator:
+void
+zero_spilled(program &p)
+{
+  block *entry_block = p.blocks[0];
+  insn_before_inserter ins(entry_block, entry_block->first, "zero_spilled");
+  value *frame = p.lookup_reg(BPF_REG_10);
+  for (int32_t ofs = -(int32_t)p.max_reg_space;
+       ofs < -(int32_t)p.max_tmp_space; ofs += 4)
+    p.mk_st(ins, BPF_W, frame, (int32_t)ofs, p.new_imm(0));
+}
+
 void
 program::generate()
 {
@@ -1024,6 +1040,7 @@ program::generate()
   fold_jumps(*this);
   reorder_blocks(*this);
   reg_alloc(*this);
+  zero_spilled(*this);
   post_alloc_cleanup(*this);
 
 #ifdef DEBUG_CODEGEN

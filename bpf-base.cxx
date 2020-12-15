@@ -1,5 +1,5 @@
 // bpf translation pass
-// Copyright (C) 2016-2019 Red Hat Inc.
+// Copyright (C) 2016-2020 Red Hat Inc.
 //
 // This file is part of systemtap, and is free software.  You can
 // redistribute it and/or modify it under the terms of the GNU General
@@ -592,7 +592,8 @@ insn_after_inserter::insert(insn *p)
 }
 
 program::program(enum bpf_target target)
-  : target(target), hardreg_vals(MAX_BPF_REG), max_tmp_space(0)
+  : target(target), hardreg_vals(MAX_BPF_REG),
+    max_tmp_space(0), max_reg_space(0)
 {
   for (unsigned i = 0; i < MAX_BPF_REG; ++i)
     hardreg_vals[i] = value::mk_hardreg(i);

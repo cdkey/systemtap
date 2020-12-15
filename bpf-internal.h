@@ -357,6 +357,11 @@ struct program
     assert(max_tmp_space <= MAX_BPF_STACK(target));
   }
 
+  // After register allocation, record the lowest offset actually
+  // used for spills. Then [-max_reg_space, -512] will be
+  // the unused portion of the stack.
+  unsigned max_reg_space;
+
   void mk_ld(insn_inserter &ins, int sz, value *dest, value *base, int off);
   void mk_st(insn_inserter &ins, int sz, value *base, int off, value *src);
   void mk_unary(insn_inserter &ins, opcode op, value *dest, value *src);
