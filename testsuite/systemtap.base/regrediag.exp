@@ -1,0 +1,11 @@
+set test "regrewarning"
+
+spawn stap -p2 $srcdir/$subdir/$test.stp
+set msgs 0
+expect {
+    -re {semantic error:[^\r\n]*\r\n} { incr msgs; exp_continue }
+    eof { }
+}
+catch { close }; catch { wait }
+
+if { $msgs == 2 } then { pass $test } else { fail "$test $msgs" }

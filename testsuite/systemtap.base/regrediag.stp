@@ -1,0 +1,14 @@
+global a;
+
+function f() {
+    a = "blamefche";
+}
+
+function g() {
+    a = 32;
+}
+
+probe begin {
+    g();
+    f();
+}
