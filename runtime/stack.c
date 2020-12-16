@@ -702,8 +702,6 @@ static void _stp_stack_kernel_sprint(char *str, int size, struct context* c,
 	log = per_cpu_ptr(_stp_log_pcpu, raw_smp_processor_id());
 	__stp_print_flush(log);
 	_stp_stack_kernel_print(c, sym_flags);
-	if ((sym_flags & _STP_SYM_POST_SPACE) && log->buf[log->len - 1] == ' ')
-		log->len--;
 	bytes = min_t(int, size - 1, log->len);
 	memcpy(str, log->buf, bytes);
 	str[bytes] = '\0';
@@ -731,8 +729,6 @@ static void _stp_stack_user_sprint(char *str, int size, struct context* c,
 	log = per_cpu_ptr(_stp_log_pcpu, raw_smp_processor_id());
 	__stp_print_flush(log);
 	_stp_stack_user_print(c, sym_flags);
-	if ((sym_flags & _STP_SYM_POST_SPACE) && log->buf[log->len - 1] == ' ')
-		log->len--;
 	bytes = min_t(int, size - 1, log->len);
 	memcpy(str, log->buf, bytes);
 	str[bytes] = '\0';
