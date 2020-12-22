@@ -163,7 +163,8 @@ global BIO_READ = 0, BIO_WRITE = 1
  * Context:
  *  The process makes block I/O request
  */
-probe ioblock.request = kernel.function ("generic_make_request")
+probe ioblock.request = kernel.function ("submit_bio_noacct")!,
+    kernel.function ("generic_make_request")
 {
 	name = "ioblock.request"
         devname = __bio_devname($bio)
