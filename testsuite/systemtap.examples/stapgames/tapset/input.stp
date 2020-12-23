@@ -6,7 +6,7 @@
 # later version.
 
 
-probe game.input = kernel.function("input_event") {
+probe game.input = kernel.function("input_event").call {
   type = $type
   code = $code
   value = $value
