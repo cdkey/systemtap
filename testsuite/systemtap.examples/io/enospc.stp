@@ -66,6 +66,7 @@ probe {kernel,module("xfs")}.function("xfs_vn_fallocate").return ?
 probe {kernel,module("btrfs")}.function("btrfs_check_data_free_space").return ?
 {
 	if (-28 == $return)
-          warnlog("btrfs", @entry($inode->i_sb->s_dev));
+          warnlog("btrfs", (@defined(@entry($inode->root))?
+			    @entry($inode->root->fs_info->sb->s_dev):
+			    @entry($inode->i_sb->s_dev)));
 }
-
