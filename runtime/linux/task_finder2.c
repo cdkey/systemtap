@@ -150,6 +150,7 @@ __stp_tf_task_worker_fn(struct task_work *work)
 	 * workers for this task.
 	 */
 	__stp_tf_task_work_free(work);
+	stp_task_work_func_done();
 }
 
 static void
@@ -1066,11 +1067,8 @@ __stp_tf_clone_worker(struct task_work *work)
 
 	might_sleep();
 	if (atomic_read(&__stp_task_finder_state) != __STP_TF_RUNNING
-	    || current->flags & PF_EXITING) {
-		/* Remember that this task_work_func is finished. */
-		stp_task_work_func_done();
+	    || current->flags & PF_EXITING)
 		return;
-	}
 
 	__stp_tf_handler_start();
 
@@ -1085,10 +1083,6 @@ __stp_tf_clone_worker(struct task_work *work)
 	}
 
 	__stp_tf_handler_end();
-
-	/* Remember that this task_work_func is finished. */
-	stp_task_work_func_done();
-	return;
 }
 
 
@@ -1392,11 +1386,8 @@ __stp_tf_quiesce_worker(struct task_work *work)
 
 	might_sleep();
 	if (atomic_read(&__stp_task_finder_state) != __STP_TF_RUNNING
-	    || current->flags & PF_EXITING) {
-		/* Remember that this task_work_func is finished. */
-		stp_task_work_func_done();
+	    || current->flags & PF_EXITING)
 		return;
-	}
 
         /* If we had a build-id based executable probe (so we have a
          * tgt->build_id) set, we could not check it back in
@@ -1420,8 +1411,6 @@ __stp_tf_quiesce_worker(struct task_work *work)
                           (long) current->tgid, ok);
                 if (!ok) {
                         // stap_utrace_detach (current, & tgt->ops);
-                        /* Remember that this task_work_func is finished. */
-                        stp_task_work_func_done();
                         return;
                 }
         } 
@@ -1444,10 +1433,6 @@ __stp_tf_quiesce_worker(struct task_work *work)
 	__stp_call_callbacks(tgt, current, 1, (current->pid == current->tgid));
 
 	__stp_tf_handler_end();
-
-	/* Remember that this task_work_func is finished. */
-	stp_task_work_func_done();
-	return;
 }
 
 static u32
@@ -1614,18 +1599,12 @@ __stp_tf_mmap_worker(struct task_work *work)
 
 	// See if we can find saved syscall info.
 	entry = __stp_tf_get_map_entry(current);
-	if (entry == NULL) {
-		/* Remember that this task_work_func is finished. */
-		stp_task_work_func_done();
+	if (entry == NULL)
 		return;
-	}
 
 	if (atomic_read(&__stp_task_finder_state) != __STP_TF_RUNNING
 	    || current->flags & PF_EXITING) {
 		__stp_tf_remove_map_entry(entry);
-
-		/* Remember that this task_work_func is finished. */
-		stp_task_work_func_done();
 		return;
 	}
 
@@ -1650,10 +1629,6 @@ __stp_tf_mmap_worker(struct task_work *work)
 	__stp_tf_remove_map_entry(entry);
 
 	__stp_tf_handler_end();
-
-	/* Remember that this task_work_func is finished. */
-	stp_task_work_func_done();
-	return;
 }
 
 static u32
