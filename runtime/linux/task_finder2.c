@@ -226,10 +226,22 @@ static void __stp_tf_cancel_all_task_work(void)
 	// Cancel all remaining requests.
 	stp_spin_lock_irqsave(&__stp_tf_task_work_list_lock, flags);
 	list_for_each_entry_safe(node, tmp, &__stp_tf_task_work_list, list) {
-		if (stp_task_work_cancel(node->task, node->work.func)) {
-			list_del(&node->list);
-			_stp_kfree(node);
-		}
+		struct __stp_tf_task_work *tf_work;
+		struct task_work *work;
+
+		work = stp_task_work_cancel(node->task, node->work.func);
+		if (!work)
+			continue;
+
+		/*
+		 * There can be multiple queued task workers with the same
+		 * worker func, so there's no guarantee that tf_work == node.
+		 * Therefore, we can only free what stp_task_work_cancel() just
+		 * gave us; freeing 'node' would be unsafe.
+		 */
+		tf_work = container_of(work, typeof(*tf_work), work);
+		list_del(&tf_work->list);
+		_stp_kfree(tf_work);
 	}
 	stp_spin_unlock_irqrestore(&__stp_tf_task_work_list_lock, flags);
 }
