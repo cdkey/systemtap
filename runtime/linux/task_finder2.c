@@ -225,6 +225,7 @@ static void __stp_tf_cancel_all_task_work(void)
 
 	// Cancel all remaining requests.
 	stp_spin_lock_irqsave(&__stp_tf_task_work_list_lock, flags);
+restart:
 	list_for_each_entry_safe(node, tmp, &__stp_tf_task_work_list, list) {
 		struct __stp_tf_task_work *tf_work;
 		struct task_work *work;
@@ -242,6 +243,21 @@ static void __stp_tf_cancel_all_task_work(void)
 		tf_work = container_of(work, typeof(*tf_work), work);
 		list_del(&tf_work->list);
 		_stp_kfree(tf_work);
+
+		/*
+		 * If the tf_work we just freed was the next node in the list,
+		 * then we need to restart the list iteration because
+		 * list_for_each_entry_safe() can't cope with the next node
+		 * being freed. We still need to use list_for_each_entry_safe()
+		 * because we need to get through one successful pass through
+		 * the entire list, since it's not guaranteed that this list
+		 * will be empty when this function exits, as there can still be
+		 * active task workers running, which is fine since the
+		 * stp_task_work API will wait for all task workers to finish
+		 * before allowing the module to unload.
+		 */
+		if (tf_work == tmp)
+			goto restart;
 	}
 	stp_spin_unlock_irqrestore(&__stp_tf_task_work_list_lock, flags);
 }
