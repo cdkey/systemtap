@@ -3,7 +3,7 @@
 function printlnfp(a) { println(fp_to_string(a,5)) }
 
 probe process("stap").function("sdt_benchmark_thread") {
-    a = user_long($fpointer)
+    a = $fp1
     b = string_to_fp("3.14")
     c = long_to_fp(2)
    

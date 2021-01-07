@@ -375,11 +375,11 @@ setup_signals (sighandler_t handler)
 
 
 static void
-sdt_benchmark_thread(unsigned long i, double *fpointer, float *fpointer2)
+sdt_benchmark_thread(unsigned long i, double fp1, float fp2)
 {
   PROBE(stap, benchmark__thread__start);
-  *fpointer += 0.0;
-  *fpointer2 += 0.0;
+  fp1 += 0.0;
+  fp2 += 0.0;
   while (i--)
     PROBE1(stap, benchmark, i);
   PROBE(stap, benchmark__thread__end);
@@ -408,7 +408,7 @@ run_sdt_benchmark(systemtap_session& s)
       double f = 2.71828;
       float f2 = 1.41421;
       for (unsigned long i = 0; i < threads; ++i)
-        handles.push_back(thread(sdt_benchmark_thread, loops, &f, &f2));
+        handles.push_back(thread(sdt_benchmark_thread, loops, f, f2));
       for (unsigned long i = 0; i < threads; ++i)
         handles[i].join();
     }

@@ -98,7 +98,15 @@
 #define pt_dwarf_register_13(regs) regs->r13
 #define pt_dwarf_register_14(regs) regs->r14
 #define pt_dwarf_register_15(regs) regs->r15
-#define pt_regs_maxno 15
+#define pt_dwarf_register_17(regs) ({uint64_t v; __asm__ __volatile__("movq %%xmm0, %0" : "=r"(v)); v;})
+#define pt_dwarf_register_18(regs) ({uint64_t v; __asm__ __volatile__("movq %%xmm1, %0" : "=r"(v)); v;})
+#define pt_dwarf_register_19(regs) ({uint64_t v; __asm__ __volatile__("movq %%xmm2, %0" : "=r"(v)); v;})
+#define pt_dwarf_register_20(regs) ({uint64_t v; __asm__ __volatile__("movq %%xmm3, %0" : "=r"(v)); v;})
+#define pt_dwarf_register_21(regs) ({uint64_t v; __asm__ __volatile__("movq %%xmm4, %0" : "=r"(v)); v;})
+#define pt_dwarf_register_22(regs) ({uint64_t v; __asm__ __volatile__("movq %%xmm5, %0" : "=r"(v)); v;})
+#define pt_dwarf_register_23(regs) ({uint64_t v; __asm__ __volatile__("movq %%xmm6, %0" : "=r"(v)); v;})
+#define pt_dwarf_register_24(regs) ({uint64_t v; __asm__ __volatile__("movq %%xmm7, %0" : "=r"(v)); v;})
+#define pt_regs_maxno 24
   
 #elif defined __i386__
 

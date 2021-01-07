@@ -3969,16 +3969,6 @@ dwflpp::translate_final_fetch_or_store (location_context &ctx,
                            dwarf_type_name(typedie).c_str()), e->tok));
 	      }
 
-	    if (encoding == DW_ATE_float
-	        || encoding == DW_ATE_complex_float
-	        /* XXX || many others? */)
-	      {
-		throw (SEMANTIC_ERROR
-		       (_F("unsupported type (encoding %s) for %s",
-			   lex_cast(encoding).c_str(),
-			   dwarf_type_name(typedie).c_str()), e->tok));
-	      }
-
 	    signed_p = (encoding == DW_ATE_signed
 			|| encoding == DW_ATE_signed_char);
 	  }
