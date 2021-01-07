@@ -51,7 +51,11 @@ __stp_show_stack (unsigned long sp, unsigned long low,
 		sp = regs->gprs[15];
 	}
 }
- 
+
+#ifndef ASYNC_SIZE
+#define ASYNC_SIZE (PAGE_SIZE << 2)
+#endif
+
 static void __stp_stack_print (struct pt_regs *regs,
 			       int verbose, int levels)
 {
