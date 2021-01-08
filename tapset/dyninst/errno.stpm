@@ -1,0 +1,3 @@
+@define errno %(
+    @var("errno","/lib64/libc.so.6")
+%)

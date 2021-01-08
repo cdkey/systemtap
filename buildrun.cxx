@@ -230,7 +230,8 @@ compile_dyninst (systemtap_session& s)
       "-fvisibility=hidden", "-O2", "-I" + s.runtime_path, "-D__DYNINST__",
       "-Wall", WERROR, "-Wno-unused", "-Wno-strict-aliasing",
       "-Wno-pointer-to-int-cast", "-Wno-int-to-pointer-cast",
-      "-pthread", "-lrt", "-fPIC", "-shared",
+      "-Wno-pragmas", "-Wno-pointer-sign", "-Wno-format",
+      "-pthread", "-lrt", "-ldw", "-fPIC", "-shared",
     };
 
   // BZ855981/948279.  Since dyninst/runtime.h includes __sync_* calls,
@@ -240,12 +241,6 @@ compile_dyninst (systemtap_session& s)
   // nowhere.  We hack around this problem thusly:
   if (s.architecture == "i386")
     cmd.push_back("-march=i586");
-
-  cmd.push_back("-Wno-pragmas");
-  // unlike kernel build, --dyninst builds with WERROR
-  // which can flag some runtime constructs
-  cmd.push_back("-Wno-pointer-sign");
-  cmd.push_back("-Wno-format");
 
   for (size_t i = 0; i < s.c_macros.size(); ++i)
     cmd.push_back("-D" + s.c_macros[i]);

@@ -11,7 +11,7 @@ set x_flags "$x_flags additional_flags=-g"
 set x_flags "$x_flags additional_flags=-fPIC"
 set x_flags "$x_flags additional_flags=-lpthread"
 
-# static tls variables
+# static tls variables setup
 
 set so1_sopath "[pwd]/libtls1.so"
 set res0 [target_compile $srcdir/$subdir/tls1_.c $so1_sopath \
@@ -27,22 +27,7 @@ if {$res0 != "" || $res != ""} {
     pass "$test compiling tls1"
 }
 
-set ok 0
-spawn $stap_path -g -c $x1_exepath $srcdir/$subdir/tls1.stp $so1_sopath IGNORE
-expect {
-    -timeout 180
-    -re {In Stap increase_tls: tls1=0x[23] tls2=0x[34]} { incr ok; exp_continue }
-    -re {In Stap.*: tls=99} { incr ok; exp_continue }
-    eof { }
-    }
-    catch {close}; catch {wait}
-if {$ok == 3} {
-    pass "$test local tls vars"
-} else {
-    fail "$test local tls vars ($ok)"
-}
-
-# extern tls variables
+# extern tls variables setup
 
 set so2_sopath "[pwd]/libtls2.so"
 set so3_sopath "[pwd]/libtls3.so"
@@ -65,54 +50,90 @@ if { $res0 != "" || $res != "" } {
     pass "$test compiling -shared"
 }
 
-set ok 0
-spawn $stap_path -g -c $x2_exepath $srcdir/$subdir/tls1.stp $so2_sopath $so3_sopath
-expect {
-    -timeout 180
-    -re {In Stap worker: tls1=0x[23] tls2=0x[34]\r\n} { incr ok; exp_continue }
-    -re {In Stap increase_tls: tls1=0x[23] tls2=0x[34]\r\n} { incr ok; exp_continue }
-    eof { }
-    }
-    catch {close}; catch {wait}
-if {$ok == 4} {
-    pass "$test ext tls vars"
-} else {
-    fail "$test ext tls vars ($ok)"
-}
-
-# Check errno
+# errno setup
 
 set errno_exepath "[pwd]/tlserrno.x"
 set res [target_compile $srcdir/$subdir/tlserrno.c $errno_exepath \
-	     executable "-g" ]
+	     executable $x_flags ]
 if {$res != ""} {
     fail "$test compiling tlserrno"
     return
 } else {
     pass "$test compiling tls1errno"
 }
+set libc_path [exec sh -c "ldd tlserrno.x | grep libc.so | awk '{print \$3}'"]
 
-spawn $stap_path  -e "probe process(\"/lib64/libc.so.6\").function(\"*stat*\").return { printf(\"errno=%d %s\\n\", @var(\"errno@errno.c\"),errno_str(@var(\"errno@errno.c\"))) }" -c "/usr/bin/ls /file/does/not/exist"
-expect {
-    -timeout 180
-    -re {errno=2 (ENOENT)} { incr ok; exp_continue }
-    eof { }
+foreach runtime [get_runtime_list] {
+    if {$runtime != ""} {
+	set test_type "$test ($runtime)"
+    } else {
+	set runtime "kernel"
+	set test_type $test
+    }
+
+    set ok 0
+    spawn $stap_path --runtime=$runtime -g -c $x1_exepath $srcdir/$subdir/tls1.stp $so1_sopath IGNORE
+    expect {
+	-timeout 180
+	-re {In Stap(()| increase_tls): (tls1=0x[23] tls2=0x[34]|tls=99)} { incr ok; exp_continue }
+	eof { }
     }
     catch {close}; catch {wait}
-if {$ok >= 1} {
-    pass "$test errno"
-} else {
-    fail "$test errno ($ok)"
-}
+    if {$ok == 3} {
+	pass "$test_type local tls vars"
+    } else {
+	fail "$test_type local tls vars ($ok/3)"
+    }
 
-spawn $stap_path -e "probe process(\"tlserrno.x\").function(\"main\").return {println (\"In Stap errno=\",@errno)" -c $errno_exepath {
-    -timeout 180
-    -re {In Stap errno=2} { incr ok; exp_continue }
-    eof { }
+    # extern tls variables
+
+    set ok 0
+    spawn $stap_path --runtime=$runtime -g -c $x2_exepath $srcdir/$subdir/tls1.stp $so2_sopath $so3_sopath
+    expect {
+	-timeout 180
+	-re {In Stap (worker|increase_tls): tls1=0x[23] tls2=0x[34]\r\n} { incr ok; exp_continue }
+	eof { }
     }
     catch {close}; catch {wait}
-if {$ok >= 1} {
-    pass "$test @errno"
-} else {
-    fail "$test @errno ($ok)"
+    if {$ok == 4} {
+	pass "$test_type ext tls vars"
+    } else {
+	fail "$test_type ext tls vars ($ok/4)"
+    }
+
+    # Check errno
+
+    set ok 0
+    spawn $stap_path --runtime=$runtime  -e "probe process(\"$libc_path\").function(\"*stat*\").return { printf(\"errno=%d %s\\n\", @var(\"errno@errno.c\"),errno_str(@var(\"errno@errno.c\"))) }" -c "/usr/bin/ls /file/does/not/exist"
+    expect {
+	-timeout 180
+	-re {errno=2 (ENOENT)} { incr ok; exp_continue }
+	eof { }
+    }
+    catch {close}; catch {wait}
+    if {$ok >= 1} {
+	pass "$test_type errno"
+    } elseif {$runtime == "dyninst"} {
+	xfail "$test_type errno ($ok/>=1)"
+    } else {
+	fail "$test_type errno ($ok/>=1)"
+    }
+
+    set ok 0
+    spawn $stap_path --runtime=$runtime -e "probe process(\"$errno_exepath\").function(\"main\").return {println (\"In Stap errno=\",@errno) }" -c "$errno_exepath"
+
+    if {$runtime == "dyninst"} {
+	setup_kfail 15387 "*-*-*"
+    }
+    expect {
+	-timeout 180
+	-re {In Stap errno=2} { incr ok; exp_continue }
+	eof { }
+    }
+    catch {close}; catch {wait}
+    if {$ok >= 1} {
+	pass "$test_type @errno"
+    } else {
+	fail "$test_type @errno ($ok/>=1)"
+    }
 }

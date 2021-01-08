@@ -108,6 +108,9 @@ static void _stp_print_char (const char c)
 }
 
 
+/* libdw includes stdbool.h which defines bool as _Bool which clashes with
+ * stap definition of _stp_print_trylock_irqsave. */
+#undef bool
 /* no-op stub synchronization */
 static bool _stp_print_trylock_irqsave(unsigned long *flags)
 {

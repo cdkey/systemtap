@@ -1730,7 +1730,9 @@ embeddedcode_info::examine (Embeddish e, const token *tok)
         clog << _F("Turning on task_finder vma_tracker, pragma:vma found in %s",
 		   current_function->unmangled_name.to_string().c_str()) << endl;
 
-      // PR15052: stapdyn doesn't have VMA-tracking yet.
+      /* PR15052: stapdyn handles its own VMA-tracking and does not
+       * emit pragma:vma, but just in case.
+       */
       if (session.runtime_usermode_p())
 	throw SEMANTIC_ERROR(_("VMA-tracking is only supported by the kernel runtime (PR15052)"), tok);
 

@@ -102,6 +102,16 @@ location_context::translate_address(Dwarf_Addr addr)
               + lex_cast_hex (addr - dw->sess.sym_stext)
 	      + "); addr; })";
 	}
+      else if (dw->sess.runtime_usermode_p())
+        {
+          c = "({ unsigned long addr = 0; "
+              "addr = _stp_umodule_relocate (\""
+              + path_remove_sysroot(dw->sess,
+				    resolve_path(dw->module_name.c_str()))
+	      + "\", "
+              + lex_cast_hex (addr)
+	      + ", NULL); addr; })";
+        }
       else
 	{
           c = "/* pragma:vma */ "
