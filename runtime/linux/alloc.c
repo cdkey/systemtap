@@ -143,6 +143,16 @@ static void _stp_mem_debug_free(void *addr, enum _stp_memtype type)
 	struct _stp_mem_entry *m = NULL;
 	unsigned long flags;
 
+	if (!addr) {
+		/* Passing NULL to these *free() functions is safe */
+		switch (type) {
+		case MEM_KMALLOC:
+		case MEM_PERCPU:
+		case MEM_VMALLOC:
+			return;
+		}
+	}
+
 	spin_lock_irqsave(&_stp_mem_lock, flags);
 	list_for_each_safe(p, tmp, &_stp_mem_list) {
 		m = list_entry(p, struct _stp_mem_entry, list);
