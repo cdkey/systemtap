@@ -126,6 +126,7 @@ URL: http://sourceware.org/systemtap/
 Source: ftp://sourceware.org/pub/systemtap/releases/systemtap-%{version}.tar.gz
 
 # Build*
+BuildRequires: make
 BuildRequires: gcc-c++
 BuildRequires: cpio
 BuildRequires: gettext-devel
