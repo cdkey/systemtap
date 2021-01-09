@@ -10669,7 +10669,7 @@ else
   enable_translator="yes"
 fi
 
- if test "$enable_translator" == "yes"; then
+ if test "$enable_translator" = "yes"; then
   BUILD_TRANSLATOR_TRUE=
   BUILD_TRANSLATOR_FALSE='#'
 else
@@ -10843,26 +10843,26 @@ fi
 
 
 if test "x${have_latex}${have_dvips}${have_ps2pdf}" != "xyesyesyes"; then
-   if test "$enable_docs" == "yes"; then
+   if test "$enable_docs" = "yes"; then
       as_fn_error $? "cannot find all tools for building documentation" "$LINENO" 5
    fi
-  if test "$enable_docs" == "check"; then
+  if test "$enable_docs" = "check"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: will not build documentation, cannot find all tools" >&5
 $as_echo "$as_me: WARNING: will not build documentation, cannot find all tools" >&2;}
   fi
 fi
-if test "$enable_docs" == "prebuilt"; then
+if test "$enable_docs" = "prebuilt"; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: will only install prebuilt documentation" >&5
 $as_echo "$as_me: will only install prebuilt documentation" >&6;}
 fi
-if test "x${have_latex}${have_dvips}${have_ps2pdf}" == "xyesyesyes" -a "$enable_docs" != "no" -a "$enable_docs" != "prebuilt"; then
+if test "x${have_latex}${have_dvips}${have_ps2pdf}" = "xyesyesyes" -a "$enable_docs" != "no" -a "$enable_docs" != "prebuilt"; then
    building_docs="yes"
    installing_prebuilt_docs="yes"
 fi
-if test "$enable_docs" == "no"; then
+if test "$enable_docs" = "no"; then
    installing_prebuilt_docs="no"
 fi
- if test "$building_docs" == "yes"; then
+ if test "$building_docs" = "yes"; then
   BUILD_DOCS_TRUE=
   BUILD_DOCS_FALSE='#'
 else
@@ -10870,7 +10870,7 @@ else
   BUILD_DOCS_FALSE=
 fi
 
- if test "$installing_prebuilt_docs" == "yes"; then
+ if test "$installing_prebuilt_docs" = "yes"; then
   INSTALL_PREBUILT_DOCS_TRUE=
   INSTALL_PREBUILT_DOCS_FALSE='#'
 else
@@ -10888,13 +10888,13 @@ else
   enable_refdocs="check"
 fi
 
-if test "$building_docs" == "no" -a "$enable_refdocs" == "yes" ; then
+if test "$building_docs" = "no" -a "$enable_refdocs" = "yes" ; then
    as_fn_error $? "must use --enable-docs with --enable-refdocs" "$LINENO" 5
 fi
-if test "$enable_refdocs" != "no" -a "${building_docs}" == "yes"; then
+if test "$enable_refdocs" != "no" -a "${building_docs}" = "yes"; then
    building_refdocs="yes"
 fi
- if test "$building_refdocs" == "yes"; then
+ if test "$building_refdocs" = "yes"; then
   BUILD_REFDOCS_TRUE=
   BUILD_REFDOCS_FALSE='#'
 else
@@ -10979,7 +10979,7 @@ $as_echo "no" >&6; }
 fi
 
 
-if test "x${have_fop}" == "xyes"; then
+if test "x${have_fop}" = "xyes"; then
    # Due to rhbz505364 / 830266, we must actually test-run fop, not just
    # hope that it works.
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking to see if xmlto --with-fop actually works" >&5
@@ -10994,7 +10994,7 @@ $as_echo "it's dead, Jim" >&6; }
    fi
    rm -f dummy-tapsets.pdf
 fi
- if test "$have_fop" == "yes"; then
+ if test "$have_fop" = "yes"; then
   HAVE_FOP_TRUE=
   HAVE_FOP_FALSE='#'
 else
@@ -11002,7 +11002,7 @@ else
   HAVE_FOP_FALSE=
 fi
 
- if test "$have_xmlto" == "yes"; then
+ if test "$have_xmlto" = "yes"; then
   HAVE_XMLTO_TRUE=
   HAVE_XMLTO_FALSE='#'
 else
@@ -11019,11 +11019,11 @@ else
   building_htmldocs="no"
 fi
 
-if test "$have_xmlto" == "no" -a "$building_htmldocs" == "yes"; then
+if test "$have_xmlto" = "no" -a "$building_htmldocs" = "yes"; then
    as_fn_error $? "xmlto required for building html documentation" "$LINENO" 5
 fi
 
- if test "$building_htmldocs" == "yes"; then
+ if test "$building_htmldocs" = "yes"; then
   BUILD_HTMLDOCS_TRUE=
   BUILD_HTMLDOCS_FALSE='#'
 else
@@ -11046,11 +11046,11 @@ cat > conftest.xml << 'EOF'
    </book>
 EOF
 
-if test "x${have_xmlto}" == "xyes"; then
+if test "x${have_xmlto}" = "xyes"; then
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for xmlto --stringparam support" >&5
 $as_echo_n "checking for xmlto --stringparam support... " >&6; }
    xmlto --stringparam man.authors.section.enabled=0 html-nochunks conftest.xml >/dev/null 2>&1
-   if test $? == 0; then
+   if test $? = 0; then
       have_xmlto_stringparam="yes"
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -11060,7 +11060,7 @@ $as_echo "no" >&6; }
    fi
    rm -f conftest.html
 fi
- if test "$have_xmlto_stringparam" == "yes"; then
+ if test "$have_xmlto_stringparam" = "yes"; then
   XMLTO_STRINGPARAM_TRUE=
   XMLTO_STRINGPARAM_FALSE='#'
 else
@@ -11311,7 +11311,7 @@ if test "$enable_server" != "no"; then
 $as_echo "$as_me: WARNING: will not build systemtap compile server, cannot find nss headers" >&2;}
   fi
 fi
- if test "${have_nss}" == "yes" -a "$enable_server" != "no"; then
+ if test "${have_nss}" = "yes" -a "$enable_server" != "no"; then
   BUILD_SERVER_TRUE=
   BUILD_SERVER_FALSE='#'
 else
@@ -11573,10 +11573,10 @@ else
   have_librpmio="no"
 fi
 
-  if test "x$have_librpm" != "xyes" -a "$with_rpm" == "yes"; then
+  if test "x$have_librpm" != "xyes" -a "$with_rpm" = "yes"; then
      as_fn_error $? "cannot find librpm" "$LINENO" 5
   fi
-  if test "x$have_librpmio" != "xyes" -a "$with_rpm" == "yes"; then
+  if test "x$have_librpmio" != "xyes" -a "$with_rpm" = "yes"; then
      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: cannot find librpmio" >&5
 $as_echo "$as_me: WARNING: cannot find librpmio" >&2;}
   fi
@@ -11633,7 +11633,7 @@ $as_echo "#define HAVE_LIBREADLINE 1" >>confdefs.h
 
 fi
 
- if test "$have_libreadline" == "yes"; then
+ if test "$have_libreadline" = "yes"; then
   HAVE_LIBREADLINE_TRUE=
   HAVE_LIBREADLINE_FALSE='#'
 else
@@ -12356,7 +12356,7 @@ $as_echo "$as_me: WARNING: will not build systemtap virt support, cannot find li
 $as_echo "$as_me: WARNING: will not build systemtap virt support, cannot find xml2 headers" >&2;}
   fi
 fi
- if test "${have_libvirt}" == "yes" -a "${have_libxml2}" == "yes" -a "$enable_virt" != "no"; then
+ if test "${have_libvirt}" = "yes" -a "${have_libxml2}" = "yes" -a "$enable_virt" != "no"; then
   BUILD_VIRT_TRUE=
   BUILD_VIRT_FALSE='#'
 else
@@ -12709,13 +12709,13 @@ else
 $as_echo "yes" >&6; }
 	have_ncurses=yes
 fi
-if test "${have_jsonc}" == "yes" -a "${have_ncurses}" == yes; then
+if test "${have_jsonc}" = "yes" -a "${have_ncurses}" = yes; then
 
 $as_echo "#define HAVE_MONITOR_LIBS 1" >>confdefs.h
 
 fi
 fi
- if test "${have_jsonc}" == "yes" -a "${have_ncurses}" == "yes" -a "$enable_monitor" != "no"; then
+ if test "${have_jsonc}" = "yes" -a "${have_ncurses}" = "yes" -a "$enable_monitor" != "no"; then
   HAVE_MONITOR_LIBS_TRUE=
   HAVE_MONITOR_LIBS_FALSE='#'
 else
@@ -12789,7 +12789,7 @@ fi
 
 
 fi
- if test "x$ac_cv_have_decl_BPF_PROG_TYPE_PERF_EVENT" == "xyes"; then
+ if test "x$ac_cv_have_decl_BPF_PROG_TYPE_PERF_EVENT" = "xyes"; then
   HAVE_BPF_DECLS_TRUE=
   HAVE_BPF_DECLS_FALSE='#'
 else
@@ -13301,7 +13301,7 @@ $as_echo "yes" >&6; }
 	have_libcurl=true
 fi
 
-            if test "x$have_libmicrohttpd" == "xtrue" -a "x$have_libuuid" == "xtrue" -a "x$have_libcurl" == "xtrue" -a "x$have_jsonc" == "xyes" -a "x$have_nss" == "xyes" -a "x$have_openssl" == "xyes" -a "x$have_cxx0x" == "xno"; then :
+            if test "x$have_libmicrohttpd" = "xtrue" -a "x$have_libuuid" = "xtrue" -a "x$have_libcurl" = "xtrue" -a "x$have_jsonc" = "xyes" -a "x$have_nss" = "xyes" -a "x$have_openssl" = "xyes" -a "x$have_cxx0x" = "xno"; then :
   have_http_support=yes
 fi
 fi
@@ -13362,7 +13362,7 @@ ac_config_files="$ac_config_files Makefile doc/Makefile man/Makefile man/cs/Make
 
 subdirs="$subdirs testsuite"
 
-if test $enable_translator == "yes"; then
+if test $enable_translator = "yes"; then
 	ac_config_files="$ac_config_files run-stap"
 
 fi
