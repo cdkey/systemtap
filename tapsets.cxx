@@ -12927,7 +12927,9 @@ tracepoint_builder::build(systemtap_session& s,
 {
   if (s.runtime_mode == systemtap_session::bpf_runtime &&
        strverscmp(s.compatible.c_str(), "4.2") >= 0) {
-         s.use_bpf_raw_tracepoint = (s.kernel_functions.count("bpf_raw_tracepoint_release") > 0);
+         s.use_bpf_raw_tracepoint =
+	   (s.kernel_functions.count("bpf_raw_tracepoint_release") > 0) ||
+	   (s.kernel_functions.count("bpf_raw_tp_link_release") > 0);
 	 if (!s.use_bpf_raw_tracepoint)
 	  throw SEMANTIC_ERROR (_("SYSTEM: new BPF TRACEPOINT behavior not supported "
                                   "by target kernel (or use --compatible=4.1 option)"));
