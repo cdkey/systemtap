@@ -14,7 +14,7 @@
   only be used with probes that have an epilogue or prologue.
 
 - Implicit thread local storage variables can now be accessed on
-  x86_64, ppc, and s390.
+  x86_64, ppc64le, and s390x.
 
 - Replaced spinlocks with RCU locks in vma map and utrace task's hash
   table lookups which reduces CPU time a lot when there are a lot of
