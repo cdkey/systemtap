@@ -173,7 +173,6 @@ struct bpf_unparser : public throwing_visitor
 
   // Used to track errors.
   value *error_status;
-  std::vector<asm_stmt> asm_stmts;
 
   // Used to switch execution of program to catch blocks.
   std::vector<block *> catch_jump;
@@ -1478,9 +1477,9 @@ bpf_unparser::visit_embeddedcode (embeddedcode *s)
 #ifdef DEBUG_CODEGEN
   this_ins.notes.push("asm");
 #endif
-  // XXX retain asm_stmts to avoid deallocating tok on throw
-  std::vector<asm_stmt> &statements = this->asm_stmts;
-  statements.clear();
+  // XXX allocate asm_stmts off the stack to avoid deallocating tok on throw
+  std::vector<asm_stmt> *statements_p = new std::vector<asm_stmt>;
+  std::vector<asm_stmt> &statements = *statements_p;
   asm_stmt stmt;
 
   // PR24528: The /* userspace */ annotation is used to mark
@@ -1800,6 +1799,7 @@ bpf_unparser::visit_embeddedcode (embeddedcode *s)
        it != adjusted_toks.end(); it++)
     delete *it;
   adjusted_toks.clear();
+  delete statements_p;
 
 #ifdef DEBUG_CODEGEN
   this_ins.notes.pop(); // asm
