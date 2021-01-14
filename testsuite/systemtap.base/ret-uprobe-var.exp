@@ -48,7 +48,7 @@ if {$res ne ""} {
         set exit_code [run_cmd_2way $cmd out stderr]
         set exp_out "a = 3\n"
         is "${test_name}: stdout" $out $exp_out
-        set stderr_pat "\\AWARNING: confusing usage, consider \\@entry\\(\\@var\\(\"a\", \"\[^\"\]+\"\\)\\) in \\.return probe: operator '\\@var' at .+?\\.stp:2:24
+        set stderr_pat "\\AWARNING: confusing usage,.*\\@entry\\(\\@var\\(\"a\", \"\[^\"\]+\"\\)\\) in \\.return probe.*: operator '\\@var' at .+?\\.stp:2:24
  source:     printf\\(\"a = %d\\\\n\", \\@var\\(\"a\"\\)\\);
                                 \\^
 \\Z"

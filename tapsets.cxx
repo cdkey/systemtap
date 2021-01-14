@@ -4619,7 +4619,7 @@ dwarf_var_expanding_visitor::visit_target_symbol (target_symbol *e)
           // PR14924: discourage this syntax
           stringstream expr;
           e->print(expr);
-          q.sess.print_warning(_F("confusing usage, consider @entry(%s) in .return probe", expr.str().c_str()), e->tok);
+          q.sess.print_warning(_F("confusing usage, value is captured as @entry(%s) in .return probe [man stapprobes] RETURN PROBES", expr.str().c_str()), e->tok);
           visit_target_symbol_saved_return(e);
           return;
         }
