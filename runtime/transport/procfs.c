@@ -299,8 +299,8 @@ static int __stp_procfs_relay_remove_buf_file_callback(struct dentry *dentry)
   if (i != MAX_RELAYFS_FILES)
     {
       pde = p_r_files[i].pde;
-      path_put (& p_r_files[i].p);
       proc_remove (pde);
+      path_put (& p_r_files[i].p);
       p_r_files[i].pde = NULL;
     }
   
