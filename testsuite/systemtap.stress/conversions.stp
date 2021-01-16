@@ -1,33 +1,60 @@
 #! stap
 # Usage: set $1 to supply test address; -DMAXERRORS=<many>
+#
+# Runs via testsuite/systemtap.stress/conversions.exp to check all these
+# statements with a variety of invalid address arguments.
+#
+# These are all expected to raise an ERROR or WARNING, or return
+# a dummy or placeholder value.
+#
+
+@define fire_once(probeno, body) %(
+probe begin {
+	probeno = @probeno
+	@body
+}
+%)
+
+# call after checks that should abort the probe
+@define unreachable %(
+	printf("REACHED_UNREACHABLE(%p,%d) at %s\n", $1, probeno, pp());
+%)
+
+# Call after lines that should continue execution
+@define noerr %(
+	printf("NOERR(%p,%d) at %s\n", $1, probeno, pp());
+%)
 
 probe begin(-1) { print ("\n") }
-probe begin { print (kernel_string ($1)) }
-probe begin { print (kernel_long ($1)) }
-probe begin { print (kernel_int ($1)) }
-probe begin { print (kernel_short ($1)) }
-probe begin { print (kernel_char ($1)) }
-probe begin { print (kernel_int ($1)) }
-probe begin { printf ("%m", $1) }
-probe begin { str = sprintf("%m", $1); printf ("%s", str) }
-probe begin { printf ("%M", $1) }
-probe begin { str = sprintf("%M", $1); printf ("%s", str) }
-probe begin { print (user_string ($1)) }
-probe begin { print (user_string ($1,"<only suspected, not known>")) }
-probe begin { print (user_string_warn ($1)) }
-probe begin { print (user_string_warn ($1, "<only suspected, not known>")) }
-probe begin { print (user_string_quoted ($1)) }
-probe begin { print (user_string_n ($1, 5)) }
-probe begin { print (user_string_n ($1, 5, "<only suspected, not known>")) }
-probe begin { print (user_string_n_warn ($1, 5)) }
-probe begin { print (user_string_n_warn ($1, 5, "<only suspected, not known>")) }
-probe begin { print (user_string_n_quoted ($1, 5)) }
-probe begin { print (user_short ($1)) }
-probe begin { print (user_short_warn ($1)) }
-probe begin { print (user_int ($1)) }
-probe begin { print (user_int_warn ($1)) }
-probe begin { print (user_long ($1)) }
-probe begin { print (user_long_warn ($1)) }
-probe begin { print (user_char ($1)) }
-probe begin { print (user_char_warn ($1)) }
-probe begin(1) { print ("\n") exit () }
+@fire_once(0, println (kernel_string ($1)); @unreachable)
+@fire_once(1, println (kernel_long ($1)); @noerr)
+@fire_once(2, println (kernel_int($1)); @noerr)
+@fire_once(3, println (kernel_short ($1)); @noerr)
+@fire_once(4, println (kernel_char ($1)); @noerr)
+@fire_once(7, printf ("%m\n", $1); @unreachable)
+@fire_once(8, str = sprintf("%m", $1); printf ("%s\n", str); @unreachable)
+@fire_once(9, printf ("%M\n", $1); @unreachable)
+@fire_once(10, str = sprintf("%M", $1); printf ("%s\n", str); @unreachable)
+@fire_once(11, println (user_string ($1)); @noerr)
+@fire_once(12, println (user_string ($1,"<only suspected, not known>")); @noerr)
+@fire_once(13, println (user_string_warn ($1)); @noerr)
+@fire_once(14, println (user_string_warn ($1, "<only suspected, not known>")); @noerr)
+@fire_once(15, println (user_string_quoted ($1)); @noerr)
+@fire_once(16, println (user_string_n ($1, 5)); @unreachable)
+@fire_once(17, println (user_string_n ($1, 5, "<only suspected, not known>")); @noerr)
+@fire_once(18, println (user_string_n_warn ($1, 5)); @noerr)
+@fire_once(19, println (user_string_n_warn ($1, 5, "<only suspected, not known>")); @noerr)
+@fire_once(20, println (user_string_n_quoted ($1, 5)); @noerr)
+@fire_once(21, println (user_short ($1)); @noerr)
+@fire_once(22, println (user_short_warn ($1)); @noerr)
+@fire_once(23, println (user_int ($1)); @noerr)
+@fire_once(24, println (user_int_warn ($1)); @noerr)
+@fire_once(25, println (user_long ($1)); @noerr)
+@fire_once(26, println (user_long_warn ($1)); @noerr)
+@fire_once(27, println (user_char ($1)); @noerr)
+@fire_once(28, println (user_char_warn ($1)); @noerr)
+@fire_once(29, println (kernel_buffer_quoted($1, 5, 20)); @noerr)
+@fire_once(30, println (kernel_buffer_quoted_error($1, 5, 20)); @unreachable)
+@fire_once(33, println (user_buffer_quoted($1, 5, 20)); @noerr)
+@fire_once(34, println (user_buffer_quoted_error($1, 5, 20)); @unreachable)
+probe begin(1) { exit() }

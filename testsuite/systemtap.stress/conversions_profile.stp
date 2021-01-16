@@ -6,174 +6,57 @@
 
 global hits
 
+@define fire_once(probeno, body) %(
 probe timer.profile {
-	if (hits[0] == 0) {
-		hits[0] = 1
-		print (kernel_string ($1))
+	probeno = @probeno
+	if (hits[probeno] == 0) {
+		hits[probeno] = 1
+		@body
 	}
 }
-probe timer.profile {
-	if (hits[1] == 0) {
-		hits[1] = 1
-		print (kernel_long ($1))
-	}
-}
-probe timer.profile {
-	if (hits[2] == 0) {
-		hits[2] = 1
-		print (kernel_int($1))
-	}
-}
-probe timer.profile {
-	if (hits[3] == 0) {
-		hits[3] = 1
-		print (kernel_short ($1))
-	}
-}
-probe timer.profile {
-	if (hits[4] == 0) {
-		hits[4] = 1
-		print (kernel_char ($1))
-	}
-}
-probe timer.profile {
-	if (hits[5] == 0) {
-		hits[5] = 1
-		print (kernel_int ($1))
-	}
-}
-probe timer.profile {
-	if (hits[6] == 0) {
-		hits[6] = 1
-		printf ("%m", $1)
- 	}
-}
-probe timer.profile {
-	if (hits[7] == 0) {
-		hits[7] = 1
-		str = sprintf("%m", $1); printf ("%s", str)
-	}
-}
-probe timer.profile {
-	if (hits[8] == 0) {
-		hits[8] = 1
-		printf ("%M", $1)
- 	}
-}
-probe timer.profile {
-	if (hits[9] == 0) {
-		hits[9] = 1
-		str = sprintf("%M", $1); printf ("%s", str)
-	}
-}
-probe timer.profile {
-	if (hits[10] == 0) {
-		hits[10] = 1
-		print (user_string ($1))
-	}
-}
-probe timer.profile {
-	if (hits[11] == 0) {
-		hits[11] = 1
-		print (user_string ($1,"<only suspected, not known>"))
-	}
-}
-probe timer.profile {
-	if (hits[12] == 0) {
-		hits[12] = 1
-		print (user_string_warn ($1))
-	}
-}
-probe timer.profile {
-	if (hits[13] == 0) {
-		hits[13] = 1
-		print (user_string_warn ($1, "<only suspected, not known>"))
-	}
-}
-probe timer.profile {
-	if (hits[14] == 0) {
-		hits[14] = 1
-		print (user_string_quoted ($1))
-	}
-}
-probe timer.profile {
-	if (hits[15] == 0) {
-		hits[15] = 1
-		print (user_string_n ($1, 5))
-	}
-}
-probe timer.profile {
-	if (hits[16] == 0) {
-		hits[16] = 1
-		print (user_string_n ($1, 5, "<only suspected, not known>"))
-	}
-}
-probe timer.profile {
-	if (hits[17] == 0) {
-		hits[17] = 1
-		print (user_string_n_warn ($1, 5))
-	}
-}
-probe timer.profile {
-	if (hits[18] == 0) {
-		hits[18] = 1
-		print (user_string_n_warn ($1, 5, "<only suspected, not known>"))
-	}
-}
-probe timer.profile {
-	if (hits[19] == 0) {
-		hits[19] = 1
-		print (user_string_n_quoted ($1, 5))
- 	}
-}
-probe timer.profile {
-	if (hits[20] == 0) {
-		hits[20] = 1
-		print (user_short ($1))
-	}
-}
-probe timer.profile {
-	if (hits[21] == 0) {
-		hits[21] = 1
-		print (user_short_warn ($1))
-	}
-}
-probe timer.profile {
-	if (hits[22] == 0) {
-		hits[22] = 1
-		print (user_int ($1))
-	}
-}
-probe timer.profile {
-	if (hits[23] == 0) {
-		hits[23] = 1
-		print (user_int_warn ($1))
-	}
-}
-probe timer.profile {
-	if (hits[24] == 0) {
-		hits[24] = 1
-		print (user_long ($1))
-	}
-}
-probe timer.profile {
-	if (hits[25] == 0) {
-		hits[25] = 1
-		print (user_long_warn ($1))
-	}
-}
-probe timer.profile {
-	if (hits[26] == 0) {
-		hits[26] = 1
-		print (user_char ($1))
-	}
-}
-probe timer.profile {
-	if (hits[27] == 0) {
-		hits[27] = 1
-		print (user_char_warn ($1))
-	}
-}
+%)
+
+# call after checks that should abort the probe
+@define unreachable %(
+	printf("REACHED_UNREACHABLE(%p,%d) at %s\n", $1, probeno, pp());
+%)
+
+# Call after lines that should continue execution
+@define noerr %(
+	printf("NOERR(%p,%d) at %s\n", $1, probeno, pp());
+%)
+
+@fire_once(0, println (kernel_string ($1)); @unreachable)
+@fire_once(1, println (kernel_long ($1)); @noerr)
+@fire_once(2, println (kernel_int($1)); @noerr)
+@fire_once(3, println (kernel_short ($1)); @noerr)
+@fire_once(4, println (kernel_char ($1)); @noerr)
+@fire_once(7, printf ("%m\n", $1); @unreachable)
+@fire_once(8, str = sprintf("%m", $1); printf ("%s\n", str); @unreachable)
+@fire_once(9, printf ("%M\n", $1); @unreachable)
+@fire_once(10, str = sprintf("%M", $1); printf ("%s\n", str); @unreachable)
+@fire_once(11, println (user_string ($1)); @noerr)
+@fire_once(12, println (user_string ($1,"<only suspected, not known>")); @noerr)
+@fire_once(13, println (user_string_warn ($1)); @noerr)
+@fire_once(14, println (user_string_warn ($1, "<only suspected, not known>")); @noerr)
+@fire_once(15, println (user_string_quoted ($1)); @noerr)
+@fire_once(16, println (user_string_n ($1, 5)); @unreachable)
+@fire_once(17, println (user_string_n ($1, 5, "<only suspected, not known>")); @noerr)
+@fire_once(18, println (user_string_n_warn ($1, 5)); @noerr)
+@fire_once(19, println (user_string_n_warn ($1, 5, "<only suspected, not known>")); @noerr)
+@fire_once(20, println (user_string_n_quoted ($1, 5)); @noerr)
+@fire_once(21, println (user_short ($1)); @noerr)
+@fire_once(22, println (user_short_warn ($1)); @noerr)
+@fire_once(23, println (user_int ($1)); @noerr)
+@fire_once(24, println (user_int_warn ($1)); @noerr)
+@fire_once(25, println (user_long ($1)); @noerr)
+@fire_once(26, println (user_long_warn ($1)); @noerr)
+@fire_once(27, println (user_char ($1)); @noerr)
+@fire_once(28, println (user_char_warn ($1)); @noerr)
+@fire_once(29, println (kernel_buffer_quoted($1, 5, 20)); @noerr)
+@fire_once(30, println (kernel_buffer_quoted_error($1, 5, 20)); @unreachable)
+@fire_once(33, println (user_buffer_quoted($1, 5, 20)); @noerr)
+@fire_once(34, println (user_buffer_quoted_error($1, 5, 20)); @unreachable)
 
 # Assume that by 3 seconds, all the above probes have been hit.
 probe timer.s(3) { print ("\n") exit () }

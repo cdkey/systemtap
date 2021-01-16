@@ -1,5 +1,18 @@
+# Kernel and userspace string and buffer access tests. Only runs in
+# "installcheck" mode.
+#
+# This harness covers user_string, kernel_string, etc via the
+# individual .stp scripts listed below.
+#
+# Run with
+#
+#    make installcheck RUNTESTFLAGS='conversions.exp'
+#
 
-proc run_conv_test {filename} {
+# Run a tapscript with invalid memory addresses to access and
+# make sure the output is as expected.
+#
+proc run_conv_test {filename expected_errs} {
     foreach value {0 0xffffffff 0xffffffffffffffff} {
 	# PR 4121: address 0 is valid on s390x
 	if {[istarget s390x-*-*] && $value == 0} { set value 0x7777777777 }
@@ -9,6 +22,7 @@ proc run_conv_test {filename} {
 	}
 
 	set test "[file tail $filename] $value"
+	# Only run for "installcheck"
 	if {![installtest_p]} { untested $test; continue }
 
 	# Turn off the duplication elimination to get an accurate
@@ -16,37 +30,45 @@ proc run_conv_test {filename} {
 	# the right errors (not a "probe took too long" error).
 	spawn stap -g --suppress-time-limits -vv -DMAXSKIPPED=99999 -DMAXERRORS=40 $filename $value
 	set errs 0
+	set unexpectedly_reached 0
 	verbose -log "exp $test $errs"
+	# Count output lines beginning with ERROR or WARNING and increment
+	# the error counter. Ignore all other output.
 	expect {
 	    -timeout 180
+	    -re {(REACHED_UNREACHABLE[^\r\n]*)\r\n} {
+		verbose -log $expect_out(1,string)
+		incr unexpectedly_reached
+		exp_continue
+	    }
 	    -re {(ERROR|WARNING)[^\r\n]*\r\n} { incr errs; exp_continue }
 	    eof { }
 	    timeout { fail "$test (timeout)" }
 	}
 	verbose -log "done exp $test $errs"
 	catch {close}; catch {wait}
-	if {$errs == 22} { pass $test } else { fail "$test ($errs)" }
-	verbose -log "done $test $errs"
+	if {$errs == $expected_errs} { pass $test } else { fail "$test (got $errs expected $expected_errs, unexpectedly_reached $unexpectedly_reached)" }
+	verbose -log "done $test errs $errs=$expected_errs unexpectedly_reached $unexpectedly_reached"
     }
 }
 
 # Test memory accesses from begin probes.
-run_conv_test $srcdir/$subdir/conversions.stp
+run_conv_test $srcdir/$subdir/conversions.stp 23
 
 # Test memory accesses from kernel.trace probes (if the "sched_switch"
 # tracepoint exists).
 if {! [catch {exec stap -l "kernel.trace(\"sched_switch\")"} dummy]} {
-    run_conv_test $srcdir/$subdir/conversions_trace.stp
+    run_conv_test $srcdir/$subdir/conversions_trace.stp 23
 } else {
     untested "conversions_trace.stp"
 }
 
 # Test memory accesses from timer.profile probes.
-run_conv_test $srcdir/$subdir/conversions_profile.stp
+run_conv_test $srcdir/$subdir/conversions_profile.stp 23
 
 # Test memory accesses from perf probes (if we've got perf probes).
 if {[perf_probes_p]} {
-    run_conv_test $srcdir/$subdir/conversions_perf.stp
+    run_conv_test $srcdir/$subdir/conversions_perf.stp 23
 } else {
     untested "conversions_perf.stp"
 }
