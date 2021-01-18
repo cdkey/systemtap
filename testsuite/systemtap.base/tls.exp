@@ -113,8 +113,6 @@ foreach runtime [get_runtime_list] {
     catch {close}; catch {wait}
     if {$ok >= 1} {
 	pass "$test_type errno"
-    } elseif {$runtime == "dyninst"} {
-	xfail "$test_type errno ($ok/>=1)"
     } else {
 	fail "$test_type errno ($ok/>=1)"
     }
@@ -122,9 +120,6 @@ foreach runtime [get_runtime_list] {
     set ok 0
     spawn $stap_path --runtime=$runtime -e "probe process(\"$errno_exepath\").function(\"main\").return {println (\"In Stap errno=\",@errno) }" -c "$errno_exepath"
 
-    if {$runtime == "dyninst"} {
-	setup_kfail 15387 "*-*-*"
-    }
     expect {
 	-timeout 180
 	-re {In Stap errno=2} { incr ok; exp_continue }

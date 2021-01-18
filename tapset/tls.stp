@@ -160,10 +160,12 @@ private global tls_module = 0
   while (l_map)
     {
      l_name = user_string(l_map->l_name);
+     if (l_name == "") {
+	 l_map = l_map->l_next
+	 continue
+     }
      l_addr = user_uint64(l_map->l_addr);
      l_tls_modid = l_map->l_tls_modid
-     if (l_name == "" && l_tls_modid == 1)
-       l_name = execname();
      name_base = basename (l_name);
      if (l_tls_modid != 0) {
 	tls_link_map_name[l_tls_modid] = name_base;
