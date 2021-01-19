@@ -1041,8 +1041,10 @@ static struct utrace *get_utrace_lock(struct task_struct *target,
 
 	bucket = get_utrace_bucket(target);
 	utrace = task_utrace_struct(bucket, target);
-	if (unlikely(!utrace))
+	if (unlikely(!utrace)) {
+		rcu_read_unlock();
 		return ERR_PTR(-ESRCH);
+	}
 
 	spin_lock(&utrace->lock);
 	if (unlikely(utrace->reap) || unlikely(!engine->ops) ||
