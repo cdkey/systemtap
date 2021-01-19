@@ -77,22 +77,7 @@
  */
 struct utrace {
 	spinlock_t lock;
-
-	union {
-		/*
-		 * These lists are cleared out when the utrace struct is ready
-		 * to be freed, so we can reuse the memory for the RCU callback
-		 * to save space. The RCU callback (struct callback_head) is the
-		 * same size as struct list_head. We reuse the space of two
-		 * list_head structs for one RCU callback struct in case the RCU
-		 * struct's forced alignment necessitates extra space.
-		 */
-		struct {
-			struct list_head attached, attaching;
-		};
-
-		struct rcu_head rcu;
-	};
+	struct list_head attached, attaching;
 
 	struct utrace_engine *reporting;
 
@@ -119,6 +104,8 @@ struct utrace {
 
 	struct task_work resume_work;
 	struct task_work report_work;
+
+	struct rcu_head rcu;
 };
 
 #ifndef TASK_UTRACE_HASH_BITS
@@ -240,6 +227,8 @@ static void __stp_utrace_free_task_work(struct task_work *work)
 	__stp_utrace_free_task_work_from_pool(utrace_work);
 }
 
+static struct kmem_cache *utrace_cachep;
+static struct kmem_cache *utrace_engine_cachep;
 static const struct utrace_engine_ops utrace_detached_ops; /* forward decl */
 
 static void utrace_report_clone(void *cb_data __attribute__ ((unused)),
@@ -345,6 +334,8 @@ static int utrace_init(void)
 {
 	int i;
 	int rc = -1;
+        static char kmem_cache1_name[50];
+        static char kmem_cache2_name[50];
 
 	if (unlikely(stp_task_work_init() != 0))
 		goto error;
@@ -394,6 +385,25 @@ static int utrace_init(void)
         }
 #endif
 
+        /* PR14781: avoid kmem_cache naming collisions (detected by CONFIG_DEBUG_VM)
+           by plopping a non-conflicting token - in this case the address of a 
+           locally relevant variable - into the names. */
+        snprintf(kmem_cache1_name, sizeof(kmem_cache1_name),
+                 "utrace_%lx", (unsigned long) (& utrace_cachep));
+	utrace_cachep = kmem_cache_create(kmem_cache1_name, 
+                                          sizeof(struct utrace),
+                                          0, 0, NULL);
+	if (unlikely(!utrace_cachep))
+		goto error;
+
+        snprintf(kmem_cache2_name, sizeof(kmem_cache2_name),
+                 "utrace_engine_%lx", (unsigned long) (& utrace_engine_cachep));
+	utrace_engine_cachep = kmem_cache_create(kmem_cache2_name, 
+                                                 sizeof(struct utrace_engine),
+                                                 0, 0, NULL);
+	if (unlikely(!utrace_engine_cachep))
+		goto error;
+
 	rc = STP_TRACE_REGISTER(sched_process_fork, utrace_report_clone);
 	if (unlikely(rc != 0)) {
 		_stp_error("register_trace_sched_process_fork failed: %d", rc);
@@ -434,6 +444,14 @@ error2:
 	STP_TRACE_UNREGISTER(sched_process_fork, utrace_report_clone);
 	tracepoint_synchronize_unregister();
 error:
+	if (utrace_cachep) {
+		kmem_cache_destroy(utrace_cachep);
+		utrace_cachep = NULL;
+	}
+	if (utrace_engine_cachep) {
+		kmem_cache_destroy(utrace_engine_cachep);
+		utrace_engine_cachep = NULL;
+	}
 	return rc;
 }
 
@@ -490,6 +508,20 @@ static int utrace_exit(void)
 	}
 	stp_spin_unlock_irqrestore(&__stp_utrace_task_work_list_lock, flags);
 
+	if (utrace_cachep) {
+		/*
+		 * We need an RCU barrier because utrace_cachep is used in the
+		 * utrace RCU callback (utrace_free_rcu()).
+		 */
+		rcu_barrier();
+		kmem_cache_destroy(utrace_cachep);
+		utrace_cachep = NULL;
+	}
+	if (utrace_engine_cachep) {
+		kmem_cache_destroy(utrace_engine_cachep);
+		utrace_engine_cachep = NULL;
+	}
+
 #ifdef STP_TF_DEBUG
 	printk(KERN_ERR "%s:%d - exit\n", __FUNCTION__, __LINE__);
 #endif
@@ -522,6 +554,13 @@ stp_task_notify_resume(struct task_struct *target, struct utrace *utrace)
 	}
 }
 
+static void utrace_free_rcu(struct rcu_head *rcu)
+{
+	struct utrace *utrace = container_of(rcu, typeof(*utrace), rcu);
+
+	kmem_cache_free(utrace_cachep, utrace);
+}
+
 /*
  * Clean up everything associated with @task.utrace.
  *
@@ -541,11 +580,11 @@ static void utrace_cleanup(struct utrace *utrace)
 #endif
 	    list_del_init(&engine->entry);
 	    /* FIXME: hmm, should this be utrace_engine_put()? */
-	    _stp_kfree(engine);
+	    kmem_cache_free(utrace_engine_cachep, engine);
 	}
 	list_for_each_entry_safe(engine, next, &utrace->attaching, entry) {
 	    list_del(&engine->entry);
-	    _stp_kfree(engine);
+	    kmem_cache_free(utrace_engine_cachep, engine);
 	}
 	spin_unlock(&utrace->lock);
 
@@ -554,7 +593,7 @@ static void utrace_cleanup(struct utrace *utrace)
 	 * since those were cancelled by
 	 * utrace_cancel_all_task_work(). */
 
-	kfree_rcu(utrace, rcu);
+	call_rcu(&utrace->rcu, utrace_free_rcu);
 #ifdef STP_TF_DEBUG
 	printk(KERN_ERR "%s:%d exit\n", __FUNCTION__, __LINE__);
 #endif
@@ -687,7 +726,7 @@ static struct utrace *utrace_task_alloc(struct utrace_bucket *bucket,
 	struct utrace *utrace;
 	unsigned long flags;
 
-	utrace = kzalloc(sizeof(*utrace), STP_ALLOC_FLAGS);
+	utrace = kmem_cache_zalloc(utrace_cachep, STP_ALLOC_FLAGS);
 	if (unlikely(!utrace))
 		return NULL;
 
@@ -758,7 +797,7 @@ static void utrace_free(struct utrace_bucket *bucket, struct utrace *utrace)
 	FREE_IF_WORK(utrace->resume_work_added, utrace_resume);
 	FREE_IF_WORK(utrace->report_work_added, utrace_report_work);
 
-	kfree_rcu(utrace, rcu);
+	call_rcu(&utrace->rcu, utrace_free_rcu);
 }
 
 /*
@@ -783,7 +822,7 @@ static void __utrace_engine_release(struct kref *kref)
 	BUG_ON(!list_empty(&engine->entry));
 	if (engine->release)
 		(*engine->release)(engine->data);
-	_stp_kfree(engine);
+	kmem_cache_free(utrace_engine_cachep, engine);
 }
 
 static bool engine_matches(struct utrace_engine *engine, int flags,
@@ -943,7 +982,7 @@ static struct utrace_engine *utrace_attach_task(
 			return ERR_PTR(-ENOMEM);
 	}
 
-	engine = _stp_kmalloc(sizeof(*engine));
+	engine = kmem_cache_alloc(utrace_engine_cachep, STP_ALLOC_FLAGS);
 	if (unlikely(!engine))
 		return ERR_PTR(-ENOMEM);
 
@@ -960,7 +999,7 @@ static struct utrace_engine *utrace_attach_task(
 	ret = utrace_add_engine(target, utrace, engine, flags, ops, data);
 
 	if (unlikely(ret)) {
-		_stp_kfree(engine);
+		kmem_cache_free(utrace_engine_cachep, engine);
 		engine = ERR_PTR(ret);
 	}
 
