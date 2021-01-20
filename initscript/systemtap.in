@@ -46,8 +46,6 @@ STAPRUN=@bindir@/staprun
 UNAME=/bin/uname
 LSMOD=/sbin/lsmod
 DRACUT=`which dracut`
-NEWKERNELPKG=/sbin/new-kernel-pkg
-KERNELINSTALL=/usr/bin/kernel-install
 
 # Not actually used directly, but needed by
 # stap dracut module for inclusion in initramfs
@@ -839,10 +837,6 @@ backup_initramfs() {
 
 onboot () {
   local s ret ss
-  if [ ! -f "$NEWKERNELPKG" -a ! -f "$KERNELINSTALL" ]; then
-    do_failure "Could not find $NEWKERNELPKG nor $KERNELINSTALL"
-    return 1
-  fi
   if [ ! -f "$DRACUT" ]; then
     do_failure "$DRACUT not found"
     return 1
@@ -940,20 +934,6 @@ onboot () {
     return 0
   fi
   clog "done"
-  # We're installing the initramfs in the default location, so user
-  # expects the next boot to use it. Let's also update the bootloader.
-  clog " Updating bootloader ... " -n
-  if [ -x "$NEWKERNELPKG" ]; then
-      logex $NEWKERNELPKG --initrdfile="$INITRAMFS" \
-            --update $KRELEASE
-  else
-      logex $KERNELINSTALL add $KRELEASE /boot/vmlinuz-$KRELEASE
-  fi
-  if [ $? -ne 0 ]; then
-    do_failure "bootloader update exited with nonzero status"
-    return 1
-  fi
-  might_success "initramfs created and bootloader updated"
   return 0
 }
 
