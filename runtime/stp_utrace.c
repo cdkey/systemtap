@@ -111,7 +111,6 @@ struct utrace {
 	unsigned int death:1;	/* in utrace_report_death() now */
 	unsigned int reap:1;	/* release_task() has run */
 	unsigned int pending_attach:1;	/* need splice_attaching() */
-	unsigned int freed:1;   /* pending RCU free */
 
 	/* We need the '*_work_added' variables to be atomic so they
 	 * can be modified without locking the utrace struct. This is
@@ -481,7 +480,6 @@ static int utrace_exit(void)
 
 		rcu_read_lock();
 		stap_hlist_for_each_entry_rcu(utrace, node, &bucket->head, hlist) {
-			utrace->freed = true;
 			stp_spin_lock_irqsave(&bucket->lock, flags);
 			hlist_del_rcu(&utrace->hlist);
 			stp_spin_unlock_irqrestore(&bucket->lock, flags);
@@ -673,7 +671,7 @@ static struct utrace *task_utrace_struct(struct utrace_bucket *bucket,
 
 	rcu_read_lock();
 	stap_hlist_for_each_entry_rcu(utrace, node, &bucket->head, hlist) {
-		if (utrace->task == task && !utrace->freed) {
+		if (utrace->task == task) {
 			found = utrace;
 			break;
 		}
@@ -747,7 +745,6 @@ static void utrace_free(struct utrace_bucket *bucket, struct utrace *utrace)
 
 	/* Remove this utrace from the mapping list of tasks to
 	 * struct utrace. */
-	utrace->freed = true;
 	stp_spin_lock_irqsave(&bucket->lock, flags);
 	hlist_del_rcu(&utrace->hlist);
 	stp_spin_unlock_irqrestore(&bucket->lock, flags);
