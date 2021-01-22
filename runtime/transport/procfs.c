@@ -235,14 +235,16 @@ static int _stp_procfs_transport_fs_init(const char *module_name)
 {
 #ifdef STAPCONF_PROC_OPS
   relay_procfs_operations.proc_open = relay_file_operations.open;
-  relay_procfs_operations.proc_poll = relay_file_operations.poll;
+  relay_procfs_operations.proc_poll = __stp_relay_file_poll;
   relay_procfs_operations.proc_mmap = relay_file_operations.mmap;
-  relay_procfs_operations.proc_read = relay_file_operations.read;
+  relay_procfs_operations.proc_read = __stp_relay_file_read;
   relay_procfs_operations.proc_lseek = relay_file_operations.llseek;
   relay_procfs_operations.proc_release = relay_file_operations.release;
 #else
   relay_procfs_operations = relay_file_operations;
   relay_procfs_operations.owner = THIS_MODULE;
+  relay_procfs_operations.poll = __stp_relay_file_poll;
+  relay_procfs_operations.read = __stp_relay_file_read;
 #endif
   
   if (_stp_mkdir_proc_module()) // get the _stp_procfs_module_dir* created
