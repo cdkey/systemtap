@@ -1129,6 +1129,7 @@ static int compute_expr(const u8 *expr, struct unwind_frame_info *frame,
 					goto bad_deref_size;
 				}
 			}
+		        PUSH(value);
 			break;
 
 		case DW_OP_rot:
