@@ -114,6 +114,9 @@ static struct timer_list _stp_ctl_work_timer;
 
 static int _stp_transport_fs_init(const char *module_name)
 {
+	// Default to using procfs
+	procfs_p = 1;
+
         // BTW: testing the other !FOO_p first is to protect against repeated
         // invocations of this function with security_locked_down() changing
 #ifdef STAPCONF_LOCKDOWN_DEBUGFS
@@ -128,11 +131,6 @@ static int _stp_transport_fs_init(const char *module_name)
 		dbug_trans(1, "choosing procfs_p=1\n");
         }
 #endif
-        if (!procfs_p) {
-                debugfs_p = 1;
-		dbug_trans(1, "choosing debugfs_p=1\n");
-        }
-
 #ifdef STAP_TRANS_PROCFS
         procfs_p = 1;
         debugfs_p = 0;
