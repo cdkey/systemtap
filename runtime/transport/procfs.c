@@ -336,12 +336,14 @@ __stp_procfs_relay_create_buf_file_callback(const char *filename,
   if (parent != _stp_procfs_module_dir_path.dentry)
     goto out;
   
-  pde = proc_create (filename, 0600,
+  pde = proc_create (filename, 0400,
                      _stp_procfs_module_dir,
                      & relay_procfs_operations);
   if (pde == NULL)
     goto out;
 
+  proc_set_user(pde, KUIDT_INIT(_stp_uid), KGIDT_INIT(_stp_gid));
+  
   rc = snprintf(fullpath, sizeof(fullpath), "/proc/systemtap/%s/%s",
                 THIS_MODULE->name, filename);
   
