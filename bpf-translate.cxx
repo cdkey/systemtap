@@ -282,7 +282,7 @@ struct bpf_unparser : public throwing_visitor
   // Used for the embedded-code assembler's diagnostics:
   source_loc adjusted_loc;
   size_t adjust_pos;
-  std::vector<token *> adjusted_toks; // track for deallocation
+  std::vector<token *> adjusted_toks; // track for delayed deallocation
 
   // Used for string data:
   value *emit_literal_string(const std::string &str, const token *tok);
@@ -325,6 +325,10 @@ bpf_unparser::bpf_unparser(program &p, globals &g)
 
 bpf_unparser::~bpf_unparser()
 {
+  // TODO: Need to delay this deallocation even further for error reporting.
+  //for (std::vector<token *>::iterator it = adjusted_toks.begin();
+  //     it != adjusted_toks.end(); it++)
+  //  delete *it;
   delete this_locals;
 }
 
@@ -1491,12 +1495,13 @@ bpf_unparser::visit_embeddedcode (embeddedcode *s)
   // track adjusted source location for each stmt
   adjusted_loc = s->tok->location;
   adjust_pos = 0;
-
   size_t pos = 0;
   while ((pos = parse_asm_stmt(s, pos, stmt)) != std::string::npos)
     {
       statements.push_back(stmt);
     }
+  // XXX past this point, adjusted_loc/adjust_pos no longer used,
+  // therefore safe to overwrite in a recursive visit_embeddedcode call
 
   // build basic block table
   std::map<std::string, block *> label_map;
@@ -1794,11 +1799,6 @@ bpf_unparser::visit_embeddedcode (embeddedcode *s)
         jumped_already = false;
     }
 
-  // housekeeping -- deallocate adjusted_toks along with statements
-  for (std::vector<token *>::iterator it = adjusted_toks.begin();
-       it != adjusted_toks.end(); it++)
-    delete *it;
-  adjusted_toks.clear();
   delete statements_p;
 
 #ifdef DEBUG_CODEGEN
