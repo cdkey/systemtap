@@ -1976,6 +1976,10 @@ function add_one (val) {
 function add_string_two (val) {
   return val . %{ /* string */ "two" %}
 }
+@define SOME_STAP_MACRO %( %{ SOME_C_MACRO %} %)
+probe begin {
+      printf("SOME_C_MACRO has value: %d\\n", @SOME_STAP_MACRO);
+}
 .ESAMPLE
 .PP
 The embedded-C code may contain markers to assert optimization
