@@ -492,7 +492,7 @@ follow_link(const string& name, const string& sysroot)
 	{
 	  string fname1 = sysroot + linkname;
 	  const char *f1 = fname1.c_str();
-	  if (access(f1, X_OK) == 0
+	  if (access(f1, R_OK) == 0
 	      && stat(f1, &st) == 0
 	      && S_ISREG(st.st_mode))
 	    {
@@ -567,7 +567,7 @@ string find_executable(const string& name, const string& sysroot,
 
       const char *f = fname.c_str();
 
-      if (access(f, X_OK) == 0
+      if (access(f, R_OK) == 0
           && stat(f, &st) == 0
           && S_ISREG(st.st_mode))
         {
@@ -634,7 +634,7 @@ string find_executable(const string& name, const string& sysroot,
               const char *f = fname.c_str();
 
               // Look for a normal executable file.
-              if (access(f, X_OK) == 0
+              if (access(f, R_OK) == 0
                   && stat(f, &st) == 0
                   && S_ISREG(st.st_mode))
                 {
