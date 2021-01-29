@@ -38,7 +38,7 @@ typedef u8 uprobe_opcode_t;
 #ifdef CONFIG_X86_32
 #define SLOT_IP(tsk) 12
 #else
-#define SLOT_IP(tsk) (test_tsk_thread_flag(tsk, TIF_IA32) ? 12 : 16)
+#define SLOT_IP(tsk) (_stp_is_compat_task2(tsk) ? 12 : 16)
 #endif
 
 #define BREAKPOINT_SIGNAL SIGTRAP
@@ -111,7 +111,7 @@ static inline unsigned long arch_get_cur_sp(struct pt_regs *regs)
 static inline unsigned long arch_predict_sp_at_ret(struct pt_regs *regs,
 		struct task_struct *tsk)
 {
-	if (test_tsk_thread_flag(tsk, TIF_IA32))
+	if (_stp_is_compat_task2(tsk))
 		return (unsigned long) (regs->sp + 4 + STRUCT_RETURN_SLOP);
 	else
 		return (unsigned long) (regs->sp + 8);

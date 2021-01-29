@@ -10,46 +10,49 @@
 #ifndef _STP_COMPAT_H_ /* -*- linux-c -*- */
 #define _STP_COMPAT_H_
 
-#ifdef CONFIG_COMPAT
-
-/* x86_64 has a different flag name from all other arches and s390... */
+#if defined(CONFIG_COMPAT)
 #include <linux/thread_info.h>
-#if defined (__x86_64__)
-  #define TIF_32BIT TIF_IA32
-#endif
-#if defined(__s390__) || defined(__s390x__)
-  #define TIF_32BIT TIF_31BIT
-#endif
-#if defined (__mips__) && !defined(TIF_32BIT)
-  #ifdef CONFIG_MIPS32_O32
-    #define TIF_32BIT TIF_32BIT_REGS
-  #elif defined(CONFIG_MIPS32_N32)
-    #define TIF_32BIT TIF_32BIT_ADDR
-  #endif
-#endif
 
-#if !defined(TIF_32BIT)
-#error architecture not supported, no TIF_32BIT flag
-#endif
 
 /* _stp_is_compat_task - returns true if this is a 32-on-64 bit user task.
    Note that some kernels/architectures define a function called
    is_compat_task(), but that just tests for being inside a 32bit compat
    syscall. We want to test whether the current task is a 32 bit compat
    task itself.*/
-static inline int _stp_is_compat_task(void)
+static inline int _stp_is_compat_task2(struct task_struct* tsk)
 {
-  return test_thread_flag(TIF_32BIT);
+/* x86_64 has a different flag name from all other arches and s390... */
+#if defined (__x86_64__) && defined(TIF_IA32)
+  return test_tsk_thread_flag(tsk, TIF_IA32);
+#elif defined (__x86_64__) /* post TIF_IA32 */
+  return (tsk->mm && (tsk->mm->context.flags & MM_CONTEXT_UPROBE_IA32));
+#elif defined(__s390__) || defined(__s390x__)
+  return test_tsk_thread_flag(tsk, TIF_31BIT);  
+#elif defined (__mips__) && !defined(TIF_32BIT)
+  #ifdef CONFIG_MIPS32_O32
+  return test_tsk_thread_flag(tsk, TIF_32BIT_REGS);    
+  #elif defined(CONFIG_MIPS32_N32)
+  return test_tsk_thread_flag(tsk, TIF_32BIT_ADDR);      
+  #endif
+#else
+#error architecture not supported, no TIF_32BIT flag?
+#endif
 }
-
 #else
 
-static inline int _stp_is_compat_task(void)
+static inline int _stp_is_compat_task2(struct task_struct* tsk)
 {
   return 0;
 }
 
 #endif /* CONFIG_COMPAT */
+
+static inline int _stp_is_compat_task(void)
+{
+  return _stp_is_compat_task2(current);
+}
+
+
 
 /* task_pt_regs is used in some core tapset functions, so try to make
  * sure something sensible is defined. task_pt_regs is required for

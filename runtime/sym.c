@@ -142,7 +142,7 @@ static struct _stp_module *_stp_umod_lookup(unsigned long addr,
   void *user = NULL;
 #ifdef CONFIG_COMPAT
         /* Handle 32bit signed values in 64bit longs, chop off top bits. */
-        if (test_tsk_thread_flag(task, TIF_32BIT))
+  if (_stp_is_compat_task2(task))
           addr &= ((compat_ulong_t) ~0);
 #endif
   if (stap_find_vma_map_info(task->group_leader, addr,
@@ -181,8 +181,8 @@ static const char *_stp_kallsyms_lookup(unsigned long addr,
         /* Handle 32bit signed values in 64bit longs, chop off top bits.
            _stp_umod_lookup does the same, but we need it here for the
            binary search on addr below. */
-        if (test_tsk_thread_flag(task, TIF_32BIT))
-          addr &= ((compat_ulong_t) ~0);
+            if (_stp_is_compat_task2(task))
+                    addr &= ((compat_ulong_t) ~0);
 #endif
 	    m = _stp_umod_lookup(addr, task, modname, &vm_start, &vm_end);
 	    if (m)
@@ -376,8 +376,8 @@ unsigned long _stp_linenumber_lookup(unsigned long addr, struct task_struct *tas
 	    unsigned long vm_end = 0;
 #ifdef CONFIG_COMPAT
       /* Handle 32bit signed values in 64bit longs, chop off top bits. */
-      if (test_tsk_thread_flag(task, TIF_32BIT))
-        addr &= ((compat_ulong_t) ~0);
+            if (_stp_is_compat_task2(task))
+                    addr &= ((compat_ulong_t) ~0);
 #endif
 	    m = _stp_umod_lookup(addr, task, &modname, &vm_start, &vm_end);
     }

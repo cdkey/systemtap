@@ -116,6 +116,9 @@ make_any_make_cmd(systemtap_session& s, const string& dir, const string& target)
       // PR13847: suppress debuginfo creation by default
       "CONFIG_DEBUG_INFO=",
 
+      // linux 5.11 wants btf but no, baby, no
+      "CONFIG_DEBUG_INFO_BTF_MODULES=",
+      
       // RHBZ1321628: suppress stack validation; expected to be temporary
       "CONFIG_STACK_VALIDATION=",
     };

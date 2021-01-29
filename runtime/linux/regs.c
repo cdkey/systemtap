@@ -346,7 +346,7 @@ static int _stp_probing_app_with_32bit_regs(struct pt_regs *regs)
 	if (!regs)
 		return 0;
 	return (user_mode(regs) &&
-			test_tsk_thread_flag(current, TIF_32BIT_REGS));
+                _stp_is_compat_task());
 }
 
 void _stp_print_regs(struct pt_regs * regs)

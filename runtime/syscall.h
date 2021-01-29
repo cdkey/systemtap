@@ -35,19 +35,19 @@
 #define __MUNMAP_SYSCALL_NO_X86_64	11
 #define __MREMAP_SYSCALL_NO_X86_64	25
 # if defined(CONFIG_IA32_EMULATION)
-#define MMAP_SYSCALL_NO(tsk) ((test_tsk_thread_flag((tsk), TIF_IA32))	\
+#define MMAP_SYSCALL_NO(tsk) (_stp_is_compat_task2(tsk) \
 			      ? __MMAP_SYSCALL_NO_IA32			\
 			      : __MMAP_SYSCALL_NO_X86_64)
-#define MMAP2_SYSCALL_NO(tsk) ((test_tsk_thread_flag((tsk), TIF_IA32))	\
+#define MMAP2_SYSCALL_NO(tsk) (_stp_is_compat_task2(tsk) \
 			       ? __MMAP2_SYSCALL_NO_IA32		\
 			       : __MMAP2_SYSCALL_NO_X86_64)
-#define MPROTECT_SYSCALL_NO(tsk) ((test_tsk_thread_flag((tsk), TIF_IA32)) \
+#define MPROTECT_SYSCALL_NO(tsk) (_stp_is_compat_task2(tsk) \
 				  ? __MPROTECT_SYSCALL_NO_IA32		\
 				  : __MPROTECT_SYSCALL_NO_X86_64)
-#define MUNMAP_SYSCALL_NO(tsk) ((test_tsk_thread_flag((tsk), TIF_IA32)) \
+#define MUNMAP_SYSCALL_NO(tsk) (_stp_is_compat_task2(tsk) \
 				  ? __MUNMAP_SYSCALL_NO_IA32		\
 				  : __MUNMAP_SYSCALL_NO_X86_64)
-#define MREMAP_SYSCALL_NO(tsk) ((test_tsk_thread_flag((tsk), TIF_IA32)) \
+#define MREMAP_SYSCALL_NO(tsk) (_stp_is_compat_task2(tsk) \
 				  ? __MREMAP_SYSCALL_NO_IA32		\
 				  : __MREMAP_SYSCALL_NO_X86_64)
 # else
@@ -279,7 +279,7 @@ syscall_get_return_value(struct task_struct *task, struct pt_regs *regs)
 // an argument and then returned won't compare correctly anymore.  So,
 // for now, disable this code.
 # if 0
-	if (test_tsk_thread_flag(task, TIF_IA32))
+	if (_stp_is_compat_task2(task))
 		// Sign-extend the value so (int)-EFOO becomes (long)-EFOO
 		// and will match correctly in comparisons.
 		regs->ax = (long) (int) regs->ax;
@@ -345,7 +345,7 @@ _stp_syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
 #endif
 #elif defined(__x86_64__)
 #ifdef CONFIG_IA32_EMULATION
-	if (test_tsk_thread_flag(task, TIF_IA32)) {
+	if (_stp_is_compat_task2(task)) {
 		switch (i) {
 #if defined(STAPCONF_X86_UNIREGS)
 		case 0:
