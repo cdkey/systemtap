@@ -6274,7 +6274,7 @@ generic_kprobe_derived_probe_group::emit_module_decls (systemtap_session& s)
   s.op->newline();
   s.op->newline() << "static int enter_kretprobe_common (struct kretprobe_instance *inst,";
   s.op->line() << " struct pt_regs *regs, int entry) {";
-  s.op->newline(1) << "struct kretprobe *krp = inst->rp;";
+  s.op->newline(1) << "struct kretprobe *krp = get_kretprobe(inst);";
 
   // NB: as of PR5673, the kprobe|kretprobe union struct is in BSS
   s.op->newline() << "int kprobe_idx = ((uintptr_t)krp-(uintptr_t)stap_kprobes)/sizeof(struct stap_kprobe);";
@@ -6302,7 +6302,7 @@ generic_kprobe_derived_probe_group::emit_module_decls (systemtap_session& s)
   s.op->newline() << "{";
   s.op->newline(1) << "unsigned long kprobes_ip = REG_IP(c->kregs);";
   s.op->newline() << "if (entry)";
-  s.op->newline(1) << "SET_REG_IP(regs, (unsigned long) inst->rp->kp.addr);";
+  s.op->newline(1) << "SET_REG_IP(regs, (unsigned long) get_kretprobe(inst)->kp.addr);";
   s.op->newline(-1) << "else";
   s.op->newline(1) << "SET_REG_IP(regs, (unsigned long)inst->ret_addr);";
   s.op->newline(-1) << "(sp->ph) (c);";

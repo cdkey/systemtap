@@ -104,4 +104,14 @@ static inline int _stp_task_pt_regs_valid(struct task_struct *task,
   return 0;
 }
 
+
+#ifndef STAPCONF_GET_KRETPROBE
+/* prior to linux commit d741bf41d7c7db4898 */
+static inline struct kretprobe* get_kretprobe(struct kretprobe_instance *inst)
+{
+  return inst->rp;
+}
+#endif
+
+
 #endif /* _STP_COMPAT_H_ */
