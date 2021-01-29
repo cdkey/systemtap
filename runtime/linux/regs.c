@@ -36,7 +36,7 @@
  * @param ri Pointer to the struct kretprobe_instance.
  * @return The function's address
  */
-#define _stp_probe_addr_r(ri) (ri->rp->kp.addr)
+#define _stp_probe_addr_r(ri) (get_kretprobe(ri)->kp.addr)
 
 #if defined  (__x86_64__)
 
