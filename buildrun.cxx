@@ -571,10 +571,6 @@ compile_pass (systemtap_session& s)
 
   // o << "CFLAGS += -fno-unit-at-a-time" << endl;
 
-  // 256^W512 bytes should be enough for anybody
-  // XXX this doesn't validate varargs, per gcc bug #41633
-  o << "EXTRA_CFLAGS += $(call cc-option,-Wframe-larger-than=512)" << endl;
-
   // gcc 5.0.0-0.13.fc23 ipa-icf seems to consume gigacpu on stap-generated code
   o << "EXTRA_CFLAGS += $(call cc-option,-fno-ipa-icf)" << endl;
 
