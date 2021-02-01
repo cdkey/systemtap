@@ -1,7 +1,7 @@
 /* Dwarfless register access for arm64 */
 /* TODO: handle 32-bit access of registers */
 
-@__private30 global _reg_offsets[37]
+@__private30 global _reg_offsets[37], _r32_offsets[31]
 
 probe init {
 	/* Same order as pt_regs */
@@ -40,6 +40,38 @@ probe init {
 	_reg_offsets["pc"] = 256
 	_reg_offsets["pstate"] = 264
 	_reg_offsets["orig_x0"] = 272
+
+	_r32_offsets["w0"] =  0
+	_r32_offsets["w1"] =  8
+	_r32_offsets["w2"] = 16
+	_r32_offsets["w3"] = 24
+	_r32_offsets["w4"] = 32
+	_r32_offsets["w5"] = 40
+	_r32_offsets["w6"] = 48
+	_r32_offsets["w7"] = 56
+	_r32_offsets["w8"] = 64
+	_r32_offsets["w9"] = 72
+	_r32_offsets["w10"] = 80
+	_r32_offsets["w11"] = 88
+	_r32_offsets["w12"] = 96
+	_r32_offsets["w13"] = 104
+	_r32_offsets["w14"] = 112
+	_r32_offsets["w15"] = 120
+	_r32_offsets["w16"] = 128
+	_r32_offsets["w17"] = 136
+	_r32_offsets["w18"] = 144
+	_r32_offsets["w19"] = 152
+	_r32_offsets["w20"] = 160
+	_r32_offsets["w21"] = 168
+	_r32_offsets["w22"] = 176
+	_r32_offsets["w23"] = 184
+	_r32_offsets["w24"] = 192
+	_r32_offsets["w25"] = 200
+	_r32_offsets["w26"] = 208
+	_r32_offsets["w27"] = 216
+	_r32_offsets["w28"] = 224
+	_r32_offsets["w29"] = 232
+	_r32_offsets["w30"] = 240
 }
 
 function probing_32bit_app:long() %{ /* pure */
@@ -84,11 +116,18 @@ function _stp_sign_extend32:long (value:long) {
 }
 
 function _stp_register:long (name:string, sign_extend:long) {
+	reg32 = 0
   assert(registers_valid(), "cannot access CPU registers in this context")
 	offset = _reg_offsets[name]
-  assert(offset != 0 || (name in _reg_offsets), "Unknown register: " . name)
+	if (offset == 0 && !(name in _reg_offsets)) {
+        offset = _r32_offsets[name]
+        if (offset == 0 && !(name in _r32_offsets)) {
+          assert(0, "Unknown register: " . name)
+        }
+        reg32 = 1;
+    }
 	value = _stp_get_register_by_offset(offset)
-	if (probing_32bit_app()) {
+	if (reg32 || probing_32bit_app()) {
 		if (sign_extend)
 			value = _stp_sign_extend32(value)
 		else
