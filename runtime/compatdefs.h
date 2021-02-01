@@ -34,6 +34,8 @@ static inline int _stp_is_compat_task2(struct task_struct* tsk)
   #elif defined(CONFIG_MIPS32_N32)
   return test_tsk_thread_flag(tsk, TIF_32BIT_ADDR);      
   #endif
+#elif defined (__aarch64__) || defined(__powerpc__)
+  return test_tsk_thread_flag(tsk, TIF_32BIT);
 #else
 #error architecture not supported, no TIF_32BIT flag?
 #endif
