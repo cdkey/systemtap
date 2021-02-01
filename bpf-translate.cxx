@@ -920,7 +920,7 @@ bpf_unparser::parse_imm (const asm_stmt &stmt, const std::string &str)
   else if (str == "-")
     val = 0;
   else try {
-      val = stol(str);
+      val = stol(str, 0, 0);
     } catch (std::exception &e) { // XXX: invalid_argument, out_of_range
       throw SEMANTIC_ERROR (_F("invalid bpf embeddedcode operand '%s'",
                                str.c_str()), stmt.tok);
@@ -1203,7 +1203,7 @@ bpf_unparser::emit_asm_arg (const asm_stmt &stmt, const std::string &arg,
   else if (is_numeric(arg) && allow_imm)
     {
       /* arg is an immediate constant */
-      long imm = stol(arg, 0, 0);
+      int64_t imm = stol(arg, 0, 0);
       return this_prog.new_imm(imm);
     }
   else if (is_numeric(arg) || arg[0] == 'r')
