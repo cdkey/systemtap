@@ -1480,6 +1480,9 @@ bpf_unparser::visit_embeddedcode (embeddedcode *s)
 {
 #ifdef DEBUG_CODEGEN
   this_ins.notes.push("asm");
+  // XXX verbose; for more precise diagnostics:
+  //std::stringstream os; os << s->tok->location;
+  //this_ins.notes.push("asm@" + os.str());
 #endif
   // XXX allocate asm_stmts off the stack to avoid deallocating tok on throw
   std::vector<asm_stmt> *statements_p = new std::vector<asm_stmt>;
