@@ -29,6 +29,7 @@
 #include <sys/uio.h>
 #include <glob.h>
 #include <time.h>
+#include <unistd.h>
 #include <sys/prctl.h>
 #include <sys/utsname.h>
 
@@ -242,7 +243,11 @@ static void remove_all_modules(void)
 
 static int remove_module(const char *name, int verb)
 {
-	int ret;
+	int i, ret;
+	enum {
+		MAX_EINTR_TRIES = 5
+	};
+
 	dbug(2, "%s\n", name);
 
 #ifdef PR_SET_NAME
@@ -271,12 +276,15 @@ static int remove_module(const char *name, int verb)
 
 	dbug(2, "removing module %s\n", name);
 	PROBE1(staprun, remove__module, name);
-	ret = delete_module (name, O_NONBLOCK);
+
+	for (i = 0; i < MAX_EINTR_TRIES; i++) {
+		ret = delete_module (name, O_NONBLOCK);
+		if (ret == 0 || errno != EINTR)
+			break;
+		usleep(100 * i);
+	}
+
 	if (ret != 0) {
-                /* XXX: maybe we should just accept this, with a
-                   diagnostic, but without an error.  Might it be
-                   possible for the same module to be started up just
-                   as we're shutting down?  */
 		err("Couldn't remove module '%s': %s.\n", name, strerror(errno));
 		return 1;
 	}
