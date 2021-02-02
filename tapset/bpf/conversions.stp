@@ -1,5 +1,5 @@
-// conversions tapset -- eBPF version
-// Copyright (C) 2018-2019 Red Hat Inc.
+// conversions tapset -- BPF version
+// Copyright (C) 2018-2021 Red Hat Inc.
 //
 // This file is part of systemtap, and is free software.  You can
 // redistribute it and/or modify it under the terms of the GNU General
@@ -40,10 +40,11 @@ function kernel_string:string (addr:long, err_msg:string)
   /* TODO PR25168: probe_read_str is used for both kernel and user memory.
      BPF will soon deprecate these in favour of separate functions. */
   call, $rc, probe_read_str, $buf, BPF_MAXSTRINGLEN, $addr;
+  /* call, $rc, probe_read_kernel_str, $buf, BPF_MAXSTRINGLEN, $addr; */
 
   /* if (rc < 0) return err_msg;
      return buf; */
-  0xa5, $rc, 0, _err, -; /* jlt $rc, 0, _err */
+  0xc5, $rc, -, _err, 0; /* jslt $rc, 0, _err */
   0xbf, $$, $buf, -, -; /* mov $$, $buf */
   0x05, -, -, _done, -; /* ja _done; */
 
@@ -69,7 +70,7 @@ function kernel_string2:string (addr:long, err_msg:string) {
 function kernel_string_n:string (addr:long, n:long)
 %{ /* bpf */ /* pure */
   /* if (n > BPF_MAXSTRINGLEN) n = BPF_MAXSTRINGLEN; */
-  0xb5, $n, -, _skip, BPF_MAXSTRINGLEN; /* jle n, BPF_MAXSTRINGLEN, _skip */
+  0xb5, $n, -, _skip, BPF_MAXSTRINGLEN; /* jle $n, BPF_MAXSTRINGLEN, _skip */
   0xb7, $n, -, -, BPF_MAXSTRINGLEN; /* mov $n, BPF_MAXSTRINGLEN */
 
   label, _skip;
@@ -81,10 +82,12 @@ function kernel_string_n:string (addr:long, n:long)
   /* TODO PR25168: probe_read_str is used for both kernel and user memory.
      BPF will soon deprecate these in favour of separate functions. */
   call, $rc, probe_read_str, $buf, $n, $addr; /* TODO: should work if the helper is named bpf_probe_read_str() too */
+  /* call, $rc, probe_read_kernel_str, $buf, $n, $addr; */
+  /* TODO substitute probe_read_str automatically for older bpf? */
 
   /* if (rc < 0) error("...", addr); */
-  0x35, $rc, 0, _done, -; /* jge rc, 0, _done */
-  call, -, printf, "ERROR: string copy fault at 0x%p [man error::fault]", $addr; /* TODO document stapbpf version of error::fault */
+  0x75, $rc, -, _done, 0; /* jsge $rc, 0, _done */
+  call, -, printf, "ERROR: string copy fault at %p [man error::fault]", $addr; /* TODO document stapbpf version of error::fault */
   call, -, exit;
 
   label, _done;

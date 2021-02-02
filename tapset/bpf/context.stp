@@ -1,5 +1,5 @@
 // context tapset
-// Copyright (C) 2016-2019 Red Hat Inc.
+// Copyright (C) 2016-2021 Red Hat Inc.
 //
 // This file is part of systemtap, and is free software.  You can
 // redistribute it and/or modify it under the terms of the GNU General
@@ -22,7 +22,7 @@ function execname:string ()
 
   /* if (rc < 0) return err_msg;
      return buf; */
-  0xa5, $rc, 0, _err, -; /* jlt $rc, 0, _err */
+  0xc5, $rc, -, _err, 0; /* jslt $rc, 0, _err */
   0xbf, $$, $buf, -, -; /* mov $$, $buf */
   0x05, -, -, _done, -; /* ja _done */
 
