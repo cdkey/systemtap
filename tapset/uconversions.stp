@@ -1,5 +1,5 @@
 // userspace conversions tapset
-// Copyright (C) 2005-2019 Red Hat Inc.
+// Copyright (C) 2005-2021 Red Hat Inc.
 // Copyright (C) 2007 Intel Corporation.
 //
 // This file is part of systemtap, and is free software.  You can
@@ -123,8 +123,8 @@ function user_string_quoted:string (addr:long) {
  * given user space address. Reports an error on the rare cases
  * when userspace data is not accessible at the given address.
  */
-function user_string_n:string (addr:long, n:long)
 %( runtime != "bpf" %?
+function user_string_n:string (addr:long, n:long)
 %( systemtap_v < "2.3" %? // PR15044
 	{ return user_string_n(addr, n, "<unknown>") }
 %:
@@ -144,11 +144,6 @@ function user_string_n:string (addr:long, n:long)
 			STAP_RETVALUE[len - 1] = '\0';
 	%}
 %)
-%:
-   { /* pure */ /* bpf */
-     // TODO: Does not provide address in error message.
-     return user_string_n(addr, n, "user string copy fault")
-   }
 %)
 
 /**
@@ -177,8 +172,8 @@ function user_string_n_nofault (addr:long, n:long) {
  * the rare cases when userspace data is not accessible at the given
  * address.
  */
-function user_string_n:string (addr:long, n:long, err_msg:string)
 %( runtime != "bpf" %?
+function user_string_n:string (addr:long, n:long, err_msg:string)
 %{ /* pure */ /* myproc-unprivileged */ /* unmodified-fnargs */
   int64_t len = clamp_t(int64_t, STAP_ARG_n + 1, 1, MAXSTRINGLEN - 1);
   if (_stp_strncpy_from_user(STAP_RETVALUE, 
@@ -187,26 +182,6 @@ function user_string_n:string (addr:long, n:long, err_msg:string)
   else
     STAP_RETVALUE[len - 1] = '\0';
 %}
-%:
-   { /* pure */ /* bpf */
-     /* !!! ACHTUNG !!!
-      * bpf uses the same bpf_probe_read() helpers for kernel and user
-      * addresses, on the assumption that the address spaces coincide.
-      * Which only really works on x86_64 in Current Day.
-      *
-      * If the address space is changed, it may return the wrong data.
-      * TODO PR25168: Fix this as soon as BPF ships proper, separate
-      * bpf_probe_read_{user,kernel}() helpers.
-      */
-     %( arch == "x86_64" %?
-        // TODO: Does not use the provided err_msg.
-        return kernel_string_n(addr, n) // calls probe_read_str()
-     %:
-        // TODO: Use error() function.
-        print("ERROR(unsupported): %s", err_msg)
-        exit()
-     %)
-   }
 %)
 function user_string_n2:string (addr:long, n:long, err_msg:string) {
   return user_string_n(addr, n, err_msg);
@@ -243,8 +218,8 @@ function user_string_n_warn:string (addr:long, n:long) {
  * rare cases when userspace data is not accessible and warns (but does
  * not abort) about the failure.
  */
-function user_string_n_warn:string (addr:long, n:long, warn_msg:string)
 %( runtime != "bpf" %?
+function user_string_n_warn:string (addr:long, n:long, warn_msg:string)
 %{ /* pure */ /* myproc-unprivileged */ /* unmodified-fnargs */
 	int64_t len = clamp_t(int64_t, STAP_ARG_n + 1, 1, MAXSTRINGLEN - 1);
 	long rc;
@@ -261,23 +236,6 @@ function user_string_n_warn:string (addr:long, n:long, warn_msg:string)
 	} else
 		STAP_RETVALUE[len - 1] = '\0';
 %}
-%:
-   { /* pure */ /* bpf */
-     /* !!! ACHTUNG !!!
-      * bpf uses the same bpf_probe_read() helpers for kernel and user
-      * addresses, on the assumption that the address spaces coincide.
-      * Which only really works on x86_64 in Current Day.
-      *
-      * If the address space is changed, it may return the wrong data.
-      * TODO PR25168: Fix this as soon as BPF ships proper, separate
-      * bpf_probe_read_{user,kernel}() helpers.
-      */
-     %( arch == "x86_64" %?
-        return kernel_string_n(addr, n, warn_msg) // calls probe_read_str()
-     %:
-        return warn_msg // don't even bother
-     %)
-   }
 %)
 function user_string2_n_warn:string (addr:long, n:long, warn_msg:string) {
   user_string_n_warn(addr, n, warn_msg);
@@ -716,7 +674,9 @@ function user_int_warn:long (addr:long)
  * of the current user space task (for those architectures that
  * support both 64/32 bit compat tasks).
  */
-function user_long_error:long (addr:long) %{ /* pure */ /* myproc-unprivileged */
+%( runtime != "bpf" %?
+function user_long_error:long (addr:long)
+%{ /* pure */ /* myproc-unprivileged */
 #ifdef CONFIG_COMPAT
 	if (_stp_is_compat_task())
 		STP_GET_USER(compat_long_t);
@@ -725,6 +685,7 @@ function user_long_error:long (addr:long) %{ /* pure */ /* myproc-unprivileged *
 		STP_GET_USER(long);
 	CATCH_DEREF_FAULT();
 %}
+%)
 
 /**
  * sfunction user_long - Retrieves a long value stored in user space
