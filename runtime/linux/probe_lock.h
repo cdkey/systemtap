@@ -22,7 +22,7 @@ struct stp_probe_lock {
 	atomic_t *skipped;
 	atomic_t *contention;
 	#endif
-	rwlock_t *lock;
+	stp_rwlock_t *lock;
 	unsigned write_p;
 };
 
@@ -34,9 +34,9 @@ stp_unlock_probe(const struct stp_probe_lock *locks, unsigned num_locks)
 	if (num_locks == 0) return; /* defeat a gcc9 warning */
 	for (i = num_locks; i-- > 0;) {
 		if (locks[i].write_p)
-			write_unlock(locks[i].lock);
+			stp_write_unlock(locks[i].lock);
 		else
-			read_unlock(locks[i].lock);
+			stp_read_unlock(locks[i].lock);
 	}
 }
 
@@ -47,7 +47,7 @@ stp_lock_probe(const struct stp_probe_lock *locks, unsigned num_locks)
 	unsigned i, retries = 0;
 	for (i = 0; i < num_locks; ++i) {
 		if (locks[i].write_p)
-			while (!write_trylock(locks[i].lock)) {
+			while (!stp_write_trylock(locks[i].lock)) {
 #if !defined(STAP_SUPPRESS_TIME_LIMITS_ENABLE)
 				if (++retries > MAXTRYLOCK)
 					goto skip;
@@ -58,7 +58,7 @@ stp_lock_probe(const struct stp_probe_lock *locks, unsigned num_locks)
 				udelay (TRYLOCKDELAY);
 			}
 		else
-			while (!read_trylock(locks[i].lock)) {
+			while (!stp_read_trylock(locks[i].lock)) {
 #if !defined(STAP_SUPPRESS_TIME_LIMITS_ENABLE)
 				if (++retries > MAXTRYLOCK)
 					goto skip;

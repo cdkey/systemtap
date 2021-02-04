@@ -1710,7 +1710,7 @@ c_unparser::emit_global (vardecl *v)
   else
     o->newline() << type << " " << vn << ";";
 
-  o->newline() << "rwlock_t " << vn << "_lock;";
+  o->newline() << "stp_rwlock_t " << vn << "_lock;";
   o->newline() << "#ifdef STP_TIMING";
   o->newline() << "atomic_t " << vn << "_lock_skip_count;";
   o->newline() << "atomic_t " << vn << "_lock_contention_count;";

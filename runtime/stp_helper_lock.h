@@ -31,13 +31,19 @@ static inline void stp_spin_unlock(raw_spinlock_t *lock)	{ raw_spin_unlock(lock)
 #define stp_spin_lock_irqsave(lock, flags)		raw_spin_lock_irqsave(lock, flags)
 #define stp_spin_unlock_irqrestore(lock, flags)		raw_spin_unlock_irqrestore(lock, flags)
 
+#define stp_rwlock_t raw_spinlock_t
 
 #define STP_DEFINE_RWLOCK(lock)		DEFINE_RAW_SPINLOCK(lock)
+
+static inline void stp_rwlock_init(raw_spinlock_t *lock)	{ raw_spin_lock_init(lock); }
 
 static inline void stp_read_lock(raw_spinlock_t *lock)		{ raw_spin_lock(lock); }
 static inline void stp_read_unlock(raw_spinlock_t *lock)	{ raw_spin_unlock(lock); }
 static inline void stp_write_lock(raw_spinlock_t *lock)		{ raw_spin_lock(lock); }
 static inline void stp_write_unlock(raw_spinlock_t *lock)	{ raw_spin_unlock(lock); }
+
+static inline int stp_read_trylock(raw_spinlock_t *lock)	{ return raw_spin_trylock(lock); }
+static inline int stp_write_trylock(raw_spinlock_t *lock)	{ return raw_spin_trylock(lock); }
 
 #define stp_read_lock_irqsave(lock, flags)		raw_spin_lock_irqsave(lock, flags)
 #define stp_read_unlock_irqrestore(lock, flags)		raw_spin_unlock_irqrestore(lock, flags)
@@ -58,12 +64,19 @@ static inline void stp_spin_unlock(spinlock_t *lock)		{ spin_unlock(lock); }
 #define stp_spin_lock_irqsave(lock, flags)		spin_lock_irqsave(lock, flags)
 #define stp_spin_unlock_irqrestore(lock, flags)		spin_unlock_irqrestore(lock, flags)
 
+#define stp_rwlock_t rwlock_t
+
 #define STP_DEFINE_RWLOCK(lock)				DEFINE_RWLOCK(lock)
+
+static inline void stp_rwlock_init(rwlock_t *lock)	{ rwlock_init(lock); }
 
 static inline void stp_read_lock(rwlock_t *lock)	{ read_lock(lock); }
 static inline void stp_read_unlock(rwlock_t *lock)	{ read_unlock(lock); }
 static inline void stp_write_lock(rwlock_t *lock)	{ write_lock(lock); }
 static inline void stp_write_unlock(rwlock_t *lock)	{ write_unlock(lock); }
+
+static inline int stp_read_trylock(rwlock_t *lock)	{ return read_trylock(lock); }
+static inline int stp_write_trylock(rwlock_t *lock)	{ return write_trylock(lock); }
 
 #define stp_read_lock_irqsave(lock, flags)		read_lock_irqsave(lock, flags)
 #define stp_read_unlock_irqrestore(lock, flags)		read_unlock_irqrestore(lock, flags)

@@ -50,7 +50,7 @@ static struct stp_globals stp_global;
 #define global(name)		(stp_global.name)
 #define global_set(name, val)	(global(name) = (val))
 #define global_lock(name)	(&global(name ## _lock))
-#define global_lock_init(name)	rwlock_init(global_lock(name))
+#define global_lock_init(name)	stp_rwlock_init(global_lock(name))
 #ifdef STP_TIMING
 #define global_skipped(name)	(&global(name ## _lock_skip_count))
 #define global_contended(name)	(&global(name ## _lock_contention_count))
