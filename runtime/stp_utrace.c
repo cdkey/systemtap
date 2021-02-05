@@ -1022,34 +1022,22 @@ static struct utrace *get_utrace_lock(struct task_struct *target,
 	struct utrace_bucket *bucket;
 	struct utrace *utrace;
 
-	rcu_read_lock();
-
 	/*
-	 * If this engine was already detached, bail out before we look at
-	 * the task_struct pointer at all.  If it's detached after this
-	 * check, then RCU is still keeping this task_struct pointer valid.
-	 *
 	 * The ops pointer is NULL when the engine is fully detached.
 	 * It's &utrace_detached_ops when it's marked detached but still
 	 * on the list.  In the latter case, utrace_barrier() still works,
 	 * since the target might be in the middle of an old callback.
 	 */
-	if (unlikely(!engine->ops)) {
-		rcu_read_unlock();
+	if (unlikely(!engine->ops))
 		return ERR_PTR(-ESRCH);
-	}
 
-	if (unlikely(engine->ops == &utrace_detached_ops)) {
-		rcu_read_unlock();
+	if (unlikely(engine->ops == &utrace_detached_ops))
 		return attached ? ERR_PTR(-ESRCH) : ERR_PTR(-ERESTARTSYS);
-	}
 
 	bucket = get_utrace_bucket(target);
 	utrace = task_utrace_struct(bucket, target);
-	if (unlikely(!utrace)) {
-		rcu_read_unlock();
+	if (unlikely(!utrace))
 		return ERR_PTR(-ESRCH);
-	}
 
 	spin_lock(&utrace->lock);
 	if (unlikely(utrace->reap) || unlikely(!engine->ops) ||
@@ -1063,7 +1051,6 @@ static struct utrace *get_utrace_lock(struct task_struct *target,
 		if (!attached && engine->ops == &utrace_detached_ops)
 			utrace = ERR_PTR(-ERESTARTSYS);
 	}
-	rcu_read_unlock();
 
 	return utrace;
 }
@@ -1346,15 +1333,7 @@ static bool utrace_reset(struct task_struct *task, struct utrace *utrace)
 	if (task_is_traced(task) && !(flags & ENGINE_STOP))
 		utrace_wakeup(task, utrace);
 
-	/*
-	 * In theory spin_lock() doesn't imply rcu_read_lock().
-	 * Once we clear ->utrace_flags this task_struct can go away
-	 * because tracehook_prepare_release_task() path does not take
-	 * utrace->lock when ->utrace_flags == 0.
-	 */
-	rcu_read_lock();
 	utrace->utrace_flags = flags;
-	rcu_read_unlock();
 	spin_unlock(&utrace->lock);
 
 	put_detached_list(&detached);
