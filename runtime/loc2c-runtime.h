@@ -214,7 +214,16 @@
 
 #define pt_dwarf_register_30(pt_regs)	pt_regs->regs[30]
 #define pt_dwarf_register_31(pt_regs)	pt_regs->sp
-#define pt_regs_maxno 31
+
+#define pt_dwarf_register_64(regs) ({uint64_t v; __asm__ __volatile__("mov %0, v0.d[0]" : "=r"(v)); v;})
+#define pt_dwarf_register_65(regs) ({uint64_t v; __asm__ __volatile__("mov %0, v1.d[0]" : "=r"(v)); v;})
+#define pt_dwarf_register_66(regs) ({uint64_t v; __asm__ __volatile__("mov %0, v2.d[0]" : "=r"(v)); v;})
+#define pt_dwarf_register_67(regs) ({uint64_t v; __asm__ __volatile__("mov %0, v3.d[0]" : "=r"(v)); v;})
+#define pt_dwarf_register_68(regs) ({uint64_t v; __asm__ __volatile__("mov %0, v4.d[0]" : "=r"(v)); v;})
+#define pt_dwarf_register_69(regs) ({uint64_t v; __asm__ __volatile__("mov %0, v5.d[0]" : "=r"(v)); v;})
+#define pt_dwarf_register_70(regs) ({uint64_t v; __asm__ __volatile__("mov %0, v6.d[0]" : "=r"(v)); v;})
+#define pt_dwarf_register_71(regs) ({uint64_t v; __asm__ __volatile__("mov %0, v7.d[0]" : "=r"(v)); v;})
+#define pt_regs_maxno 71
 
 #elif defined (__arm__)
 
