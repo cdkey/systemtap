@@ -532,8 +532,6 @@ stp_task_notify_resume(struct task_struct *target, struct utrace *utrace)
 
 /*
  * Clean up everything associated with @task.utrace.
- *
- * This routine must be called under the utrace_cleanup_lock.
  */
 static void utrace_cleanup(struct utrace *utrace)
 {
