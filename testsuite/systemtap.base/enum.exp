@@ -1,0 +1,47 @@
+set test "enum"
+set stap_path $env(SYSTEMTAP_PATH)/stap
+
+# exp_internal 1
+
+set xflags "additional_flags=-g"
+set xflags "$xflags additional_flags=-L[pwd] additional_flags=[pwd]/libenum.so"
+set xflags "$xflags additional_flags=-Wl,-rpath-link,[pwd]"
+set exepath "[pwd]/enum.x"
+set soflags "additional_flags=-shared"
+set soflags "$soflags additional_flags=-g"
+set soflags "$soflags additional_flags=-fPIC"
+set soflags "$soflags additional_flags=-DSHARED"
+set sopath "[pwd]/libenum.so"
+set reso [target_compile $srcdir/$subdir/enum.cxx $sopath \
+	      executable $soflags ]
+set res [target_compile $srcdir/$subdir/enum.cxx $exepath \
+	      executable $xflags ]
+if {$res != ""} {
+    fail "$test compiling enum.c"
+    return
+} else {
+    pass "$test compiling enum.c"
+}
+
+foreach runtime [get_runtime_list] {
+    if {$runtime != ""} {
+	set test_type "$test ($runtime)"
+    } else {
+	set runtime "kernel"
+	set test_type $test
+    }
+
+    set ok 0
+    spawn $stap_path --runtime=$runtime -g $srcdir/$subdir/enum.stp -c $exepath $sopath
+    expect {
+	-timeout 180
+	-re "(\"sixteen_power_8\" is 0x100000000|\"C\" is C|\"green\" is 2|\"fourth\" is 4|\"c\" is c|\"sharp\" is #|\"astruct->third\" is 3|\"astruct->ordinal\" is 1|\"mexico\" is 2)\r\n" { incr ok; exp_continue }
+	eof { }
+    }
+    catch {close}; catch {wait}
+    if {$ok == 10} {
+	pass "$test $runtime"
+    } else {
+	fail "$test $runtime ($ok/10)"
+    }
+}

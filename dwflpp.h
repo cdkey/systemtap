@@ -620,6 +620,8 @@ private:
   // target variables.
   void emit_address (Dwarf_Addr address);
 
+  int  dwarf_get_enum (Dwarf_Die *scopes, int nscopes,
+                       const char *name, Dwarf_Die *result);
   void get_locals(std::vector<Dwarf_Die>& scopes, std::set<std::string>& locals);
   void get_locals_die(Dwarf_Die &die, std::set<std::string>& locals);
   void get_members(Dwarf_Die *vardie, std::set<std::string>& members,

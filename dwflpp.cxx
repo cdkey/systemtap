@@ -2770,6 +2770,39 @@ dwflpp::get_locals_die(Dwarf_Die& die, set<string>& locals)
 }
 
 
+int
+dwflpp::dwarf_get_enum (Dwarf_Die *scopes, int nscopes,
+                   const char *name, Dwarf_Die *result)
+{
+  // subprogram {<decls> enumeration_type {enumerator,...}}
+  // lexical block {<decls> enumeration_type {enumerator,...}}
+  // enumeration_type {enumerator,...}}
+  for (int out = 0; out < nscopes; ++out)
+    if (dwarf_haschildren (&scopes[out]) && dwarf_child (&scopes[out], result) == 0)
+      do
+        {
+          Dwarf_Die save_result = *result;
+          if (dwarf_tag (result) == DW_TAG_enumerator
+              || (dwarf_tag (result) == DW_TAG_enumeration_type
+                  && dwarf_child (result, result) == 0))
+            do
+              {
+                if (dwarf_tag (result) == DW_TAG_enumerator)
+                  {
+                    const char *diename = dwarf_diename (result);
+                    if (diename != NULL && !strcmp (name, diename))
+                      return out;
+                  }
+              }
+            while (dwarf_siblingof (result, result) == 0);
+          *result = save_result;
+        }
+      while (dwarf_siblingof (result, result) == 0);
+
+  return -1;
+}
+
+
 Dwarf_Attribute *
 dwflpp::find_variable_and_frame_base (vector<Dwarf_Die>& scopes,
                                       Dwarf_Addr pc,
@@ -2789,37 +2822,38 @@ dwflpp::find_variable_and_frame_base (vector<Dwarf_Die>& scopes,
                                            0, NULL, 0, 0,
                                            vardie);
   if (declaring_scope < 0)
-    {
-      // XXX: instead: add suggested locals and let a caller throw a single error
-      set<string> locals;
-      get_locals(scopes, locals);
-      string sugs = levenshtein_suggest(local, locals, 5);
-      if (pc)
-        throw SEMANTIC_ERROR (_F("unable to find local '%s', [man error::dwarf] dieoffset %s in %s, near pc %s %s %s %s (%s)",
-                                 local.c_str(),
-                                 lex_cast_hex(dwarf_dieoffset(scope_die)).c_str(),
-                                 module_name.c_str(),
-                                 lex_cast_hex(pc).c_str(),
-                                 (scope_die == NULL) ? "" : _("in"),
-                                 (dwarf_diename(scope_die) ?: "<unknown>"),
-                                 (dwarf_diename(cu) ?: "<unknown>"),
-                                 (sugs.empty()
-                                  ? (_("<no alternatives>"))
-				  : (_("alternatives: ") + sugs + ")")).c_str()),
-                              e->tok);
-      else
-        throw SEMANTIC_ERROR (_F("unable to find global '%s', [man error::dwarf] dieoffset %s in %s, %s %s %s (%s)",
-                                 local.c_str(),
-                                 lex_cast_hex(dwarf_dieoffset(scope_die)).c_str(),
-                                 module_name.c_str(),
-                                 (scope_die == NULL) ? "" : _("in"),
-                                 (dwarf_diename(scope_die) ?: "<unknown>"),
-                                 cu_name().c_str(),
-                                 (sugs.empty()
-                                  ? (_("<no alternatives>"))
-				  : (_("alternatives: ") + sugs + ")")).c_str()),
-                              e->tok);
-    }
+      if ((declaring_scope = dwarf_get_enum (&scopes[0], scopes.size(), local.c_str(), vardie)) < 0)
+        {
+          // XXX: instead: add suggested locals and let a caller throw a single error
+          set<string> locals;
+          get_locals(scopes, locals);
+          string sugs = levenshtein_suggest(local, locals, 5);
+          if (pc)
+            throw SEMANTIC_ERROR (_F("unable to find local '%s', [man error::dwarf] dieoffset %s in %s, near pc %s %s %s %s (%s)",
+                local.c_str(),
+                lex_cast_hex(dwarf_dieoffset(scope_die)).c_str(),
+                module_name.c_str(),
+                lex_cast_hex(pc).c_str(),
+                (scope_die == NULL) ? "" : _("in"),
+                    (dwarf_diename(scope_die) ?: "<unknown>"),
+                    (dwarf_diename(cu) ?: "<unknown>"),
+                    (sugs.empty()
+                        ? (_("<no alternatives>"))
+                            : (_("alternatives: ") + sugs + ")")).c_str()),
+                e->tok);
+          else
+            throw SEMANTIC_ERROR (_F("unable to find global '%s', [man error::dwarf] dieoffset %s in %s, %s %s %s (%s)",
+                local.c_str(),
+                lex_cast_hex(dwarf_dieoffset(scope_die)).c_str(),
+                module_name.c_str(),
+                (scope_die == NULL) ? "" : _("in"),
+                    (dwarf_diename(scope_die) ?: "<unknown>"),
+                    cu_name().c_str(),
+                    (sugs.empty()
+                        ? (_("<no alternatives>"))
+                            : (_("alternatives: ") + sugs + ")")).c_str()),
+                e->tok);
+        }
 
   *funcdie = scopes[declaring_scope];
 
@@ -3377,7 +3411,8 @@ dwflpp::find_struct_member(const target_symbol::component& c,
               && find_struct_member(c, &import, memberdie, dies, locs))
             goto success;
 
-          if (tag != DW_TAG_member && tag != DW_TAG_inheritance)
+          if (tag != DW_TAG_member && tag != DW_TAG_inheritance
+              && tag != DW_TAG_enumeration_type)
             continue;
 
           const char *name = dwarf_diename(&die);
@@ -3387,6 +3422,20 @@ dwflpp::find_struct_member(const target_symbol::component& c,
               Dwarf_Die inheritee;
               if (dwarf_attr_die (&die, DW_AT_type, &inheritee))
                 inheritees.push_back(inheritee);
+            }
+          else if (tag == DW_TAG_enumeration_type)
+            {
+              Dwarf_Die enum_item;
+              if (dwarf_get_enum (&die, 1, c.member.c_str(), &enum_item) >= 0
+                  && dwarf_attr_integrate (&enum_item, DW_AT_const_value, &attr))
+                {
+                  /* We have a matching enum so use its die and attr */
+                  *parentdie = die;
+                  *memberdie = enum_item;
+                  dies.insert(dies.begin(), enum_item);
+                  locs.insert(locs.begin(), attr);
+                  goto success;
+                }
             }
           else if (name == NULL)
             {
@@ -3417,8 +3466,10 @@ success:
     }
 
   /* Union members don't usually have a location,
-   * but just use the containing union's location.  */
-  else if (dwarf_tag(parentdie) != DW_TAG_union_type)
+   * but just use the containing union's location.
+   * Enumerators don't have a location, treat as a constant. */
+  else if (dwarf_tag(parentdie) != DW_TAG_union_type
+           && dwarf_tag(&die) != DW_TAG_enumeration_type)
     throw SEMANTIC_ERROR (_F("no location for field '%s':%s",
                              c.member.c_str(), dwarf_errmsg(-1)), c.tok);
 
@@ -3544,6 +3595,16 @@ dwflpp::translate_components(location_context *ctx,
                                           sugs.c_str()), c.tok);
                 }
 
+              if (dwarf_tag (vardie) == DW_TAG_enumerator)
+                {
+                  location *n = ctx->locations.back();
+                  /* Fold all locations except this enum constant */
+                  ctx->locations.erase(ctx->locations.begin(), ctx->locations.end()-1);
+                  n = translate_location (ctx, &locs[0], &dies[0],
+                      pc, NULL, e, n);
+                  ctx->locations.push_back(n);
+                  return;
+                }
 	      if (!ctx->locations.empty())
 		{
 		  location *n = ctx->locations.back();
@@ -3782,6 +3843,10 @@ dwflpp::translate_final_fetch_or_store (location_context &ctx,
                                         Dwarf_Die *typedie)
 {
   const target_symbol *e = ctx.e;
+
+  if (dwarf_tag (vardie) == DW_TAG_enumerator)
+    /* translate_location has already handled the enum constant */
+    return;
 
   /* First boil away any qualifiers associated with the type DIE of
      the final location to be accessed.  */
@@ -4087,7 +4152,8 @@ dwflpp::literal_stmt_for_local (location_context &ctx,
   /* Translate the ->bar->baz[NN] parts. */
 
   Dwarf_Die typedie;
-  if (dwarf_attr_die (&vardie, DW_AT_type, &typedie) == NULL)
+  if (dwarf_attr_die (&vardie, DW_AT_type, &typedie) == NULL
+      && dwarf_tag (&vardie) != DW_TAG_enumerator)
     {
       string msg = _F("failed to retrieve type attribute for '%s' [man error::dwarf]", local.c_str());
       semantic_error err(ERR_SRC, msg, e->tok);

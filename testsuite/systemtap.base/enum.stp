@@ -1,0 +1,24 @@
+probe process.function("main") 
+{
+  /*        file scope                   file scope */
+  printf("\"sixteen_power_8\" is %#lx\n\"C\" is %c\n", $sixteen_power_8, $C)
+}
+
+probe process.function("main").label("RETURN") 
+{
+  /* func block scope    func block scope struct scope              struct scope */
+  printf("\"c\" is %c\n\"sharp\" is %c\n\"astruct->third\" is %d\n\"astruct->ordinal\" is %d\n", 
+	 $c, $sharp, $astruct->third, $astruct->ordinal)
+} 
+
+probe process.function("main").label("END_BLOCK") 
+{
+  /* lex block scope         lex block scope */
+  printf("\"green\" is %d\n\"fourth\" is %d\n", $green,$fourth)
+}
+
+probe process(@1).function("test_enum") 
+{
+  /* extern so file scope */
+  printf("\"mexico\" is %d\n",@var("mexico",@1))
+}
