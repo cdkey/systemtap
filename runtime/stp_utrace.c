@@ -2709,7 +2709,6 @@ static void utrace_report_death(void *cb_data __attribute__ ((unused)),
 {
 	struct utrace_bucket *bucket;
 	struct utrace *utrace;
-	INIT_REPORT(report);
 
 	if (atomic_read(&utrace_state) != __UTRACE_REGISTERED)
 		return;
@@ -2746,43 +2745,25 @@ static void utrace_report_death(void *cb_data __attribute__ ((unused)),
 	 * flag and know that we are not yet fully quiescent for purposes
 	 * of detach bookkeeping.
 	 */
-	if (in_atomic() || irqs_disabled()) {
-		if (atomic_add_unless(&utrace->report_work_added, 1, 1)) {
-			int rc;
+	if (atomic_add_unless(&utrace->report_work_added, 1, 1)) {
+		int rc;
 #ifdef STP_TF_DEBUG
-			printk(KERN_ERR "%s:%d - adding task_work\n",
-			       __FUNCTION__, __LINE__);
+		printk(KERN_ERR "%s:%d - adding task_work\n",
+		       __FUNCTION__, __LINE__);
 #endif
-			rc = stp_task_work_add(task,
-					       &utrace->report_work);
-			if (rc != 0) {
-				atomic_set(&utrace->report_work_added, 0);
-				/* stp_task_work_add() returns -ESRCH
-				 * if the task has already passed
-				 * exit_task_work(). Just ignore this
-				 * error. */
-				if (rc != -ESRCH) {
-					printk(KERN_ERR
-					       "%s:%d - task_work_add() returned %d\n",
-					       __FUNCTION__, __LINE__, rc);
-				}
+		rc = stp_task_work_add(task, &utrace->report_work);
+		if (rc != 0) {
+			atomic_set(&utrace->report_work_added, 0);
+			/* stp_task_work_add() returns -ESRCH
+			 * if the task has already passed
+			 * exit_task_work(). Just ignore this
+			 * error. */
+			if (rc != -ESRCH) {
+				printk(KERN_ERR
+				       "%s:%d - task_work_add() returned %d\n",
+				       __FUNCTION__, __LINE__, rc);
 			}
 		}
-	}
-	else {
-		spin_lock(&utrace->lock);
-		BUG_ON(utrace->death);
-		utrace->death = 1;
-		utrace->resume = UTRACE_RESUME;
-		splice_attaching(utrace);
-		spin_unlock(&utrace->lock);
-
-		REPORT_CALLBACKS(, task, utrace, &report, UTRACE_EVENT(DEATH),
-				 report_death, engine, -1/*group_dead*/,
-				 -1/*signal*/);
-
-		utrace_maybe_reap(task, utrace, false);
-		utrace_free(bucket, utrace);
 	}
 }
 
