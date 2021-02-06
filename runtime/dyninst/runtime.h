@@ -190,7 +190,8 @@ static void systemtap_module_exit(void);
 static inline unsigned long _stap_hash_seed(); /* see common_session_state.h */
 #define stap_hash_seed _stap_hash_seed()
 
-typedef pthread_rwlock_t rwlock_t; /* for globals */
+/* typedef pthread_rwlock_t rwlock_t; */ /* for globals */
+#define stp_rwlock_t pthread_rwlock_t /* for globals */
 
 static int stp_pthread_mutex_init_shared(pthread_mutex_t *mutex)
 {
