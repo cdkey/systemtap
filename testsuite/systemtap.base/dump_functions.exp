@@ -41,8 +41,16 @@ if {[catch {exec stap -v --dump-functions 2>/dev/null} outputv]} {
 set output  [split $output  "\n"]
 set outputv [split $outputv "\n"]
 
+verbose -log "output: $output"
+
 set subtest "user_string in output"
 has_function $output 1 "user_string:string *"
+
+set subtest "ubacktrace in output"
+has_function $output 1 "ubacktrace:string *"
+
+set subtest "callers in output"
+has_function $output 1 "callers:string *"
 
 set subtest "_caller_match not in output"
 has_function $output 0 "_caller_match:long *"

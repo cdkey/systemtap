@@ -5726,7 +5726,7 @@ semantic_pass_optimize1 (systemtap_session& s)
       else if (iterations > 0)
         s.suppress_warnings = true;
 
-      if (s.unoptimized) // need these even in -u mode
+      if (s.unoptimized && ! s.dump_mode) // need these even in -u mode
         {
           semantic_pass_opt1 (s, relaxed_p);
           semantic_pass_opt5 (s, relaxed_p);
