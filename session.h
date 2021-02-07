@@ -239,7 +239,8 @@ public:
   bool monitor;
   int monitor_interval;
   int timeout; // in ms
-
+  std::map<std::string,std::string> typequery_memo;
+  
   enum
    { dump_none,               // no dumping requested
      dump_probe_types,        // dump standard tapset probes

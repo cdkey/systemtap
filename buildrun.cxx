@@ -1116,9 +1116,14 @@ make_typequery_kmod(systemtap_session& s, const vector<string>& headers, string&
   omf << "obj-m := " + basename + ".o" << endl;
   omf.close();
 
-  // create our empty source file
+  // create our -nearly- empty source file
   string source(dir + "/" + basename + ".c");
   ofstream osrc(source.c_str());
+
+  // this is mandated by linux kbuild as of 5.11+
+  osrc << "#include <linux/module.h>" << endl;
+  osrc << "MODULE_LICENSE(\"GPL\");" << endl;
+  
   osrc.close();
 
   // make the module
@@ -1165,6 +1170,13 @@ make_typequery_umod(systemtap_session& s, const vector<string>& headers, string&
 int
 make_typequery(systemtap_session& s, string& module)
 {
+  // check our memoized cache first
+  if (s.typequery_memo.find(module) != s.typequery_memo.end())
+    {
+      module = s.typequery_memo.at(module);
+      return 0;
+    }
+    
   int rc;
   string new_module;
   vector<string> headers;
@@ -1192,6 +1204,10 @@ make_typequery(systemtap_session& s, string& module)
   else
       rc = make_typequery_umod(s, headers, new_module);
 
+  // memoize the result --- even if it failed (rc != 0), so as to avoid
+  // repeated attempts to rebuild the same thing
+  s.typequery_memo[module] = new_module;
+  
   if (!rc)
     module = new_module;
 

@@ -377,6 +377,7 @@ systemtap_session::systemtap_session (const systemtap_session& other,
   no_global_var_display = other.no_global_var_display;
   pass_1a_complete = other.pass_1a_complete;
   timeout = other.timeout;
+  // don't bother copy typequery_memo
 
   include_path = other.include_path;
   runtime_path = other.runtime_path;
