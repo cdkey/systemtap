@@ -1,3 +1,5 @@
+- Enumerators can now be accessed as $context variables.
+
 * What's new in version 4.5
 
 * What's new in version 4.4, 2020-11-09
