@@ -22,6 +22,7 @@
 %{!?with_systemd: %global with_systemd 0%{?fedora} >= 19 || 0%{?rhel} >= 7}
 %{!?with_emacsvim: %global with_emacsvim 0%{?fedora} >= 19 || 0%{?rhel} >= 7}
 %{!?with_java: %global with_java 0%{?fedora} >= 19 || 0%{?rhel} >= 7}
+%{!?with_debuginfod: %global with_virthost 0%{?fedora} >= 25 || 0%{?rhel} >= 7}
 %{!?with_virthost: %global with_virthost 0%{?fedora} >= 19 || 0%{?rhel} >= 7}
 %{!?with_virtguest: %global with_virtguest 1}
 %{!?with_dracut: %global with_dracut 0%{?fedora} >= 19 || 0%{?rhel} >= 6}
@@ -132,7 +133,9 @@ BuildRequires: cpio
 BuildRequires: gettext-devel
 BuildRequires: pkgconfig(nss)
 BuildRequires: pkgconfig(avahi-client)
+%if %{with_debuginfod}
 BuildRequires: pkgconfig(libdebuginfod)
+%endif
 %if %{with_dyninst}
 BuildRequires: dyninst-devel >= 10.0
 BuildRequires: pkgconfig(libselinux)
@@ -367,7 +370,9 @@ Requires: systemtap = %{version}-%{release}
 Requires: systemtap-sdt-devel = %{version}-%{release}
 Requires: systemtap-server = %{version}-%{release}
 Requires: dejagnu which elfutils grep nc
+%if %{with_debuginfod}
 Requires: elfutils-debuginfod
+%endif
 Requires: gcc gcc-c++ make glibc-devel
 # testsuite/systemtap.base/ptrace.exp needs strace
 Requires: strace
@@ -529,6 +534,13 @@ systemtap-runtime-virthost machine to execute systemtap scripts.
 %global sqlite_config --disable-sqlite
 %endif
 
+%if %{with_debuginfod}
+%global debuginfod_config --with-debuginfod
+%else
+%global debuginfod_config --without-debuginfod
+%endif
+
+
 # Enable/disable the crash extension
 %if %{with_crash}
 %global crash_config --enable-crash
@@ -610,7 +622,7 @@ systemtap-runtime-virthost machine to execute systemtap scripts.
 # We don't ship compileworthy python code, just oddball samples
 %global py_auto_byte_compile 0
 
-%configure %{dyninst_config} %{sqlite_config} %{crash_config} %{docs_config} %{pie_config} %{rpm_config} %{java_config} %{virt_config} %{dracut_config} %{python3_config} %{python2_probes_config} %{python3_probes_config} %{httpd_config} %{bpf_config} --disable-silent-rules --with-extra-version="rpm %{version}-%{release}"
+%configure %{dyninst_config} %{sqlite_config} %{crash_config} %{docs_config} %{pie_config} %{rpm_config} %{java_config} %{virt_config} %{dracut_config} %{python3_config} %{python2_probes_config} %{python3_probes_config} %{httpd_config} %{bpf_config} %{debuginfod_config} --disable-silent-rules --with-extra-version="rpm %{version}-%{release}"
 make %{?_smp_mflags}
 
 
