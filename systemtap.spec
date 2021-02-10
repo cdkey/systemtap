@@ -132,6 +132,7 @@ BuildRequires: cpio
 BuildRequires: gettext-devel
 BuildRequires: pkgconfig(nss)
 BuildRequires: pkgconfig(avahi-client)
+BuildRequires: pkgconfig(libdebuginfod)
 %if %{with_dyninst}
 BuildRequires: dyninst-devel >= 10.0
 BuildRequires: pkgconfig(libselinux)
