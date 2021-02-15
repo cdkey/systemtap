@@ -5,8 +5,6 @@
 function printlnfp(a) { println(fp_to_string(a,5)) }
 
 probe process("stap").function("sdt_benchmark_thread") {
-    //i_temp = $i_temp
-    //println(i_temp)
     fp = $fp1
     printlnfp(fp)
     fp32 = $fp2

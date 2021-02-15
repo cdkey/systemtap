@@ -128,11 +128,35 @@ static const struct usr_regset_lut url_x86_64[] = {
   { "r13", NT_PRSTATUS, 2*8 }, 
   { "r14", NT_PRSTATUS, 1*8 }, 
   { "r15", NT_PRSTATUS, 0*8 }, 
-  { "rip", NT_PRSTATUS, 16*8 }, 
+  { "rip", NT_PRSTATUS, 16*8 },
   /* XXX: SSE registers %xmm0-%xmm7 */ 
+  { "xmm0", NT_PRFPREG, 160+0*16}, // dwarf reg# 17 = byte #160 in PRFPREG register dump
+  { "xmm1", NT_PRFPREG, 160+1*16}, // see also gdb gdb i387-tdep.c fxsave_offset
+  { "xmm2", NT_PRFPREG, 160+2*16}, // see also intel x86-64 architecture software manual, fxsave area
+  { "xmm3", NT_PRFPREG, 160+3*16},
+  { "xmm4", NT_PRFPREG, 160+4*16},
+  { "xmm5", NT_PRFPREG, 160+5*16},
+  { "xmm6", NT_PRFPREG, 160+6*16},
+  { "xmm7", NT_PRFPREG, 160+7*16},
   /* XXX: SSE2 registers %xmm8-%xmm15 */
+  { "xmm8", NT_PRFPREG, 160+8*16},
+  { "xmm9", NT_PRFPREG, 160+9*16},
+  { "xmm10", NT_PRFPREG, 160+10*16},
+  { "xmm11", NT_PRFPREG, 160+11*16},
+  { "xmm12", NT_PRFPREG, 160+12*16},
+  { "xmm13", NT_PRFPREG, 160+13*16},
+  { "xmm14", NT_PRFPREG, 160+14*16},
+  { "xmm15", NT_PRFPREG, 160+15*16},
   /* XXX: FP registers %st0-%st7 */
   /* XXX: MMX registers %mm0-%mm7 */
+  { "st0", NT_PRFPREG, 32},
+  { "st1", NT_PRFPREG, 48},
+  { "st2", NT_PRFPREG, 64},
+  { "st3", NT_PRFPREG, 80},
+  { "st4", NT_PRFPREG, 90},
+  { "st5", NT_PRFPREG, 112},
+  { "st6", NT_PRFPREG, 128},
+  { "st7", NT_PRFPREG, 144}
 };
 #endif
 /* XXX: insert other architectures here. */
