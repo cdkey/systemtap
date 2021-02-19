@@ -267,6 +267,9 @@ Requires: kernel-devel-uname-r
 %endif
 
 Requires: gcc make
+# for compiling --runtime=dyninst sripts, need elfutils headers, bz1930973
+Requires: elfutils-devel >= %{elfutils_version}
+
 Conflicts: systemtap-client < %{version}-%{release}
 Conflicts: systemtap-server < %{version}-%{release}
 Conflicts: systemtap-runtime < %{version}-%{release}
