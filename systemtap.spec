@@ -10,7 +10,7 @@
 %{!?with_crash: %global with_crash 1}
 %endif
 %{!?with_rpm: %global with_rpm 1}
-%{!?elfutils_version: %global elfutils_version 0.142}
+%{!?elfutils_version: %global elfutils_version 0.179}
 %{!?pie_supported: %global pie_supported 1}
 %{!?with_boost: %global with_boost 0}
 %ifarch %{ix86} x86_64 ppc ppc64 ppc64le aarch64
