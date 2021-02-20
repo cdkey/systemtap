@@ -556,7 +556,8 @@ systemtap_session::usage (int exitcode)
   // the actual error message with all the help text.
   if (exitcode != EXIT_SUCCESS)
     {
-      clog << _("Try '--help' for more information.") << endl;
+      clog << _("Try '--help' for more information. [man stap]") << endl;
+      clog << _("A message like [man foo] means for more info, run % man foo") << endl;
       throw exit_exception(exitcode);
     }
 
