@@ -136,8 +136,8 @@ stap_merge_DEPENDENCIES =
 stap_merge_LINK = $(CCLD) $(stap_merge_CFLAGS) $(CFLAGS) \
 	$(stap_merge_LDFLAGS) $(LDFLAGS) -o $@
 am_stapio_OBJECTS = stapio.$(OBJEXT) mainloop.$(OBJEXT) \
-	common.$(OBJEXT) ctl.$(OBJEXT) relay.$(OBJEXT) \
-	monitor.$(OBJEXT)
+	common.$(OBJEXT) start_cmd.$(OBJEXT) ctl.$(OBJEXT) \
+	relay.$(OBJEXT) monitor.$(OBJEXT)
 stapio_OBJECTS = $(am_stapio_OBJECTS)
 am__DEPENDENCIES_1 =
 @HAVE_MONITOR_LIBS_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) \
@@ -150,8 +150,9 @@ am__dirstamp = $(am__leading_dot)dirstamp
 @HAVE_NSS_TRUE@	../staprun-nsscommon.$(OBJEXT)
 am_staprun_OBJECTS = staprun-staprun.$(OBJEXT) \
 	staprun-staprun_funcs.$(OBJEXT) staprun-ctl.$(OBJEXT) \
-	staprun-common.$(OBJEXT) ../staprun-privilege.$(OBJEXT) \
-	../staprun-util.$(OBJEXT) $(am__objects_1)
+	staprun-common.$(OBJEXT) staprun-start_cmd.$(OBJEXT) \
+	../staprun-privilege.$(OBJEXT) ../staprun-util.$(OBJEXT) \
+	$(am__objects_1)
 staprun_OBJECTS = $(am_staprun_OBJECTS)
 @HAVE_NSS_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
 @HAVE_HTTP_SUPPORT_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1)
@@ -190,7 +191,8 @@ am__depfiles_remade = ../$(DEPDIR)/staprun-nsscommon.Po \
 	./$(DEPDIR)/staprun-ctl.Po ./$(DEPDIR)/staprun-modverify.Po \
 	./$(DEPDIR)/staprun-staprun.Po \
 	./$(DEPDIR)/staprun-staprun_funcs.Po \
-	./$(DEPDIR)/stapsh-stapsh.Po
+	./$(DEPDIR)/staprun-start_cmd.Po ./$(DEPDIR)/stapsh-stapsh.Po \
+	./$(DEPDIR)/start_cmd.Po
 am__mv = mv -f
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -499,7 +501,7 @@ AM_LDFLAGS = @PIELDFLAGS@
 noinst_LIBRARIES = libstrfloctime.a
 libstrfloctime_a_SOURCES = strfloctime.c
 libstrfloctime_a_CFLAGS = $(AM_CFLAGS) -Wno-format-nonliteral
-staprun_SOURCES = staprun.c staprun_funcs.c ctl.c common.c \
+staprun_SOURCES = staprun.c staprun_funcs.c ctl.c common.c start_cmd.c \
 	../privilege.cxx ../util.cxx $(am__append_1)
 staprun_CFLAGS = $(AM_CFLAGS) -DSINGLE_THREADED $(debuginfod_CFLAGS) \
 	$(am__append_2)
@@ -508,7 +510,7 @@ staprun_CPPFLAGS = $(AM_CPPFLAGS)
 staprun_LDADD = libstrfloctime.a $(staprun_LIBS) $(debuginfod_LIBS) \
 	$(am__append_4) $(am__append_5)
 staprun_LDFLAGS = $(AM_LDFLAGS) -Wl,--whole-archive,libstrfloctime.a,--no-whole-archive
-stapio_SOURCES = stapio.c mainloop.c common.c ctl.c relay.c monitor.c
+stapio_SOURCES = stapio.c mainloop.c common.c start_cmd.c ctl.c relay.c monitor.c
 stapio_LDADD = libstrfloctime.a -lpthread $(am__append_6)
 stapio_LDFLAGS = -Wl,--whole-archive,libstrfloctime.a,--no-whole-archive
 man_MANS = staprun.8
@@ -704,7 +706,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/staprun-modverify.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/staprun-staprun.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/staprun-staprun_funcs.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/staprun-start_cmd.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stapsh-stapsh.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/start_cmd.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -811,6 +815,20 @@ staprun-common.obj: common.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common.c' object='staprun-common.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(staprun_CPPFLAGS) $(CPPFLAGS) $(staprun_CFLAGS) $(CFLAGS) -c -o staprun-common.obj `if test -f 'common.c'; then $(CYGPATH_W) 'common.c'; else $(CYGPATH_W) '$(srcdir)/common.c'; fi`
+
+staprun-start_cmd.o: start_cmd.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(staprun_CPPFLAGS) $(CPPFLAGS) $(staprun_CFLAGS) $(CFLAGS) -MT staprun-start_cmd.o -MD -MP -MF $(DEPDIR)/staprun-start_cmd.Tpo -c -o staprun-start_cmd.o `test -f 'start_cmd.c' || echo '$(srcdir)/'`start_cmd.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/staprun-start_cmd.Tpo $(DEPDIR)/staprun-start_cmd.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='start_cmd.c' object='staprun-start_cmd.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(staprun_CPPFLAGS) $(CPPFLAGS) $(staprun_CFLAGS) $(CFLAGS) -c -o staprun-start_cmd.o `test -f 'start_cmd.c' || echo '$(srcdir)/'`start_cmd.c
+
+staprun-start_cmd.obj: start_cmd.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(staprun_CPPFLAGS) $(CPPFLAGS) $(staprun_CFLAGS) $(CFLAGS) -MT staprun-start_cmd.obj -MD -MP -MF $(DEPDIR)/staprun-start_cmd.Tpo -c -o staprun-start_cmd.obj `if test -f 'start_cmd.c'; then $(CYGPATH_W) 'start_cmd.c'; else $(CYGPATH_W) '$(srcdir)/start_cmd.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/staprun-start_cmd.Tpo $(DEPDIR)/staprun-start_cmd.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='start_cmd.c' object='staprun-start_cmd.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(staprun_CPPFLAGS) $(CPPFLAGS) $(staprun_CFLAGS) $(CFLAGS) -c -o staprun-start_cmd.obj `if test -f 'start_cmd.c'; then $(CYGPATH_W) 'start_cmd.c'; else $(CYGPATH_W) '$(srcdir)/start_cmd.c'; fi`
 
 staprun-modverify.o: modverify.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(staprun_CPPFLAGS) $(CPPFLAGS) $(staprun_CFLAGS) $(CFLAGS) -MT staprun-modverify.o -MD -MP -MF $(DEPDIR)/staprun-modverify.Tpo -c -o staprun-modverify.o `test -f 'modverify.c' || echo '$(srcdir)/'`modverify.c
@@ -1057,7 +1075,9 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/staprun-modverify.Po
 	-rm -f ./$(DEPDIR)/staprun-staprun.Po
 	-rm -f ./$(DEPDIR)/staprun-staprun_funcs.Po
+	-rm -f ./$(DEPDIR)/staprun-start_cmd.Po
 	-rm -f ./$(DEPDIR)/stapsh-stapsh.Po
+	-rm -f ./$(DEPDIR)/start_cmd.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -1120,7 +1140,9 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/staprun-modverify.Po
 	-rm -f ./$(DEPDIR)/staprun-staprun.Po
 	-rm -f ./$(DEPDIR)/staprun-staprun_funcs.Po
+	-rm -f ./$(DEPDIR)/staprun-start_cmd.Po
 	-rm -f ./$(DEPDIR)/stapsh-stapsh.Po
+	-rm -f ./$(DEPDIR)/start_cmd.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

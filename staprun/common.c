@@ -7,7 +7,7 @@
  * Public License (GPL); either version 2, or (at your option) any
  * later version.
  *
- * Copyright (C) 2007-2017 Red Hat Inc.
+ * Copyright (C) 2007-2021 Red Hat Inc.
  */
 
 #include "staprun.h"
@@ -22,10 +22,6 @@
 #include <limits.h>
 #include "../git_version.h"
 #include "../version.h"
-
-#ifndef OPEN_MAX
-#define OPEN_MAX 256
-#endif
 
 /* variables needed by parse_args() */
 int verbose;
@@ -353,7 +349,7 @@ void usage(char *prog, int rc)
 	"-w              Suppress warnings.\n"
 	"-u              Load uprobes.ko\n"
 	"-c cmd          Command \'cmd\' will be run and staprun will\n"
-	"                exit when it does.  The '_stp_target' variable\n"
+	"                exit when it does. The '_stp_target' variable\n"
 	"                will contain the pid for the command.\n"
 	"-x pid          Sets the '_stp_target' variable to pid.\n"
   "-N pid          Sets the '_stp_namespaces_pid' variable to pid.\n"
@@ -755,42 +751,4 @@ char *parse_stap_color(const char *type)
 	}
 
 	return NULL; /* key not found */
-}
-
-void
-closefrom(int lowfd)
-{
-	long fd, maxfd;
-	char *endp;
-	struct dirent *dent;
-	DIR *dirp;
-
-	/* Check for a /proc/self/fd directory. */
-	if ((dirp = opendir("/proc/self/fd"))) {
-		int dir_fd = dirfd(dirp);
-		while ((dent = readdir(dirp)) != NULL) {
-			fd = strtol(dent->d_name, &endp, 10);
-			if (dent->d_name != endp && *endp == '\0'
-			    && fd >= 0 && fd < INT_MAX && fd >= lowfd
-			    && fd != dir_fd)
-				(void) close((int)fd);
-		}
-		(void) closedir(dirp);
-	}
-	else {
-		/*
-		 * Here we fall back on sysconf(). Why? It is possible
-		 * /proc isn't mounted, we're out of file descriptors,
-		 * etc., which could cause the opendir() to fail. Also
-		 * note thet it is possible to open a file descriptor
-		 * and then drop the rlimit such that it is below the
-		 * open fd.
-		 */
-		maxfd = sysconf(_SC_OPEN_MAX);
-		if (maxfd < 0)
-			maxfd = OPEN_MAX;
-
-		for (fd = lowfd; fd < maxfd; fd++)
-			(void) close((int) fd);
-	}
 }

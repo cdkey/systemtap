@@ -23,7 +23,8 @@ noinst_LIBRARIES = libstrfloctime.a
 libstrfloctime_a_SOURCES = strfloctime.c
 libstrfloctime_a_CFLAGS = $(AM_CFLAGS) -Wno-format-nonliteral
 
-staprun_SOURCES = staprun.c staprun_funcs.c ctl.c common.c ../privilege.cxx ../util.cxx
+staprun_SOURCES = staprun.c staprun_funcs.c ctl.c common.c start_cmd.c \
+	../privilege.cxx ../util.cxx
 staprun_CFLAGS = $(AM_CFLAGS) -DSINGLE_THREADED $(debuginfod_CFLAGS)
 staprun_CXXFLAGS = $(AM_CXXFLAGS) -DSINGLE_THREADED
 staprun_CPPFLAGS = $(AM_CPPFLAGS)
@@ -41,7 +42,7 @@ if HAVE_HTTP_SUPPORT
 staprun_LDADD += $(openssl_LIBS)
 endif
 
-stapio_SOURCES = stapio.c mainloop.c common.c ctl.c relay.c monitor.c
+stapio_SOURCES = stapio.c mainloop.c common.c start_cmd.c ctl.c relay.c monitor.c
 stapio_LDADD =  libstrfloctime.a -lpthread
 stapio_LDFLAGS =  -Wl,--whole-archive,libstrfloctime.a,--no-whole-archive
 

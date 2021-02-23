@@ -7,7 +7,7 @@
  * Public License (GPL); either version 2, or (at your option) any
  * later version.
  *
- * Copyright (C) 2005-2016 Red Hat Inc.
+ * Copyright (C) 2005-2021 Red Hat Inc.
  */
 #define _FILE_OFFSET_BITS 64
 
@@ -226,7 +226,11 @@ int open_cloexec(const char *pathname, int flags, mode_t mode);
 int openat_cloexec(int dirfd, const char *pathname, int flags, mode_t mode);
 #endif
 int pipe_cloexec(int pipefd[2]);
+
+/* start_cmd.c functions; XXX shared with ../stapbpf */
 void closefrom(int lowfd);
+void start_cmd(void);
+int resume_cmd(void);
 
 /* monitor.c function */
 void monitor_winch(int signum);
