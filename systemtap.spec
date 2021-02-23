@@ -406,7 +406,12 @@ Requires: systemtap-runtime-python2 = %{version}-%{release}
 Requires: systemtap-runtime-python3 = %{version}-%{release}
 %endif
 %ifarch x86_64
+%if 0%{?rhel} >= 8 || 0%{?fedora} >= 20
+# fweimer, personal correspondence
+Recommends: glibc-devel(x86-32)
+%else
 Requires: /usr/lib/libc.so
+%endif
 # ... and /usr/lib/libgcc_s.so.*
 # ... and /usr/lib/libstdc++.so.*
 %endif
