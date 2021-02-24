@@ -115,7 +115,8 @@ am__dirstamp = $(am__leading_dot)dirstamp
 @HAVE_BPF_DECLS_TRUE@am_stapbpf_OBJECTS = stapbpf-stapbpf.$(OBJEXT) \
 @HAVE_BPF_DECLS_TRUE@	stapbpf-bpfinterp.$(OBJEXT) \
 @HAVE_BPF_DECLS_TRUE@	stapbpf-libbpf.$(OBJEXT) \
-@HAVE_BPF_DECLS_TRUE@	../stapbpf-util.$(OBJEXT)
+@HAVE_BPF_DECLS_TRUE@	../stapbpf-util.$(OBJEXT) \
+@HAVE_BPF_DECLS_TRUE@	../staprun/stapbpf-start_cmd.$(OBJEXT)
 stapbpf_OBJECTS = $(am_stapbpf_OBJECTS)
 am__DEPENDENCIES_1 =
 @HAVE_BPF_DECLS_TRUE@stapbpf_DEPENDENCIES = $(am__DEPENDENCIES_1) \
@@ -138,6 +139,7 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ../$(DEPDIR)/stapbpf-util.Po \
+	../staprun/$(DEPDIR)/stapbpf-start_cmd.Po \
 	./$(DEPDIR)/stapbpf-bpfinterp.Po ./$(DEPDIR)/stapbpf-libbpf.Po \
 	./$(DEPDIR)/stapbpf-stapbpf.Po
 am__mv = mv -f
@@ -441,7 +443,9 @@ AM_CPPFLAGS = -D_GNU_SOURCE -I$(srcdir)/../includes \
 	-DPKGLIBDIR='"$(pkglibexecdir)"' -DLOCALEDIR='"$(localedir)"'
 AM_LDFLAGS = @PIELDFLAGS@
 @HAVE_BPF_DECLS_TRUE@man_MANS = stapbpf.8
-@HAVE_BPF_DECLS_TRUE@stapbpf_SOURCES = stapbpf.cxx bpfinterp.cxx libbpf.c ../util.cxx
+@HAVE_BPF_DECLS_TRUE@stapbpf_SOURCES = stapbpf.cxx bpfinterp.cxx libbpf.c ../util.cxx \
+@HAVE_BPF_DECLS_TRUE@	../staprun/start_cmd.c
+
 @HAVE_BPF_DECLS_TRUE@stapbpf_CPPFLAGS = $(AM_CPPFLAGS)
 @HAVE_BPF_DECLS_TRUE@stapbpf_CFLAGS = $(AM_CFLAGS) $(debuginfod_CFLAGS)
 @HAVE_BPF_DECLS_TRUE@stapbpf_CXXFLAGS = $(AM_CXXFLAGS)
@@ -535,6 +539,14 @@ clean-binPROGRAMS:
 	@: > ../$(DEPDIR)/$(am__dirstamp)
 ../stapbpf-util.$(OBJEXT): ../$(am__dirstamp) \
 	../$(DEPDIR)/$(am__dirstamp)
+../staprun/$(am__dirstamp):
+	@$(MKDIR_P) ../staprun
+	@: > ../staprun/$(am__dirstamp)
+../staprun/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) ../staprun/$(DEPDIR)
+	@: > ../staprun/$(DEPDIR)/$(am__dirstamp)
+../staprun/stapbpf-start_cmd.$(OBJEXT): ../staprun/$(am__dirstamp) \
+	../staprun/$(DEPDIR)/$(am__dirstamp)
 
 stapbpf$(EXEEXT): $(stapbpf_OBJECTS) $(stapbpf_DEPENDENCIES) $(EXTRA_stapbpf_DEPENDENCIES) 
 	@rm -f stapbpf$(EXEEXT)
@@ -543,11 +555,13 @@ stapbpf$(EXEEXT): $(stapbpf_OBJECTS) $(stapbpf_DEPENDENCIES) $(EXTRA_stapbpf_DEP
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f ../*.$(OBJEXT)
+	-rm -f ../staprun/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@../$(DEPDIR)/stapbpf-util.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@../staprun/$(DEPDIR)/stapbpf-start_cmd.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stapbpf-bpfinterp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stapbpf-libbpf.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stapbpf-stapbpf.Po@am__quote@ # am--include-marker
@@ -587,6 +601,20 @@ stapbpf-libbpf.obj: libbpf.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='libbpf.c' object='stapbpf-libbpf.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stapbpf_CPPFLAGS) $(CPPFLAGS) $(stapbpf_CFLAGS) $(CFLAGS) -c -o stapbpf-libbpf.obj `if test -f 'libbpf.c'; then $(CYGPATH_W) 'libbpf.c'; else $(CYGPATH_W) '$(srcdir)/libbpf.c'; fi`
+
+../staprun/stapbpf-start_cmd.o: ../staprun/start_cmd.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stapbpf_CPPFLAGS) $(CPPFLAGS) $(stapbpf_CFLAGS) $(CFLAGS) -MT ../staprun/stapbpf-start_cmd.o -MD -MP -MF ../staprun/$(DEPDIR)/stapbpf-start_cmd.Tpo -c -o ../staprun/stapbpf-start_cmd.o `test -f '../staprun/start_cmd.c' || echo '$(srcdir)/'`../staprun/start_cmd.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ../staprun/$(DEPDIR)/stapbpf-start_cmd.Tpo ../staprun/$(DEPDIR)/stapbpf-start_cmd.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../staprun/start_cmd.c' object='../staprun/stapbpf-start_cmd.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stapbpf_CPPFLAGS) $(CPPFLAGS) $(stapbpf_CFLAGS) $(CFLAGS) -c -o ../staprun/stapbpf-start_cmd.o `test -f '../staprun/start_cmd.c' || echo '$(srcdir)/'`../staprun/start_cmd.c
+
+../staprun/stapbpf-start_cmd.obj: ../staprun/start_cmd.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stapbpf_CPPFLAGS) $(CPPFLAGS) $(stapbpf_CFLAGS) $(CFLAGS) -MT ../staprun/stapbpf-start_cmd.obj -MD -MP -MF ../staprun/$(DEPDIR)/stapbpf-start_cmd.Tpo -c -o ../staprun/stapbpf-start_cmd.obj `if test -f '../staprun/start_cmd.c'; then $(CYGPATH_W) '../staprun/start_cmd.c'; else $(CYGPATH_W) '$(srcdir)/../staprun/start_cmd.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ../staprun/$(DEPDIR)/stapbpf-start_cmd.Tpo ../staprun/$(DEPDIR)/stapbpf-start_cmd.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../staprun/start_cmd.c' object='../staprun/stapbpf-start_cmd.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stapbpf_CPPFLAGS) $(CPPFLAGS) $(stapbpf_CFLAGS) $(CFLAGS) -c -o ../staprun/stapbpf-start_cmd.obj `if test -f '../staprun/start_cmd.c'; then $(CYGPATH_W) '../staprun/start_cmd.c'; else $(CYGPATH_W) '$(srcdir)/../staprun/start_cmd.c'; fi`
 
 .cxx.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -778,6 +806,8 @@ distclean-generic:
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
 	-rm -f ../$(DEPDIR)/$(am__dirstamp)
 	-rm -f ../$(am__dirstamp)
+	-rm -f ../staprun/$(DEPDIR)/$(am__dirstamp)
+	-rm -f ../staprun/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -790,6 +820,7 @@ clean-am: clean-binPROGRAMS clean-generic mostlyclean-am
 
 distclean: distclean-am
 		-rm -f ../$(DEPDIR)/stapbpf-util.Po
+	-rm -f ../staprun/$(DEPDIR)/stapbpf-start_cmd.Po
 	-rm -f ./$(DEPDIR)/stapbpf-bpfinterp.Po
 	-rm -f ./$(DEPDIR)/stapbpf-libbpf.Po
 	-rm -f ./$(DEPDIR)/stapbpf-stapbpf.Po
@@ -840,6 +871,7 @@ installcheck-am:
 
 maintainer-clean: maintainer-clean-am
 		-rm -f ../$(DEPDIR)/stapbpf-util.Po
+	-rm -f ../staprun/$(DEPDIR)/stapbpf-start_cmd.Po
 	-rm -f ./$(DEPDIR)/stapbpf-bpfinterp.Po
 	-rm -f ./$(DEPDIR)/stapbpf-libbpf.Po
 	-rm -f ./$(DEPDIR)/stapbpf-stapbpf.Po

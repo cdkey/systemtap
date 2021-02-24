@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2016-2019 Red Hat, Inc.
+ * Copyright (C) 2016-2021 Red Hat, Inc.
  *
  */
 
@@ -69,11 +69,35 @@ extern "C" {
 
 using namespace std;
 
-static int group_fd = -1;		// ??? Need one per cpu.
-extern "C" { 
-int log_level = 0;
-};
+// XXX declarations from ../staprun/staprun.h required by start_cmd()
+extern "C" {
+int verbose = 0; // TODO redundant with log_level below
+int read_stdin = 0; // TODO not used; stapbpf doesn't (yet) have input.char?
+char *__name__ = NULL; // TODO redundant with module_name below
 int target_pid = 0;
+char *target_cmd = NULL;
+
+/* ../staprun/common.c functions */
+void eprintf(const char *fmt, ...)
+{
+  va_list va;
+  va_start(va, fmt);
+  // if (use_syslog)
+  // 	vsyslog(LOG_ERR, fmt, va);
+  // else
+  vfprintf(stderr, fmt, va);
+  va_end(va);
+}
+
+/* ../staprun/common.c functions */
+void start_cmd(void);
+int resume_cmd(void);
+};
+
+static int group_fd = -1;		// ??? Need one per cpu.
+extern "C" {
+int log_level = 0;
+}
 static int warnings = 1;
 static int exit_phase = 0;
 static int interrupt_message = 0;
@@ -1412,6 +1436,7 @@ load_bpf_file(const char *module)
   len = module_name_str.copy(buf, BPF_MAXSTRINGLEN-1);
   buf[len] = '\0';
   module_name = buf;
+  __name__ = buf; // XXX for start_cmd()
 
   int fd = open(module, O_RDONLY);
   if (fd < 0)
@@ -2052,14 +2077,16 @@ procfs_spawn(bpf_transport_context* uctx)
 static void
 usage(const char *argv0)
 {
-  printf("Usage: %s [-v][-w][-V][-h] [-o FILE] <bpf-file>\n"
-	 "  -h, --help       Show this help text\n"
-	 "  -v, --verbose    Increase verbosity\n"
-	 "  -V, --version    Show version\n"
-	 "  -w               Suppress warnings\n"
-	 "  -x pid           Sets the '_stp_target' variable to pid.\n"
-	 "  -o FILE          Send output to FILE\n",
-	 argv0);
+  printf(_("Usage: %s [-v][-w][-V][-h] [-c cmd] [-x pid] [-o FILE] <bpf-file>\n"), argv0);
+  printf(_("-h, --help       Show this help text.\n"
+           "-v, --verbose    Increase verbosity.\n"
+           "-V, --version    Show version.\n"
+           "-w               Suppress warnings.\n"
+           "-c cmd           Command \'cmd\' will be run and stapbpf will\n"
+           "                 exit when it does. The '_stp_target' variable\n"
+           "                 will contain the pid for the command.\n"
+           "-x pid           Sets the '_stp_target' variable to pid.\n"
+           "-o FILE          Send output to FILE.\n"));
 }
 
 
@@ -2098,58 +2125,70 @@ main(int argc, char **argv)
 
   int rc;
 
-  while ((rc = getopt_long(argc, argv, "hvVwx:o:", long_opts, NULL)) >= 0)
+  while ((rc = getopt_long(argc, argv, "hvVwc:x:o:", long_opts, NULL)) >= 0)
     switch (rc)
       {
       case 'v':
         log_level++;
+        verbose++; // XXX for start_cmd()
         break;
       case 'w':
         warnings = 0;
         break;
-
+      case 'c':
+        target_cmd = optarg;
+        break;
       case 'x':
-	target_pid = atoi(optarg);
-	break;
+        target_pid = atoi(optarg);
+        break;
 
       case 'o':
-	output_f = fopen(optarg, "w");
-	if (output_f == NULL)
-	  {
-	    fprintf(stderr, "Error opening %s for output: %s\n",
-		    optarg, strerror(errno));
-	    return 1;
-	  }
-	break;
+        output_f = fopen(optarg, "w");
+        if (output_f == NULL)
+          {
+            fprintf(stderr, "Error opening %s for output: %s\n",
+                    optarg, strerror(errno));
+            return 1;
+          }
+        break;
 
       case 'V':
         printf("Systemtap BPF loader/runner (version %s, %s)\n"
-	       "Copyright (C) 2016-2020 Red Hat, Inc. and others\n" // PRERELEASE
+               "Copyright (C) 2016-2020 Red Hat, Inc. and others\n" // PRERELEASE
                "This is free software; "
-	       "see the source for copying conditions.\n",
-	       VERSION, STAP_EXTENDED_VERSION);
-	return 0;
+               "see the source for copying conditions.\n",
+               VERSION, STAP_EXTENDED_VERSION);
+        return 0;
 
       case 'h':
-	usage(argv[0]);
-	return 0;
+        usage(argv[0]);
+        return 0;
 
       default:
       do_usage:
-	usage(argv[0]);
-	return 1;
+        usage(argv[0]);
+        return 1;
       }
   if (optind != argc - 1)
     goto do_usage;
+  if (target_cmd && target_pid) {
+    fprintf(stderr, _("ERROR: You can't specify the '-c' and '-x' options together.\n"));
+    goto do_usage;
+  }
 
   // Be sure dmesg mentions that we are loading bpf programs:
   kmsg = fopen("/dev/kmsg", "w");
   if (kmsg == NULL)
-    fprintf(stderr, "WARNING: could not open /dev/kmsg for diagnostics: %s\n", strerror(errno));
+    fprintf(stderr, _("WARNING: Could not open /dev/kmsg for diagnostics: %s\n"), strerror(errno));
 
   load_bpf_file(argv[optind]); // <- XXX initializes cpus online, PR24543 initializes default_cpu
   init_internal_globals();
   init_perf_transport();
+
+  // PR25177: For '-c' option, start the command now so its pid is available:
+  if (target_cmd)
+    start_cmd();
+  // XXX Done before begin probes, after load_bpf_file() sets __name__.
 
   // Create a bpf_transport_context for userspace programs:
   unsigned ncpus = map_attrs[bpf::globals::perf_event_map_idx].max_entries;
@@ -2177,8 +2216,17 @@ main(int argc, char **argv)
   signal(SIGINT, (sighandler_t)sigint);
   signal(SIGTERM, (sighandler_t)sigint);
 
-  // PR26109: Only continue startup if begin probes did not exit.
+  // perf_event listener is not yet active.
   bool perf_ioc_enabled = false;
+
+  // PR25177: Signal the '-c' command to start running.
+  int target_rc = 0;
+  if (target_cmd)
+    target_rc = resume_cmd();
+  if (target_rc < 0)
+    goto cleanup_and_exit;
+
+  // PR26109: Only continue startup if begin probes did not exit.
   if (!get_exit_status()) { // may already be set by begin probe
     // PR22330: Listen for perf_events:
     std::thread(perf_event_loop, pthread_self()).detach();
@@ -2196,6 +2244,7 @@ main(int argc, char **argv)
     pause();
   }
 
+ cleanup_and_exit:
   // Disable the kprobes before deregistering and running exit probes.
   if (perf_ioc_enabled)
     ioctl(group_fd, PERF_EVENT_IOC_DISABLE, 0);
@@ -2217,18 +2266,22 @@ main(int argc, char **argv)
   signal(SIGINT, (sighandler_t)sigint); // restore previously ignored signal
   signal(SIGTERM, (sighandler_t)sigint);
 
-  // Run the end probes.
-  if (prog_end && !error)
-    bpf_interpret(prog_end->d_size / sizeof(bpf_insn),
-                  static_cast<bpf_insn *>(prog_end->d_buf),
-                  &uctx);
+  // PR25177: Skip exit probes if target_cmd did not resume correctly.
+  if (target_rc >= 0)
+    {
+      // Run the end probes.
+      if (prog_end && !error)
+        bpf_interpret(prog_end->d_size / sizeof(bpf_insn),
+                      static_cast<bpf_insn *>(prog_end->d_buf),
+                      &uctx);
 
-  // Run the error probes.
-  if (prog_error && error) 
-    bpf_interpret(prog_error->d_size / sizeof(bpf_insn),
-                  static_cast<bpf_insn *>(prog_error->d_buf),
-                  &uctx);
-  
+      // Run the error probes.
+      if (prog_error && error)
+        bpf_interpret(prog_error->d_size / sizeof(bpf_insn),
+                      static_cast<bpf_insn *>(prog_error->d_buf),
+                      &uctx);
+    }
+
   // Clean up transport layer allocations:
   for (std::vector<bpf_transport_context *>::iterator it = transport_contexts.begin();
        it != transport_contexts.end(); it++)

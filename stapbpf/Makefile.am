@@ -18,7 +18,8 @@ bin_PROGRAMS = stapbpf
 
 man_MANS = stapbpf.8
 
-stapbpf_SOURCES = stapbpf.cxx bpfinterp.cxx libbpf.c ../util.cxx
+stapbpf_SOURCES = stapbpf.cxx bpfinterp.cxx libbpf.c ../util.cxx \
+	../staprun/start_cmd.c
 stapbpf_CPPFLAGS = $(AM_CPPFLAGS)
 stapbpf_CFLAGS = $(AM_CFLAGS) $(debuginfod_CFLAGS)
 stapbpf_CXXFLAGS = $(AM_CXXFLAGS)

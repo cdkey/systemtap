@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2016-2019 Red Hat, Inc.
+ * Copyright (C) 2016-2021 Red Hat, Inc.
  *
  */
 
@@ -86,6 +86,8 @@ uint64_t bpf_interpret(size_t ninsns,
                        const struct bpf_insn insns[],
                        bpf_transport_context *ctx);
 
+extern "C" {
 extern int target_pid;
+};
 
 #endif /* STAPRUNBPF_H */
