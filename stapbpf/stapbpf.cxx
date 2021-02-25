@@ -72,9 +72,9 @@ using namespace std;
 
 // XXX declarations from ../staprun/staprun.h required by start_cmd()
 extern "C" {
-int verbose = 0; // TODO redundant with log_level below
+int verbose = 0;
 int read_stdin = 0; // TODO not used; stapbpf doesn't (yet) have input.char?
-char *__name__ = NULL; // TODO redundant with module_name below
+char *__name__ = NULL; // XXX aliased as module_name below
 int target_pid = 0;
 char *target_cmd = NULL;
 
@@ -96,9 +96,6 @@ int resume_cmd(void);
 };
 
 static int group_fd = -1;		// ??? Need one per cpu.
-extern "C" {
-int log_level = 0;
-}
 static int target_pid_failed_p = 0;
 static int warnings = 1;
 static int exit_phase = 0;
@@ -106,7 +103,7 @@ static int interrupt_message = 0;
 static FILE *output_f = stdout;
 static FILE *kmsg = NULL;
 
-static const char *module_name;
+#define module_name __name__
 static const char *module_basename;
 static const char *script_name; // name of original systemtap script
 static const char *module_license;
@@ -435,7 +432,7 @@ instantiate_maps (Elf64_Shdr *shdr, Elf_Data *data)
           (unsigned long long) rlim_max_orig,
           (unsigned long long) curr_rlimit.rlim_max,
           strerror(errno));
-  if (log_level > 1)
+  if (verbose > 1)
     {
       fprintf(stderr, "increasing map cur resource limit from %llu to %llu\n",
               (unsigned long long) rlim_orig,
@@ -475,7 +472,7 @@ instantiate_maps (Elf64_Shdr *shdr, Elf_Data *data)
           attrs[i].max_entries = ncpus;
         }
 
-      if (log_level > 2)
+      if (verbose > 2)
         fprintf(stderr, "creating map type %u entry %zu: key_size %u, value_size %u, "
                 "max_entries %u, map_flags %u\n", map_type, i,
                 attrs[i].key_size, attrs[i].value_size,
@@ -860,7 +857,7 @@ register_uprobes()
 	  goto fail_n;
 	}
 
-      if (log_level > 1)
+      if (verbose > 1)
         fprintf(stderr, "Associating probe %zu with uprobe %s\n", i, msgbuf);
 
       ssize_t wlen = write(fd, msgbuf, olen);
@@ -979,7 +976,7 @@ register_kprobes()
 	  goto fail_n;
 	}
 
-      if (log_level > 1)
+      if (verbose > 1)
         fprintf(stderr, "Associating probe %zu with kprobe %s\n", i, msgbuf);
       
       ssize_t wlen = write(fd, msgbuf, olen);
@@ -1410,7 +1407,7 @@ init_perf_transport()
       if (base == MAP_FAILED)
         fatal("error mmapping header for perf_event fd %d\n", pmu_fd);
       perf_headers.push_back((perf_event_mmap_page*)base);
-      if (log_level > 2)
+      if (verbose > 2)
         fprintf(stderr, "Initialized perf_event output on cpu %d\n", cpu);
     }
 }
@@ -1438,7 +1435,6 @@ load_bpf_file(const char *module)
   len = module_name_str.copy(buf, BPF_MAXSTRINGLEN-1);
   buf[len] = '\0';
   module_name = buf;
-  __name__ = buf; // XXX for start_cmd()
 
   int fd = open(module, O_RDONLY);
   if (fd < 0)
@@ -1851,7 +1847,7 @@ perf_event_loop(pthread_t main_thread)
 
   for (;;)
     {
-      if (log_level > 3)
+      if (verbose > 3)
         fprintf(stderr, "Polling for perf_event data on %d cpus...\n", n_active_cpus);
       int ready = poll(pmu_fds, n_active_cpus, 1000); // XXX: Consider setting timeout -1 (unlimited).
       if (ready < 0 && errno == EINTR)
@@ -1862,7 +1858,7 @@ perf_event_loop(pthread_t main_thread)
         {
           if (pmu_fds[i].revents <= 0)
             continue;
-          if (log_level > 3)
+          if (verbose > 3)
             fprintf(stderr, "Saw perf_event on fd %d\n", pmu_fds[i].fd);
 
           ready --;
@@ -2032,7 +2028,7 @@ procfs_cleanup()
   if (procfsprobes.size() > 0 && remove_file_or_dir(dir))
     fprintf(stderr, "WARNING: an error ocurred while deleting a directory (%s). %s.\n", dir, strerror(errno));
 
-  if (log_level)
+  if (verbose)
     fprintf(stderr, "removed fifo directory %s\n", dir);
 }
 
@@ -2063,7 +2059,7 @@ procfs_spawn(bpf_transport_context* uctx)
       if ((mkfifo(path.c_str(), mode) == -1))
         fatal("an error occured while making procfs fifos. %s.\n", strerror(errno));
 
-      if (log_level)
+      if (verbose)
         fprintf(stderr, "created %c fifo %s\n", data->type, path.c_str());
       
       // TODO: Could set the owner/group of the fifo to the effective user.  or real?
@@ -2085,7 +2081,7 @@ usage(const char *argv0)
            "-V, --version    Show version.\n"
            "-w               Suppress warnings.\n"
            "-c cmd           Command \'cmd\' will be run and stapbpf will\n"
-           "                 exit when it does. The '_stp_target' variable\n"
+           "                 exit when it does.  The '_stp_target' variable\n"
            "                 will contain the pid for the command.\n"
            "-x pid           Sets the '_stp_target' variable to pid.\n"
            "-o FILE          Send output to FILE.\n"));
@@ -2121,7 +2117,7 @@ void
 sigchld(int signum)
 {
   int chld_stat = 0;
-  if (log_level > 2)
+  if (verbose > 2)
     fprintf(stderr, "sigchld %d (%s)\n", signum, strsignal(signum));
   pid_t pid = waitpid(-1, &chld_stat, WNOHANG);
   if (pid != target_pid) {
@@ -2166,8 +2162,7 @@ main(int argc, char **argv)
     switch (rc)
       {
       case 'v':
-        log_level++;
-        verbose++; // XXX for start_cmd()
+        verbose++;
         break;
       case 'w':
         warnings = 0;

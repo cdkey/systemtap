@@ -93,7 +93,7 @@ int bpf_get_next_key(int fd, void *key, void *next_key)
 #define ROUND_UP(x, n) (((x) + (n) - 1u) & ~((n) - 1u))
 
 char bpf_log_buf[LOG_BUF_SIZE];
-extern int log_level; // set from stapbpf command line
+extern int verbose; // set from stapbpf command line
 
 int bpf_prog_load(enum bpf_prog_type prog_type,
 		  const struct bpf_insn *insns, int prog_len,
@@ -110,11 +110,11 @@ int bpf_prog_load(enum bpf_prog_type prog_type,
            the eBPF verifier output */
         int retry = 0;
  do_retry:
-        if (log_level || retry)
+        if (verbose || retry)
           {
             attr.log_buf = ptr_to_u64(bpf_log_buf);
             attr.log_size = LOG_BUF_SIZE;
-            attr.log_level = retry ? log_level + 1 : log_level;
+            attr.log_level = retry ? verbose + 1 : verbose;
             /* they hang together, or they hang separately with -EINVAL */
           }
 
@@ -125,11 +125,11 @@ int bpf_prog_load(enum bpf_prog_type prog_type,
 
 	bpf_log_buf[0] = 0;
 
-        if (log_level > 1)
+        if (verbose > 1)
           fprintf(stderr, "Loading probe type %d, size %d\n", prog_type, prog_len);
 
         int rc = syscall(__NR_bpf, BPF_PROG_LOAD, &attr, sizeof(attr));
-        if (rc < 0 && log_level == 0 && !retry)
+        if (rc < 0 && verbose == 0 && !retry)
           {
             retry = 1; goto do_retry;
           }

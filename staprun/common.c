@@ -349,7 +349,7 @@ void usage(char *prog, int rc)
 	"-w              Suppress warnings.\n"
 	"-u              Load uprobes.ko\n"
 	"-c cmd          Command \'cmd\' will be run and staprun will\n"
-	"                exit when it does. The '_stp_target' variable\n"
+	"                exit when it does.  The '_stp_target' variable\n"
 	"                will contain the pid for the command.\n"
 	"-x pid          Sets the '_stp_target' variable to pid.\n"
   "-N pid          Sets the '_stp_namespaces_pid' variable to pid.\n"
