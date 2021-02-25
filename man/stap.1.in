@@ -96,7 +96,7 @@ The
 program is the front-end to the Systemtap tool.  It accepts probing
 instructions written in a simple domain-specific language, translates
 those instructions into C code, compiles this C code, and loads the
-resulting module into a running Linux kernel or a DynInst user-space
+resulting module into a running Linux kernel or a Dyninst user-space
 mutator, to perform the requested system trace/probe functions.  You
 can supply the script in a named file (FILENAME), from standard input
 (use \- instead of FILENAME), or from the command line (using \-e
@@ -2083,7 +2083,7 @@ is used for user space addresses.
 @kderef(SIZE, addr)
 @uderef(SIZE, addr)
 .ESAMPLE
-This will interpert
+This will interpret
 .I addr
 as a kernel/user address and read
 .I SIZE
@@ -2653,7 +2653,7 @@ now includes two new prototype backends: \fI\-\-runtime=dyninst\fR and
 at runtime. This backend does not use kernel modules, and does not require
 root privileges, but is restricted with respect to the kinds of probes and
 other constructs that a script may use. \fIdyninst\fR runtime operates in
-target-attach mode, so it does requirea \fI\-c COMMAND\fR or \fI\-x PID\fR
+target-attach mode, so it does require a \fI\-c COMMAND\fR or \fI\-x PID\fR
 process.  For example:
 .SAMPLE
 stap \-\-runtime=dyninst \-c 'stap \-V' \\
