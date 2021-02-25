@@ -41,6 +41,7 @@
 #include <sys/mman.h>
 #include <sys/utsname.h>
 #include <sys/resource.h>
+#include <sys/wait.h>
 #include <pwd.h>
 #include "bpfinterp.h"
 #include "../util.h"
@@ -98,6 +99,7 @@ static int group_fd = -1;		// ??? Need one per cpu.
 extern "C" {
 int log_level = 0;
 }
+static int target_pid_failed_p = 0;
 static int warnings = 1;
 static int exit_phase = 0;
 static int interrupt_message = 0;
@@ -2114,6 +2116,41 @@ sigint(int s)
      fatal("error during bpf map update: %s\n", strerror(errno));
 }
 
+// XXX similar to chld_proc in ../staprun/mainloop.c
+void
+sigchld(int signum)
+{
+  int chld_stat = 0;
+  if (log_level > 2)
+    fprintf(stderr, "sigchld %d (%s)\n", signum, strsignal(signum));
+  pid_t pid = waitpid(-1, &chld_stat, WNOHANG);
+  if (pid != target_pid) {
+    return;
+  }
+
+  if (chld_stat) {
+    // our child exited with a non-zero status
+    if (WIFSIGNALED(chld_stat)) {
+      fprintf(stderr, _("WARNING: Child process exited with signal %d (%s)\n"),
+          WTERMSIG(chld_stat), strsignal(WTERMSIG(chld_stat)));
+      target_pid_failed_p = 1;
+    }
+    if (WIFEXITED(chld_stat) && WEXITSTATUS(chld_stat)) {
+      fprintf(stderr, _("WARNING: Child process exited with status %d\n"),
+          WEXITSTATUS(chld_stat));
+      target_pid_failed_p = 1;
+    }
+  }
+
+  // set exit flag
+  int key = bpf::globals::EXIT;
+  int64_t val = 1;
+
+  if (bpf_update_elem
+       (map_fds[bpf::globals::internal_map_idx], &key, &val, 0) != 0)
+     fatal("error during bpf map update: %s\n", strerror(errno));
+}
+
 int
 main(int argc, char **argv)
 {
@@ -2226,6 +2263,10 @@ main(int argc, char **argv)
   if (target_rc < 0)
     goto cleanup_and_exit;
 
+  // PR25177: This is to notify when our child process (-c) ends.
+  if (target_cmd)
+    signal(SIGCHLD, (sighandler_t)sigchld);
+
   // PR26109: Only continue startup if begin probes did not exit.
   if (!get_exit_status()) { // may already be set by begin probe
     // PR22330: Listen for perf_events:
@@ -2265,6 +2306,7 @@ main(int argc, char **argv)
   exit_phase = 1;
   signal(SIGINT, (sighandler_t)sigint); // restore previously ignored signal
   signal(SIGTERM, (sighandler_t)sigint);
+  signal(SIGCHLD, SIG_IGN); // assume child is no longer relevant
 
   // PR25177: Skip exit probes if target_cmd did not resume correctly.
   if (target_rc >= 0)
@@ -2293,10 +2335,13 @@ main(int argc, char **argv)
   int error_count = get_error_count();
 
   if (error_count > 0) {
-    // TODO: Need better color configuration.
+    // TODO: Need better color configuration. Borrow staprun's dbug, warn, err macros?
     fprintf(stderr, "\033[0;33m" "WARNING:" "\033[0m" " Number of errors: %d\n", error_count); 
     return 1;
   }
+
+  if (target_pid_failed_p)
+    return 1;
 
   return 0;
 }
