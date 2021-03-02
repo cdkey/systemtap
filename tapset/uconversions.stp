@@ -113,6 +113,7 @@ function user_string_quoted:string (addr:long) {
 
 
 
+%( runtime != "bpf" %?
 /**
  * sfunction user_string_n - Retrieves string of given length from user space
  *
@@ -123,7 +124,6 @@ function user_string_quoted:string (addr:long) {
  * given user space address. Reports an error on the rare cases
  * when userspace data is not accessible at the given address.
  */
-%( runtime != "bpf" %?
 function user_string_n:string (addr:long, n:long)
 %( systemtap_v < "2.3" %? // PR15044
 	{ return user_string_n(addr, n, "<unknown>") }
@@ -160,6 +160,7 @@ function user_string_n_nofault (addr:long, n:long) {
   try { return user_string_n(addr, n) } catch { return "" }
 }
 
+%( runtime != "bpf" %?
 /**
  * sfunction user_string_n - Retrieves string of given length from user space
  *
@@ -172,7 +173,6 @@ function user_string_n_nofault (addr:long, n:long) {
  * the rare cases when userspace data is not accessible at the given
  * address.
  */
-%( runtime != "bpf" %?
 function user_string_n:string (addr:long, n:long, err_msg:string)
 %{ /* pure */ /* myproc-unprivileged */ /* unmodified-fnargs */
   int64_t len = clamp_t(int64_t, STAP_ARG_n + 1, 1, MAXSTRINGLEN - 1);
@@ -206,6 +206,7 @@ function user_string_n_warn:string (addr:long, n:long) {
 %)
 }
 
+%( runtime != "bpf" %?
 /**
  * sfunction user_string_n_warn - Retrieves string from user space with alternative warning string
  *
@@ -218,7 +219,6 @@ function user_string_n_warn:string (addr:long, n:long) {
  * rare cases when userspace data is not accessible and warns (but does
  * not abort) about the failure.
  */
-%( runtime != "bpf" %?
 function user_string_n_warn:string (addr:long, n:long, warn_msg:string)
 %{ /* pure */ /* myproc-unprivileged */ /* unmodified-fnargs */
 	int64_t len = clamp_t(int64_t, STAP_ARG_n + 1, 1, MAXSTRINGLEN - 1);
@@ -663,6 +663,7 @@ function user_int_warn:long (addr:long)
 	}
 }
 
+%( runtime != "bpf" %?
 /**
  * sfunction user_long_error - Retrieves a long value stored in user space
  *
@@ -674,7 +675,6 @@ function user_int_warn:long (addr:long)
  * of the current user space task (for those architectures that
  * support both 64/32 bit compat tasks).
  */
-%( runtime != "bpf" %?
 function user_long_error:long (addr:long)
 %{ /* pure */ /* myproc-unprivileged */
 #ifdef CONFIG_COMPAT
