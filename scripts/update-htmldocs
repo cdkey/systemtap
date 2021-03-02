@@ -52,29 +52,35 @@ fi
 ### LANGREF
 cp doc/langref.pdf $BASEDIR/htdocs/
 
-#Something about publicanizing the langref?
-
-rm $BASEDIR/htdocs/langref/*.html
+rm $BASEDIR/htdocs/langref/*
 cd $BASEDIR/htdocs
-cvs rm && cvs commit -m 'removed langref/*.html'
+cvs rm && cvs commit -m 'removed langref/* bits'
 
-cd $BASEDIR/systemtap/doc
-latex2html -noaddress -show_section_numbers -custom_titles -local_icons -split 4 langref.tex -dir $BASEDIR/htdocs/langref/
-cd $BASEDIR/htdocs
-cvs add langref/*.html && cvs commit -m 'add new langref/*.html'
+cd $BASEDIR/htdocs/langref
+htlatex $BASEDIR/systemtap/doc/langref.tex "html,2"
+cp langref.html index.html
+cd $BASEDIR/htdocs/
+cvs add langref/*.html
+cvs add langref/*.css
+cvs commit -m 'add new langref/*'
 cd -
+
+
 ### TUTORIAL
 cp $BASEDIR/systemtap/build/doc/tutorial.pdf $BASEDIR/htdocs/
-rm $BASEDIR/htdocs/tutorial/*.html
+
+rm -f $BASEDIR/htdocs/tutorial/*
+cd $BASEDIR/htdocs
+cvs rm && cvs commit -m 'removed tutorial/* bits'
+
+cd $BASEDIR/htdocs/tutorial
+htlatex $BASEDIR/systemtap/doc/tutorial.tex "html,2"
+cp tutorial.html index.html
 
 cd $BASEDIR/htdocs
-#cvs rm && cvs commit -m 'removed tutorial/*.html'
-
-cd $BASEDIR/systemtap/doc
-latex2html -noaddress -show_section_numbers -custom_titles -local_icons -split 4 tutorial.tex -dir $BASEDIR/htdocs/tutorial/
-
-cd $BASEDIR/htdocs
-cvs add tutorial/*.html && cvs commit -m 'add new tutorial/*.html'
+cvs add tutorial/*.html
+cvs add tutorial/*.css
+cvs commit -m 'add new tutorial/*'
 
 # beginners guide
 # we require xmlto version newer than 0.0.23-3

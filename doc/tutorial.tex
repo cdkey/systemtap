@@ -5,7 +5,7 @@
 % later version.
 
 \documentclass[compatible]{article}
-\usepackage{html}
+% \usepackage{html}
 \usepackage{graphicx}
 % \usepackage{moreverb}
 \usepackage{fancyvrb}
@@ -18,8 +18,8 @@
 \usepackage{charter}
 
 \newenvironment{boxedminipage}%% Boxed minipage
-    {\begin{makeimage}\begin{center}\begin{Sbox}\begin{minipage}}%
-    {\end{minipage}\end{Sbox}\fbox{\TheSbox}\end{center}\end{makeimage}}
+    {\begin{center}\begin{Sbox}\begin{minipage}}%
+    {\end{minipage}\end{Sbox}\fbox{\TheSbox}\end{center}}
 
 \newcommand{\nomenclature}[2]{}
 
@@ -1106,11 +1106,11 @@ and a live GIT source repository.  Come join us!
 
 \appendix
 
-\section{Glossary}
+% \section{Glossary}
 % \renewcommand{\nomname}{}
 % \printglossary
 % \begin{htmlonly}
-{\em Sorry, no glossary available.}
+% {\em Sorry, no glossary available.}
 % \end{htmlonly}
 
 \section{Errors}
@@ -1121,6 +1121,11 @@ locate the precise location of error in the script code.  There is
 sometimes a subsequent or prior line that elaborates.
 
 {\large {\em error} {\tt at:} {\em filename}:{\em line}:{\em column}: {\em details}}
+
+Many error messages contain a man-page key like this \verb+[man foo]+.
+This indicates that more details are available as a \verb+man+ page \verb+foo+,
+so use the \verb+% man foo+ command to view it.
+
 
 \subsection{Parse errors}
 
