@@ -74,9 +74,18 @@ signing-related processing.
 
 The normal kernel-module based systemtap backend may be more than
 your script requires.  Try
-.IR "stap --runtime=bpf" and/or "stap --runtime=dyninst"
+.nh
+.IR "stap\ --runtime=bpf " and/or " stap\ --runtime=dyninst"
+.hy
 backends.  Though they have inherent limitations, they operate
 with lesser privileges and perceived risks.
+
+It may be possible to disable secure/lockdown measures temporarily
+with the SysRQ+x keystroke, or permanently with
+.nh
+.IR "sudo\ mokutil\ --disable-validation"
+.hy
+and a reboot.
 
 .TP
 errors from target program
