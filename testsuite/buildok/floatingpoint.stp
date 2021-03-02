@@ -4,11 +4,26 @@
 
 function printlnfp(a) { println(fp_to_string(a,5)) }
 
-probe process("stap").function("sdt_benchmark_thread") {
-    fp = $fp1
-    printlnfp(fp)
-    fp32 = $fp2
-    printlnfp(fp32_to_fp64(fp32))
+probe process("stap").mark("benchmark__thread__start") {
+    println("sdt parameters:")
+    printlnfp($fp1)
+    printlnfp(fp32_to_fp64($fp2))
+    println("sdt locals:")
+    printlnfp($fp_local1)
+    printlnfp(fp32_to_fp64($fp_local2))
+    printlnfp($fp_local3)
+    printlnfp($fp_local4)
+    printlnfp($fp_local5)
+    printlnfp($fp_local6)
+    printlnfp($fp_local7)
+    printlnfp($fp_local8)
+    printlnfp($fp_local9)
+    printlnfp($fp_local10)
+    printlnfp($fp_local11)
+    printlnfp($fp_local12)
+    printlnfp($fp_local13)
+    printlnfp($fp_local14)
+    printlnfp($fp_local15)
     exit()
 }
 
