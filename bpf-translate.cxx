@@ -3690,7 +3690,7 @@ bpf_unparser::visit_print_format (print_format *e)
 	      throw SEMANTIC_ERROR(_("cannot print a raw stats object"),
 				   e->args[i]->tok);
 	    case pe_long:
-	      format += "%lld";
+	      format += "%ld";
 	      break;
 
 	    case pe_string:
