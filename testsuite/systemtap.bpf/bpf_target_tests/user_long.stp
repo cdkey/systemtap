@@ -1,5 +1,3 @@
-// TODOXXX also imitate systemtap.base/ret-uprobe-var_1.c for @var support
-
 global arg
 
 probe begin {

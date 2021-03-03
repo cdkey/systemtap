@@ -1,0 +1,16 @@
+global arg
+
+probe begin {
+  printf("BEGIN\n")
+}
+
+probe process("./a.out").function("main").return {
+  arg = @var("a"); arg2 = @entry(@var("a"))
+  printf("found addr a, @entry(a) = %d, %d\n", arg, arg2)
+  exit()
+}
+
+probe end {
+  printf("found %p\n", arg)
+  printf("END PASS\n")
+}
