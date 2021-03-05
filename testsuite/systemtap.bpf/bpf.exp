@@ -6,6 +6,7 @@
 #    make installcheck RUNTESTFLAGS="bpf.exp" CHECK_ONLY="printf uprobes"
 
 set testdir "$srcdir/$subdir/bpf_tests"
+set targettestdir "$srcdir/$subdir/bpf_target_tests"
 
 # Skip irrelevant environment.
 if {![bpf_p]} {
@@ -41,11 +42,11 @@ proc stapbpf_run { TEST_NAME OUTPUT_STR options args } {
     set invalid_prog 7
     set comp_err 8
     
-    set cmd [concat stap -v --runtime=bpf -x 12345 $options $args]
+    set cmd [concat stap -v --runtime=bpf $options $args]
     # don't the following: ... $test_file_name could be some transient or leftover file
     # if [file readable $test_file_name] { lappend cmd $test_file_name }
 
-    # child process, only for some commands
+    # child process, only for some commands not using -c
     set mypid2 0
 
     send_log "executing: $cmd\n"
@@ -130,21 +131,34 @@ proc get_output_str { test } {
 }
 
 if {[info exists env(CHECK_ONLY)]} {
-    set all_files [lsort [glob -nocomplain $testdir/*.stp]]
+    set all_files [lsort [glob -nocomplain $testdir/*.stp $targettestdir/*.stp]]
     set stap_files ""
     foreach file $env(CHECK_ONLY) {
         if {[lsearch $all_files $testdir/$file.stp] >= 0} {
             set stap_files "$stap_files $testdir/$file.stp"
         }
+        if {[lsearch $all_files $targettestdir/$file.stp] >= 0} {
+            set stap_files "$stap_files $targettestdir/$file.stp"
+        }
     }
 } else {
-    set stap_files [lsort [glob -nocomplain $testdir/*.stp]]
+    set stap_files [lsort [glob -nocomplain $testdir/*.stp $targettestdir/*.stp]]
+}
+
+# Compile helper program; XXX skip -O flag to avoid inlining functions
+set res [target_compile $srcdir/$subdir/bpf-target.c ./a.out executable \
+    "additional_flags=-g"]
+if {$res ne ""} {
+    verbose "target_compile failed: $res" 2
+    fail "bpf.exp: unable to compile bpf-target.c"
 }
 
 foreach file $stap_files {
     global mypid
     set mypid 0
     set test [file tail $file]
+    # bpf_tests or bpf_target_tests:
+    set testtype [file tail [file dirname $file]]
     if {! [installtest_p]} { untested $test; continue }
     if {! [bpf_p]} { untested $test; continue }
 
@@ -162,6 +176,13 @@ foreach file $stap_files {
         reg_alloc3.stp { set options "--compatible=4.1" }
         tracepoint1.stp { set options "--compatible=4.1" }
         default { set options "" }
+    }
+
+    # Add -c/-x option for some tests that require them
+    if {"$testtype" == "bpf_target_tests"} {
+        set options "-c ./a.out $options"
+    } else {
+        set options "-x 12345 $options"
     }
 
     set output_str [get_output_str $test]
@@ -231,5 +252,3 @@ foreach file $stap_files {
         wait
     }
 }
-
-

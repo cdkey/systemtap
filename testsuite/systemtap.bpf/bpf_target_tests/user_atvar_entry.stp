@@ -1,16 +1,25 @@
-global arg
+global found1 = 0
+global found2 = 0
 
 probe begin {
   printf("BEGIN\n")
 }
 
-probe process("./a.out").function("main").return {
-  arg = @var("a"); arg2 = @entry(@var("a"))
-  printf("found addr a, @entry(a) = %d, %d\n", arg, arg2)
-  exit()
+probe process("a.out").function("main").return {
+  a = @var("a"); a0 = @entry(@var("a"))
+  printf("main(): a, @entry(a) = %d, %d\n", a, a0)
+  if (a == 5 && a0 == 3) found1 = 1
+}
+
+probe process("a.out").function("foo").return {
+  a = @var("a"); a0 = @entry(@var("a"))
+  printf("foo(): a, @entry(a) = %d, %d\n", a, a0)
+  if (a == 5 && a0 == 4) found2 = 1
 }
 
 probe end {
-  printf("found %p\n", arg)
-  printf("END PASS\n")
+  if (found1 && found2)
+    printf("END PASS\n")
+  else
+    printf("END FAIL\n")
 }

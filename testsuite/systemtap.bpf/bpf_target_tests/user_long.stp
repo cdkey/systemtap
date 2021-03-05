@@ -1,16 +1,18 @@
-global arg
+global found = 0
 
 probe begin {
   printf("BEGIN\n")
 }
 
-probe process("./a.out").function("foo") {
-  arg = user_long_error($b)
-  printf("found addr %p -> %p\n", $b, arg)
-  exit()
+probe process("a.out").function("foo") {
+  a = user_long_error($b)
+  printf("foo(): b, *b = %p, %d\n", $b, a)
+  if (a == 4) found = 1
 }
 
 probe end {
-  printf("found %p\n", arg)
-  printf("END PASS\n")
+  if (found)
+    printf("END PASS\n")
+  else
+    printf("END FAIL\n")
 }
