@@ -6,6 +6,9 @@
 // Public License (GPL); either version 2, or (at your option) any
 // later version.
 
+// TODO: Really need a solution for redundant docstrings.
+// TODO: Use jump_to_catch/register_error for user_long{,_warn} type functions.
+
 function user_string_n:string (addr:long, n:long)
 { /* pure */ /* bpf */
   // TODO: Does not provide address in error message.
@@ -129,14 +132,47 @@ function __bpf_probe_read_user_error:long (addr:long, size:long)
   call, -, exit;
 
   label, _done;
-  /* return *(unsigned long *)buf >> 8*(8-size); // LITTLE ENDIAN */
-  0x79, $val, $buf, 0x0, -; /* ldxdw $val, buf */
-  0xb7, $shift, -, -, 0x8; /* mov $shift, 8 */
-  0x1f, $shift, $size, -, -; /* sub $shift, $size */
-  0x27, $shift, -, -, 0x8; /* mul $shift, 8 */
-  0x7f, $val, $shift, -, -; /* rsh $val, $shift */
-  0xbf, $$, $val, -, -; /* mov $$, $val */
+  /* return *(unsigned long *)buf; */
+  0x79, $$, $buf, 0x0, -; /* ldxdw $$, buf */
 %}
+// XXX I assumed I would need to return buf >> 8*(8-size) here,
+// but buf is already correctly aligned for smaller sizes. Hmm.
+
+function __signext:long (src:long, size:long) { /* pure */ /* bpf */
+  // XXX 2'S COMPLEMENT; assumes upper bits of size are zero
+  // as provided by __bpf_probe_read_user_error()
+  // thanks to https://graphics.stanford.edu/~seander/bithacks
+  bits = 8*size
+  mask = 1 << (bits-1)
+  return (src ^ mask) - mask
+}
+
+function __bpf_probe_read_user_error_signed (addr:long, size:long) { /* pure */ /* bpf */
+  return __signext(__bpf_probe_read_user_error(addr, size), size)
+}
+
+// TODO We can't be sure of exact lengths of {char,short,int,long}
+// so the best guess for now is 1,2,4,8 to match the BPF definitions.
+// However, I'm pretty sure sizeof.stp uses some @cast() trickery to
+// get the size of a data type. Should we capture it as a macro?
+
+function user_char_error:long (addr:long) { /* pure */ /* bpf */
+  // XXX: Note that the lkm version is also reading a signed char,
+  // which gets sign extended to a long just like this. I was surprised.
+  return __bpf_probe_read_user_error_signed(addr, 1)
+}
+
+function user_short_error:long (addr:long) { /* pure */ /* bpf */
+  return __bpf_probe_read_user_error_signed(addr, 2)
+}
+
+function user_ushort_error:long (addr:long) { /* pure */ /* bpf */
+  return __bpf_probe_read_user_error(addr, 2)
+}
+
+function user_int_error:long (addr:long) { /* pure */ /* bpf */
+  return __bpf_probe_read_user_error_signed(addr, 4)
+}
 
 function user_long_error:long (addr:long) { /* pure */ /* bpf */
   /* XXX code for testing LITTLE ENDIAN / BIG ENDIAN */
@@ -145,5 +181,41 @@ function user_long_error:long (addr:long) { /* pure */ /* bpf */
     __bpf_probe_read_user_error(addr, 2),
     __bpf_probe_read_user_error(addr, 4),
     __bpf_probe_read_user_error(addr, 8)) /* end test */
+  return __bpf_probe_read_user_error(addr, 8) // XXX no sign extension needed
+}
+
+function user_ulong_error:long (addr:long) { /* pure */ /* bpf */
   return __bpf_probe_read_user_error(addr, 8)
+}
+
+function user_int8_error:long (addr:long) { /* pure */ /* bpf */
+  return __bpf_probe_read_user_error_signed(addr, 1)
+}
+
+function user_uint8_error:long (addr:long) { /* pure */ /* bpf */
+  return __bpf_probe_read_user_error(addr, 1)
+}
+
+function user_int16_error:long (addr:long) { /* pure */ /* bpf */
+  return __bpf_probe_read_user_error_signed(addr, 2)
+}
+
+function user_uint16_error:long (addr:long) { /* pure */ /* bpf */
+  return __bpf_probe_read_user_error(addr, 2)
+}
+
+function user_int32_error:long (addr:long) { /* pure */ /* bpf */
+  return __bpf_probe_read_user_error_signed(addr, 4)
+}
+
+function user_uint32_error:long (addr:long) { /* pure */ /* bpf */
+  return __bpf_probe_read_user_error(addr, 4)
+}
+
+function user_int64_error:long (addr:long) { /* pure */ /* bpf */
+  return __bpf_probe_read_user_error(addr, 8) // XXX no sign extension needed
+}
+
+function user_uint64_error:long (addr:long) { /* pure */ /* bpf */
+  return __bpf_probe_read_user_error_(addr, 8)
 }

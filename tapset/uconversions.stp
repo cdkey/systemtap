@@ -113,6 +113,7 @@ function user_string_quoted:string (addr:long) {
 
 
 
+// XXX this and other functions also implemented in tapset/bpf/uconversions.stp
 %( runtime != "bpf" %?
 /**
  * sfunction user_string_n - Retrieves string of given length from user space
@@ -482,6 +483,7 @@ function user_string_quoted_utf16:string (addr:long) {
 }
 
 
+%( runtime != "bpf" %?
 /**
  * sfunction user_char_error - Retrieves a char value stored in user space
  *
@@ -494,6 +496,7 @@ function user_char_error:long (addr:long) %{ /* pure */ /* myproc-unprivileged *
 	STP_GET_USER(char);
 	CATCH_DEREF_FAULT();
 %}
+%)
 
 /**
  * sfunction user_char - Retrieves a char value stored in user space
@@ -526,6 +529,7 @@ function user_char_warn:long (addr:long) {
 	}
 }
 
+%( runtime != "bpf" %?
 /**
  * sfunction user_short_error - Retrieves a short value stored in user space
  *
@@ -538,6 +542,7 @@ function user_short_error:long (addr:long) %{ /* pure */ /* myproc-unprivileged 
 	STP_GET_USER(short);
 	CATCH_DEREF_FAULT();
 %}
+%)
 
 /**
  * sfunction user_short - Retrieves a short value stored in user space
@@ -570,6 +575,7 @@ function user_short_warn:long (addr:long) {
 	}
 }
 
+%( runtime != "bpf" %?
 /**
  * sfunction user_ushort_error - Retrieves an unsigned short value stored in user space
  *
@@ -583,6 +589,7 @@ function user_ushort_error:long (addr:long) %{ /* pure */ /* myproc-unprivileged
 	STP_GET_USER(unsigned short);
 	CATCH_DEREF_FAULT();
 %}
+%)
 
 /**
  * sfunction user_ushort - Retrieves an unsigned short value stored in user space
@@ -617,6 +624,7 @@ function user_ushort_warn:long (addr:long)
 	}
 }
 
+%( runtime != "bpf" %?
 /**
  * sfunction user_int_error - Retrieves an int value stored in user space
  *
@@ -629,6 +637,7 @@ function user_int_error:long (addr:long) %{ /* pure */ /* myproc-unprivileged */
 	STP_GET_USER(int);
 	CATCH_DEREF_FAULT();
 %}
+%)
 
 /**
  * sfunction user_int - Retrieves an int value stored in user space
@@ -723,6 +732,7 @@ function user_long_warn:long (addr:long) {
 	}
 }
 
+%( runtime != "bpf" %?
 /**
  * sfunction user_ulong_error - Retrieves a unsigned long value stored in user space
  *
@@ -743,6 +753,7 @@ function user_ulong_error:long (addr:long) %{ /* pure */ /* myproc-unprivileged 
 		STP_GET_USER(unsigned long);
 	CATCH_DEREF_FAULT();
 %}
+%)
 
 /**
  * sfunction user_ulong - Retrieves an unsigned long value stored in user space
@@ -781,6 +792,7 @@ function user_ulong_warn:long (addr:long) {
 	}
 }
 
+%( runtime != "bpf" %?
 /**
  * sfunction user_int8_error - Retrieves a 8-bit integer value stored in user space
  *
@@ -794,6 +806,7 @@ function user_int8_error:long (addr:long) %{ /* pure */ /* myproc-unprivileged *
 	STP_GET_USER(int8_t);
 	CATCH_DEREF_FAULT();
 %}
+%)
 
 /**
  * sfunction user_int8 - Retrieves a 8-bit integer value stored in user space
@@ -808,6 +821,7 @@ function user_int8:long (addr:long) {
 }
 
 
+%( runtime != "bpf" %?
 /**
  * sfunction user_uint8_error - Retrieves a unsigned 8-bit integer value stored in user space
  *
@@ -821,6 +835,7 @@ function user_uint8_error:long (addr:long) %{ /* pure */ /* myproc-unprivileged 
 	STP_GET_USER(uint8_t);
 	CATCH_DEREF_FAULT();
 %}
+%)
 
 /**
  * sfunction user_uint8 - Retrieves a unsigned 8-bit integer value stored in user space
@@ -835,6 +850,7 @@ function user_uint8:long (addr:long) {
 	try { return user_uint8_error(addr) } catch { return 0 }
 }
 
+%( runtime != "bpf" %?
 /**
  * sfunction user_int16_error - Retrieves a 16-bit integer value stored in user space
  *
@@ -848,6 +864,7 @@ function user_int16_error:long (addr:long) %{ /* pure */ /* myproc-unprivileged 
 	STP_GET_USER(int16_t);
 	CATCH_DEREF_FAULT();
 %}
+%)
 
 /**
  * sfunction user_int16 - Retrieves a 16-bit integer value stored in user space
@@ -861,6 +878,7 @@ function user_int16:long (addr:long) {
 	try { return user_int16_error(addr) } catch { return 0 }
 }
 
+%( runtime != "bpf" %?
 /**
  * sfunction user_uint16_error - Retrieves an unsigned 16-bit integer value stored in user space
  *
@@ -874,6 +892,7 @@ function user_uint16_error:long (addr:long) %{ /* pure */ /* myproc-unprivileged
 	STP_GET_USER(uint16_t);
 	CATCH_DEREF_FAULT();
 %}
+%)
 
 /**
  * sfunction user_uint16 - Retrieves an unsigned 16-bit integer value stored in user space
@@ -887,6 +906,7 @@ function user_uint16:long (addr:long) {
 	try { return user_uint16_error(addr) } catch { return 0 }
 }
 
+%( runtime != "bpf" %?
 /**
  * sfunction user_int32_error - Retrieves a 32-bit integer value stored in user space
  *
@@ -900,6 +920,7 @@ function user_int32_error:long (addr:long) %{ /* pure */ /* myproc-unprivileged 
 	STP_GET_USER(int32_t);
 	CATCH_DEREF_FAULT();
 %}
+%)
 
 /**
  * sfunction user_int32 - Retrieves a 32-bit integer value stored in user space
@@ -913,6 +934,7 @@ function user_int32:long (addr:long) {
 	try { return user_int32_error(addr) } catch { return 0 }
 }
 
+%( runtime != "bpf" %?
 /**
  * sfunction user_uint32_error - Retrieves an unsigned 32-bit integer value stored in user space
  *
@@ -926,6 +948,7 @@ function user_uint32_error:long (addr:long) %{ /* pure */ /* myproc-unprivileged
 	STP_GET_USER(uint32_t);
 	CATCH_DEREF_FAULT();
 %}
+%)
 
 /**
  * sfunction user_uint32 - Retrieves an unsigned 32-bit integer value stored in user space
@@ -939,6 +962,7 @@ function user_uint32:long (addr:long) {
 	try { return user_uint32_error(addr) } catch { return 0 }
 }
 
+%( runtime != "bpf" %?
 /**
  * sfunction user_int64_error - Retrieves a 64-bit integer value stored in user space
  *
@@ -952,6 +976,7 @@ function user_int64_error:long (addr:long) %{ /* pure */ /* myproc-unprivileged 
 	STP_GET_USER(int64_t);
 	CATCH_DEREF_FAULT();
 %}
+%)
 
 /**
  * sfunction user_int64 - Retrieves a 64-bit integer value stored in user space
@@ -965,6 +990,7 @@ function user_int64:long (addr:long) {
 	try { return user_int64_error(addr) } catch { return 0 }
 }
 
+%( runtime != "bpf" %?
 /**
  * sfunction user_uint64_error - Retrieves an unsigned 64-bit integer value stored in user space
  *
@@ -979,6 +1005,7 @@ function user_uint64_error:long (addr:long) {
 	 * we keep user_uint64_error anyway for API completeness. */
 	return user_int64_error(addr)
 }
+%)
 
 /**
  * sfunction user_uint64 - Retrieves an unsigned 64-bit integer value stored in user space

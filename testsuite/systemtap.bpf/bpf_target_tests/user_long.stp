@@ -1,18 +1,42 @@
-global found = 0
+// tests user_long_error and others
+
+global found_basic = 0
+global found_signext = 0
 
 probe begin {
   printf("BEGIN\n")
 }
 
+probe process("a.out").function("main") {
+  printf("main(): i,j,k = %d,%d,%d\n", @var("i"), @var("j"), @var("k"))
+}
+
+// test basic
 probe process("a.out").function("foo") {
   a = user_long_error($b)
-  printf("foo(): b, *b = %p, %d\n", $b, a)
-  if (a == 4) found = 1
+  printf("foo(): b, *b = %p, %lx\n", $b, a)
+  if (a == 4) found_basic = 1
+}
+
+// test sign extension
+probe process("a.out").function("bar") {
+  b = user_int_error($b)
+  c = user_short_error($c)
+  d = user_char_error($d)
+
+  printf("bar(): i = *b = [mem %lx] ulong %lx, int %d\n", user_ulong_error($b), b, b)
+  // XXX exceeds register allocator capacity
+  //printf("bar(): j = *c = [mem %x] ushort %x, short %d\n", user_ulong_error($c), user_ushort_error($c), c)
+  printf("bar(): j = *c = [mem %lx] ushort %lx, short %d\n", user_ulong_error($c), c, c)
+  printf("bar(): k = *d = [mem %lx] ulong %lx, char %d\n", user_ulong_error($d), d, d)
+  if (b == -3 && c == -2 && d == -1) found_signext = 1
 }
 
 probe end {
-  if (found)
-    printf("END PASS\n")
+  if (!found_basic)
+    printf("failed basic\nEND FAIL\n")
+  else if (!found_signext)
+    printf("failed signext\nEND FAIL\n")
   else
-    printf("END FAIL\n")
+    printf("END PASS\n")
 }
