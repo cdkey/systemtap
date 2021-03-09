@@ -136,6 +136,7 @@ static struct _stp_module *_stp_kmod_sec_lookup(unsigned long addr,
 static struct _stp_module *_stp_umod_lookup(unsigned long addr,
 					    struct task_struct *task,
 					    const char **name,
+					    unsigned long *offset,
 					    unsigned long *vm_start,
 					    unsigned long *vm_end)
 {
@@ -146,7 +147,7 @@ static struct _stp_module *_stp_umod_lookup(unsigned long addr,
           addr &= ((compat_ulong_t) ~0);
 #endif
   if (stap_find_vma_map_info(task->group_leader, addr,
-			     vm_start, vm_end, name, &user) == 0)
+			     vm_start, vm_end, offset, name, &user) == 0)
     if (user != NULL)
       {
 	struct _stp_module *m = (struct _stp_module *)user;
@@ -175,6 +176,7 @@ static const char *_stp_kallsyms_lookup(unsigned long addr,
 
 	if (task)
 	  {
+	    unsigned long sect_offset = 0;
 	    unsigned long vm_start = 0;
 	    unsigned long vm_end = 0;
 #ifdef CONFIG_COMPAT
@@ -184,13 +186,13 @@ static const char *_stp_kallsyms_lookup(unsigned long addr,
             if (_stp_is_compat_task2(task))
                     addr &= ((compat_ulong_t) ~0);
 #endif
-	    m = _stp_umod_lookup(addr, task, modname, &vm_start, &vm_end);
+	    m = _stp_umod_lookup(addr, task, modname, &sect_offset, &vm_start, &vm_end);
 	    if (m)
 	      {
 		sec = &m->sections[0];
 		/* XXX .absolute sections really shouldn't be here... */
 		if (strcmp(".dynamic", m->sections[0].name) == 0)
-		  rel_addr = addr - vm_start;
+		  rel_addr = addr - vm_start + sect_offset;
 		else
 		  rel_addr = addr;
 	      }
@@ -372,14 +374,12 @@ unsigned long _stp_linenumber_lookup(unsigned long addr, struct task_struct *tas
 
   if (task)
     {
-	    unsigned long vm_start = 0;
-	    unsigned long vm_end = 0;
 #ifdef CONFIG_COMPAT
       /* Handle 32bit signed values in 64bit longs, chop off top bits. */
             if (_stp_is_compat_task2(task))
                     addr &= ((compat_ulong_t) ~0);
 #endif
-	    m = _stp_umod_lookup(addr, task, &modname, &vm_start, &vm_end);
+	    m = _stp_umod_lookup(addr, task, &modname, NULL, NULL, NULL);
     }
   else
     m = _stp_kmod_sec_lookup(addr, &sec);

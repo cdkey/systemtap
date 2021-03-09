@@ -1495,7 +1495,7 @@ static int unwind(struct unwind_context *context, int user)
 
 	if (user)
 	  {
-	    m = _stp_umod_lookup (pc, current, & module_name, NULL, NULL);
+	    m = _stp_umod_lookup (pc, current, & module_name, NULL, NULL, NULL);
 	    if (m)
 	      s = &m->sections[0];
 	  }

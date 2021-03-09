@@ -108,7 +108,7 @@ static void _stp_vma_match_vdso(struct task_struct *tsk)
       if (found != NULL)
 	{
 	  stap_add_vma_map_info(tsk, vdso_addr,
-				vdso_addr + found->sections[0].size,
+				vdso_addr + found->sections[0].size, 0,
 				"vdso", found);
 	  dbug_task_vma(1,"found vdso: %s\n", found->path);
 	}
@@ -161,13 +161,13 @@ static int _stp_vma_mmap_cb(struct stap_task_finder_target *tgt,
         
 	// We used to be only interested in the first load of the whole module that
 	// is executable.  But with modern enough gcc/ld.so, executables are mapped
-        // in more small pieces (r--p,r-xp,rw-p, instead of r-xp, rw-p).  To establish
-        // the virtual base address, we initially look for an offset=0 mapping.
+        // in more small pieces (r--p,r-xp,rw-p, instead of r-xp, rw-p).  NB:
+	// the first section might not be executable, so there can be an offset.
         //
         // We register whether or not we know the module,
 	// so we can later lookup the name given an address for this task.
-	if (path != NULL && offset == 0
-	    && stap_find_vma_map_info(tsk, addr, NULL, NULL, NULL, NULL) != 0) {
+	if (path != NULL &&
+	    stap_find_vma_map_info(tsk, addr, NULL, NULL, NULL, NULL, NULL) != 0) {
 		for (i = 0; i < _stp_num_modules; i++) {
 			// PR20433: papering over possibility of NULL pointers
 			if (strcmp(path ?: "", _stp_modules[i]->path ?: "") == 0)
@@ -178,21 +178,9 @@ static int _stp_vma_mmap_cb(struct stap_task_finder_target *tgt,
 				    "vm_cb: matched path %s to module (sec: %s)\n",
 				    path, _stp_modules[i]->sections[0].name);
 			  module = _stp_modules[i];
-			  /* Make sure we really don't know about this module
-			     yet.  If we do know, we might want to extend
-			     the coverage. */
-			  res = stap_find_vma_map_info_user(tsk->group_leader,
-							    module,
-							    &vm_start, &vm_end,
-							    NULL);
-			  if (res == -ESRCH)
-			    res = stap_add_vma_map_info(tsk->group_leader,
-						        addr, addr + length,
-						        path, module);
-			  else if (res == 0 && vm_end + 1 == addr)
-			    res = stap_extend_vma_map_info(tsk->group_leader,
-							   vm_start,
-							   addr + length);
+			  res = stap_add_vma_map_info(tsk->group_leader,
+						      addr, addr + length,
+						      offset, path, module);
 			  /* VMA entries are allocated dynamically, this is fine,
 			   * since we are in a task_finder callback, which is in
 			   * user context. */
@@ -212,7 +200,8 @@ static int _stp_vma_mmap_cb(struct stap_task_finder_target *tgt,
 		    || _stp_target == tsk->group_leader->pid)
 		  {
 		    res = stap_add_vma_map_info(tsk->group_leader, addr,
-						addr + length, path, NULL);
+						addr + length, offset, path,
+						NULL);
 		    dbug_task_vma(1,
 			      "registered '%s' for %d (res:%d) [%lx-%lx]\n",
 			      path, tsk->group_leader->pid,

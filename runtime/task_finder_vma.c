@@ -54,6 +54,7 @@ struct __stp_tf_vma_entry {
 	struct task_struct *tsk;
 	unsigned long vm_start;
 	unsigned long vm_end;
+	unsigned long offset;
 	char path[TASK_FINDER_VMA_ENTRY_PATHLEN]; /* mmpath name, if known */
 
 	// User data (possibly stp_module)
@@ -206,7 +207,8 @@ __stp_tf_get_vma_bucket(struct task_struct *tsk)
 // only from user context.
 static int
 stap_add_vma_map_info(struct task_struct *tsk, unsigned long vm_start,
-		      unsigned long vm_end, const char *path, void *user)
+		      unsigned long vm_end, unsigned long offset,
+		      const char *path, void *user)
 {
 	struct __stp_tf_vma_bucket *bucket = __stp_tf_get_vma_bucket(tsk);
 	struct __stp_tf_vma_entry *entry;
@@ -227,6 +229,7 @@ stap_add_vma_map_info(struct task_struct *tsk, unsigned long vm_start,
 	entry->tsk = tsk;
 	entry->vm_start = vm_start;
 	entry->vm_end = vm_end;
+	entry->offset = offset;
 	entry->user = user;
 
 	path_len = strlen(path);
@@ -290,7 +293,7 @@ stap_remove_vma_map_info(struct task_struct *tsk, unsigned long vm_start)
 static int
 stap_find_vma_map_info(struct task_struct *tsk, unsigned long addr,
 		       unsigned long *vm_start, unsigned long *vm_end,
-		       const char **path, void **user)
+		       unsigned long *offset, const char **path, void **user)
 {
 	struct __stp_tf_vma_bucket *bucket;
 	struct __stp_tf_vma_entry *entry;
@@ -308,6 +311,8 @@ stap_find_vma_map_info(struct task_struct *tsk, unsigned long addr,
 		*vm_start = entry->vm_start;
 	if (vm_end)
 		*vm_end = entry->vm_end;
+	if (offset)
+		*offset = entry->offset;
 	if (path)
 		*path = entry->path;
 	if (user)
