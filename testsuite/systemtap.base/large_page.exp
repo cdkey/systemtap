@@ -1,0 +1,51 @@
+set test "large_page"
+set ::result_string {hello world
+main main}
+
+set extra_flags {
+    {}
+    {additional_flags=-Wl,-zcommon-page-size=2097152}
+    {additional_flags=-Wl,-zmax-page-size=2097152}
+    {additional_flags=-Wl,-zcommon-page-size=2097152 additional_flags=-Wl,-zmax-page-size=2097152}
+}
+
+# Iterate extra_flags
+for {set i 0} {$i < [llength $extra_flags]} {incr i} {
+    set extra_flag [lindex $extra_flags $i]
+    set testprog "$test.c.exe.$i"
+    set test_flags "additional_flags=-g"
+    set test_flags "$test_flags additional_flags=-Wall"
+
+    set saveidx 0
+
+    set res [target_compile $srcdir/$subdir/$test.c $testprog executable "$test_flags $extra_flag"]
+    if { $res != "" } {
+        verbose "target_compile failed: $res" 2
+        fail "compiling $test.c $extra_flag"
+    } else {
+        pass "compiling $test.c $extra_flag"
+    }
+
+    if {[installtest_p]} {
+        foreach runtime [get_runtime_list] {
+            if {$runtime == "dyninst"} then {
+                # dyninst doesn't grok usymname() etc.
+                setup_kfail 23475 "*-*-*"
+            }
+            if {$runtime != ""} {
+                stap_run3 "$test ($runtime) $extra_flag" \
+                    --runtime=$runtime -w $srcdir/$subdir/large_page.stp \
+                    $testprog -c ./$testprog
+            } elseif {[uprobes_p]} {
+                stap_run3 "$test $extra_flag" -w $srcdir/$subdir/large_page.stp \
+                    $testprog -c ./$testprog
+            } else {          
+                untested "$test $extra_flag"
+            }   
+        }   
+    } else {        
+        untested "$t        est"
+    }   
+    catch {exec rm -f $testprog}
+    
+} ; # for {set i 0} {$i < [llength $extra_flags]}

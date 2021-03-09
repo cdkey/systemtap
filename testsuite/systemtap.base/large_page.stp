@@ -1,0 +1,1 @@
+probe process.function("main") { println(ppfunc(), " ", usymname(uaddr())) }
