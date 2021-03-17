@@ -7,10 +7,10 @@ function printlnfp(a) { println(fp_to_string(a,5)) }
 probe process("stap").mark("benchmark__thread__start") {
     println("sdt parameters:")
     printlnfp($fp1)
-    printlnfp(fp32_to_fp64($fp2))
+    printlnfp($fp2)
     println("sdt locals:")
     printlnfp($fp_local1)
-    printlnfp(fp32_to_fp64($fp_local2))
+    printlnfp($fp_local2)
     printlnfp($fp_local3)
     printlnfp($fp_local4)
     printlnfp($fp_local5)
@@ -31,17 +31,11 @@ probe begin {
     a = 4614253070214989087 //3.14
     b = 4622500287032611308 //11.21
     
-    a32 = 1078523331 //3.14
-    b32 = 3219463864 //-1.79
-
-    printlnfp(fp32_to_fp64(a32))
-    printlnfp(fp32_to_fp64(b32))
-
     println(fp_to_string(a, 5)) // 3.14
     printlnfp(string_to_fp("3.14"))
     printlnfp(string_to_fp("1.0"))
     printlnfp(long_to_fp(3))
-    printlnfp(fp_to_long(a, 0, 0)) //3.14
+    println(fp_to_long(a, 0, 0)) //3.14
 
     printlnfp(fp_add(b, a)) //11.21 + 3.14 = 14.35
     printlnfp(fp_sub(b, a)) //11.21 - 3.14 = 8.07
