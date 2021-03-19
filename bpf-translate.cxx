@@ -192,9 +192,9 @@ struct bpf_unparser : public throwing_visitor
   block *get_exit_block();
 
   // TODO General triage of bpf-possible functionality:
-  virtual void visit_block (::block *s);
-  virtual void visit_try_block (try_block* s);
   virtual void visit_embeddedcode (embeddedcode *s);
+  virtual void visit_try_block (try_block* s);
+  virtual void visit_block (::block *s);
   virtual void visit_null_statement (null_statement *s);
   virtual void visit_expr_statement (expr_statement *s);
   virtual void visit_if_statement (if_statement* s);
@@ -778,14 +778,6 @@ bpf_unparser::emit_store(expression *e, value *val)
     } 
  err:
   throw SEMANTIC_ERROR (_("unknown lvalue"), e->tok);
-}
-
-void
-bpf_unparser::visit_block (::block *s)
-{
-  unsigned n = s->statements.size();
-  for (unsigned i = 0; i < n; ++i)
-    emit_stmt (s->statements[i]);
 }
 
 /* WORK IN PROGRESS: A simple eBPF assembler.
@@ -1426,56 +1418,6 @@ bpf_unparser::emit_asm_opcode (const asm_stmt &stmt,
 }
 
 void
-bpf_unparser::visit_try_block (try_block* s)
-{
-  block* catch_block = this_prog.new_block();
-  block* join_block = this_prog.new_block();
-
-  // Prepare the catch block in case an error is called. The 
-  // catch block code is emitted after the try block because 
-  // error messages are propagated during the error statements
-  // which are expected to occur in the try blocks. 
-  catch_jump.push_back(catch_block);
-
-  // Emit code for statements inside try block. If one of these 
-  // statements is a call to error(...), then the execution will
-  // switch over to the catch block set up above.
-  emit_stmt(s->try_block);
-
-  // Remove the catch block as the try block has been emitted
-  // (this is useful when dealing with nested try-catch blocks).
-  catch_jump.pop_back();
-
-  emit_jmp(join_block);
-
-  set_block(catch_block);
-
-  // Set up connection to the error message.
-  if (s->catch_error_var) 
-    {
-      vardecl* catch_var_decl = s->catch_error_var->referent;
-
-      auto j = this_locals->find(catch_var_decl);
-      if (j == this_locals->end())
-        throw SEMANTIC_ERROR(_("unknown value"), catch_var_decl->tok);
-
-      value* catch_var = j->second;
-
-      // This message is stored during jump_to_catch.
-      value* error_var = catch_msg.back();
-      catch_msg.pop_back();
-
-      this_prog.mk_mov(this_ins, catch_var, error_var);
-    }
-
-  // After setting up the message, the catch block can run.
-  emit_stmt(s->catch_block);
-  emit_jmp(join_block);
-  
-  set_block(join_block);
-}
-
-void
 bpf_unparser::visit_embeddedcode (embeddedcode *s)
 {
 #ifdef DEBUG_CODEGEN
@@ -1613,7 +1555,7 @@ bpf_unparser::visit_embeddedcode (embeddedcode *s)
            * a catch block in the case that an error is called during the 
            * corresponding try block. Pointers to catch blocks are set up
            * before the code for the try block is emitted and are stored
-           * in catch_jump. 
+           * in catch_jump.
            */
 
           // Store the error message for the catch block. 
@@ -1807,6 +1749,64 @@ bpf_unparser::visit_embeddedcode (embeddedcode *s)
 #ifdef DEBUG_CODEGEN
   this_ins.notes.pop(); // asm
 #endif
+}
+
+void
+bpf_unparser::visit_try_block (try_block* s)
+{
+  block* catch_block = this_prog.new_block();
+  block* join_block = this_prog.new_block();
+
+  // Prepare the catch block in case an error is called. The
+  // catch block code is emitted after the try block because
+  // error messages are propagated during the error statements
+  // which are expected to occur in the try blocks.
+  catch_jump.push_back(catch_block);
+
+  // Emit code for statements inside try block. If one of these
+  // statements is a call to error(...), then the execution will
+  // switch over to the catch block set up above.
+  emit_stmt(s->try_block);
+
+  // Remove the catch block as the try block has been emitted
+  // (this is useful when dealing with nested try-catch blocks).
+  catch_jump.pop_back();
+
+  emit_jmp(join_block);
+
+  set_block(catch_block);
+
+  // Set up connection to the error message.
+  if (s->catch_error_var)
+    {
+      vardecl* catch_var_decl = s->catch_error_var->referent;
+
+      auto j = this_locals->find(catch_var_decl);
+      if (j == this_locals->end())
+        throw SEMANTIC_ERROR(_("unknown value"), catch_var_decl->tok);
+
+      value* catch_var = j->second;
+
+      // This message is stored during jump_to_catch.
+      value* error_var = catch_msg.back();
+      catch_msg.pop_back();
+
+      this_prog.mk_mov(this_ins, catch_var, error_var);
+    }
+
+  // After setting up the message, the catch block can run.
+  emit_stmt(s->catch_block);
+  emit_jmp(join_block);
+
+  set_block(join_block);
+}
+
+void
+bpf_unparser::visit_block (::block *s)
+{
+  unsigned n = s->statements.size();
+  for (unsigned i = 0; i < n; ++i)
+    emit_stmt (s->statements[i]);
 }
 
 void
