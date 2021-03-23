@@ -3910,7 +3910,7 @@ synthetic_embedded_deref_call(dwflpp& dw, location_context &ctx,
   if (ref_exp == 0) // e.g. if saw ->type == loc_noncontinguous
     throw SEMANTIC_ERROR(_("no usable location for symbol [error::dwarf]"), e->tok);
 
-  //check if it's a 32 bit float; if it is do the conversion from f32 to f64
+  //check if it's a 32-bit float; if it is do the conversion from f32 to f64
   int typetag = dwarf_tag (function_type);
   if (typetag == DW_TAG_base_type)
     {
@@ -3929,18 +3929,22 @@ synthetic_embedded_deref_call(dwflpp& dw, location_context &ctx,
                      dwarf_diename (function_type) ?: "<anonymous>",
                      dwarf_errmsg (-1)), e->tok));
         }
-      if ((encoding == DW_ATE_float
-	  || encoding == DW_ATE_complex_float) 
+      if (encoding == DW_ATE_float
 	  && byte_size == 4)
 	{
-	  functioncall* conv_fcall = new functioncall();
-          conv_fcall->function = "fp32_to_fp64";
-	  conv_fcall->tok = tok;
-          conv_fcall->type = pe_long;
-          conv_fcall->type_details = fcall->type_details;
-          //conv_fcall->referents = 0;
-          conv_fcall->args.push_back(fcall);
-          fcall = conv_fcall;
+          if (lvalue_p) {
+            throw (SEMANTIC_ERROR
+                   ("cannot assign yet to 32-bit float", e->tok));
+          } else {
+            functioncall* conv_fcall = new functioncall();
+            conv_fcall->function = "fp32_to_fp64";
+            conv_fcall->tok = tok;
+            conv_fcall->type = pe_long;
+            conv_fcall->type_details = fcall->type_details;
+            //conv_fcall->referents = 0;
+            conv_fcall->args.push_back(fcall);
+            fcall = conv_fcall;
+          }
 	}
     }
 
