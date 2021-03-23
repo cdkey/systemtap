@@ -140,7 +140,7 @@ fi
 if [ -x /usr/sbin/aa-status ]; then
    run "aa-status"
 fi
-echo == NSS ==
+echo "== NSS =="
 if [ -n "$SYSTEMTAP_DIR" ]; then
     nss_db_status "$SYSTEMTAP_DIR/ssl/client"
     nss_db_status "$SYSTEMTAP_DIR/ssl/server"
