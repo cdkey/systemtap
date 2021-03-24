@@ -5308,7 +5308,7 @@ function _struct_timex_u:string(uaddr:long)
 function _struct_compat_timex_u:string(uaddr:long)
 %{ /* pure */
 #if defined(CONFIG_COMPAT)
-#if defined(CONFIG_COMPAT_32BIT_TIME)
+#if defined(CONFIG_COMPAT_32BIT_TIME) && (LINUX_VERSION_CODE >= KERNEL_VERSION(5,1,0))
 #define compat_timex old_timex32
 #endif
 	struct compat_timex ts;
@@ -5338,7 +5338,7 @@ function _struct_compat_timex_u:string(uaddr:long)
 			         (unsigned long)ptr);
 		}
 	}
-#if defined(CONFIG_COMPAT_32BIT_TIME)
+#if defined(CONFIG_COMPAT_32BIT_TIME) && (LINUX_VERSION_CODE >= KERNEL_VERSION(5,1,0))
 #undef compat_timex
 #endif
 #endif
