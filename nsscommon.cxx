@@ -65,7 +65,7 @@ server_cert_nickname ()
 
 string
 add_cert_db_prefix (const string &db_path) {
-#if 0 && ((NSS_VMAJOR > 3) || (NSS_VMAJOR == 3 && NSS_VMINOR >= 37))
+#if (NSS_VMAJOR > 3) || (NSS_VMAJOR == 3 && NSS_VMINOR >= 55)
   // https://wiki.mozilla.org/NSS_Shared_DB
   if (db_path.find (':') == string::npos)
     return string("sql:") + db_path;

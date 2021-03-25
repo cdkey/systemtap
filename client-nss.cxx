@@ -472,6 +472,26 @@ isIPv6LinkLocal (const PRNetAddr &address)
   return false;
 }
 
+/* Begin sql: change trust workaround */
+static int change_cert_trust() __attribute((unused));
+static int
+change_cert_trust ()
+{
+  /* certutil will find the last added certificate, which should be the one
+   * just added in nss_trustNewServer that CERT_ChangeCertTrust failed for.
+   */
+  vector<string> cmd
+    {
+     "certutil", "-M", "-t", "P,P,P"
+    };
+  cmd.push_back ("-d");
+  cmd.push_back (local_client_cert_db_path());
+  cmd.push_back ("-n");
+  cmd.push_back (server_cert_nickname());
+  return stap_system (false, cmd);
+}
+/* End sql: change trust workaround */
+
 static int
 client_connect (const compile_server_info &server,
 		const char* infileName, const char* outfileName,
@@ -512,6 +532,19 @@ client_connect (const compile_server_info &server,
 	  errCode = NSS_SERVER_CERT_EXPIRED_ERROR;
 	  return errCode;
 	case SEC_ERROR_CA_CERT_INVALID:
+	  /* Begin sql: change trust workaround */
+	  /* TODO Fix trust without using certutil
+	   * The nss switch from dbm: to sql: results in change trust failing;
+	   * using certutil and retrying is a workaround */
+#if (NSS_VMAJOR > 3) || (NSS_VMAJOR == 3 && NSS_VMINOR >= 55)
+	case SEC_ERROR_INVALID_ALGORITHM:
+	  if (!change_cert_trust ())
+	    {
+	      sleep (1);
+	      break;
+	    }
+#endif
+	  /* End sql: change trust workaround */
 	  /* The server's certificate is not trusted. The exit code must
 	     reflect this.  */
 	  errCode = NSS_CA_CERT_INVALID_ERROR;
