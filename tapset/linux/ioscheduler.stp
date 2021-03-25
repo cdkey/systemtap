@@ -20,7 +20,7 @@
  * @elevator_name: The type of I/O elevator currently enabled
  */
 probe ioscheduler.elv_next_request = kernel.function("blk_peek_request") !,
-				     kernel.function("elv_next_request")
+				     kernel.function("elv_next_request") ?
 {
 	name = "elv_next_request"
 	elevator_name = kernel_string(
@@ -70,7 +70,7 @@ probe ioscheduler.elv_next_request.return =
  * @disk_minor: Disk minor number of the request
  */
 probe ioscheduler.elv_completed_request
-	= kernel.function("elv_completed_request")
+	= kernel.function("elv_completed_request") ?
 {
 	name = "elv_completed_request"
 	elevator_name = kernel_string(
@@ -148,11 +148,11 @@ probe ioscheduler.elv_add_request.kp =
 probe ioscheduler.elv_add_request.tp = kernel.trace("block_rq_insert") ?
 {
 	name = "elv_add_request"
-	q =  $q
-	elevator_name = ($q->elevator == 0) ? "" : kernel_string(
-		@choose_defined($q->elevator->type->elevator_name,
-			@choose_defined($q->elevator->elevator_type->elevator_name,
-                                        $q->elevator->elevator_name)), "")
+        q = $rq->q
+        elevator_name = kernel_string(
+			@choose_defined($rq->q->elevator->type->elevator_name,
+				@choose_defined($rq->q->elevator->elevator_type->elevator_name,
+                                                $rq->q->elevator->elevator_name)), "")
 	rq = $rq
 
 	if ($rq == 0 || $rq->rq_disk ==0) {
@@ -197,15 +197,12 @@ probe ioscheduler_trace.elv_completed_request
 			= kernel.trace("block_rq_complete") ?
 {
 	name = "elv_completed_request"
-	if (@defined($q)) {
-		elevator_name = kernel_string(
-			@choose_defined($q->elevator->type->elevator_name,
-				@choose_defined($q->elevator->elevator_type->elevator_name,
-                                                $q->elevator->elevator_name)), "")
-	}
-	else {
-		elevator_name = kernel_string($rq->q->elevator->type->elevator_name)
-	}
+        q = $rq->q
+        elevator_name = kernel_string(
+			@choose_defined($rq->q->elevator->type->elevator_name,
+				@choose_defined($rq->q->elevator->elevator_type->elevator_name,
+                                                $rq->q->elevator->elevator_name)), "")
+
 	rq = $rq
 
 	if ($rq == 0 || $rq->rq_disk ==0) {
@@ -236,10 +233,11 @@ probe ioscheduler_trace.elv_issue_request
 			= kernel.trace("block_rq_issue") ?
 {
 	name = "elv_issue_request"
-	elevator_name = kernel_string(
-		@choose_defined($q->elevator->type->elevator_name,
-			@choose_defined($q->elevator->elevator_type->elevator_name,
-                                        $q->elevator->elevator_name)), "")
+        q = $rq->q
+        elevator_name = kernel_string(
+			@choose_defined($rq->q->elevator->type->elevator_name,
+				@choose_defined($rq->q->elevator->elevator_type->elevator_name,
+                                                $rq->q->elevator->elevator_name)), "")
 	rq = $rq
 
 	if ($rq == 0 || $rq->rq_disk ==0) {
@@ -270,10 +268,11 @@ probe ioscheduler_trace.elv_requeue_request
 			= kernel.trace("block_rq_requeue") ?
 {
 	name = "elv_requeue_request"
-	elevator_name = kernel_string(
-		@choose_defined($q->elevator->type->elevator_name,
-			@choose_defined($q->elevator->elevator_type->elevator_name,
-                                        $q->elevator->elevator_name)), "")
+        q = $rq->q
+        elevator_name = kernel_string(
+			@choose_defined($rq->q->elevator->type->elevator_name,
+				@choose_defined($rq->q->elevator->elevator_type->elevator_name,
+                                                $rq->q->elevator->elevator_name)), "")
 	rq = $rq
 
 	if ($rq == 0 || $rq->rq_disk ==0) {
@@ -303,10 +302,11 @@ probe ioscheduler_trace.elv_abort_request
 			= kernel.trace("block_rq_abort") ?
 {
 	name = "elv_abort_request"
-	elevator_name = kernel_string(
-		@choose_defined($q->elevator->type->elevator_name,
-			@choose_defined($q->elevator->elevator_type->elevator_name,
-                                        $q->elevator->elevator_name)), "")
+        q = $rq->q
+        elevator_name = kernel_string(
+			@choose_defined($rq->q->elevator->type->elevator_name,
+				@choose_defined($rq->q->elevator->elevator_type->elevator_name,
+                                                $rq->q->elevator->elevator_name)), "")
 	rq = $rq
 
 	if ($rq == 0 || $rq->rq_disk ==0) {
