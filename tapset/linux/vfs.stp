@@ -686,7 +686,7 @@ probe vfs.do_sync_read = kernel.function("do_sync_read") !,
 }
 # We'd really like to probe new_sync_read() here, but it is typically
 # inlined. So, we'll probe its caller, __vfs_read().
-probe __vfs.__vfs_read = kernel.function("__vfs_read")
+probe __vfs.__vfs_read = kernel.function("__vfs_read")!, kernel.function("vfs_read")
 {
 	# Skip the call if new_sync_read() wouldn't be called.
 	if ($file->f_op->read || !$file->f_op->read_iter) next
@@ -708,7 +708,7 @@ probe vfs.do_sync_read.return = kernel.function("do_sync_read").return !,
 		units = "bytes"
 	}
 }
-probe __vfs.__vfs_read.return = kernel.function("__vfs_read").return
+probe __vfs.__vfs_read.return = kernel.function("__vfs_read").return! , kernel.function("vfs_read").return 
 {
 	# Skip the call if new_sync_read() wouldn't be called.
 	if (@entry($file->f_op->read) || !@entry($file->f_op->read_iter)) next
@@ -738,7 +738,7 @@ probe vfs.do_sync_write = kernel.function("do_sync_write") !,
 }
 # We'd really like to probe new_sync_read() here, but it is typically
 # inlined. So, we'll probe its caller, __vfs_write().
-probe __vfs.__vfs_write = kernel.function("__vfs_write")
+probe __vfs.__vfs_write = kernel.function("__vfs_write")!, kernel.function("vfs_write")
 {
 	# Skip the call if new_sync_write() wouldn't be called.
 	if ($file->f_op->write || !$file->f_op->write_iter) next
@@ -761,7 +761,7 @@ probe vfs.do_sync_write.return = kernel.function("do_sync_write").return !,
 		units = "bytes"
 	}
 }
-probe __vfs.__vfs_write.return = kernel.function("__vfs_write").return
+probe __vfs.__vfs_write.return = kernel.function("__vfs_write").return!, kernel.function("vfs_write").return
 {
 	# Skip the call if new_sync_write() wouldn't be called.
 	if (@entry($file->f_op->write) || !@entry($file->f_op->write_iter)) next
@@ -905,7 +905,11 @@ probe __vfs.do_mpage_readpage.return =
 probe __vfs.ext4_mpage_readpages.return =
 	kernel.function("ext4_mpage_readpages").return ?
 {
-	size = @entry($nr_pages)
+  if (@defined($rac)) {
+    size = @entry($rac) ? @entry($rac->_nr_pages) : 1
+  } else {
+    size = @entry($nr_pages)
+  }
 }
 
 
