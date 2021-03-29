@@ -320,6 +320,10 @@ nss_trustNewServer (CERTCertificate *serverCert)
   secStatus = PK11_ImportCert(slot, serverCert, CK_INVALID_HANDLE, nickname, PR_FALSE);
   if (secStatus != SECSuccess)
     goto done;
+
+  if (PK11_NeedUserInit(slot)) {
+    PK11_InitPin(slot, (char*)NULL, "");
+  }
   
   /* Make it a trusted peer.  */
   trust = (CERTCertTrust *)PORT_ZAlloc(sizeof(CERTCertTrust));

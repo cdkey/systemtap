@@ -743,7 +743,11 @@ static SECStatus
 add_server_cert (const string &db_path, SECItem *certDER, PK11SlotInfo *slot)
 {
   // Decode the cert.
-  CERTCertificate *cert = CERT_DecodeCertFromPackage((char *)certDER->data, certDER->len);
+  CERTCertificate *cert = CERT_NewTempCertificate(CERT_GetDefaultCertDB (), certDER,
+      (char*)server_cert_nickname () /* nickname */,
+      PR_FALSE /* isPerm */,
+      PR_TRUE /* copyDER */);
+
   if (! cert)
     {
       nsscommon_error (_("Unable to decode certificate"));
@@ -893,7 +897,11 @@ add_client_cert (const string &inFileName, const string &db_path, db_init_types 
   // Add the cert to the database
   // Decode the cert.
   secStatus = SECFailure;
-  cert = CERT_DecodeCertFromPackage ((char *)certDER.data, certDER.len);
+  cert = CERT_NewTempCertificate(CERT_GetDefaultCertDB (), &certDER,
+      (char*)server_cert_nickname () /* nickname */,
+      PR_FALSE /* isPerm */,
+      PR_TRUE /* copyDER */);
+
   if (! cert)
     {
       nsscommon_error (_("Unable to decode certificate"));
@@ -919,6 +927,10 @@ add_client_cert (const string &inFileName, const string &db_path, db_init_types 
       nssError ();
       goto done;
     }
+  
+  if (PK11_NeedUserInit(slot)) {
+    PK11_InitPin(slot, (char*)NULL, "");
+  }
   
   // Make it a trusted SSL peer.
   trust = (CERTCertTrust *)PORT_ZAlloc (sizeof (CERTCertTrust));
