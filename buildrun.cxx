@@ -1132,7 +1132,7 @@ make_typequery_kmod(systemtap_session& s, const vector<string>& headers, string&
   // make the module
   vector<string> make_cmd = make_make_cmd(s, dir);
   bool quiet = (s.verbose < 4);
-  int rc = run_make_cmd(s, make_cmd, quiet, quiet);
+  int rc = run_make_cmd(s, make_cmd, quiet, false /* stderr should be quiet PR27658 */);
   if (rc)
     s.set_try_server ();
   return rc;
@@ -1163,7 +1163,7 @@ make_typequery_umod(systemtap_session& s, const vector<string>& headers, string&
     cmd.insert(cmd.end(), { "-include", headers[i] });
 
   bool quiet = (s.verbose < 4);
-  int rc = stap_system (s.verbose, cmd, quiet, quiet);
+  int rc = stap_system (s.verbose, cmd, quiet, false /* stderr should be quiet PR27658 */);
   if (rc)
     s.set_try_server ();
   return rc;
