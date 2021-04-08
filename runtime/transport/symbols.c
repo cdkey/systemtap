@@ -148,14 +148,24 @@ void put_module_sect_attrs(struct stap_module_sect_attrs* as)
         _stp_kfree(as->sections);
 }
 
+static ssize_t _stp_read_file_from_path(const char *path, char *buf, size_t len)
+{
+	struct file *file;
+	loff_t pos = 0;
+	ssize_t ret;
 
-#if defined(STAPCONF_KERNEL_READ_FILE_FROM_PATH)
-/* PR26307.  We used to dig around the kernel module_attribute
-   structure to extract modules' section addresses ... then the kernel
-   hid the needed headers, so a goofy hack was put in place instead.
-   As of kernel 5.8-rc5, the hack doesn't work any more, so switch to
-   a different method: using kernel_read_file_from_path() (linux 4.6+)
-   to get at the same data, but as exposed to sysfs. */
+	file = filp_open(path, O_RDONLY, 0);
+	if (IS_ERR(file))
+		return PTR_ERR(file);
+
+#ifdef STAPCONF_KERNEL_READ_NEW_ARGS
+	ret = kernel_read(file, buf, len, &pos);
+#else
+	ret = kernel_read(file, pos, buf, len);
+#endif
+	fput(file);
+	return ret;
+}
 
 static unsigned long
 read_sect_sysfs(const char* module, const char *section)
@@ -163,33 +173,19 @@ read_sect_sysfs(const char* module, const char *section)
         char *pathname = __getname(); // PATH_MAX sized
         int rc;
         unsigned long addr = 0;
-        void *buffer = NULL;
-#ifdef STAPCONF_KERNEL_READ_FILE_FROM_PATH_OFFSET
-        size_t size;
-#else
-        loff_t size;
-#endif
+	char buffer[32] = {}; // Sections files are 19 bytes in size at most
 
         if (pathname == 0)
                 goto out;
         rc = snprintf(pathname, PATH_MAX, "/sys/module/%s/sections/%s", module, section);
         if (rc >= PATH_MAX)
                 goto out1;
-#ifdef STAPCONF_KERNEL_READ_FILE_FROM_PATH_OFFSET
-        rc = kernel_read_file_from_path(pathname, 0 /* offset */,
-                                        &buffer, 64 /* max. bytes expected */,
-                                        &size /* file_size */,
-                                        READING_UNKNOWN);
-#else
-        rc = kernel_read_file_from_path(pathname, &buffer, &size, 64 /* max. bytes expected */,
-                                        READING_UNKNOWN);
-#endif
-        if (rc <= 0)
-                goto out1;
+	rc = _stp_read_file_from_path(pathname, buffer, sizeof(buffer));
+	if (rc <= 0)
+		goto out1;
         rc = kstrtoul(buffer, 0, &addr);
         if (rc != 0) // parse error?
                 addr = 0L;
-        vfree (buffer);
 out1:
         __putname(pathname);
 out:
@@ -229,78 +225,6 @@ out1:
 out:
         return;
 }
-
-#else
-
-#if !defined(STAPCONF_MODULE_SECT_ATTRS) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
-/* It would be nice if it were (still) in a header we could get to,
-   like include/linux/module.h, but commit a58730c42 moved them into
-   kernel/module.c.  NB: this became obsolete/dangerous as of linux 5.8! */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,8,0)
-#error "obsolete" /* otherwise kernel BUG:s easily triggered, PR26307 */
-#endif
-
-struct module_sect_attr
-{
-        struct module_attribute mattr;
-        char *name;
-        unsigned long address;
-};
-
-struct module_sect_attrs
-{
-        struct attribute_group grp;
-        unsigned int nsections;
-        struct module_sect_attr attrs[0];
-};
-#endif
-
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,11)
-static unsigned _stp_module_nsections (struct module_sect_attrs *attrs)
-{
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
-	/* We have the answer right here!  */
-	return attrs->nsections;
-#else
-	/* Since grp.attrs is the same length and NULL-terminated,
-	 * we can count the sections from that.  */
-	struct attribute **gattr = &attrs->grp.attrs[0];
-	while (*gattr != NULL)
-		++gattr;
-	return gattr - &attrs->grp.attrs[0];
-#endif
-}
-#endif
-
-
-void get_module_sect_attrs(struct module* mod,
-                           struct stap_module_sect_attrs* as)
-{
-        unsigned i;
-        struct module_sect_attrs* attrs = mod->sect_attrs;
-        
-        as->nsections = _stp_module_nsections (attrs);
-        as->sections = _stp_kzalloc(as->nsections * sizeof(struct stap_module_sect_attr));
-        if (as->sections == 0) {
-                goto out1;
-        }
-
-        for (i=0; i<as->nsections; i++) {
-                as->sections[i].name = attrs->attrs[i].name;
-                as->sections[i].address = attrs->attrs[i].address;
-        }
-        
-        goto out;
-
-out1:
-        as->nsections = 0; // prevent later kfrees run amok
-out:
-        return;
-}
-#endif  /* STAPCONF_KERNEL_READ_FILE_FROM_PATH */
-
-
 
 static int _stp_module_notifier (struct notifier_block * nb,
                                  unsigned long val, void *data)
