@@ -147,8 +147,10 @@ CONFIG_CLEAN_FILES = includes/sys/sdt-config.h \
 	initscript/config.systemtap initscript/config.stap-server \
 	initscript/systemtap initscript/stap-server \
 	initscript/99stap/module-setup.sh initscript/99stap/install \
-	initscript/99stap/check run-stap dtrace staprun/guest/stapshd \
-	staprun/guest/stapsh-daemon staprun/guest/stapsh@.service
+	initscript/99stap/check run-stap dtrace \
+	java/org/systemtap/byteman/helper/HelperSDT.java \
+	staprun/guest/stapshd staprun/guest/stapsh-daemon \
+	staprun/guest/stapsh@.service
 CONFIG_CLEAN_VPATH_FILES =
 @BUILD_TRANSLATOR_TRUE@am__EXEEXT_1 = stap$(EXEEXT)
 @BUILD_TRANSLATOR_TRUE@@BUILD_VIRT_TRUE@am__EXEEXT_2 =  \
@@ -857,6 +859,8 @@ initscript/99stap/check: $(top_builddir)/config.status $(top_srcdir)/initscript/
 run-stap: $(top_builddir)/config.status $(srcdir)/run-stap.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 dtrace: $(top_builddir)/config.status $(srcdir)/dtrace.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+java/org/systemtap/byteman/helper/HelperSDT.java: $(top_builddir)/config.status $(top_srcdir)/java/org/systemtap/byteman/helper/HelperSDT.java.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 staprun/guest/stapshd: $(top_builddir)/config.status $(top_srcdir)/staprun/guest/stapshd.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@

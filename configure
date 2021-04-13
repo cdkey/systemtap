@@ -628,6 +628,7 @@ am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
 subdirs
+pkglibexecdir
 STAP_PREFIX
 NEED_BASE_CLIENT_CODE_FALSE
 NEED_BASE_CLIENT_CODE_TRUE
@@ -13352,6 +13353,13 @@ _ACEOF
 STAP_PREFIX="$stap_prefix"
 
 
+pkglibexecdir=$prefix/libexec/$PACKAGE
+pkglibexecdir=`eval echo $pkglibexecdir`
+pkglibexecdir=`eval echo $pkglibexecdir`
+pkglibexecdir="$pkglibexecdir"
+
+
+
 ac_config_headers="$ac_config_headers config.h:config.in"
 
 
@@ -13373,6 +13381,8 @@ ac_config_files="$ac_config_files stapdyn/Makefile"
 ac_config_files="$ac_config_files java/Makefile"
 
 ac_config_files="$ac_config_files java/stapbm"
+
+ac_config_files="$ac_config_files java/org/systemtap/byteman/helper/HelperSDT.java"
 
 ac_config_files="$ac_config_files python/Makefile"
 
@@ -14286,6 +14296,7 @@ do
     "stapdyn/Makefile") CONFIG_FILES="$CONFIG_FILES stapdyn/Makefile" ;;
     "java/Makefile") CONFIG_FILES="$CONFIG_FILES java/Makefile" ;;
     "java/stapbm") CONFIG_FILES="$CONFIG_FILES java/stapbm" ;;
+    "java/org/systemtap/byteman/helper/HelperSDT.java") CONFIG_FILES="$CONFIG_FILES java/org/systemtap/byteman/helper/HelperSDT.java" ;;
     "python/Makefile") CONFIG_FILES="$CONFIG_FILES python/Makefile" ;;
     "staprun/Makefile") CONFIG_FILES="$CONFIG_FILES staprun/Makefile" ;;
     "stapbpf/Makefile") CONFIG_FILES="$CONFIG_FILES stapbpf/Makefile" ;;

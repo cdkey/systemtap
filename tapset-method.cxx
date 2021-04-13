@@ -164,7 +164,7 @@ java_builder::build (systemtap_session & sess,
 
      In the event a java backtrace is requested (signaled by a '1' returned by the
      _bt() stap function and appended to the stapbm call),  we need to place a
-     probe point on the method__bt marker in the libHelperSDT_*.so .  We've created
+     probe point on the method__bt marker in the libHelperSDT.so .  We've created
      this new marker as we don't want it interfering with the method__X markers of
      the same rulename.  The overall flow of backtraces are the same as 'regular'
      method probes, however run through STAP_BACKTRACE helper method, and
@@ -173,7 +173,7 @@ java_builder::build (systemtap_session & sess,
      STAP_BACKTRACE also converts the throwable object to a string for us to pass/report
 
      The end result is we need to place another probe point automatically for the user;
-     process("$pkglibdir/libHelperSDT_*.so").provider("HelperSDT").mark("method__bt")
+     process("$pkglibdir/libHelperSDT.so").provider("HelperSDT").mark("method__bt")
      and pass the backtrace string to the java_backtrace_string variable, which then gets
      immediately passed to the subsequent mark("method_XX") probe through the java_backtrace()
      function's return value.
@@ -183,7 +183,7 @@ java_builder::build (systemtap_session & sess,
   base->body->visit(&jdi);
 
   // the wildcard is deliberate to catch all architectures
-  string libhelper = string(PKGLIBDIR) + "/libHelperSDT_*.so";
+  string libhelper = string(PKGLIBDIR) + "/libHelperSDT.so";
   string rule_name = "module_name() . " + lex_cast_qstring(base->name());
   const token* tok = base->body->tok;
 

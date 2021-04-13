@@ -77,7 +77,6 @@ am__make_keepgoing = (target_option=k; $(am__make_running_with_option))
 pkgdatadir = $(datadir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
-pkglibexecdir = $(libexecdir)/@PACKAGE@
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 install_sh_DATA = $(install_sh) -c -m 644
 install_sh_PROGRAM = $(install_sh) -c
@@ -215,6 +214,7 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
+pkglibexecdir = @pkglibexecdir@
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
@@ -422,7 +422,6 @@ top_srcdir = @top_srcdir@
 uuid_CFLAGS = @uuid_CFLAGS@
 uuid_LIBS = @uuid_LIBS@
 AUTOMAKE_OPTIONS = subdir-objects
-JAVA_ARCH := $(target_cpu)
 
 # XXX: perhaps autoconfigure the following?
 JAVAC = javac
@@ -684,9 +683,9 @@ maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
 	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
+@HAVE_JAVA_FALSE@install-data-local:
 @HAVE_JAVA_FALSE@install-exec-local:
 @HAVE_JAVA_FALSE@uninstall-local:
-@HAVE_JAVA_FALSE@install-data-local:
 clean: clean-am
 
 clean-am: clean-binPROGRAMS clean-generic clean-noinstPROGRAMS \
@@ -779,27 +778,18 @@ uninstall-am: uninstall-binPROGRAMS uninstall-local \
 
 .PRECIOUS: Makefile
 
-# XXX: the following arch names are based generally off the rpmspec
-# for java-1.7.0-openjdk, there might be omissions in some weird cases
-override JAVA_ARCH:=$(JAVA_ARCH:x86_64=amd64)
-override JAVA_ARCH:=$(JAVA_ARCH:i%86=i386)
-override JAVA_ARCH:=$(JAVA_ARCH:sparcv9=sparc)
-override JAVA_ARCH:=$(JAVA_ARCH:sparc64=sparcv9)
-override JAVA_ARCH:=$(JAVA_ARCH:arm%=arm)
-override JAVA_ARCH:=$(JAVA_ARCH:powerpc64le%=ppc64le)
-override JAVA_ARCH:=$(JAVA_ARCH:powerpc64%=ppc64)
-@HAVE_JAVA_TRUE@$(HELPERSDT).class: $(srcdir)/$(HELPERSDT).java
-@HAVE_JAVA_TRUE@	$(JAVAC) -d . $(srcdir)/$(HELPERSDT).java
+@HAVE_JAVA_TRUE@$(HELPERSDT).class: $(HELPERSDT).java
+@HAVE_JAVA_TRUE@	$(JAVAC) -d . $(HELPERSDT).java
 @HAVE_JAVA_TRUE@HelperSDT.jar: $(HELPERSDT).class
 @HAVE_JAVA_TRUE@	$(JAR) cvf HelperSDT.jar $(HELPERSDT).class
 
 # place/install libHelperSDT.so and HelperSDT.jar
 @HAVE_JAVA_TRUE@install-exec-local:
-@HAVE_JAVA_TRUE@	$(INSTALL_PROGRAM) -D libHelperSDT.so $(DESTDIR)$(pkglibexecdir)/libHelperSDT_$(JAVA_ARCH).so
+@HAVE_JAVA_TRUE@	$(INSTALL_PROGRAM) -D libHelperSDT.so $(DESTDIR)$(pkglibexecdir)/libHelperSDT.so
 @HAVE_JAVA_TRUE@install-data-local: HelperSDT.jar
 @HAVE_JAVA_TRUE@	$(INSTALL_DATA) -D HelperSDT.jar $(DESTDIR)$(pkglibexecdir)/HelperSDT.jar
 @HAVE_JAVA_TRUE@uninstall-local:
-@HAVE_JAVA_TRUE@	rm -rf $(DESTDIR)$(pkglibexecdir)/libHelperSDT_$(JAVA_ARCH).so
+@HAVE_JAVA_TRUE@	rm -rf $(DESTDIR)$(pkglibexecdir)/libHelperSDT.so
 @HAVE_JAVA_TRUE@	rm -rf $(DESTDIR)$(pkglibexecdir)/HelperSDT.jar
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

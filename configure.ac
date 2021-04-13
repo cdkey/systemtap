@@ -961,6 +961,13 @@ test "$stap_prefix" = NONE && stap_prefix=$ac_default_prefix
 AC_DEFINE_UNQUOTED(STAP_PREFIX, "$stap_prefix", [configure prefix location])
 AC_SUBST(STAP_PREFIX, "$stap_prefix")
 
+dnl compute a fully expanded $pkglibexecdir for substitution here and there
+pkglibexecdir=$prefix/libexec/$PACKAGE
+pkglibexecdir=`eval echo $pkglibexecdir`
+pkglibexecdir=`eval echo $pkglibexecdir`
+AC_SUBST(pkglibexecdir, "$pkglibexecdir")
+
+
 AC_CONFIG_HEADERS([config.h:config.in])
 
 dnl XXX: we'd like fully expanded path names for the @macros@ in there,
@@ -983,6 +990,7 @@ AC_CONFIG_FILES([dtrace], [chmod +x dtrace])
 AC_CONFIG_FILES(stapdyn/Makefile)
 AC_CONFIG_FILES(java/Makefile)
 AC_CONFIG_FILES([java/stapbm], [chmod +x java/stapbm])
+AC_CONFIG_FILES(java/org/systemtap/byteman/helper/HelperSDT.java)
 AC_CONFIG_FILES(python/Makefile)
 AC_CONFIG_FILES(staprun/Makefile)
 AC_CONFIG_FILES(stapbpf/Makefile)

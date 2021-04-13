@@ -967,58 +967,6 @@ exit 0
 
 # ------------------------------------------------------------------------
 
-%if %{with_java}
-
-%triggerin runtime-java -- java-1.8.0-openjdk, java-1.7.0-openjdk, java-1.6.0-openjdk
-for f in %{_libexecdir}/systemtap/libHelperSDT_*.so; do
-    %ifarch %{ix86}
-	arch=i386
-    %else
-        arch=`basename $f | cut -f2 -d_ | cut -f1 -d.`
-    %endif
-    for archdir in %{_jvmdir}/*openjdk*/jre/lib/${arch}; do
-	 if [ -d ${archdir} ]; then
-            ln -sf %{_libexecdir}/systemtap/libHelperSDT_${arch}.so ${archdir}/libHelperSDT_${arch}.so
-            ln -sf %{_libexecdir}/systemtap/HelperSDT.jar ${archdir}/../ext/HelperSDT.jar
-	 fi
-    done
-done
-
-%triggerun runtime-java -- java-1.8.0-openjdk, java-1.7.0-openjdk, java-1.6.0-openjdk
-for f in %{_libexecdir}/systemtap/libHelperSDT_*.so; do
-    %ifarch %{ix86}
-	arch=i386
-    %else
-        arch=`basename $f | cut -f2 -d_ | cut -f1 -d.`
-    %endif
-    for archdir in %{_jvmdir}/*openjdk*/jre/lib/${arch}; do
-        rm -f ${archdir}/libHelperSDT_${arch}.so
-        rm -f ${archdir}/../ext/HelperSDT.jar
-    done
-done
-
-%triggerpostun runtime-java -- java-1.8.0-openjdk, java-1.7.0-openjdk, java-1.6.0-openjdk
-# Restore links for any JDKs remaining after a package removal:
-for f in %{_libexecdir}/systemtap/libHelperSDT_*.so; do
-    %ifarch %{ix86}
-	arch=i386
-    %else
-        arch=`basename $f | cut -f2 -d_ | cut -f1 -d.`
-    %endif
-    for archdir in %{_jvmdir}/*openjdk*/jre/lib/${arch}; do
-	 if [ -d ${archdir} ]; then
-            ln -sf %{_libexecdir}/systemtap/libHelperSDT_${arch}.so ${archdir}/libHelperSDT_${arch}.so
-            ln -sf %{_libexecdir}/systemtap/HelperSDT.jar ${archdir}/../ext/HelperSDT.jar
-	 fi
-    done
-done
-
-# XXX: analogous support for other types of JRE/JDK??
-
-%endif
-
-# ------------------------------------------------------------------------
-
 %files
 # The main "systemtap" rpm doesn't include any files.
 
@@ -1074,7 +1022,7 @@ done
 %license COPYING
 %if %{with_java}
 %dir %{_libexecdir}/systemtap
-%{_libexecdir}/systemtap/libHelperSDT_*.so
+%{_libexecdir}/systemtap/libHelperSDT.so
 %endif
 %if %{with_emacsvim}
 %{_emacs_sitelispdir}/*.el*
@@ -1194,7 +1142,7 @@ done
 %if %{with_java}
 %files runtime-java
 %dir %{_libexecdir}/systemtap
-%{_libexecdir}/systemtap/libHelperSDT_*.so
+%{_libexecdir}/systemtap/libHelperSDT.so
 %{_libexecdir}/systemtap/HelperSDT.jar
 %{_libexecdir}/systemtap/stapbm
 %endif

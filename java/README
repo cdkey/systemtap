@@ -12,24 +12,5 @@ it can be installed through your distribution's package manager.
 Either way, double-check that this enviroment variable is configured
 correctly.
 
-(2) libHelperSDT_*.so and HelperSDT.jar must be installed into the
-local JDK that you are planning to probe.
-
-Unless you are installing systemtap from the RPM package on a system
-with OpenJDK 1.6.0+ (in which case the following step is done for
-you), the current systemtap makefile makes no effort to install
-libHelperSDT_*.so and HelperSDT.jar where the JDK install can detect
-them, instead putting them in PREFIX/libexec/systemtap. You must
-copy/link these files to the JDK install's extension directories
-yourself.
-
-For example, if you have systemtap installed under /usr and an OpenJDK
-install under /usr/lib/jvm/java on a x86_64 machine, you can create
-symlinks as follows:
-
-  # ln -s /usr/libexec/systemtap/libHelperSDT_amd64.so /usr/lib/jvm/java/jre/lib/amd64/libHelperSDT_amd64.so
-  # ln -s /usr/libexec/systemtap/HelperSDT.jar /usr/lib/jvm/java/jre/lib/ext/HelperSDT.jar
-
-Other JDK versions may have a different placement for their extension
-directories; consult the corresponding JDK's documentation as
-appropriate.
+(2) libHelperSDT.so and HelperSDT.jar must be accessible to the local
+JDK that you are planning to probe.
