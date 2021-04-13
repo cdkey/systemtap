@@ -524,6 +524,9 @@ compile_pass (systemtap_session& s)
   // used by runtime/linux/netfilter.c
   output_exportconf(s, o2, "nf_register_hook", "STAPCONF_NF_REGISTER_HOOK");
 
+  // runtime/linux/kprobes.c
+  output_exportconf(s, o2, "module_mutex", "STAPCONF_MODULE_MUTEX");
+    
   // used by tapset/linux/ioblock.stp
   output_exportconf(s, o2, "disk_get_part", "STAPCONF_DISK_GET_PART");
 
