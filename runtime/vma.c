@@ -178,9 +178,21 @@ static int _stp_vma_mmap_cb(struct stap_task_finder_target *tgt,
 				    "vm_cb: matched path %s to module (sec: %s)\n",
 				    path, _stp_modules[i]->sections[0].name);
 			  module = _stp_modules[i];
-			  res = stap_add_vma_map_info(tsk->group_leader,
-						      addr, addr + length,
-						      offset, path, module);
+			  /* Make sure we really don't know about this module
+			     yet.  If we do know, we might want to extend
+			     the coverage. */
+			  res = stap_find_vma_map_info_user(tsk->group_leader,
+							    module,
+							    &vm_start, &vm_end,
+							    NULL);
+			  if (res == -ESRCH || vm_start + offset == addr)
+			    res = stap_add_vma_map_info(tsk->group_leader,
+						        addr, addr + length,
+						        offset, path, module);
+			  else if (res == 0 && vm_end + 1 == addr)
+			    res = stap_extend_vma_map_info(tsk->group_leader,
+							   vm_start,
+							   addr + length);
 			  /* VMA entries are allocated dynamically, this is fine,
 			   * since we are in a task_finder callback, which is in
 			   * user context. */
