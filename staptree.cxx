@@ -2531,7 +2531,7 @@ void
 symuse_collecting_visitor::visit_try_block(try_block* s)
 {
   // Default to varuse visitor behaviour if the referent is set.
-  if (s->catch_error_var->referent)
+  if (s->catch_error_var && s->catch_error_var->referent)
     varuse_collecting_visitor::visit_try_block(s);
   else
     {
