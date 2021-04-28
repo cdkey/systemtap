@@ -72,7 +72,9 @@ function bdevname:string(bdev:long)
 
 	hd = bdev->bd_disk
 
-	if (bdev->bd_part)
+	if (@defined(@cast(bdev, "block_device", "kernel")->bd_partno))
+		partno = bdev->bd_partno
+	else if (bdev->bd_part)
 		partno = bdev->bd_part->partno
 	else
 		partno = MINOR(bdev->bd_dev) - hd->first_minor;
