@@ -17,7 +17,7 @@
 function umodname:string (addr:long) %{
 /* pure */ /* myproc-unprivileged */ /* pragma:vma */
   const char *name = NULL;
-  _stp_umod_lookup(STAP_ARG_addr, current, &name, NULL, NULL);
+  _stp_umod_lookup(STAP_ARG_addr, current, &name, NULL, NULL, NULL);
   if (!name) {
     name = "<unknown>";
 #if STAP_COMPAT_VERSION >= STAP_VERSION(2,3) // PR15044
