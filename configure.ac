@@ -962,11 +962,9 @@ AC_DEFINE_UNQUOTED(STAP_PREFIX, "$stap_prefix", [configure prefix location])
 AC_SUBST(STAP_PREFIX, "$stap_prefix")
 
 dnl compute a fully expanded $pkglibexecdir for substitution here and there
-pkglibexecdir=$prefix/libexec/$PACKAGE
-pkglibexecdir=`eval echo $pkglibexecdir`
-pkglibexecdir=`eval echo $pkglibexecdir`
-AC_SUBST(pkglibexecdir, "$pkglibexecdir")
-
+stap_libexecdir=$libexecdir
+test "$stap_libexecdir" = '${exec_prefix}/libexec' && stap_libexecdir=$stap_prefix/libexec
+AC_SUBST(pkglibexecdir, "$stap_libexecdir/$PACKAGE")
 
 AC_CONFIG_HEADERS([config.h:config.in])
 

@@ -13353,11 +13353,9 @@ _ACEOF
 STAP_PREFIX="$stap_prefix"
 
 
-pkglibexecdir=$prefix/libexec/$PACKAGE
-pkglibexecdir=`eval echo $pkglibexecdir`
-pkglibexecdir=`eval echo $pkglibexecdir`
-pkglibexecdir="$pkglibexecdir"
-
+stap_libexecdir=$libexecdir
+test "$stap_libexecdir" = '${exec_prefix}/libexec' && stap_libexecdir=$stap_prefix/libexec
+pkglibexecdir="$stap_libexecdir/$PACKAGE"
 
 
 ac_config_headers="$ac_config_headers config.h:config.in"
