@@ -15,10 +15,11 @@ global seeks, oldsec
 probe ioblock_trace.request {
   if (size == 0) next
   %( $# == 1 %? if (devname !~ @1) next %) // reject mismatching device names
-  sectorsize = (@defined($q->limits->logical_block_size)
+  sectorsize = @choose_defined ($bio->bi_bdev->bd_disk->queue->limits->logical_block_size,
+	        (@defined($q->limits->logical_block_size)
 		? $q->limits->logical_block_size
 		: (@defined($q->logical_block_size) ? $q->logical_block_size
-		   : $q->hardsect_size))
+		   : $q->hardsect_size)))
   # printf("%s %s\n", devname, rw ? "w" : "r")
   sec = sector
   seeks[devname] <<< sec - oldsec[devname]

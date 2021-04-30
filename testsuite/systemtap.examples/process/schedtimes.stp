@@ -46,7 +46,7 @@ global pid_iowait_count
 %)
 
 @define nr_iowait(rq) %(
-    atomic_read(&@cast(@rq, "rq")->nr_iowait)
+    atomic_read(&@cast(@rq, "rq", "kernel")->nr_iowait)
 %)
 
 
