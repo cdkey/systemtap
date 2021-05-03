@@ -373,6 +373,13 @@ Requires: dejagnu which elfutils grep nc
 %if %{with_debuginfod}
 Requires: elfutils-debuginfod
 %endif
+# work around fedora ci gating kvetching about i686<->x86-64 conflicts
+%ifarch x86_64
+Conflicts: systemtap-testsuite = %{version}-%{release}.i686
+%endif
+%ifarch i686
+Conflicts: systemtap-testsuite = %{version}-%{release}.x86_64
+%endif
 Requires: gcc gcc-c++ make glibc-devel
 # testsuite/systemtap.base/ptrace.exp needs strace
 Requires: strace
@@ -432,6 +439,13 @@ Summary: Systemtap Java Runtime Support
 License: GPLv2+
 URL: http://sourceware.org/systemtap/
 Requires: systemtap-runtime = %{version}-%{release}
+# work around fedora ci gating kvetching about i686<->x86-64 conflicts
+%ifarch x86_64
+Conflicts: systemtap-runtime = %{version}-%{release}.i686
+%endif
+%ifarch i686
+Conflicts: systemtap-runtime = %{version}-%{release}.x86_64
+%endif
 Requires: byteman > 2.0
 Requires: iproute
 Requires: java-devel
