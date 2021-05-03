@@ -1346,10 +1346,17 @@ struct update_visitor: public visitor
   }
 
   update_visitor(unsigned v = 0): verbose(v), aborted_p(false), relaxed_p(true) {}
-  virtual ~update_visitor() { assert(values.empty()); }
+  virtual ~update_visitor() {
+    if (!values.empty())
+      /* PR27274: tolerate aborted traversals */
+      std::runtime_error(_("update_visitor dtor has unused values"));
+  }
 
   // Permit reuse of the visitor object. 
-  virtual void reset() { aborted_p = false; relaxed_p = true; }
+  virtual void reset() { aborted_p = false; relaxed_p = true;
+    /* PR27274: tolerate aborted traversals */
+    while (!values.empty()) values.pop();
+ }
   virtual bool relaxed() { return relaxed_p; }
     
   virtual void visit_block (block *s);
