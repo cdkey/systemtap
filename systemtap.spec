@@ -177,7 +177,7 @@ BuildRequires: xmlto /usr/share/xmlto/format/fo/pdf
 BuildRequires: emacs
 %endif
 %if %{with_java}
-BuildRequires: jpackage-utils java-devel
+BuildRequires: java-devel
 %endif
 %if %{with_virthost}
 # BuildRequires: libvirt-devel >= 1.0.2
