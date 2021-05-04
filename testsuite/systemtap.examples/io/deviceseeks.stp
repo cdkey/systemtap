@@ -12,14 +12,21 @@
 
 global seeks, oldsec
 
+@define q_cast(var) %( @cast(@var, "request_queue", "kernel") %)
+
 probe ioblock_trace.request {
   if (size == 0) next
   %( $# == 1 %? if (devname !~ @1) next %) // reject mismatching device names
-  sectorsize = @choose_defined ($bio->bi_bdev->bd_disk->queue->limits->logical_block_size,
-	        (@defined($q->limits->logical_block_size)
-		? $q->limits->logical_block_size
-		: (@defined($q->logical_block_size) ? $q->logical_block_size
-		   : $q->hardsect_size)))
+  # Newer kernels remove the $q parameter from tracepoint
+  # For 5.12 and newer get the q from $bio->bi_bdev->bd_disk->queue
+  # For 5.11 get queue from $bio->bi_disk->queue
+  queue =  @defined ($q) ? $q
+    : @choose_defined($bio->bi_bdev->bd_disk->queue, $bio->bi_disk->queue)
+  sectorsize = (@defined(@q_cast(queue)->limits->logical_block_size) ?
+		queue->limits->logical_block_size :
+		(@defined(@q_cast(queue)->logical_block_size) ?
+		 queue->logical_block_size :
+		 queue->hardsect_size ))
   # printf("%s %s\n", devname, rw ? "w" : "r")
   sec = sector
   seeks[devname] <<< sec - oldsec[devname]
