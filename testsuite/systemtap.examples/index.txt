@@ -2,7 +2,7 @@ SYSTEMTAP EXAMPLES INDEX
 (see also keyword-index.txt)
 
 
-For systemtap version 4.4.
+For systemtap version 4.5.
 
 apps/gmalloc_watch.stp - Tracing glib2 memory allocations
 keywords: trace
@@ -1951,6 +1951,12 @@ keywords: profiling syscall
 
 
 security-band-aids/cve-2008-0600.stp - cve-2008-0600 security band-aid
+keywords: security guru
+
+  historical emergency security band-aid, for reference/education only
+
+
+security-band-aids/cve-2011-4127.stp - cve-2011-4127 security band-aid
 keywords: security guru
 
   historical emergency security band-aid, for reference/education only
