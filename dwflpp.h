@@ -182,7 +182,7 @@ struct inline_instance_info : base_func_info
 };
 
 struct location;
-struct location_context;
+class location_context;
 
 struct dwflpp
 {

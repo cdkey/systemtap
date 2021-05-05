@@ -123,7 +123,7 @@ struct parse_error: public std::runtime_error
 };
 
 
-class symresolution_info;
+struct symresolution_info;
 
 struct systemtap_session
 {

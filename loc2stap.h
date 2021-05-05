@@ -41,7 +41,7 @@ struct location
   { }
 };
 
-class dwflpp;
+struct dwflpp;
 class location_context
 {
 public:
