@@ -124,8 +124,8 @@ private function __skb_shinfo:long(addr:long)
 private function __skb_frag_size:long(addr:long, frag:long)
 %{ /* pure */
   struct skb_shared_info *skb_shr = (struct skb_shared_info *)(uintptr_t)STAP_ARG_addr;
-  skb_frag_t skb_frag = skb_shr->frags[STAP_ARG_frag];
-  STAP_RETVALUE = skb_frag.size;
+  skb_frag_t *skb_frag = &(skb_shr->frags[STAP_ARG_frag]);
+  STAP_RETVALUE = skb_frag_size(skb_frag);
 %}
 
 private function __skb_frag_data_addr:long(addr:long, frag:long)
