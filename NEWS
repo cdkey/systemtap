@@ -1,6 +1,23 @@
-- Enumerators can now be accessed as $context variables.
-
 * What's new in version 4.5
+
+- Java probing support has been updated to work with the latest versions of the
+  JVM and byteman (PR27739).
+
+- An initial version of the bpf/uconversions.stp tapset
+  provides tapset functions such as user_long_error()
+  to access values in userspace.
+
+- Enabled the -c option to work with the bpf backend (PR25177).
+
+- Enum values can now be accessed as $context variables (PR25346).
+
+- Executables for which stap has execute but not read permissions
+  (--x--x--x) can now be probed with build-id probes and debuginfod.
+  This allows probing some setuid programs (PR27251).
+
+- Added VMA-tracking support to the stapdyn backend.
+
+- The kernel runtime now uses procfs as the default transport mechanism.
 
 * What's new in version 4.4, 2020-11-09
 
