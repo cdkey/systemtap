@@ -95,7 +95,7 @@ if [catch {exec /usr/bin/which debuginfod} debuginfod] then {
     untested "$test debuginfod"
 } else {
     set port [expr {10000 + int(rand()*10000)}]
-    spawn $debuginfod -p $port -d :memory: -F .
+    spawn $debuginfod -p $port -d tmp.sqlite -F .
     set debuginfod_pid [exp_pid $spawn_id]
     # give it time to scan the build directory
     sleep 10

@@ -583,12 +583,13 @@ string find_executable(const string& name, const string& sysroot,
       if (retpath == "")
         {
           // Query debuginfod for the executable.
-          debuginfod_client *client = debuginfod_begin();
-
-          if (client != NULL)
+          static unique_ptr <debuginfod_client, void (*)(debuginfod_client*)>
+            client (debuginfod_begin(), &debuginfod_end);
+          
+          if (client.get() != NULL)
             {
               char *p;
-              int fd = debuginfod_find_executable(client,
+              int fd = debuginfod_find_executable(client.get(),
                                                   (const unsigned char*)(name.c_str()),
                                                   0, &p);
               if (fd >= 0)
@@ -597,7 +598,6 @@ string find_executable(const string& name, const string& sysroot,
                   free(p);
                   close(fd);
                 }
-              debuginfod_end(client);
             }
         }
 #endif /* HAVE_LIBDEBUGINFOD */
