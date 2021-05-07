@@ -80,6 +80,7 @@ staprun/staprun.c
 staprun/staprun_funcs.c
 staprun/staprun.h
 staprun/stapsh.c
+staprun/start_cmd.c
 staprun/strfloctime.c
 stap-serverd.cxx
 stap-sign-module.cxx
