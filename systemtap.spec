@@ -1210,6 +1210,9 @@ exit 0
 
 # PRERELEASE
 %changelog
+* Fri May 07 2021 Serhei Makarov <me@serhei.io> - 4.5-1
+- Upstream release.
+
 * Mon Nov 09 2020 Frank Ch. Eigler <fche@redhat.com> - 4.4-1
 - Upstream release.
 
