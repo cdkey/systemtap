@@ -1,4 +1,4 @@
-* What's new in version 4.5
+* What's new in version 4.5, 2021-05-07
 
 - Java probing support has been updated to work with the latest
   versions of the JVM and byteman (PR27739).
