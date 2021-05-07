@@ -2,12 +2,12 @@
 .\"     Title: probe::scsi.iodone
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: SCSI Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SCSI\&.IODONE" "3stap" "November 2020" "SystemTap Tapset Reference" "SCSI Tapset"
+.TH "PROBE::SCSI\&.IODONE" "3stap" "May 2021" "SystemTap Tapset Reference" "SCSI Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,21 +36,6 @@ scsi\&.iodone
 .fi
 .SH "VALUES"
 .PP
-\fIscsi_timer_pending\fR
-.RS 4
-1 if a timer is pending on this request
-.RE
-.PP
-\fIdata_direction\fR
-.RS 4
-The data_direction specifies whether this command is from/to the device\&.
-.RE
-.PP
-\fIdevice_state_str\fR
-.RS 4
-The current state of the device, as a string
-.RE
-.PP
 \fIlun\fR
 .RS 4
 The lun number
@@ -61,19 +46,24 @@ The lun number
 The channel number
 .RE
 .PP
+\fIdevice_state_str\fR
+.RS 4
+The current state of the device, as a string
+.RE
+.PP
+\fIscsi_timer_pending\fR
+.RS 4
+1 if a timer is pending on this request
+.RE
+.PP
+\fIdev_id\fR
+.RS 4
+The scsi device id
+.RE
+.PP
 \fIhost_no\fR
 .RS 4
 The host number
-.RE
-.PP
-\fIreq_addr\fR
-.RS 4
-The current struct request pointer, as a number
-.RE
-.PP
-\fIdata_direction_str\fR
-.RS 4
-Data direction, as a string
 .RE
 .PP
 \fIdevice_state\fR
@@ -81,9 +71,19 @@ Data direction, as a string
 The current state of the device
 .RE
 .PP
-\fIdev_id\fR
+\fIreq_addr\fR
 .RS 4
-The scsi device id
+The current struct request pointer, as a number
+.RE
+.PP
+\fIdata_direction\fR
+.RS 4
+The data_direction specifies whether this command is from/to the device\&.
+.RE
+.PP
+\fIdata_direction_str\fR
+.RS 4
+Data direction, as a string
 .RE
 .SH SEE ALSO\n 
 .IR tapset::scsi (3stap)

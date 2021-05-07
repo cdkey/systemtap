@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.fop.lock
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.FOP\&.L" "3stap" "November 2020" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.FOP\&.L" "3stap" "May 2021" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,9 +36,9 @@ nfs\&.fop\&.lock
 .fi
 .SH "VALUES"
 .PP
-\fIcmd\fR
+\fIfl_type\fR
 .RS 4
-cmd arguments
+lock type
 .RE
 .PP
 \fIdev\fR
@@ -46,19 +46,9 @@ cmd arguments
 device identifier
 .RE
 .PP
-\fIino\fR
+\fIfl_flag\fR
 .RS 4
-inode number
-.RE
-.PP
-\fIfl_type\fR
-.RS 4
-lock type
-.RE
-.PP
-\fIfl_end\fR
-.RS 4
-ending offset of locked region
+lock flags
 .RE
 .PP
 \fIi_mode\fR
@@ -66,9 +56,19 @@ ending offset of locked region
 file type and access rights
 .RE
 .PP
-\fIfl_flag\fR
+\fIcmd\fR
 .RS 4
-lock flags
+cmd arguments
+.RE
+.PP
+\fIfl_end\fR
+.RS 4
+ending offset of locked region
+.RE
+.PP
+\fIino\fR
+.RS 4
+inode number
 .RE
 .PP
 \fIfl_start\fR

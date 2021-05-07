@@ -2,12 +2,12 @@
 .\"     Title: function::caller
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: Context Functions
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::CALLER" "3stap" "November 2020" "SystemTap Tapset Reference" "Context Functions"
+.TH "FUNCTION::CALLER" "3stap" "May 2021" "SystemTap Tapset Reference" "Context Functions"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -39,7 +39,8 @@ function::caller \- Return name and address of calling function
 None
 .SH "DESCRIPTION"
 .PP
-This function returns the address and name of the calling function\&. This is equivalent to calling: sprintf(\(lq\fBs\fR 0x\fBx\fR\(rq, symname(\fBcaller_addr\fR),
+This function returns the address and name of the calling function\&. This is equivalent to calling: sprintf("\fBs\fR
+0x\fBx\fR", symname(\fBcaller_addr\fR),
 \fBcaller_addr\fR)
 .SH SEE ALSO\n 
 .IR tapset::context-caller (3stap)

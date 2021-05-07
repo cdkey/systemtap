@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.TH TAPSET::FLOATINGPOINT 3stap "November 2020" "SystemTap Tapset Reference"
+.TH TAPSET::FLOATINGPOINT 3stap "May 2021" "SystemTap Tapset Reference"
 .SH NAME
 tapset::floatingpoint \- systemtap floatingpoint tapset
  
@@ -63,6 +63,14 @@ See
  for details.
 .P
 .TP
+.B fp_div 
+fp divide
+.IP
+See 
+.IR function::fp_div (3stap)
+ for details.
+.P
+.TP
 .B fp_rem 
 Floating point division
 .IP
@@ -95,11 +103,19 @@ See
  for details.
 .P
 .TP
-.B fp_le 
+.B fp_lt 
 fp comparison function less than
 .IP
 See 
-.IR function::fp_le (3stap)
+.IR function::fp_lt (3stap)
+ for details.
+.P
+.TP
+.B fp32_to_fp64 
+Convert fp32 to 64 bit floating point
+.IP
+See 
+.IR function::fp32_to_fp64 (3stap)
  for details.
 
 .SH SEE ALSO
@@ -118,6 +134,8 @@ See
 .BR
 .IR \%function::fp_mul (3stap),
 .BR
+.IR \%function::fp_div (3stap),
+.BR
 .IR \%function::fp_rem (3stap),
 .BR
 .IR \%function::fp_sqrt (3stap),
@@ -125,6 +143,10 @@ See
 .IR \%function::fp_eq (3stap),
 .BR
 .IR \%function::fp_le (3stap),
+.BR
+.IR \%function::fp_lt (3stap),
+.BR
+.IR \%function::fp32_to_fp64 (3stap),
 .BR
 .IR \%stap (1),
 .IR \%stapprobes (3stap)

@@ -2,12 +2,12 @@
 .\"     Title: probe::socket.writev
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: Socket Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SOCKET\&.WRIT" "3stap" "November 2020" "SystemTap Tapset Reference" "Socket Tapset"
+.TH "PROBE::SOCKET\&.WRIT" "3stap" "May 2021" "SystemTap Tapset Reference" "Socket Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,14 @@ socket\&.writev
 .fi
 .SH "VALUES"
 .PP
+\fIsize\fR
+.RS 4
+Message size in bytes
+.RE
+.PP
 \fIprotocol\fR
 .RS 4
 Protocol value
-.RE
-.PP
-\fIfamily\fR
-.RS 4
-Protocol family value
 .RE
 .PP
 \fIname\fR
@@ -56,14 +56,14 @@ Name of this probe
 Socket type value
 .RE
 .PP
+\fIfamily\fR
+.RS 4
+Protocol family value
+.RE
+.PP
 \fIstate\fR
 .RS 4
 Socket state value
-.RE
-.PP
-\fIsize\fR
-.RS 4
-Message size in bytes
 .RE
 .PP
 \fIflags\fR

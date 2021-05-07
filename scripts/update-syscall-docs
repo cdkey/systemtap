@@ -63,13 +63,15 @@ def execShellCmd(cmd):
                               stderr=subprocess.PIPE)
     out, err = p.communicate()
     sys.stderr.write(str(err))
-    return [line for line in str(out).split('\n') if line]
+    return [line for line in str(out.decode('utf-8')).split('\n') if line]
 
 def getSyscallsList(output_type):
     cmd = ['stap', '-L', 'nd_syscall.*']
     out = execShellCmd(cmd)
+    print("got",out)
     retval = ""
     for line in sorted(out):
+        print("line",line)
         tokens = line.split(' ')
         tokens.reverse()
         scname = tokens.pop().replace('nd_syscall.', '')

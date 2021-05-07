@@ -2,12 +2,12 @@
 .\"     Title: probe::scsi.ioexecute
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: SCSI Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SCSI\&.IOEXEC" "3stap" "November 2020" "SystemTap Tapset Reference" "SCSI Tapset"
+.TH "PROBE::SCSI\&.IOEXEC" "3stap" "May 2021" "SystemTap Tapset Reference" "SCSI Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,26 +36,6 @@ scsi\&.ioexecute
 .fi
 .SH "VALUES"
 .PP
-\fIrequest_buffer\fR
-.RS 4
-The data buffer address
-.RE
-.PP
-\fIhost_no\fR
-.RS 4
-The host number
-.RE
-.PP
-\fIdevice_state_str\fR
-.RS 4
-The current state of the device, as a string
-.RE
-.PP
-\fItimeout\fR
-.RS 4
-Request timeout in seconds
-.RE
-.PP
 \fIlun\fR
 .RS 4
 The lun number
@@ -71,19 +51,19 @@ The channel number
 The data buffer buffer length
 .RE
 .PP
-\fIretries\fR
+\fIdevice_state_str\fR
 .RS 4
-Number of times to retry request
+The current state of the device, as a string
 .RE
 .PP
-\fIdata_direction_str\fR
+\fIrequest_buffer\fR
 .RS 4
-Data direction, as a string
+The data buffer address
 .RE
 .PP
-\fIdevice_state\fR
+\fIhost_no\fR
 .RS 4
-The current state of the device
+The host number
 .RE
 .PP
 \fIdev_id\fR
@@ -91,9 +71,29 @@ The current state of the device
 The scsi device id
 .RE
 .PP
+\fItimeout\fR
+.RS 4
+Request timeout in seconds
+.RE
+.PP
+\fIdata_direction_str\fR
+.RS 4
+Data direction, as a string
+.RE
+.PP
 \fIdata_direction\fR
 .RS 4
 The data_direction specifies whether this command is from/to the device\&.
+.RE
+.PP
+\fIretries\fR
+.RS 4
+Number of times to retry request
+.RE
+.PP
+\fIdevice_state\fR
+.RS 4
+The current state of the device
 .RE
 .SH SEE ALSO\n 
 .IR tapset::scsi (3stap)

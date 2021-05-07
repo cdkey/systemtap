@@ -2,12 +2,12 @@
 .\"     Title: probe::sunrpc.svc.create
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: Networking Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SUNRPC\&.SVC\" "3stap" "November 2020" "SystemTap Tapset Reference" "Networking Tapset"
+.TH "PROBE::SUNRPC\&.SVC\" "3stap" "May 2021" "SystemTap Tapset Reference" "Networking Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,11 +36,6 @@ sunrpc\&.svc\&.create
 .fi
 .SH "VALUES"
 .PP
-\fIprog\fR
-.RS 4
-the number of the program
-.RE
-.PP
 \fIpg_nvers\fR
 .RS 4
 the number of supported versions
@@ -49,6 +44,11 @@ the number of supported versions
 \fIbufsize\fR
 .RS 4
 the buffer size
+.RE
+.PP
+\fIprog\fR
+.RS 4
+the number of the program
 .RE
 .PP
 \fIprogname\fR

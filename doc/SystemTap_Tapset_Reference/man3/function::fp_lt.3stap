@@ -2,12 +2,12 @@
 .\"     Title: function::fp_lt
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: Floating point processing Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::FP_LT" "3stap" "November 2020" "SystemTap Tapset Reference" "Floating point processing Taps"
+.TH "FUNCTION::FP_LT" "3stap" "May 2021" "SystemTap Tapset Reference" "Floating point processing Taps"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,3 +48,5 @@ second 64 bit floating point input
 .SH "DESCRIPTION"
 .PP
 check if infp1 is strictly less than infp2
+.SH SEE ALSO\n 
+.IR tapset::floatingpoint (3stap)

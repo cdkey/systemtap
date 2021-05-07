@@ -2,12 +2,12 @@
 .\"     Title: probe::nfsd.createv3
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFSD\&.CREATE" "3stap" "November 2020" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFSD\&.CREATE" "3stap" "May 2021" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,29 +36,9 @@ nfsd\&.createv3
 .fi
 .SH "VALUES"
 .PP
-\fIiap_valid\fR
+\fIfilename\fR
 .RS 4
-Attribute flags
-.RE
-.PP
-\fIfh\fR
-.RS 4
-file handle (the first part is the length of the file handle)
-.RE
-.PP
-\fIclient_ip\fR
-.RS 4
-the ip address of client
-.RE
-.PP
-\fIcreatemode\fR
-.RS 4
-create mode \&.The possible values could be: NFS3_CREATE_EXCLUSIVE, NFS3_CREATE_UNCHECKED, or NFS3_CREATE_GUARDED
-.RE
-.PP
-\fItruncp\fR
-.RS 4
-trunp arguments, indicates if the file shouldbe truncate
+file name
 .RE
 .PP
 \fIiap_mode\fR
@@ -66,9 +46,14 @@ trunp arguments, indicates if the file shouldbe truncate
 file access mode
 .RE
 .PP
-\fIfilelen\fR
+\fItruncp\fR
 .RS 4
-the length of file name
+trunp arguments, indicates if the file shouldbe truncate
+.RE
+.PP
+\fIiap_valid\fR
+.RS 4
+Attribute flags
 .RE
 .PP
 \fIverifier\fR
@@ -76,9 +61,24 @@ the length of file name
 file attributes (atime,mtime,mode)\&. It\*(Aqs used to reset file attributes for CREATE_EXCLUSIVE
 .RE
 .PP
-\fIfilename\fR
+\fIcreatemode\fR
 .RS 4
-file name
+create mode \&.The possible values could be: NFS3_CREATE_EXCLUSIVE, NFS3_CREATE_UNCHECKED, or NFS3_CREATE_GUARDED
+.RE
+.PP
+\fIclient_ip\fR
+.RS 4
+the ip address of client
+.RE
+.PP
+\fIfilelen\fR
+.RS 4
+the length of file name
+.RE
+.PP
+\fIfh\fR
+.RS 4
+file handle (the first part is the length of the file handle)
 .RE
 .SH "DESCRIPTION"
 .PP

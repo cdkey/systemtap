@@ -2,12 +2,12 @@
 .\"     Title: probe::nfsd.rename
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFSD\&.RENAME" "3stap" "November 2020" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFSD\&.RENAME" "3stap" "May 2021" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,9 +36,9 @@ nfsd\&.rename
 .fi
 .SH "VALUES"
 .PP
-\fIfh\fR
+\fIflen\fR
 .RS 4
-file handler of old path
+length of old file name
 .RE
 .PP
 \fIclient_ip\fR
@@ -51,19 +51,19 @@ the ip address of client
 file handler of new path
 .RE
 .PP
-\fIfilename\fR
-.RS 4
-old file name
-.RE
-.PP
-\fIflen\fR
-.RS 4
-length of old file name
-.RE
-.PP
 \fItname\fR
 .RS 4
 new file name
+.RE
+.PP
+\fIfh\fR
+.RS 4
+file handler of old path
+.RE
+.PP
+\fIfilename\fR
+.RS 4
+old file name
 .RE
 .PP
 \fItlen\fR

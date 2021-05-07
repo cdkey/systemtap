@@ -2,12 +2,12 @@
 .\"     Title: probe::sunrpc.clnt.bind_new_program
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: Networking Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::SUNRPC\&.CLNT" "3stap" "November 2020" "SystemTap Tapset Reference" "Networking Tapset"
+.TH "PROBE::SUNRPC\&.CLNT" "3stap" "May 2021" "SystemTap Tapset Reference" "Networking Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,6 +36,11 @@ sunrpc\&.clnt\&.bind_new_program
 .fi
 .SH "VALUES"
 .PP
+\fIold_progname\fR
+.RS 4
+the name of old RPC program
+.RE
+.PP
 \fIservername\fR
 .RS 4
 the server machine name
@@ -56,19 +61,14 @@ the number of new RPC program
 the number of old RPC program
 .RE
 .PP
-\fIvers\fR
-.RS 4
-the version of new RPC program
-.RE
-.PP
 \fIprogname\fR
 .RS 4
 the name of new RPC program
 .RE
 .PP
-\fIold_progname\fR
+\fIvers\fR
 .RS 4
-the name of old RPC program
+the version of new RPC program
 .RE
 .SH SEE ALSO\n 
 .IR tapset::rpc (3stap)

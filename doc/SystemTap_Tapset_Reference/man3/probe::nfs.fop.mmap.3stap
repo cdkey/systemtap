@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.fop.mmap
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.FOP\&.M" "3stap" "November 2020" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.FOP\&.M" "3stap" "May 2021" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,39 +36,9 @@ nfs\&.fop\&.mmap
 .fi
 .SH "VALUES"
 .PP
-\fIcache_time\fR
+\fIvm_start\fR
 .RS 4
-when we started read\-caching this inode
-.RE
-.PP
-\fIdev\fR
-.RS 4
-device identifier
-.RE
-.PP
-\fIino\fR
-.RS 4
-inode number
-.RE
-.PP
-\fIattrtimeo\fR
-.RS 4
-how long the cached information is assumed to be valid\&. We need to revalidate the cached attrs for this inode if jiffies \- read_cache_jiffies > attrtimeo\&.
-.RE
-.PP
-\fIvm_end\fR
-.RS 4
-the first byte after end address within vm_mm
-.RE
-.PP
-\fIbuf\fR
-.RS 4
-the address of buf in user space
-.RE
-.PP
-\fIcache_valid\fR
-.RS 4
-cache related bit mask flag
+start address within vm_mm
 .RE
 .PP
 \fIparent_name\fR
@@ -76,9 +46,39 @@ cache related bit mask flag
 parent dir name
 .RE
 .PP
+\fIbuf\fR
+.RS 4
+the address of buf in user space
+.RE
+.PP
+\fIino\fR
+.RS 4
+inode number
+.RE
+.PP
+\fIvm_end\fR
+.RS 4
+the first byte after end address within vm_mm
+.RE
+.PP
 \fIfile_name\fR
 .RS 4
 file name
+.RE
+.PP
+\fIattrtimeo\fR
+.RS 4
+how long the cached information is assumed to be valid\&. We need to revalidate the cached attrs for this inode if jiffies \- read_cache_jiffies > attrtimeo\&.
+.RE
+.PP
+\fIdev\fR
+.RS 4
+device identifier
+.RE
+.PP
+\fIcache_valid\fR
+.RS 4
+cache related bit mask flag
 .RE
 .PP
 \fIvm_flag\fR
@@ -86,9 +86,9 @@ file name
 vm flags
 .RE
 .PP
-\fIvm_start\fR
+\fIcache_time\fR
 .RS 4
-start address within vm_mm
+when we started read\-caching this inode
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfs (3stap)

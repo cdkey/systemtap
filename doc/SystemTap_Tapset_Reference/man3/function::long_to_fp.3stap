@@ -2,12 +2,12 @@
 .\"     Title: function::long_to_fp
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: Floating point processing Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::LONG_TO_FP" "3stap" "November 2020" "SystemTap Tapset Reference" "Floating point processing Taps"
+.TH "FUNCTION::LONG_TO_FP" "3stap" "May 2021" "SystemTap Tapset Reference" "Floating point processing Taps"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -42,6 +42,6 @@ a long integer
 .RE
 .SH "DESCRIPTION"
 .PP
-Convert from a long to a softfloat floating point, then print the floating point value\&.
+Convert from a long to a 64 bit softfloat floating point\&.
 .SH SEE ALSO\n 
 .IR tapset::floatingpoint (3stap)

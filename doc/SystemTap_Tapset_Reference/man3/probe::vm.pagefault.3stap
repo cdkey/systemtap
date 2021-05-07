@@ -2,12 +2,12 @@
 .\"     Title: probe::vm.pagefault
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: Memory Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::VM\&.PAGEFAUL" "3stap" "November 2020" "SystemTap Tapset Reference" "Memory Tapset"
+.TH "PROBE::VM\&.PAGEFAUL" "3stap" "May 2021" "SystemTap Tapset Reference" "Memory Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,14 +36,14 @@ vm\&.pagefault
 .fi
 .SH "VALUES"
 .PP
-\fIaddress\fR
-.RS 4
-the address of the faulting memory access; i\&.e\&. the address that caused the page fault
-.RE
-.PP
 \fIname\fR
 .RS 4
 name of the probe point
+.RE
+.PP
+\fIaddress\fR
+.RS 4
+the address of the faulting memory access; i\&.e\&. the address that caused the page fault
 .RE
 .PP
 \fIwrite_access\fR

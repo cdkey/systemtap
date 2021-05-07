@@ -2,12 +2,12 @@
 .\"     Title: probe::nfsd.proc.lookup
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFSD\&.PROC\&" "3stap" "November 2020" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFSD\&.PROC\&" "3stap" "May 2021" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,9 +36,9 @@ nfsd\&.proc\&.lookup
 .fi
 .SH "VALUES"
 .PP
-\fIproto\fR
+\fIfilename\fR
 .RS 4
-transfer protocol
+file name
 .RE
 .PP
 \fIclient_ip\fR
@@ -51,11 +51,6 @@ the ip address of client
 requester\*(Aqs group id
 .RE
 .PP
-\fIfilename\fR
-.RS 4
-file name
-.RE
-.PP
 \fIfilelen\fR
 .RS 4
 the length of file name
@@ -64,6 +59,11 @@ the length of file name
 \fIversion\fR
 .RS 4
 nfs version
+.RE
+.PP
+\fIproto\fR
+.RS 4
+transfer protocol
 .RE
 .PP
 \fIfh\fR

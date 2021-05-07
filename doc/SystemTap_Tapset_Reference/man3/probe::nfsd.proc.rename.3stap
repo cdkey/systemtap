@@ -2,12 +2,12 @@
 .\"     Title: probe::nfsd.proc.rename
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFSD\&.PROC\&" "3stap" "November 2020" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFSD\&.PROC\&" "3stap" "May 2021" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,39 +36,14 @@ nfsd\&.proc\&.rename
 .fi
 .SH "VALUES"
 .PP
-\fIfilename\fR
-.RS 4
-old file name
-.RE
-.PP
 \fItname\fR
 .RS 4
 new file name
 .RE
 .PP
-\fIflen\fR
+\fIfh\fR
 .RS 4
-length of old file name
-.RE
-.PP
-\fItfh\fR
-.RS 4
-file handler of new path
-.RE
-.PP
-\fItlen\fR
-.RS 4
-length of new file name
-.RE
-.PP
-\fIclient_ip\fR
-.RS 4
-the ip address of client
-.RE
-.PP
-\fIgid\fR
-.RS 4
-requester\*(Aqs group id
+file handler of old path
 .RE
 .PP
 \fIuid\fR
@@ -76,9 +51,34 @@ requester\*(Aqs group id
 requester\*(Aqs user id
 .RE
 .PP
-\fIfh\fR
+\fIflen\fR
 .RS 4
-file handler of old path
+length of old file name
+.RE
+.PP
+\fIclient_ip\fR
+.RS 4
+the ip address of client
+.RE
+.PP
+\fItfh\fR
+.RS 4
+file handler of new path
+.RE
+.PP
+\fIgid\fR
+.RS 4
+requester\*(Aqs group id
+.RE
+.PP
+\fIfilename\fR
+.RS 4
+old file name
+.RE
+.PP
+\fItlen\fR
+.RS 4
+length of new file name
 .RE
 .SH SEE ALSO\n 
 .IR tapset::nfsd (3stap)

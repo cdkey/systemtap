@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.proc.rename_setup
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.PROC\&." "3stap" "November 2020" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.PROC\&." "3stap" "May 2021" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,11 +36,6 @@ nfs\&.proc\&.rename_setup
 .fi
 .SH "VALUES"
 .PP
-\fIprot\fR
-.RS 4
-transfer protocol
-.RE
-.PP
 \fIversion\fR
 .RS 4
 NFS version
@@ -54,6 +49,11 @@ IP address of server
 \fIfh\fR
 .RS 4
 file handle of parent dir
+.RE
+.PP
+\fIprot\fR
+.RS 4
+transfer protocol
 .RE
 .SH "DESCRIPTION"
 .PP

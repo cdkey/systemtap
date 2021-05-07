@@ -2,12 +2,12 @@
 .\"     Title: probe::kprocess.exec
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: Kernel Process Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::KPROCESS\&.EX" "3stap" "November 2020" "SystemTap Tapset Reference" "Kernel Process Tapset"
+.TH "PROBE::KPROCESS\&.EX" "3stap" "May 2021" "SystemTap Tapset Reference" "Kernel Process Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -41,6 +41,11 @@ kprocess\&.exec
 The arguments to pass to the new executable, including the 0th arg (SystemTap v2\&.5+)
 .RE
 .PP
+\fIargstr\fR
+.RS 4
+A string containing the filename followed by the arguments to pass, excluding 0th arg (SystemTap v2\&.5+)
+.RE
+.PP
 \fIfilename\fR
 .RS 4
 The path to the new executable
@@ -49,11 +54,6 @@ The path to the new executable
 \fIname\fR
 .RS 4
 Name of the system call (\(lqexecve\(rq) (SystemTap v2\&.5+)
-.RE
-.PP
-\fIargstr\fR
-.RS 4
-A string containing the filename followed by the arguments to pass, excluding 0th arg (SystemTap v2\&.5+)
 .RE
 .SH "CONTEXT"
 .PP

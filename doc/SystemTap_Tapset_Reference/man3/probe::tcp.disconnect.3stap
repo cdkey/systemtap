@@ -2,12 +2,12 @@
 .\"     Title: probe::tcp.disconnect
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: Networking Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::TCP\&.DISCONN" "3stap" "November 2020" "SystemTap Tapset Reference" "Networking Tapset"
+.TH "PROBE::TCP\&.DISCONN" "3stap" "May 2021" "SystemTap Tapset Reference" "Networking Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -41,19 +41,19 @@ tcp\&.disconnect
 TCP destination port
 .RE
 .PP
-\fIname\fR
-.RS 4
-Name of this probe
-.RE
-.PP
-\fIdaddr\fR
-.RS 4
-A string representing the destination IP address
-.RE
-.PP
 \fIfamily\fR
 .RS 4
 IP address family
+.RE
+.PP
+\fIsaddr\fR
+.RS 4
+A string representing the source IP address
+.RE
+.PP
+\fIflags\fR
+.RS 4
+TCP flags (e\&.g\&. FIN, etc)
 .RE
 .PP
 \fIsport\fR
@@ -66,14 +66,14 @@ TCP source port
 Network socket
 .RE
 .PP
-\fIsaddr\fR
+\fIname\fR
 .RS 4
-A string representing the source IP address
+Name of this probe
 .RE
 .PP
-\fIflags\fR
+\fIdaddr\fR
 .RS 4
-TCP flags (e\&.g\&. FIN, etc)
+A string representing the destination IP address
 .RE
 .SH "CONTEXT"
 .PP

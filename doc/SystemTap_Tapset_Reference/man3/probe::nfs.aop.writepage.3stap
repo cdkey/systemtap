@@ -2,12 +2,12 @@
 .\"     Title: probe::nfs.aop.writepage
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: Network File Storage Tapsets
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::NFS\&.AOP\&.W" "3stap" "November 2020" "SystemTap Tapset Reference" "Network File Storage Tapsets"
+.TH "PROBE::NFS\&.AOP\&.W" "3stap" "May 2021" "SystemTap Tapset Reference" "Network File Storage Tapsets"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,9 +36,14 @@ nfs\&.aop\&.writepage
 .fi
 .SH "VALUES"
 .PP
-\fIsize\fR
+\fIfor_kupdate\fR
 .RS 4
-number of pages to be written in this execution
+a flag of writeback_control, indicates if it\*(Aqs a kupdate writeback
+.RE
+.PP
+\fIwsize\fR
+.RS 4
+write size
 .RE
 .PP
 \fIi_flag\fR
@@ -46,34 +51,19 @@ number of pages to be written in this execution
 file flags
 .RE
 .PP
-\fIfor_kupdate\fR
-.RS 4
-a flag of writeback_control, indicates if it\*(Aqs a kupdate writeback
-.RE
-.PP
-\fIi_state\fR
-.RS 4
-inode state flags
-.RE
-.PP
-\fIi_size\fR
-.RS 4
-file length in bytes
-.RE
-.PP
-\fIpage_index\fR
-.RS 4
-offset within mapping, can used a page identifier and position identifier in the page frame
-.RE
-.PP
 \fIdev\fR
 .RS 4
 device identifier
 .RE
 .PP
-\fIino\fR
+\fIsb_flag\fR
 .RS 4
-inode number
+super block flags
+.RE
+.PP
+\fIi_size\fR
+.RS 4
+file length in bytes
 .RE
 .PP
 \fIfor_reclaim\fR
@@ -86,14 +76,24 @@ a flag of writeback_control, indicates if it\*(Aqs invoked from the page allocat
 the address of page
 .RE
 .PP
-\fIsb_flag\fR
+\fIino\fR
 .RS 4
-super block flags
+inode number
 .RE
 .PP
-\fIwsize\fR
+\fIi_state\fR
 .RS 4
-write size
+inode state flags
+.RE
+.PP
+\fIpage_index\fR
+.RS 4
+offset within mapping, can used a page identifier and position identifier in the page frame
+.RE
+.PP
+\fIsize\fR
+.RS 4
+number of pages to be written in this execution
 .RE
 .SH "DESCRIPTION"
 .PP

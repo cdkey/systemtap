@@ -2,12 +2,12 @@
 .\"     Title: probe::udp.recvmsg.return
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: Networking Tapset
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "PROBE::UDP\&.RECVMSG" "3stap" "November 2020" "SystemTap Tapset Reference" "Networking Tapset"
+.TH "PROBE::UDP\&.RECVMSG" "3stap" "May 2021" "SystemTap Tapset Reference" "Networking Tapset"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,19 +36,9 @@ udp\&.recvmsg\&.return
 .fi
 .SH "VALUES"
 .PP
-\fIdaddr\fR
+\fIsize\fR
 .RS 4
-A string representing the destination IP address
-.RE
-.PP
-\fIfamily\fR
-.RS 4
-IP address family
-.RE
-.PP
-\fIdport\fR
-.RS 4
-UDP destination port
+Number of bytes received by the process
 .RE
 .PP
 \fIname\fR
@@ -56,19 +46,29 @@ UDP destination port
 The name of this probe
 .RE
 .PP
-\fIsize\fR
+\fIsport\fR
 .RS 4
-Number of bytes received by the process
+UDP source port
+.RE
+.PP
+\fIdport\fR
+.RS 4
+UDP destination port
+.RE
+.PP
+\fIfamily\fR
+.RS 4
+IP address family
+.RE
+.PP
+\fIdaddr\fR
+.RS 4
+A string representing the destination IP address
 .RE
 .PP
 \fIsaddr\fR
 .RS 4
 A string representing the source IP address
-.RE
-.PP
-\fIsport\fR
-.RS 4
-UDP source port
 .RE
 .SH "CONTEXT"
 .PP

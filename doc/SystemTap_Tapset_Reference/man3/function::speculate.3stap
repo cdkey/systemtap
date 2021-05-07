@@ -2,12 +2,12 @@
 .\"     Title: function::speculate
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: November 2020
+.\"      Date: May 2021
 .\"    Manual: Speculation
 .\"    Source: SystemTap Tapset Reference
 .\"  Language: English
 .\"
-.TH "FUNCTION::SPECULATE" "3stap" "November 2020" "SystemTap Tapset Reference" "Speculation"
+.TH "FUNCTION::SPECULATE" "3stap" "May 2021" "SystemTap Tapset Reference" "Speculation"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
