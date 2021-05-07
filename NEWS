@@ -1,11 +1,11 @@
 * What's new in version 4.5
 
-- Java probing support has been updated to work with the latest versions of the
-  JVM and byteman (PR27739).
+- Java probing support has been updated to work with the latest
+  versions of the JVM and byteman (PR27739).
 
-- An initial version of the bpf/uconversions.stp tapset
-  provides tapset functions such as user_long_error()
-  to access values in userspace.
+- An initial version of the bpf/uconversions.stp tapset provides
+  tapset functions such as user_long_error() to access values in
+  userspace.
 
 - Enabled the -c option to work with the bpf backend (PR25177).
 
@@ -17,7 +17,23 @@
 
 - Added VMA-tracking support to the stapdyn backend.
 
-- The kernel runtime now uses procfs as the default transport mechanism.
+- Several concurrency/locking fixes and improvements were made to the
+  uprobes family of probes and to the transport subsystem.  Large
+  machines with hundreds of CPUs are better supported.
+
+- The kernel runtime now uses procfs as the default namespace for
+  the relayfs pseudo-files.
+
+- Floating point variables may now be accessed directly as normal
+  $context variables.  32-bit floats are automatically widened to
+  doubles. (PR13838)
+
+- A wider variety of SecureBoot MOK keys are now recognized for
+  more reliable triggering of stap-server module signing.  Document
+  some additional lockdown/secureboot administrative escape options.
+  (PR26665)
+
+- On startup, stap explains the [man FOO] diagnostic syntax.
 
 * What's new in version 4.4, 2020-11-09
 
