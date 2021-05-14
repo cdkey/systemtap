@@ -888,7 +888,8 @@ location_context::frame_location()
 	fb_ops = fb_expr;
 
       location *fb_loc = translate (fb_ops, fb_len, 0, NULL, false, false);
-      assert(fb_loc->type == loc_address);
+      if (fb_loc->type != loc_address)
+        throw SEMANTIC_ERROR("expected loc_address");
 
       this->frame_base = new_local("_fb_");
       assignment *set = new assignment;
