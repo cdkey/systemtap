@@ -23,6 +23,7 @@ TAPSET_S390=$TAPSET_SRC/linux/s390/syscall_num.stp
 TAPSET_ARM=$TAPSET_SRC/linux/arm/syscall_num.stp
 TAPSET_AARCH64=$TAPSET_SRC/linux/arm64/syscall_num.stp
 TAPSET_MIPS=$TAPSET_SRC/linux/mips/syscall_num.stp
+TAPSET_RISCV=$TAPSET_SRC/linux/riscv/syscall_num.stp
 
 SYSCALLS_32=$(mktemp)
 SYSCALLS_64=$(mktemp)
@@ -116,5 +117,9 @@ __dump_syscalls $STRACE_SRC/linux/mips/syscallent-n64.h 64
 __dump_syscalls $STRACE_SRC/linux/mips/syscallent-o32.h 32
 __dump_syscalls $STRACE_SRC/linux/mips/syscallent-n32.h 32
 __generate_tapset $TAPSET_MIPS
+# ======= riscv =======
+__init
+__dump_syscalls $STRACE_SRC/linux/riscv/syscallent.h 64
+__generate_tapset $TAPSET_RISCV
 
 rm -f $SYSCALLS_32 $SYSCALLS_64
