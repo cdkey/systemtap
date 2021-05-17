@@ -2539,6 +2539,7 @@ validate_module_elf (Dwfl_Module *mod, const char *name,  base_query *q)
     case EM_ARM: expect_machine = "arm*"; break;
     case EM_AARCH64: expect_machine = "arm64"; break;
     case EM_MIPS: expect_machine = "mips"; break;
+    case EM_RISCV: expect_machine = "riscv"; break;
       // XXX: fill in some more of these
     default: expect_machine = "?"; break;
     }
@@ -6738,6 +6739,43 @@ sdt_uprobe_var_expanding_visitor::build_dwarf_registers ()
     DRI ("x29", 29, DI); DRI ("w29", 29, SI);
     DRI ("x30", 30, DI); DRI ("w30", 30, SI);
     DRI ("sp", 31, DI);
+  } else if (elf_machine == EM_RISCV) {
+    Dwarf_Addr bias;
+    Elf* elf = (dwfl_module_getelf (dw.mod_info->mod, &bias));
+    enum regwidths riscv_reg_width =
+        (gelf_getclass (elf) == ELFCLASS32) ? SI : DI;
+    DRI ("x0", 0, riscv_reg_width); DRI ("zero", 0, riscv_reg_width);
+    DRI ("x1", 1, riscv_reg_width); DRI ("ra", 1, riscv_reg_width);
+    DRI ("x2", 2, riscv_reg_width); DRI ("sp", 2, riscv_reg_width);
+    DRI ("x3", 3, riscv_reg_width); DRI ("gp", 3, riscv_reg_width);
+    DRI ("x4", 4, riscv_reg_width); DRI ("tp", 4, riscv_reg_width);
+    DRI ("x5", 5, riscv_reg_width); DRI ("t0", 5, riscv_reg_width);
+    DRI ("x6", 6, riscv_reg_width); DRI ("t1", 6, riscv_reg_width);
+    DRI ("x7", 7, riscv_reg_width); DRI ("t2", 7, riscv_reg_width);
+    DRI ("x8", 8, riscv_reg_width); DRI ("s0", 8, riscv_reg_width); DRI ("fp", 8, riscv_reg_width);
+    DRI ("x9", 9, riscv_reg_width); DRI ("s1", 9, riscv_reg_width);
+    DRI ("x10", 10, riscv_reg_width); DRI ("a0", 10, riscv_reg_width);
+    DRI ("x11", 11, riscv_reg_width); DRI ("a1", 11, riscv_reg_width);
+    DRI ("x12", 12, riscv_reg_width); DRI ("a2", 12, riscv_reg_width);
+    DRI ("x13", 13, riscv_reg_width); DRI ("a3", 13, riscv_reg_width);
+    DRI ("x14", 14, riscv_reg_width); DRI ("a4", 14, riscv_reg_width);
+    DRI ("x15", 15, riscv_reg_width); DRI ("a5", 15, riscv_reg_width);
+    DRI ("x16", 16, riscv_reg_width); DRI ("a6", 16, riscv_reg_width);
+    DRI ("x17", 17, riscv_reg_width); DRI ("a7", 17, riscv_reg_width);
+    DRI ("x18", 18, riscv_reg_width); DRI ("s2", 18, riscv_reg_width);
+    DRI ("x19", 19, riscv_reg_width); DRI ("s3", 19, riscv_reg_width);
+    DRI ("x20", 20, riscv_reg_width); DRI ("s4", 20, riscv_reg_width);
+    DRI ("x21", 21, riscv_reg_width); DRI ("s5", 21, riscv_reg_width);
+    DRI ("x22", 22, riscv_reg_width); DRI ("s6", 22, riscv_reg_width);
+    DRI ("x23", 23, riscv_reg_width); DRI ("s7", 23, riscv_reg_width);
+    DRI ("x24", 24, riscv_reg_width); DRI ("s8", 24, riscv_reg_width);
+    DRI ("x25", 25, riscv_reg_width); DRI ("s9", 25, riscv_reg_width);
+    DRI ("x26", 26, riscv_reg_width); DRI ("s10", 26, riscv_reg_width);
+    DRI ("x27", 27, riscv_reg_width); DRI ("s11", 27, riscv_reg_width);
+    DRI ("x28", 28, riscv_reg_width); DRI ("t3", 28, riscv_reg_width);
+    DRI ("x29", 29, riscv_reg_width); DRI ("t4", 29, riscv_reg_width);
+    DRI ("x30", 30, riscv_reg_width); DRI ("t5", 30, riscv_reg_width);
+    DRI ("x31", 31, riscv_reg_width); DRI ("t6", 31, riscv_reg_width);
   } else if (elf_machine == EM_MIPS) {
     Dwarf_Addr bias;
     Elf* elf = (dwfl_module_getelf (dw.mod_info->mod, &bias));

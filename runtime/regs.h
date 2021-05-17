@@ -58,6 +58,12 @@
 #define REG_IP(regs_arg) ((regs_arg)->cp0_epc)
 #define REG_SP(regs_arg) ((regs_arg)->regs[29])
 
+#elif defined (__riscv)
+
+#define REG_IP(regs_arg) (regs_arg)->epc
+#define REG_SP(regs_arg) (regs_arg)->sp
+#define REG_LINK(regs_arg) (regs_arg)->ra
+
 #elif defined (__s390__) || defined (__s390x__)
 
 #ifndef __s390x__

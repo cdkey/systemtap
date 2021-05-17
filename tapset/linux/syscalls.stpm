@@ -410,7 +410,7 @@
 @define SYSC_CLONE_CHILD_TID_UADDR_ARGNO %( 5 %)
 %)
 
-%( arch == "i386" || arch == "arm" || arch == "powerpc" || arch == "mips" %?
+%( arch == "i386" || arch == "arm" || arch == "powerpc" || arch == "mips" || arch == "riscv" %?
 @define arch_syscall_prefix %( "" %)
 @define arch_syscall0_prefix %( "" %)
 @define SYSC_CLONE_CLONE_FLAGS_ARGNO %( 1 %)
