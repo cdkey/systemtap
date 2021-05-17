@@ -574,7 +574,11 @@ compile_pass (systemtap_session& s)
   o << "EXTRA_CFLAGS += -freorder-blocks" << endl; // improve on -Os
 
   // Generate eh_frame for self-backtracing
-  o << "EXTRA_CFLAGS += -fasynchronous-unwind-tables" << endl;
+  // FIXME Work around the issue with riscv kernel modules not being
+  // loadable with asynchronous unwind tables due to R_RISCV_32_PCREL
+  // relocations.
+  if (s.architecture != "riscv")
+    o << "EXTRA_CFLAGS += -fasynchronous-unwind-tables" << endl;
 
   // We used to allow the user to override default optimization when so
   // requested by adding a -O[0123s] so they could determine the
