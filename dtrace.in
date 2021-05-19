@@ -359,7 +359,7 @@ def main():
     if s_filename != "" and use_cpp:
         (ignore, fname) = mkstemp(suffix=".d")
         cpp = os.environ.get("CPP", "cpp")
-        retcode = call(split(cpp) + includes + defines + [s_filename, fname])
+        retcode = call(split(cpp) + includes + defines + [s_filename, '-o', fname])
         if retcode != 0:
             print("\"cpp includes s_filename\" failed")
             usage()
