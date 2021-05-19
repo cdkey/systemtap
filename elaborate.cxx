@@ -78,14 +78,17 @@ derived_probe::derived_probe (probe *p, probe_point *l, bool rewrite_loc):
   this->locations.push_back (l);
 }
 
-
 void
-derived_probe::printsig (ostream& o, bool nest) const
+derived_probe::printsig_nonest (ostream& o) const
 {
   probe::printsig (o);
+}
 
-  if (nest)
-    printsig_nested (o);
+void
+derived_probe::printsig (ostream& o) const
+{
+  probe::printsig (o);
+  printsig_nested (o);
 }
 
 void
