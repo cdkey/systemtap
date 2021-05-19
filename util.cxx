@@ -1542,7 +1542,7 @@ levenshtein_suggest(const string& target,        // string to match against
 
       // Approximate levenshtein by size-difference only; real score
       // is at least this high
-      unsigned min_score = labs(target.size() - it->size());
+      unsigned min_score = abs(static_cast<signed>(target.size()) - static_cast<signed>(it->size()));
 
       if (min_score > threshold) // min-score too high for threshold
         continue;
