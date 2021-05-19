@@ -382,7 +382,7 @@ public:
 
 response build_collection_rh::POST(const request &req)
 {
-    client_request_data *crd = new struct client_request_data;
+    client_request_data *crd = new client_request_data;
     if (crd == NULL) {
 	// Return an error.
 	server_error("500 - internal server error");

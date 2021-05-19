@@ -178,7 +178,7 @@ class container_backend : public backend_base
 public:
     container_backend();
 
-    bool can_generate_module(const struct client_request_data *crd);
+    bool can_generate_module(const client_request_data *crd);
     int generate_module(const client_request_data *crd,
 			const vector<string> &argv,
 			const string &uuid,

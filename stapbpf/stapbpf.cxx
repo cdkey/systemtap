@@ -79,6 +79,7 @@ int target_pid = 0;
 char *target_cmd = NULL;
 
 /* ../staprun/common.c functions */
+__attribute__ ((format (printf, 1, 2)))
 void eprintf(const char *fmt, ...)
 {
   va_list va;
