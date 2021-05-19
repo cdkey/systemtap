@@ -269,7 +269,7 @@ static std::vector<uprobe_data> uprobes;
 
 // TODO: Move fatal() to bpfinterp.h and replace abort() calls in the interpreter.
 // TODO: Add warn() option.
-static void __attribute__((noreturn))
+static void __attribute__((noreturn))  __attribute__ ((format (printf, 1, 2)))
 fatal(const char *str, ...)
 {
   if (module_name)
@@ -796,7 +796,7 @@ kprobe_collect_from_syms(Elf_Data *sym_data, Elf_Data *str_data)
       if (syms[i].st_name < str_data->d_size)
 	name = static_cast<char *>(str_data->d_buf) + syms[i].st_name;
       else
-	fatal("symbol %u has invalid string index\n", i);
+	fatal("symbol %zu has invalid string index\n", i);
       maybe_collect_kprobe(name, i, syms[i].st_shndx, syms[i].st_value);
     }
 }

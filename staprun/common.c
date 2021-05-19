@@ -679,6 +679,7 @@ int send_request(int type, void *data, int len)
 
 static int use_syslog = 0;
 
+ __attribute__ ((format (printf, 1, 2)))
 void eprintf(const char *fmt, ...)
 {
 	va_list va;
@@ -708,7 +709,7 @@ void print_color(const char *type)
 		char *seq = parse_stap_color(type);
 		if (seq != NULL) {
 			eprintf("\033[");
-			eprintf(seq);
+			eprintf("%s", seq);
 			eprintf("m\033[K");
 			free(seq);
 		}

@@ -10360,12 +10360,9 @@ kprobe_derived_probe::kprobe_derived_probe (systemtap_session& sess,
 
 void kprobe_derived_probe::printsig (ostream& o) const
 {
-  bool nest = true;
   sole_location()->print (o);
   o << " /* " << " name = " << symbol_name << "*/";
-
-  if (nest)
-    printsig_nested (o);
+  printsig_nested (o);
 }
 
 void kprobe_derived_probe::join_group (systemtap_session& s)
