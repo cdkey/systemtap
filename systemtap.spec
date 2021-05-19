@@ -196,6 +196,9 @@ BuildRequires: python2-setuptools
 BuildRequires: python-setuptools
 %endif
 %endif
+%if %{with_python3}
+BuildRequires: python3
+%endif
 %if %{with_python3_probes}
 BuildRequires: python3-devel
 BuildRequires: python3-setuptools
@@ -484,7 +487,7 @@ This package includes support files needed to run systemtap scripts
 that probe python 3 processes.
 %endif
 
-%if %{with_python3}
+%if %{with_python3_probes}
 %package exporter
 Summary: Systemtap-prometheus interoperation mechanism
 License: GPLv2+
@@ -951,7 +954,7 @@ if [ "$1" -ge "1" ]; then
 fi
 exit 0
 
-%if %{with_python3}
+%if %{with_python3_probes}
 %if %{with_systemd}
 %preun exporter
 if [ $1 = 0 ] ; then
@@ -1192,7 +1195,7 @@ exit 0
 %endif
 %endif
 
-%if %{with_python3}
+%if %{with_python3_probes}
 %files exporter
 %{_sysconfdir}/stap-exporter
 %{_sysconfdir}/sysconfig/stap-exporter
