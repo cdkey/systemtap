@@ -240,6 +240,7 @@ public:
     if (n1 != o.n1 || w2 != o.w2)
       throw_out_of_range("bpf::bitset::set2::operator=");
     memcpy(data, o.data, n1 * w2 * sizeof(word_t));
+    return *this;
   }
 
   set1_ref operator[] (size_t i)
