@@ -300,8 +300,8 @@ struct c_tmpcounter cxx_final: public c_unparser
   // var_declare(), which will forward to the parent c_unparser for output;
   void var_declare(string const&, var const& v) cxx_override;
 
-  void emit_function (functiondecl* fd);
-  void emit_probe (derived_probe* dp);
+  void emit_function (functiondecl* fd) override;
+  void emit_probe (derived_probe* dp) override;
 
   const string& get_compiled_printf (bool print_to_stream,
 				     const string& format) cxx_override;
