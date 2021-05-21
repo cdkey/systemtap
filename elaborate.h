@@ -203,13 +203,13 @@ struct derived_probe: public probe
   virtual void join_group (systemtap_session& s) = 0;
   virtual probe_point* sole_location () const;
   virtual probe_point* script_location () const;
-  virtual void printsig (std::ostream &o) const override;
+  virtual void printsig (std::ostream &o) const cxx_override;
   void printsig_nonest (std::ostream &o) const;
   // return arguments of probe if there
   virtual void getargs (std::list<std::string> &) const {}
   void printsig_nested (std::ostream &o) const;
-  virtual void collect_derivation_chain (std::vector<probe*> &probes_list) const override;
-  virtual void collect_derivation_pp_chain (std::vector<probe_point*> &pp_list) const override;
+  virtual void collect_derivation_chain (std::vector<probe*> &probes_list) const cxx_override;
+  virtual void collect_derivation_pp_chain (std::vector<probe_point*> &pp_list) const cxx_override;
   std::string derived_locations (bool firstFrom = true);
 
   virtual void print_dupe_stamp(std::ostream&) {}
