@@ -1,0 +1,7 @@
+#! stap -p4
+
+probe process("/usr/lib*/libc.so.*").function("s*") { println ($$parms) }
+probe process("/usr/lib*/libc.so.*").function("__old*")? { println ($$parms) }
+
+// e.g. tricky: str_to_mpn (dangling parameter-ref vs. call-site)
+//              __old_mempcpy_small 

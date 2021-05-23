@@ -3929,6 +3929,10 @@ synthetic_embedded_deref_call(dwflpp& dw, location_context &ctx,
                      dwarf_diename (function_type) ?: "<anonymous>",
                      dwarf_errmsg (-1)), e->tok));
         }
+      if (byte_size > 8)
+            throw (SEMANTIC_ERROR
+                   ("cannot process >64-bit values", e->tok));
+        
       if (encoding == DW_ATE_float
 	  && byte_size == 4)
 	{
