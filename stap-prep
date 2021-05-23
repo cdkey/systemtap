@@ -17,11 +17,30 @@ echo "Configuring for kernel release $UNAME"
 # See if the configured debuginfod
 DEBUGINFOD=0
 prep_debuginfod() {
-    # choose a part of the kernel that elfutils 0.181 can decode
-    vdso=`ls -1 /lib/modules/$UNAME/vdso/*.so 2>/dev/null | head -1` # vdso32.so and/or vdso64.so or whatever
-    if debuginfod-find debuginfo "$vdso" > /dev/null 2>&1; then
-        DEBUGINFOD=1
-        echo "Will use debuginfod DEBUGINFOD_URLS=$DEBUGINFOD_URLS to fetch debuginfo."
+    # Choose a representative part - the vmlinuz file itself, which
+    # may be compressed-ELF or something else.  Previously, used a
+    # vdso* image only, but that false-positive tricks stap-prep on
+    # aarch64/s390x, due to rhbz 1891509 / elfutils PR25498
+    vmlinuz=/lib/modules/$UNAME/vmlinuz
+    
+    if [ -n "$DEBUGINFOD_URLS" ]; then
+        echo "Please wait, attempting to download $vmlinuz debuginfo"
+        if [ -z "$DEBUGINFOD_TIMEOUT" ]; then
+            DEBUGINFOD_TIMEOUT=300
+            export DEBUGINFOD_TIMEOUT
+            echo "Increasing DEBUGINFOD_TIMEOUT to $DEBUGINFOD_TIMEOUT temporarily"
+        fi
+        DEBUGINFOD_PROGRESS=1
+        export DEBUGINFOD_PROGRESS
+        if debuginfod-find debuginfo "$vmlinuz" > /dev/null; then
+            DEBUGINFOD=1
+            ls -ald `debuginfod-find debuginfo "$vmlinuz"`
+            echo "Download successful.  Assuming debuginfod server usage."
+        else
+            echo "Download failed."
+        fi
+    else
+        echo 'Debuginfo automatic downloading is not configured via $DEBUGINFOD_URLS'
     fi
 }
 
