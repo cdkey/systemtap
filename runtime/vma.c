@@ -185,14 +185,15 @@ static int _stp_vma_mmap_cb(struct stap_task_finder_target *tgt,
 							    module,
 							    &vm_start, &vm_end,
 							    NULL);
-			  if (res == -ESRCH || vm_start + offset == addr)
+			  if (res == -ESRCH)
 			    res = stap_add_vma_map_info(tsk->group_leader,
-						        addr, addr + length,
-						        offset, path, module);
-			  else if (res == 0 && vm_end + 1 == addr)
-			    res = stap_extend_vma_map_info(tsk->group_leader,
-							   vm_start,
-							   addr + length);
+							addr, addr + length,
+							0, path, module);
+			  else
+			    res = stap_add_vma_map_info(tsk->group_leader,
+							addr, addr + length,
+							addr - vm_start, path, module);
+
 			  /* VMA entries are allocated dynamically, this is fine,
 			   * since we are in a task_finder callback, which is in
 			   * user context. */

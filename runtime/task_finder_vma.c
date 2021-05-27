@@ -54,7 +54,7 @@ struct __stp_tf_vma_entry {
 	struct task_struct *tsk;
 	unsigned long vm_start;
 	unsigned long vm_end;
-	unsigned long offset;
+	unsigned long offset;  //offset from base addr of the module
 	char path[TASK_FINDER_VMA_ENTRY_PATHLEN]; /* mmpath name, if known */
 
 	// User data (possibly stp_module)
@@ -243,7 +243,7 @@ stap_add_vma_map_info(struct task_struct *tsk, unsigned long vm_start,
 	}
 
 	stp_spin_lock_irqsave(&bucket->lock, flags);
-	hlist_add_head_rcu(&entry->hlist, &bucket->head);
+	hlist_add_tail_rcu(&entry->hlist, &bucket->head);
 	stp_spin_unlock_irqrestore(&bucket->lock, flags);
 	return 0;
 }
@@ -303,7 +303,7 @@ stap_find_vma_map_info(struct task_struct *tsk, unsigned long addr,
 
 	bucket = __stp_tf_get_vma_bucket(tsk);
 	entry = __stp_tf_get_vma_map(bucket, tsk, 1, addr >= entry->vm_start &&
-				     addr < entry->vm_end);
+				     addr <= entry->vm_end);
 	if (!entry)
 		return -ESRCH;
 
