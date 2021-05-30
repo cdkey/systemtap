@@ -16,6 +16,7 @@ Prerequisites:
 - C compiler (same as what kernel was compiled with), to build kernel modules
 - C++11 compiler such as gcc 4.8+, to build systemtap itself
 - elfutils 0.151+ with libdwfl for debugging information parsing
+- Python for tools which are scripts, such as dtrace(1)
 - root privileges
 
 Installation steps:
