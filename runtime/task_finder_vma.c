@@ -21,6 +21,26 @@ static inline bool atomic_try_cmpxchg(atomic_t *v, int *old, int new)
 }
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
+// Added in linux 4.7, backported to rhel 7, not present in rhel 6
+static inline void hlist_add_tail_rcu(struct hlist_node *n,
+					   struct hlist_head *h)
+{
+  struct hlist_node *i, *last = NULL;
+  
+  for (i = hlist_first_rcu(h); i; i = hlist_next_rcu(i))
+    last = i;
+  
+  if (last) {
+    n->next = last->next;
+    n->pprev = &last->next;
+    rcu_assign_pointer(hlist_next_rcu(last), n);
+  } else {
+    hlist_add_head_rcu(n, h);
+  }
+}
+#endif
+
 #ifndef STAPCONF_ATOMIC_FETCH_ADD_UNLESS
 static inline int atomic_fetch_add_unless(atomic_t *v, int a, int u)
 {
