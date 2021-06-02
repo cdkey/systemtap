@@ -4042,6 +4042,7 @@ expression* parser::parse_symbol ()
 	{
 	  swallow ();
 	  struct functioncall* f = new functioncall;
+          f->synthetic = false;
 	  f->tok = t;
 	  f->function = name;
 	  // Allow empty actual parameter list
