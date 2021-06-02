@@ -56,7 +56,7 @@ probe end
 done
 
 
-if [ "${perfresult['first']}" == "${perfresult['second']}" ] ; then
+if [ "${perfresult['first']}" = "${perfresult['second']}" ] ; then
     echo PASS: ${perfresult["first"]}
 else
     echo UNRESOLVED: ${perfresult["first"]} ${perfresult["second"]}
