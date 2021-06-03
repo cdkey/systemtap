@@ -621,7 +621,7 @@ private:
   void emit_address (Dwarf_Addr address);
 
   int  dwarf_get_enum (Dwarf_Die *scopes, int nscopes,
-                       const char *name, Dwarf_Die *result);
+                       const char *name, Dwarf_Die *result, Dwarf_Die *type);
   void get_locals(std::vector<Dwarf_Die>& scopes, std::set<std::string>& locals);
   void get_locals_die(Dwarf_Die &die, std::set<std::string>& locals);
   void get_members(Dwarf_Die *vardie, std::set<std::string>& members,
@@ -632,6 +632,7 @@ private:
                                                  std::string const & local,
                                                  const target_symbol *e,
                                                  Dwarf_Die *vardie,
+                                                 Dwarf_Die *typedie,
                                                  Dwarf_Attribute *fb_attr_mem,
                                                  Dwarf_Die *funcdie);
 

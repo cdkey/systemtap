@@ -2772,7 +2772,7 @@ dwflpp::get_locals_die(Dwarf_Die& die, set<string>& locals)
 
 int
 dwflpp::dwarf_get_enum (Dwarf_Die *scopes, int nscopes,
-                   const char *name, Dwarf_Die *result)
+                   const char *name, Dwarf_Die *result, Dwarf_Die *enum_type)
 {
   // subprogram {<decls> enumeration_type {enumerator,...}}
   // lexical block {<decls> enumeration_type {enumerator,...}}
@@ -2781,7 +2781,7 @@ dwflpp::dwarf_get_enum (Dwarf_Die *scopes, int nscopes,
     if (dwarf_haschildren (&scopes[out]) && dwarf_child (&scopes[out], result) == 0)
       do
         {
-          Dwarf_Die save_result = *result;
+          *enum_type = *result;
           if (dwarf_tag (result) == DW_TAG_enumerator
               || (dwarf_tag (result) == DW_TAG_enumeration_type
                   && dwarf_child (result, result) == 0))
@@ -2791,11 +2791,16 @@ dwflpp::dwarf_get_enum (Dwarf_Die *scopes, int nscopes,
                   {
                     const char *diename = dwarf_diename (result);
                     if (diename != NULL && !strcmp (name, diename))
-                      return out;
+                      {
+                        Dwarf_Attribute attr_mem;
+                        dwarf_formref_die (dwarf_attr_integrate (enum_type, DW_AT_type, &attr_mem),
+                                                 enum_type);
+                        return out;
+                      }
                   }
               }
             while (dwarf_siblingof (result, result) == 0);
-          *result = save_result;
+          *result = *enum_type;
         }
       while (dwarf_siblingof (result, result) == 0);
 
@@ -2809,6 +2814,7 @@ dwflpp::find_variable_and_frame_base (vector<Dwarf_Die>& scopes,
                                       string const & local,
                                       const target_symbol *e,
                                       Dwarf_Die *vardie,
+                                      Dwarf_Die *typedie,
                                       Dwarf_Attribute *fb_attr_mem,
                                       Dwarf_Die *funcdie)
 {
@@ -2822,7 +2828,8 @@ dwflpp::find_variable_and_frame_base (vector<Dwarf_Die>& scopes,
                                            0, NULL, 0, 0,
                                            vardie);
   if (declaring_scope < 0)
-      if ((declaring_scope = dwarf_get_enum (&scopes[0], scopes.size(), local.c_str(), vardie)) < 0)
+      if ((declaring_scope = dwarf_get_enum (&scopes[0], scopes.size(),
+          local.c_str(), vardie, typedie)) < 0)
         {
           // XXX: instead: add suggested locals and let a caller throw a single error
           set<string> locals;
@@ -3426,7 +3433,8 @@ dwflpp::find_struct_member(const target_symbol::component& c,
           else if (tag == DW_TAG_enumeration_type)
             {
               Dwarf_Die enum_item;
-              if (dwarf_get_enum (&die, 1, c.member.c_str(), &enum_item) >= 0
+              Dwarf_Die enum_type;
+              if (dwarf_get_enum (&die, 1, c.member.c_str(), &enum_item, &enum_type) >= 0
                   && dwarf_attr_integrate (&enum_item, DW_AT_const_value, &attr))
                 {
                   /* We have a matching enum so use its die and attr */
@@ -3845,8 +3853,11 @@ dwflpp::translate_final_fetch_or_store (location_context &ctx,
   const target_symbol *e = ctx.e;
 
   if (dwarf_tag (vardie) == DW_TAG_enumerator)
-    /* translate_location has already handled the enum constant */
-    return;
+    {
+      /* Set the type to the enumeration_type discovered by dwarf_get_enum */
+      *typedie = *start_typedie;
+      return;
+    }
 
   /* First boil away any qualifiers associated with the type DIE of
      the final location to be accessed.  */
@@ -4094,8 +4105,9 @@ dwflpp::literal_stmt_for_local (location_context &ctx,
   // needs to remain valid until express_as_string() has finished with it.
   Dwarf_Op addr_loc;
 
+  Dwarf_Die typedie;
   fb_attr = find_variable_and_frame_base (scopes, ctx.pc, local, e,
-                                          &vardie, &fb_attr_mem,
+                                          &vardie, &typedie, &fb_attr_mem,
                                           &funcdie);
 
   if (sess.verbose>2)
@@ -4141,7 +4153,6 @@ dwflpp::literal_stmt_for_local (location_context &ctx,
 
   /* Translate the ->bar->baz[NN] parts. */
 
-  Dwarf_Die typedie;
   if (dwarf_attr_die (&vardie, DW_AT_type, &typedie) == NULL
       && dwarf_tag (&vardie) != DW_TAG_enumerator)
     {
@@ -4218,7 +4229,7 @@ dwflpp::type_die_for_local (vector<Dwarf_Die>& scopes,
   Dwarf_Die vardie, funcdie;
   Dwarf_Attribute attr_mem;
 
-  find_variable_and_frame_base (scopes, pc, local, e, &vardie, &attr_mem, &funcdie);
+  find_variable_and_frame_base (scopes, pc, local, e, &vardie, typedie, &attr_mem, &funcdie);
 
   if (dwarf_attr_die (&vardie, DW_AT_type, typedie) == NULL)
     throw SEMANTIC_ERROR(_F("failed to retrieve type attribute for '%s' [man error::dwarf]", local.c_str()), e->tok);
