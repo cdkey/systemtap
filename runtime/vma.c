@@ -149,6 +149,7 @@ static int _stp_vma_mmap_cb(struct stap_task_finder_target *tgt,
 {
 	int i, res;
 	struct _stp_module *module = NULL;
+	void *ori_mod = NULL; 
 	const char *name = ((dentry != NULL) ? (char *)dentry->d_name.name
 			    : NULL);
         
@@ -167,7 +168,8 @@ static int _stp_vma_mmap_cb(struct stap_task_finder_target *tgt,
         // We register whether or not we know the module,
 	// so we can later lookup the name given an address for this task.
 	if (path != NULL &&
-	    stap_find_vma_map_info(tsk, addr, NULL, NULL, NULL, NULL, NULL) != 0) {
+	    (stap_find_vma_map_info(tsk->group_leader, addr, NULL, NULL, NULL, NULL, &ori_mod) != 0 || 
+	     ori_mod != module)) { 
 		for (i = 0; i < _stp_num_modules; i++) {
 			// PR20433: papering over possibility of NULL pointers
 			if (strcmp(path ?: "", _stp_modules[i]->path ?: "") == 0)
