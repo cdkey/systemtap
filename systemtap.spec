@@ -174,7 +174,7 @@ BuildRequires: xmlto /usr/share/xmlto/format/fo/pdf
 %endif
 %endif
 %if %{with_emacsvim}
-BuildRequires: emacs
+# no buildrequires, because just package the .el files
 %endif
 %if %{with_java}
 BuildRequires: java-devel
