@@ -29,6 +29,7 @@
 #include <functional> 
 #include <cctype>
 #include <locale>
+#include <memory>
 
 extern "C" {
 #include <elf.h>
