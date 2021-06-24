@@ -505,7 +505,8 @@ to remote requesters on demand.
 Summary: Systemtap Cross-VM Instrumentation - host
 License: GPLv2+
 URL: http://sourceware.org/systemtap/
-Requires: libvirt >= 1.0.2
+# only require libvirt-libs really
+#Requires: libvirt >= 1.0.2
 Requires: libxml2
 
 %description runtime-virthost
