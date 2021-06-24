@@ -182,6 +182,10 @@ static void _stp_print_regs(struct pt_regs * regs)
 		}
 
 		_stp_printf("%016lX ", regs->gpr[i]);
+/* since kernel commit 8dc7f0229 */
+#ifndef FULL_REGS
+#define FULL_REGS(r) true
+#endif
 		if (i == 13 && !FULL_REGS(regs))
 			break;
 	}
