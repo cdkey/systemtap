@@ -11930,6 +11930,13 @@ static vector<string> tracepoint_extra_decls (systemtap_session& s,
 	they_live.push_back ("#include <linux/phy.h>");
     }
 
+  if (header.find("intel_iommu") != string::npos && s.architecture != "x86_64" && s.architecture != "i386")
+    {
+      // need asm/cacheflush.h for clflush_cache_range() used in that header,
+      // but this function does not exist on e.g. ppc
+      they_live.push_back ("#error nope");
+    }
+
   if (header.find("wbt") != string::npos)
     {
       // blk-wbt.h gets included as "../../../block/blk-wbt.h", so we
