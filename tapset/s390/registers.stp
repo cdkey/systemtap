@@ -136,7 +136,10 @@ function uarch_bytes:long() {
 function _stp_get_register_by_offset:long (offset:long) %{ /* pure */
 	long value;
 	struct pt_regs *regs;
-	regs = (CONTEXT->user_mode_p ? CONTEXT->uregs : CONTEXT->kregs);
+	if (CONTEXT->sregs)
+	  regs = CONTEXT->sregs;
+	else
+	  regs = (CONTEXT->user_mode_p ? CONTEXT->uregs : CONTEXT->kregs);
 	if (!regs) {
 		CONTEXT->last_error = "No registers available in this context";
 		return;
@@ -169,9 +172,10 @@ function _stp_sign_extend32:long (value:long) {
 }
 
 function _stp_register:long (name:string, sign_extend:long) {
-  assert(registers_valid(), "cannot access CPU registers in this context")
+	# don't assert this: will get *regs state checked in _stp_get_register_by_offset, and better
+	# assert(registers_valid(), "cannot access CPU registers in this context")
 	offset = _reg_offsets[name]
-  assert(offset != 0 || (name in _reg_offsets), "Unknown register: " . name)
+	assert(offset != 0 || (name in _reg_offsets), "Unknown register: " . name)
 	value = _stp_get_register_by_offset(offset)
 	if (probing_32bit_app()) {
 		if (sign_extend)
@@ -235,8 +239,10 @@ function _stp_arg2:long (argnum:long, sign_extend:long, truncate:long,
 		val = u_register("r5")
 	else if (argnum == 5)
 		val = u_register("r6")
+	else if (argnum == 6 && %{ CONTEXT->sregs != NULL %} ) // linux syscall arg6 goes into r7
+		val = u_register("r7")
 	else if (argnum >= 6)
-		val = _stp_get_kernel_stack_param(argnum - 6)
+		val = _stp_get_kernel_stack_param(argnum - 6);
 
 	if ((truncate || @__compat_task) && !force64) {
 		/* High bits may be garbage. */
