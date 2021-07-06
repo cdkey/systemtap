@@ -140,6 +140,7 @@ function explain(symbol,pri,blah) {
 }
 
 probe begin {
+  explain("common_nsleep",3,"Nanosleep delay");
   explain("SyS_epoll_wait",3,"Waiting for event (epoll)");
   explain("SyS_flock",3,"flock() on a file");
   explain("SyS_nanosleep",5,"Application requested delay");
@@ -149,6 +150,7 @@ probe begin {
   explain("__log_wait_for_space",5,"Waiting for EXT3 journal space");
   explain("__mark_inode_dirty",1,"Marking inode dirty");
   explain("__pollwait",2,"Waiting for event (poll)");
+  explain("__sys_accept4",2,"Waiting for a connection on a socket (accept/accept4)");
   explain("__stop_machine_run",3,"Freezing the kernel (for module load)");
   explain("__wait_on_buffer",2,"Waiting for buffer IO to complete");
   explain("acpi_ec_transaction",3,"ACPI hardware access");
@@ -164,9 +166,12 @@ probe begin {
   explain("blkdev_direct_IO",3,"Direct block device IO");
   explain("blkdev_ioctl",2,"block device IOCTL");
   explain("blocking_notifier_call_chain",1,"Blocking notifier");
+  explain("btrfs_sync_file",2,"btrfs sync file");
   explain("cdrom_open",3,"opening cdrom device");
+  explain("cleaner_kthread",3,"btrfs cleaner_kthread()");
   explain("core_sys_select",2,"Waiting for event (select)");
   explain("dm_wait_for_completion",2,"Waiting for device mapper ops");
+  explain("do_epoll_wait",3,"Waiting for event (epoll)");
   explain("do_fork",3,"Fork() system call");
   explain("do_fsync",5,"fsync() on a file");
   explain("do_futex",3,"Userspace lock contention");
@@ -178,6 +183,7 @@ probe begin {
   explain("do_sys_poll",2,"Waiting for event (poll)");
   explain("do_truncate",3,"Truncating file");
   explain("do_unlinkat",2,"Unlinking file");
+  explain("do_writepages",2,"Writing back dirty pages");
   explain("evdev_read",5,"Reading keyboard/mouse input");
   explain("ext3_bread",3,"Synchronous EXT3 read");
   explain("ext3_create",3,"EXT3 Creating a file");
@@ -208,6 +214,7 @@ probe begin {
   explain("journal_get_undo_access",3,"Waiting for EXT3 journal undo operation");
   explain("journal_get_write_access",3,"EXT3: Waiting for journal access");
   explain("kauditd_thread",2,"kernel audit daemon");
+  explain("kcompactd",2,"kcompactd() kernel thread");
   explain("khugepaged",2,"khugepaged() kernel thread");
   explain("kjournald",2,"kjournald() kernel thread");
   explain("kjournald2",2,"jdb2() kernel thread");
@@ -236,6 +243,7 @@ probe begin {
   explain("proc_lookup",3,"Looking up /proc file");
   explain("proc_reg_read",2,"Reading from /proc file");
   explain("proc_root_readdir",2,"Reading /proc directory");
+  explain("psi_poll_worker",3,"Pressure stall information (psimon) kthread");
   explain("rcu_gp_kthread",2,"RCU grace period kernel thread");
   explain("read_block_bitmap",3,"Reading EXT3 block bitmaps");
   explain("request_module",2,"Loading a kernel module");
@@ -272,6 +280,7 @@ probe begin {
   explain("sys_wait4",3,"Waiting for a process to die");
   explain("tcp_connect",3,"TCP/IP connect");
   explain("tcp_recvmsg",3,"Receiving TCP/IP data");
+  explain("transaction_kthread",3,"btrfs transaction_kthread()");
   explain("tty_ioctl",2,"TTY IOCTL");
   explain("tty_poll",3,"Waiting for TTY data");
   explain("tty_read",3,"Waiting for TTY input");
