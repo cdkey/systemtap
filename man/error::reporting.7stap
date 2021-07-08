@@ -20,7 +20,7 @@ systemtap@sourceware.org
 
 .TP
 public IRC
-#systemtap on irc.freenode.net, use fpaste.org for snippets of text
+#systemtap on irc.oftc.net, use fpaste.org for snippets of text
 
 .TP
 public bugzilla
