@@ -21,7 +21,7 @@ static inline bool atomic_try_cmpxchg(atomic_t *v, int *old, int new)
 }
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
+#ifndef STAPCONF_HLIST_ADD_TAIL_RCU
 // Added in linux 4.7, backported to rhel 7, not present in rhel 6
 #define hlist_first_rcu(head)   (*((struct hlist_node __rcu **)(&(head)->first)))
 #define hlist_next_rcu(node)    (*((struct hlist_node __rcu **)(&(node)->next)))
