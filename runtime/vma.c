@@ -199,7 +199,7 @@ static int _stp_vma_mmap_cb(struct stap_task_finder_target *tgt,
 			  /* VMA entries are allocated dynamically, this is fine,
 			   * since we are in a task_finder callback, which is in
 			   * user context. */
-			  if (res != 0) {
+			  if (res != 0 && res != -EEXIST) {
 				_stp_error ("Couldn't register module '%s' for pid %d (%d)\n", _stp_modules[i]->path, tsk->group_leader->pid, res);
 			  }
 			  return 0;
