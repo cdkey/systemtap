@@ -40,12 +40,11 @@ APPLY_DIFF=1
 DATE=`date +"%a %b %d %Y"`
 NAME=`git config --get-all user.name`
 EMAIL=`git config --get-all user.email`
-TAG_DATE=`date +"%Y%m%d%H%M"`
 STAP_MAJOR_VERSION=`grep "^Version:" systemtap.spec`
 CHANGELOG_VERSION=`echo $STAP_MAJOR_VERSION | cut -f2 -d" "`
-#GIT_VERSION_TAG=`echo 0.$(git describe --abbrev=12 | rev | cut -f1,2 -d- --output-delimiter=. | rev)`
-GIT_DESCRIBE=`git describe | rev | cut -f1 -d"g" | rev`
-GIT_VERSION_TAG=`echo 0.${TAG_DATE}git${GIT_DESCRIBE}`
+TAG_DATE=$(expr `date +%s` / 100) # short: 100-second blocks since epoch
+GIT_DESCRIBE=`git rev-parse HEAD | cut -c1-8`
+GIT_VERSION_TAG=`echo ${TAG_DATE}g${GIT_DESCRIBE}`
 ### lets do a sanity check first
 if which fedpkg &>/dev/null; then
  :
@@ -95,7 +94,7 @@ git archive --prefix=systemtap-$CHANGELOG_VERSION/ -o ../systemtap/systemtap-$CH
 
 cd ../systemtap
 
-sed -i "s/Release: .*/Release: $GIT_VERSION_TAG\%\{\?dist\}/" systemtap.spec
+sed -i "s/^Version:.*/Version: $CHANGELOG_VERSION~pre$GIT_VERSION_TAG/" systemtap.spec
 sed -i "s/^Source:.*/Source: %{name}-%{version}-$GIT_VERSION_TAG.tar.gz/" systemtap.spec
 
 # make note in the comments if any differences from upstream systemtap.spec have been merged
