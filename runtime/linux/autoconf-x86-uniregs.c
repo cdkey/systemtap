@@ -1,3 +1,4 @@
+#include <linux/sched.h>
 #include <asm/ptrace.h>
 
 #if defined (__i386__) || defined (__x86_64__)
