@@ -90,7 +90,7 @@ fi
 # create a tar.gz of the latest git sources from HEAD
 cd systemtap-git
 
-git archive --prefix=systemtap-$CHANGELOG_VERSION/ -o ../systemtap/systemtap-$FINAL_VERSION.tar.gz HEAD
+git archive --prefix=systemtap-$FINAL_VERSION/ -o ../systemtap/systemtap-$FINAL_VERSION.tar.gz HEAD
 
 # fedpackage stuff
 
