@@ -1,11 +1,13 @@
 // logging tapset
-// Copyright (C) 2005-2019 Red Hat Inc.
+// Copyright (C) 2005-2021 Red Hat Inc.
 //
 // This file is part of systemtap, and is free software.  You can
 // redistribute it and/or modify it under the terms of the GNU General
 // Public License (GPL); either version 2, or (at your option) any
 // later version.
 
+// XXX this and other functions also implemented in tapset/bpf/logging.stp
+%( runtime != "bpf" %?
 
 /**
  * sfunction log - Send a line to the common trace buffer
@@ -20,15 +22,9 @@
  * messages. 
  */
 function log (msg:string)
-%( runtime != "bpf" %?
-   %{ /* unprivileged */ /* unmodified-fnargs */
-	STAP_PRINTF ("%s\n", STAP_ARG_msg);
-   %}
-%:
-   { /* unprivileged */ /* bpf */
-     printf("%s\n", msg)
-   }
-%)
+%{ /* unprivileged */ /* unmodified-fnargs */
+     STAP_PRINTF ("%s\n", STAP_ARG_msg);
+%}
 
 /**
  * sfunction warn - Send a line to the warning stream
@@ -40,16 +36,9 @@ function log (msg:string)
  * being used. If the last characater is not a newline, the one is added.
  */
 function warn (msg:string)
-%( runtime != "bpf" %?
-   %{ /* unprivileged */ /* unmodified-fnargs */
-        _stp_warn ("%s", STAP_ARG_msg);
-   %}
-%:
-   { /* unprivileged */ /* bpf */
-     // TODO: _stp_warn intelligently determines whether msg has a newline
-     printf("WARNING: %s\n", msg)
-   }
-%)
+%{ /* unprivileged */ /* unmodified-fnargs */
+     _stp_warn ("%s", STAP_ARG_msg);
+%}
 
 
 /**
@@ -61,17 +50,10 @@ function warn (msg:string)
  * running ones may complete their work.
  */
 function exit ()
-%( runtime != "bpf" %?
-  %{ /* unprivileged */
-     atomic_set (session_state(), STAP_SESSION_STOPPING);
-     _stp_exit ();
-  %}
-%:
-  { /* unprivileged */ /* bpf */
-    _set_exit_status()
-    _send_exit_msg()
-  }
-%)
+%{ /* unprivileged */
+   atomic_set (session_state(), STAP_SESSION_STOPPING);
+   _stp_exit ();
+%}
 
 
 %(systemtap_v >= "4.0" %?
@@ -85,20 +67,12 @@ function exit ()
  * this function call cannot be caught by 'try ... catch'.
  */
 function abort ()
-%( runtime != "bpf" %?
-  %{ /* unprivileged */
-     atomic_set (session_state(), STAP_SESSION_STOPPING);
-     _stp_exit ();
-     CONTEXT->aborted = 1;
-     CONTEXT->last_stmt = NULL;
-  %}
-%:
-  { /* unprivileged */ /* bpf */
-    printf("ERROR: abort() not supported in eBPF backend\n")
-    exit() 
-    /* TODO: need to abort the execution flow immediately -- consider using terminate statement */
-  }
-%)
+%{ /* unprivileged */
+   atomic_set (session_state(), STAP_SESSION_STOPPING);
+   _stp_exit ();
+   CONTEXT->aborted = 1;
+   CONTEXT->last_stmt = NULL;
+%}
 %)
 
 
@@ -113,30 +87,15 @@ function abort ()
  * trigger an exit().
  */
 function error (msg:string)
-%( runtime != "bpf" %?
-  %{ /* unprivileged */ /* unmodified-fnargs */
-     /* NB: we used to reuse msg[] for an assignment to last_error; this
-      is clearer & safer. */
-     strlcpy (CONTEXT->error_buffer, STAP_ARG_msg, MAXSTRINGLEN);
-     CONTEXT->last_error = CONTEXT->error_buffer;
-     CONTEXT->last_stmt = NULL;
-  %}
-%:
-   { /* unprivileged */ /* bpf */
-   
-     // If error is called within a try block, the instruction flow
-     // will switch to the corresponding catch block.
-     _jump_to_catch(msg)   
+%{ /* unprivileged */ /* unmodified-fnargs */
+   /* NB: we used to reuse msg[] for an assignment to last_error; this
+    is clearer & safer. */
+   strlcpy (CONTEXT->error_buffer, STAP_ARG_msg, MAXSTRINGLEN);
+   CONTEXT->last_error = CONTEXT->error_buffer;
+   CONTEXT->last_stmt = NULL;
+%}
 
-     // Execution will reach here if error was called outside a try
-     // block. In this case, the error message will be stored for
-     // printing and the error status will be set.
-     _register_error(msg)   
-
-     // Short-circuit the program to its exit.
-     _terminate()
-   }
-%)
+%) // XXX runtime != "bpf"
 
 /**
  * sfunction assert - evaluate assertion
@@ -171,6 +130,8 @@ function assert(expression:long, msg:string) { /* bpf */ /* unprivileged */
     }
 }
 
+%( runtime != "bpf" %?
 function stp_print_binary(n:long, arg1:long, arg2:long, arg3:long, arg4:long) %{
 	_stp_print_binary (STAP_ARG_n, STAP_ARG_arg1, STAP_ARG_arg2, STAP_ARG_arg3, STAP_ARG_arg4);
 %}
+%)

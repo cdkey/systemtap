@@ -1,0 +1,43 @@
+// logging tapset -- BPF version
+// Copyright (C) 2005-2021 Red Hat Inc.
+//
+// This file is part of systemtap, and is free software.  You can
+// redistribute it and/or modify it under the terms of the GNU General
+// Public License (GPL); either version 2, or (at your option) any
+// later version.
+
+function log (msg:string) { /* unprivileged */ /* bpf */
+  printf("%s\n", msg)
+}
+
+function warn (msg:string) { /* unprivileged */ /* bpf */
+  // TODO: _stp_warn intelligently determines whether msg has a newline
+  printf("WARNING: %s\n", msg)
+}
+
+function exit () { /* unprivileged */ /* bpf */
+  _set_exit_status()
+  _send_exit_msg()
+}
+
+%(systemtap_v >= "4.0" %?
+function abort () { /* unprivileged */ /* bpf */
+  printf("ERROR: abort() not supported in eBPF backend\n")
+  exit()
+  /* TODO PR27820: need to abort the execution flow immediately -- consider using terminate statement */
+}
+%)
+
+function error (msg:string) { /* unprivileged */ /* bpf */
+  // If error is called within a try block, the instruction flow
+  // will switch to the corresponding catch block.
+  _jump_to_catch(msg)   
+
+  // Execution will reach here if error was called outside a try
+  // block. In this case, the error message will be stored for
+  // printing and the error status will be set.
+  _register_error(msg)   
+
+  // Short-circuit the program to its exit.
+  _terminate()
+}
