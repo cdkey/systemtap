@@ -24,6 +24,9 @@
 #ifdef STAPCONF_LOCKDOWN_DEBUGFS
 #include <linux/security.h>
 #endif
+#ifdef STAPCONF_514_PANIC
+#include <linux/panic_notifier.h>
+#endif
 #include "../uidgid_compatibility.h"
 
 static int _stp_exit_flag = 0;

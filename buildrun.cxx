@@ -383,7 +383,8 @@ compile_pass (systemtap_session& s)
   output_exportconf(s, o2, "cpu_khz", "STAPCONF_CPU_KHZ");
   output_exportconf(s, o2, "__module_text_address", "STAPCONF_MODULE_TEXT_ADDRESS");
   output_exportconf(s, o2, "add_timer_on", "STAPCONF_ADD_TIMER_ON");
-
+  output_autoconf(s, o, cs, "autoconf-514-panic.c", "STAPCONF_514_PANIC", NULL);
+  
   output_dual_exportconf(s, o2, "probe_kernel_read", "probe_kernel_write", "STAPCONF_PROBE_KERNEL");
   output_autoconf(s, o, cs, "autoconf-hw_breakpoint_context.c",
 		  "STAPCONF_HW_BREAKPOINT_CONTEXT", NULL);
