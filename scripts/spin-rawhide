@@ -45,6 +45,8 @@ CHANGELOG_VERSION=`echo $STAP_MAJOR_VERSION | cut -f2 -d" "`
 TAG_DATE=$(expr `date +%s` / 100) # short: 100-second blocks since epoch
 GIT_DESCRIBE=`git rev-parse HEAD | cut -c1-8`
 GIT_VERSION_TAG=`echo ${TAG_DATE}g${GIT_DESCRIBE}`
+FINAL_VERSION="$CHANGELOG_VERSION~pre$GIT_VERSION_TAG" # the resulting Version: / Source: identifier
+
 ### lets do a sanity check first
 if which fedpkg &>/dev/null; then
  :
@@ -88,27 +90,27 @@ fi
 # create a tar.gz of the latest git sources from HEAD
 cd systemtap-git
 
-git archive --prefix=systemtap-$CHANGELOG_VERSION/ -o ../systemtap/systemtap-$CHANGELOG_VERSION-$GIT_VERSION_TAG.tar.gz HEAD
+git archive --prefix=systemtap-$CHANGELOG_VERSION/ -o ../systemtap/systemtap-$FINAL_VERSION.tar.gz HEAD
 
 # fedpackage stuff
 
 cd ../systemtap
 
-sed -i "s/^Version:.*/Version: $CHANGELOG_VERSION~pre$GIT_VERSION_TAG/" systemtap.spec
-sed -i "s/^Source:.*/Source: %{name}-%{version}-$GIT_VERSION_TAG.tar.gz/" systemtap.spec
+sed -i "s/^Version:.*/Version: $FINAL_VERSION/" systemtap.spec
+sed -i "s/^Source:.*/Source: %{name}-%{version}.tar.gz/" systemtap.spec
 
 # make note in the comments if any differences from upstream systemtap.spec have been merged
 if [ "$APPLY_DIFF" == 0 ]; then
     sed -i "s/\%changelog/\%changelog\n* $DATE $NAME <$EMAIL> - $CHANGELOG_VERSION-$GIT_VERSION_TAG\n- Automated weekly rawhide release\n- Applied spec changes from upstream git\n/" systemtap.spec
 else
-    sed -i "s/\%changelog/\%changelog\n* $DATE $NAME <$EMAIL> - $CHANGELOG_VERSION-$GIT_VERSION_TAG\n- Automated weekly rawhide release\n/" systemtap.spec
+    sed -i "s/\%changelog/\%changelog\n* $DATE $NAME <$EMAIL> - $FINAL_VERSION\n- Automated weekly rawhide release\n/" systemtap.spec
 fi
 
 echo "Please ensure that you have an up to date fedoraproject krb5 ticket, else kinit `whoami`@FEDORAPROJECT.ORG"
 klist
 
-fedpkg new-sources systemtap-$CHANGELOG_VERSION-$GIT_VERSION_TAG.tar.gz
+fedpkg new-sources systemtap-$FINAL_VERSION.tar.gz
 
-fedpkg commit -m "Automated weekly systemtap rawhide release: $GIT_VERSION_TAG" -p
+fedpkg commit -m "Automated weekly systemtap rawhide release: $FINAL_VERSION" -p
 
 fedpkg build
