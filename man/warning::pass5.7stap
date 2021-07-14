@@ -1,0 +1,59 @@
+.\" t    -*- nroff -*-
+
+.TH ERROR::PASS5 7stap 
+.SH NAME
+warning::pass5 \- systemtap pass-5 warnings
+
+.\" macros
+.de SAMPLE
+
+.nr oldin \\n(.i
+.br
+.RS
+.nf
+.nh
+..
+.de ESAMPLE
+.hy
+.fi
+.RE
+.in \\n[oldin]u
+
+..
+
+.SH DESCRIPTION
+Warnings that occur during pass 5 (execution) can have a variety of causes.
+
+
+.TP
+probe insertion errors
+With any of the systemtap runtimes, it may be possible that the
+backends are unable to insert probe points requested by the systemtap
+script.  For example, you may see errors such as
+.SAMPLE
+WARNING: probe [...] registration error (rc -524)
+.ESAMPLE
+(524 is a kernel error code for ENOTSUPP).  These situations are out
+of systemtap's control, and result in some probes not receiving any
+hits.  This may be caused by temporary resource constraints or
+permanent problems.  One common permanent problem is such a probe
+point being placed at instructions that the runtime (kernel kprobes,
+uprobes or dyninst) cannot decode or intercept.  A possible workaround
+is to move the probe points slightly in the script, so as to target a
+nearby statement, or a caller, or a callee.  See also
+.IR error::dwarf (7stap).
+
+.SH GATHERING MORE INFORMATION
+Increasing the verbosity of pass-5
+with an option such as
+.IR "--vp 00001"
+can help pinpoint the problem.
+
+.SH SEE ALSO
+.nh
+.nf
+.IR stap (1),
+.IR http://sourceware.org/systemtap/wiki/TipExhaustedResourceErrors ,
+.IR error::pass5 (7stap),
+.IR error::reporting (7stap)
+.IR error::dwarf (7stap)

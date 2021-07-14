@@ -772,10 +772,10 @@ stapkp_init(struct stap_kprobe_probe *probes,
 	  && ((skp->module == NULL) || skp->module[0] == '\0'
 	      || strcmp(skp->module, "kernel") == 0)) {
 	 if (skp->symbol_name)
-	    _stp_warn("probe %s (%s+%u) registration error (rc %d)",
+	    _stp_warn("probe %s (%s+%u) registration error [man warning::pass5] (rc %d)",
 		      skp->probe->pp, skp->symbol_name, skp->offset, rc);
 	 else
-	    _stp_warn("probe %s (address 0x%lx) registration error (rc %d)",
+	    _stp_warn("probe %s (address 0x%lx) registration error [man warning::pass5] (rc %d)",
 		      skp->probe->pp, stapkp_relocate_addr(skp), rc);
       }
    }

@@ -117,3 +117,4 @@ can help pinpoint the problem.
 .IR http://sourceware.org/systemtap/wiki/TipExhaustedResourceErrors ,
 .IR error::fault (7stap),
 .IR error::reporting (7stap)
+.IR warning::pass5 (7stap)

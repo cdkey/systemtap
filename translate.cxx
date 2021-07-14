@@ -2062,7 +2062,7 @@ c_unparser::emit_module_init ()
       // If a probe types's emit_module_init() wants to handle error
       // messages itself, it should set probe_point to NULL, 
       o->newline(1) << "if (probe_point)";
-      o->newline(1) << "_stp_error (\"probe %s registration error (rc %d)\", probe_point, rc);";
+      o->newline(1) << "_stp_error (\"probe %s registration error [man warning::pass5] (rc %d)\", probe_point, rc);";
       o->indent(-1);
       // NB: we need to be in the error state so timers can shutdown cleanly,
       // and so end probes don't run.  OTOH, error probes can run.

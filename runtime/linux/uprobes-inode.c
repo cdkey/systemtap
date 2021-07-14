@@ -267,7 +267,7 @@ stapiu_register (struct stapiu_instance* inst, struct stapiu_consumer* c)
 
   if (ret)
     _stp_warn("probe %s at inode-offset %lu:%p "
-	      "registration error (rc %d)",
+	      "registration error [man warning::pass5] (rc %d)",
 	      c->probe->pp,
 	      (unsigned long) inst->inode->i_ino,
 	      (void*) (uintptr_t) c->offset,

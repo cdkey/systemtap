@@ -10839,7 +10839,7 @@ hwbkpt_derived_probe_group::emit_module_init (systemtap_session& s)
   s.op->newline() << "stap_hwbkpt_ret_array[i] = 0;";
   s.op->newline(-1) << "}";
   s.op->newline() << "if (rc) {";
-  s.op->newline(1) << "_stp_warn(\"Hwbkpt probe %s: registration error %d, addr %p, name %s\", probe_point, rc, addr, hwbkpt_symbol_name);";
+  s.op->newline(1) << "_stp_warn(\"Hwbkpt probe %s: registration error [man warning::pass5] %d, addr %p, name %s\", probe_point, rc, addr, hwbkpt_symbol_name);";
   s.op->newline() << "skp->registered_p = 0;";
   s.op->newline(-1) << "}";
   s.op->newline() << " else skp->registered_p = 1;";
