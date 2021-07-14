@@ -22,9 +22,13 @@ function exit () { /* unprivileged */ /* bpf */
 
 %(systemtap_v >= "4.0" %?
 function abort () { /* unprivileged */ /* bpf */
-  printf("ERROR: abort() not supported in eBPF backend\n")
-  exit()
-  /* TODO PR27820: need to abort the execution flow immediately -- consider using terminate statement */
+  // TODO PR27820: There may be a delay between setting exit status
+  // and stapbpf.cxx disabling the probes. This could be solved
+  // at the cost of setting a global var and adding a check to the
+  // start of every probe.
+  _set_exit_status()
+  _send_exit_msg()
+  _terminate()
 }
 %)
 
