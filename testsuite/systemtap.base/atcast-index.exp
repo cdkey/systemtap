@@ -31,7 +31,7 @@ if {$res ne ""} {
 
 # --- TEST 2 ---
 
-set subtest2 "TEST 2: ternay expressions inside dwarf array indexes"
+set subtest2 "TEST 2: ternary expressions inside dwarf array indexes"
 
 set res [target_compile ${testpath}/${test}_2.c ./a.out executable \
     "additional_flags=-O additional_flags=-g"]
