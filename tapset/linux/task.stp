@@ -186,7 +186,7 @@ function task_parent:long(task:long)
  */
 function task_state:long (task:long)
 {
-    return @task(task)->state
+  return @choose_defined(@task(task)->state,@task(task)->__state)
 }
 
 /**
