@@ -33,9 +33,12 @@
 #if defined(__set_task_state)
 #define __stp_set_task_state(tsk, state_value)		\
 	__set_task_state((tsk), (state_value))
-#else
+#elif defined(STAPCONF_TASK_STATE)
 #define __stp_set_task_state(tsk, state_value)		\
 	do { (tsk)->state = (state_value); } while (0)
+#else
+#define __stp_set_task_state(tsk, state_value)		\
+	signal_wake_up_state((tsk), (state_value))
 #endif
 
 // For now, disable the task_work_queue on non-RT kernels.
@@ -1263,7 +1266,7 @@ static void utrace_wakeup(struct task_struct *target, struct utrace *utrace)
 	spin_lock_irq(&target->sighand->siglock);
 	if (target->signal->flags & SIGNAL_STOP_STOPPED ||
 	    target->signal->group_stop_count)
-		target->state = TASK_STOPPED;
+	        __stp_set_task_state(target, TASK_STOPPED);
 	else
 		stp_wake_up_state(target, __TASK_TRACED);
 	spin_unlock_irq(&target->sighand->siglock);
