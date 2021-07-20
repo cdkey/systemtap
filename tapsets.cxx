@@ -2280,9 +2280,16 @@ query_dwarf_func (Dwarf_Die * func, dwarf_query * q)
               // up the ELF symbol name and rely on a heuristic.
               GElf_Sym sym;
               GElf_Off off = 0;
-              const char *name = dwfl_module_addrinfo (q->dw.module, entrypc,
+	      Dwarf_Addr elf_bias;
+	      Elf *elf = dwfl_module_getelf (q->dw.module, &elf_bias);
+	      assert(elf);
+
+	      const char *name = dwfl_module_addrinfo (q->dw.module, entrypc + elf_bias,
                                                        &off, &sym, NULL, NULL, NULL);
 
+	      if (q->sess.verbose>3)
+		      clog << _F("%s = dwfl_module_addrinfo(entrypc=%p + %p)\n",
+				 name, (void*)entrypc, (void *)elf_bias);
               if (name != NULL && strstr(name, ".part.") != NULL)
                 {
                   if (q->sess.verbose>2)
