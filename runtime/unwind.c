@@ -527,7 +527,7 @@ static int processCFI(const u8 *start, const u8 *end, unsigned long targetLoc,
 					REG_STATE.cfa.reg = value;
 					dbug_unwind(1, "DW_CFA_def_cfa reg=%ld\n", REG_STATE.cfa.reg);
 				}
-				/* fallthrough */
+				fallthrough;
 			case DW_CFA_def_cfa_offset:
 				if (REG_STATE.cfa_is_expr != 0) {
 					_stp_warn("Unexpected DW_CFA_def_cfa_offset\n");
@@ -549,7 +549,7 @@ static int processCFI(const u8 *start, const u8 *end, unsigned long targetLoc,
 						    value, DWARF_REG_MAP(value));
 					REG_STATE.cfa.reg = value;
 				}
-				/* fallthrough */
+				fallthrough;
 			case DW_CFA_def_cfa_offset_sf:
 				if (REG_STATE.cfa_is_expr != 0) {
 					_stp_warn("Unexpected DW_CFA_def_cfa_offset_sf\n");
@@ -922,7 +922,7 @@ static int compute_expr(const u8 *expr, struct unwind_frame_info *frame,
 		case DW_OP_bra:
 			if (POP == 0)
 				break;
-			/* Fall through.  */
+                        fallthrough;
 		case DW_OP_skip:
 			NEED(sizeof(u.s16));
 			memcpy(&u.s16, expr, sizeof(u.s16));

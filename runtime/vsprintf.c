@@ -641,7 +641,7 @@ _stp_vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
 
                     case 'X':
                             flags |= STP_LARGE;
-			    /* fallthru */
+			    fallthrough;
                     case 'x':
                             base = 16;
                             break;
@@ -649,7 +649,7 @@ _stp_vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
                     case 'd':
                     case 'i':
                             flags |= STP_SIGN;
-			    /* fallthru */
+			    fallthrough;
                     case 'u':
                             break;
 
@@ -835,7 +835,7 @@ _stp_vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
 
 		case 'X':
 			flags |= STP_LARGE;
-			/* fallthru */
+                        fallthrough;
 		case 'x':
 			base = 16;
 			break;
@@ -843,7 +843,7 @@ _stp_vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
 		case 'd':
 		case 'i':
 			flags |= STP_SIGN;
-			/* fallthru */
+                        fallthrough;
 		case 'u':
 			break;
 
