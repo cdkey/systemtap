@@ -190,60 +190,8 @@ AS_IF([test "x$HAVE_CXX11" != x1],[
   AC_LANG_POP(C++)
   ])
 
-AC_ARG_ENABLE([ssp],
-  [AS_HELP_STRING([--disable-ssp], [disable gcc stack-protector])])
-AS_IF([test "x$enable_ssp" != xno],[
-   save_CFLAGS="$CFLAGS"
-   save_CXXFLAGS="$CXXFLAGS"
-   CXXFLAGS="-Werror -fstack-protector-all -D_FORTIFY_SOURCE=2 $CXXFLAGS"
-   CFLAGS="-Werror -fstack-protector-all -D_FORTIFY_SOURCE=2 $CFLAGS"
-   AC_COMPILE_IFELSE([AC_LANG_SOURCE([int something ();])], [
-       AC_MSG_NOTICE([Compiling with gcc -fstack-protector-all et al.])
-	CFLAGS="-fstack-protector-all -D_FORTIFY_SOURCE=2 $save_CFLAGS"
-	CXXFLAGS="-fstack-protector-all -D_FORTIFY_SOURCE=2 $save_CXXFLAGS"],[
-       AC_MSG_NOTICE([Compiler does not support -fstack-protector-all et al.])
-       CFLAGS="$save_CFLAGS"
-       CXXFLAGS="$save_CXXFLAGS"])])
-
-
-dnl Link with gold if possible
-dnl but: https://bugzilla.redhat.com/show_bug.cgi?id=636603
-dnl
-dnl AC_PATH_PROG(GOLD, [ld.gold], [no])
-dnl if test "x$GOLD" != "xno"
-dnl then
-dnl   mkdir -p Bdir
-dnl   ln -sf $GOLD Bdir/ld
-dnl   LDFLAGS="$LDFLAGS -B`pwd`/Bdir/"
-dnl   AC_MSG_NOTICE([using ld.gold to link])
-dnl fi
-
-
-# Compiling with fPIE by default (but see PR 9922)
-AC_ARG_ENABLE([pie],
-  [AS_HELP_STRING([--enable-pie], [enable position-independent-executable])])
-AS_IF([test "x$enable_pie" != xno],[
-   PIECFLAGS='-fPIE'
-   PIECXXFLAGS='-fPIE'
-   PIELDFLAGS='-pie -Wl,-z,relro -Wl,-z,now'
-   save_CFLAGS="$CFLAGS"
-   save_CXXFLAGS="$CXXFLAGS"
-   save_LDFLAGS="$LDFLAGS"
-   CFLAGS="$CFLAGS $PIECFLAGS"
-   CXXFLAGS="$CXXFLAGS $PIECXXFLAGS"
-   LDFLAGS="$LDFLAGS $PIELDFLAGS"
-   AC_LINK_IFELSE([AC_LANG_SOURCE([void main () {}])], [
-       AC_MSG_NOTICE([Compiling with gcc pie et al.])
-   ], [
-       AC_MSG_NOTICE([Compiler does not support -pie et al.])
-       PIECFLAGS=""
-       PIECXXFLAGS=""
-       PIELDFLAGS=""
-   ])
-   CFLAGS="$save_CFLAGS"
-   CXXFLAGS="$save_CXXFLAGS"
-   LDFLAGS="$save_LDFLAGS"
-])
+dnl Carry forward some empty PIE*FLAGS so we don't have to modify
+dnl all the Makefile.am's just now.
 AC_SUBST(PIELDFLAGS)
 AC_SUBST(PIECFLAGS)
 AC_SUBST(PIECXXFLAGS)

@@ -904,8 +904,6 @@ with_libiconv_prefix
 with_libintl_prefix
 enable_prologues
 enable_sdt_probes
-enable_ssp
-enable_pie
 with_debuginfod
 enable_sqlite
 enable_translator
@@ -1609,8 +1607,6 @@ Optional Features:
   --disable-rpath         do not hardcode runtime library paths
   --enable-prologues      make -P prologue-searching default
   --disable-sdt-probes    disable process.mark probes in stap, staprun, stapio
-  --disable-ssp           disable gcc stack-protector
-  --enable-pie            enable position-independent-executable
   --enable-sqlite         build with sqlite support
   --disable-translator    build only runtime utilities
   --enable-crash[=DIRECTORY]
@@ -10269,82 +10265,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 fi
 
-# Check whether --enable-ssp was given.
-if test "${enable_ssp+set}" = set; then :
-  enableval=$enable_ssp;
-fi
-
-if test "x$enable_ssp" != xno; then :
-
-   save_CFLAGS="$CFLAGS"
-   save_CXXFLAGS="$CXXFLAGS"
-   CXXFLAGS="-Werror -fstack-protector-all -D_FORTIFY_SOURCE=2 $CXXFLAGS"
-   CFLAGS="-Werror -fstack-protector-all -D_FORTIFY_SOURCE=2 $CFLAGS"
-   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-int something ();
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-       { $as_echo "$as_me:${as_lineno-$LINENO}: Compiling with gcc -fstack-protector-all et al." >&5
-$as_echo "$as_me: Compiling with gcc -fstack-protector-all et al." >&6;}
-	CFLAGS="-fstack-protector-all -D_FORTIFY_SOURCE=2 $save_CFLAGS"
-	CXXFLAGS="-fstack-protector-all -D_FORTIFY_SOURCE=2 $save_CXXFLAGS"
-else
-
-       { $as_echo "$as_me:${as_lineno-$LINENO}: Compiler does not support -fstack-protector-all et al." >&5
-$as_echo "$as_me: Compiler does not support -fstack-protector-all et al." >&6;}
-       CFLAGS="$save_CFLAGS"
-       CXXFLAGS="$save_CXXFLAGS"
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-
-
-
-
-# Compiling with fPIE by default (but see PR 9922)
-# Check whether --enable-pie was given.
-if test "${enable_pie+set}" = set; then :
-  enableval=$enable_pie;
-fi
-
-if test "x$enable_pie" != xno; then :
-
-   PIECFLAGS='-fPIE'
-   PIECXXFLAGS='-fPIE'
-   PIELDFLAGS='-pie -Wl,-z,relro -Wl,-z,now'
-   save_CFLAGS="$CFLAGS"
-   save_CXXFLAGS="$CXXFLAGS"
-   save_LDFLAGS="$LDFLAGS"
-   CFLAGS="$CFLAGS $PIECFLAGS"
-   CXXFLAGS="$CXXFLAGS $PIECXXFLAGS"
-   LDFLAGS="$LDFLAGS $PIELDFLAGS"
-   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-void main () {}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-
-       { $as_echo "$as_me:${as_lineno-$LINENO}: Compiling with gcc pie et al." >&5
-$as_echo "$as_me: Compiling with gcc pie et al." >&6;}
-
-else
-
-       { $as_echo "$as_me:${as_lineno-$LINENO}: Compiler does not support -pie et al." >&5
-$as_echo "$as_me: Compiler does not support -pie et al." >&6;}
-       PIECFLAGS=""
-       PIECXXFLAGS=""
-       PIELDFLAGS=""
-
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-   CFLAGS="$save_CFLAGS"
-   CXXFLAGS="$save_CXXFLAGS"
-   LDFLAGS="$save_LDFLAGS"
-
-fi
 
 
 

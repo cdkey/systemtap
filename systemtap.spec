@@ -11,7 +11,6 @@
 %endif
 %{!?with_rpm: %global with_rpm 1}
 %{!?elfutils_version: %global elfutils_version 0.179}
-%{!?pie_supported: %global pie_supported 1}
 %{!?with_boost: %global with_boost 0}
 %ifarch %{ix86} x86_64 ppc ppc64 ppc64le aarch64
 %{!?with_dyninst: %global with_dyninst 0%{?fedora} >= 18 || 0%{?rhel} >= 7}
@@ -589,14 +588,6 @@ systemtap-runtime-virthost machine to execute systemtap scripts.
 %global docs_config --enable-docs=prebuilt
 %endif
 
-# Enable pie as configure defaults to disabling it
-%if %{pie_supported}
-%global pie_config --enable-pie
-%else
-%global pie_config --disable-pie
-%endif
-
-
 %if %{with_java}
 %global java_config --with-java=%{_jvmdir}/java
 %else
@@ -646,8 +637,8 @@ systemtap-runtime-virthost machine to execute systemtap scripts.
 # We don't ship compileworthy python code, just oddball samples
 %global py_auto_byte_compile 0
 
-%configure %{dyninst_config} %{sqlite_config} %{crash_config} %{docs_config} %{pie_config} %{rpm_config} %{java_config} %{virt_config} %{dracut_config} %{python3_config} %{python2_probes_config} %{python3_probes_config} %{httpd_config} %{bpf_config} %{debuginfod_config} --disable-silent-rules --with-extra-version="rpm %{version}-%{release}"
-make %{?_smp_mflags}
+%configure %{dyninst_config} %{sqlite_config} %{crash_config} %{docs_config} %{rpm_config} %{java_config} %{virt_config} %{dracut_config} %{python3_config} %{python2_probes_config} %{python3_probes_config} %{httpd_config} %{bpf_config} %{debuginfod_config} --disable-silent-rules --with-extra-version="rpm %{version}-%{release}"
+make %{?_smp_mflags} V=1
 
 
 %install
