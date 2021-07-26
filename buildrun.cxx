@@ -120,7 +120,13 @@ make_any_make_cmd(systemtap_session& s, const string& dir, const string& target)
       "CONFIG_DEBUG_INFO_BTF_MODULES=",
       
       // RHBZ1321628: suppress stack validation; expected to be temporary
-      "CONFIG_STACK_VALIDATION=",
+      // "CONFIG_STACK_VALIDATION=",
+      
+      // PR28140 ... as of kernel 5.14-rc*, this is actively
+      // dangerous, because it skips the full objtool processing
+      // chain, and the resulting tracepoint call sites in the ko are
+      // not properly instrumented.  See also Linux commit
+      // ab3257042c2.
     };
 
   // PR10280: suppress symbol versioning to restrict to exact kernel version
