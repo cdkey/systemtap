@@ -389,4 +389,20 @@ static void stp_dyninst_dtor(void)
     _stp_copy_destroy();
 }
 
+
+/* A fallthrough; macro to let the runtime survive -Wimplicit-fallthrough=5 */
+/* from <linux/compiler_attribute.h> */
+#ifndef fallthrough
+#if __GNUC__ < 5
+# define fallthrough                    do {} while (0)  /* fallthrough */
+#else
+#if __has_attribute(__fallthrough__)
+# define fallthrough                    __attribute__((__fallthrough__))
+#else
+# define fallthrough                    do {} while (0)  /* fallthrough */
+#endif
+#endif
+#endif
+
+
 #endif /* _STAPDYN_RUNTIME_H_ */
