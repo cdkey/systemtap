@@ -410,6 +410,7 @@ bpf_unparser::emit_jmp(block *b)
 {
   // Begin by hoping that we can simply place the destination as fallthru.
   // If this assumption doesn't hold, it'll be fixed by reorder_blocks.
+  assert(in_block());
   block *this_block = this_ins.get_block ();
   this_block->fallthru = new edge(this_block, b);
   clear_block ();
@@ -1772,7 +1773,8 @@ bpf_unparser::visit_try_block (try_block* s)
   // (this is useful when dealing with nested try-catch blocks).
   catch_jump.pop_back();
 
-  emit_jmp(join_block);
+  if (in_block ())
+    emit_jmp(join_block);
 
   set_block(catch_block);
 
@@ -1796,7 +1798,8 @@ bpf_unparser::visit_try_block (try_block* s)
 
   // After setting up the message, the catch block can run.
   emit_stmt(s->catch_block);
-  emit_jmp(join_block);
+  if (in_block ())
+    emit_jmp(join_block);
 
   set_block(join_block);
 }
