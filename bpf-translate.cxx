@@ -1,5 +1,5 @@
 // bpf translation pass
-// Copyright (C) 2016-2020 Red Hat Inc.
+// Copyright (C) 2016-2021 Red Hat Inc.
 //
 // This file is part of systemtap, and is free software.  You can
 // redistribute it and/or modify it under the terms of the GNU General
@@ -1903,176 +1903,259 @@ bpf_unparser::visit_foreach_loop(foreach_loop* s)
     throw SEMANTIC_ERROR(_("unsupported loop in bpf kernel probe"), s->tok);
   // TODO: Future versions of BPF will include limited looping capability.
 
-  if (s->indexes.size() != 1)
-   throw SEMANTIC_ERROR(_("unhandled multi-dimensional array"), s->tok);
+  // TODO: Handle array_slice in foreach iteration.
+  if (!s->array_slice.empty())
+    throw SEMANTIC_ERROR(_("unsupported array slice in bpf foreach loop"), s->tok);
 
-  vardecl *keydecl = s->indexes[0]->referent;
-  auto i = this_locals->find(keydecl);
-  if (i == this_locals->end())
-    throw SEMANTIC_ERROR(_("unknown index"), keydecl->tok);
+  bool composite_key = s->indexes.size() != 1;
+  std::vector<vardecl *> key_decls;
+  std::vector<value *> keys; // key_decls[i] refers to keys[i]
+  std::vector<unsigned> key_offsets; // key_decls[i] is at keys_offset[i]
 
+  // Populate key_decls
+  for (unsigned k = 0; k < s->indexes.size(); k++)
+    {
+      vardecl *keydecl = s->indexes[k]->referent;
+      key_decls.push_back(keydecl);
+      auto i = this_locals->find(keydecl);
+      if (i == this_locals->end())
+        throw SEMANTIC_ERROR(_("unknown index"), keydecl->tok);
+      keys.push_back(i->second);
+    }
+
+  // Get arraydecl
   symbol *a;
   if (! (a = dynamic_cast<symbol *>(s->base)))
     throw SEMANTIC_ERROR(_("unknown type"), s->base->tok);
   vardecl *arraydecl = a->referent;
 
-  // PR23875: foreach should handle string keys
-  auto type = arraydecl->index_types[0];
-  if (type != pe_long && type != pe_string)
-    throw SEMANTIC_ERROR(_("unhandled foreach index type"), s->tok);
-  int keysize = 8; // XXX: If a string key, foreach will handle a pointer to it.
+  // Populate key_offsets, foreach_info
+  globals::foreach_info info;
+  info.sort_direction = s->sort_direction;
+  info.sort_column = s->sort_column;
+  // XXX: s->sort_column may be uninitialized if s->sort_direction == 0
+  //if (s->sort_direction == 0) info.sort_column = 1;
+  info.keysize = 0;
+  info.sort_column_size = 0;
+  info.sort_column_ofs = 0;
+  for (unsigned k = 0; k < arraydecl->index_types.size(); k++)
+    {
+      auto type = arraydecl->index_types[k];
+      if (type != pe_long && type != pe_string)
+        throw SEMANTIC_ERROR(_("unhandled foreach index type"), s->tok);
+      int this_column_size;
+      // PR23875: foreach should handle string keys
+      if (type == pe_long)
+        {
+          this_column_size = 8;
+        }
+      else if (type == pe_string)
+        {
+          this_column_size = BPF_MAXSTRINGLEN;
+        }
+      if (info.sort_column == k + 1) // record sort column
+        {
+          info.sort_column_size = this_column_size;
+          info.sort_column_ofs = info.keysize;
+        }
+      key_offsets.push_back(info.keysize);
+      info.keysize += this_column_size;
+    }
+  if (arraydecl->index_types.size() == 1)
+    {
+      // Signals map_get_next_key to treat the key as a single value:
+      info.sort_column_ofs = -1;
+    }
 
+  // Save foreach_info to foreach_loop_info_table
+  glob.foreach_loop_info.push_back(info);
+  globals::loop_idx foreach_id = glob.foreach_loop_info.size();
+
+  // Get map_slot for arraydecl
   auto g = glob.globals.find(arraydecl);
   if (g == glob.globals.end())
     throw SEMANTIC_ERROR(_("unknown array"), arraydecl->tok);
-
   int map_id = g->second.map_id;
+  bool is_stat_array = g->second.is_stat();
+
   // PR23476: Handle foreach iteration for stats arrays.
-  assert (!g->second.is_scalar());
-  if (g->second.is_stat())
+  assert(!g->second.is_scalar()); // XXX scalar map slot was used for arraydecl
+  if (is_stat_array)
     {
+      // Get stats_map for arraydecl
       auto all_fields = glob.array_stats.find(arraydecl);
       if (all_fields == glob.array_stats.end())
         throw SEMANTIC_ERROR(_("unknown stats array"), arraydecl->tok);
+
+      // Get the correct map for aggregates:
       auto one_field = all_fields->second.find(globals::stat_iter_field);
       assert (one_field != all_fields->second.end());
       map_id = one_field->second;
-      // XXX: Since foreach only handles/returns keys, it's sufficient
-      // to simply iterate one of the stat field maps.
 
-      // If sorting on aggregate is required (s->sort_aggr),
-      // map_get_next_key will need to perform aggregation
-      // calculations that might require access to more than one map.
+      // XXX: Since foreach only handles/returns keys, for the basic
+      // case it's sufficient to simply iterate one of the stat field
+      // maps.
       //
-      // TODO PR24528: need to pass sort_aggr to the interpreter.
-      // TODO PR24528: use existing foreach_sort_stat.exp testcase to check this.
-      if (s->sort_column == 0)
+      // TODO PR24528: But if sorting on aggregate is required
+      // (when info.sort_column==0, s->sort_aggr is set),
+      // then map_get_next_key will need to perform aggregation
+      // calculations, and these will require access to more than one map.
+      //
+      // TODO PR24528: Need to pass s->sort_aggr, agg_idx via foreach_info.
+      // TODO PR24528: Verify with foreach_sort_stat.exp testcase.
+      if (info.sort_column == 0)
         throw SEMANTIC_ERROR(_("unsupported sorted iteration on stat aggregate"), arraydecl->tok);
     }
 
-  value *limit = this_prog.new_reg();
-  value *key = i->second;
+  // Initialize constants, values, blocks
+  int keyref_size = 8; // the BPF stack holds a pointer to the key
+  value *limit;
+  if (s->limit)
+    limit = this_prog.new_reg();
+  else
+    limit = this_prog.new_imm(-1);
+  value *keyref;
+  if (composite_key)
+    keyref = this_prog.new_reg();
+  else
+    keyref = keys[0];
   value *i0 = this_prog.new_imm(0);
-  value *key_ofs = this_prog.new_imm(-keysize);
-  value *newkey_ofs = this_prog.new_imm(-keysize-keysize);
+  value *id = this_prog.new_imm(foreach_id);
   value *frame = this_prog.lookup_reg(BPF_REG_10);
   block *body_block = this_prog.new_block ();
   block *load_block_1 = this_prog.new_block ();
   block *iter_block = this_prog.new_block ();
   block *join_block = this_prog.new_block ();
 
-  // Track iteration limit.
+  // Reserve stack space; XXX may be cleared by the loop body
+  value *key_ofs = this_prog.new_imm(-keyref_size);
+  value *newkey_ofs = this_prog.new_imm(-keyref_size-keyref_size);
+  this_prog.use_tmp_space(2*keyref_size);
+
+  // Setup iteration limit
   if (s->limit)
     this_prog.mk_mov(this_ins, limit, emit_expr(s->limit));
-  else
-    // XXX may want 'limit = this_prog.new_imm(-1);'
-    this_prog.mk_mov(this_ins, limit, this_prog.new_imm(-1));
 
-  // XXX: s->sort_column may be uninitialized if s->sort_direction == 0
-  unsigned sort_column = s->sort_column;
-  //unsigned sort_column = s->sort_direction == 0 ? 0 : s->sort_column;
-
-  // Get the first key.
+  // Get the first key
   this_prog.load_map (this_ins, this_prog.lookup_reg(BPF_REG_1), map_id);
   this_prog.mk_mov (this_ins, this_prog.lookup_reg(BPF_REG_2), i0);
   this_prog.mk_binary (this_ins, BPF_ADD, this_prog.lookup_reg(BPF_REG_3), 
                        frame, newkey_ofs);
-  this_prog.mk_mov (this_ins, this_prog.lookup_reg(BPF_REG_4),
-                    this_prog.new_imm(SORT_FLAGS(sort_column,s->sort_direction)));
+  this_prog.mk_mov (this_ins, this_prog.lookup_reg(BPF_REG_4), id);
   this_prog.mk_mov (this_ins, this_prog.lookup_reg(BPF_REG_5), limit);
   this_prog.mk_call (this_ins, BPF_FUNC_map_get_next_key, 5);
   this_prog.mk_jcond (this_ins, NE, this_prog.lookup_reg(BPF_REG_0), i0,
                       join_block, load_block_1);
 
-  this_prog.use_tmp_space(2*keysize);
-
-  emit_jmp(load_block_1);
-
-  // Do loop body
+  // Enter loop body
+  set_block(body_block);
   loop_break.push_back (join_block);
   loop_cont.push_back (iter_block);
-
-  set_block(body_block);
-  emit_stmt(s->block);
+  emit_stmt(s->block); // XXX may clobber key, newkey at top of stack
+  loop_cont.pop_back ();
+  loop_break.pop_back();
   if (in_block ())
     emit_jmp(iter_block);
 
-  loop_cont.pop_back ();
-  loop_break.pop_back ();
-
-  // Call map_get_next_key, exit loop if it doesn't return 0
+  // Get the next key, exit loop if map_get_next_key doesn't return 0
   set_block(iter_block);
-
+  this_prog.mk_st (this_ins, BPF_DW, frame, -keyref_size /*key_ofs*/, keyref);
   this_prog.load_map (this_ins, this_prog.lookup_reg(BPF_REG_1), map_id);
-  this_prog.mk_st (this_ins, BPF_DW, frame, -keysize, key);
   this_prog.mk_binary (this_ins, BPF_ADD, this_prog.lookup_reg(BPF_REG_2),
                        frame, key_ofs);
   this_prog.mk_binary (this_ins, BPF_ADD, this_prog.lookup_reg(BPF_REG_3),
                        frame, newkey_ofs);
-  this_prog.mk_mov (this_ins, this_prog.lookup_reg(BPF_REG_4),
-                    this_prog.new_imm(SORT_FLAGS(sort_column,s->sort_direction)));
+  this_prog.mk_mov (this_ins, this_prog.lookup_reg(BPF_REG_4), id);
   this_prog.mk_mov (this_ins, this_prog.lookup_reg(BPF_REG_5), limit);
   this_prog.mk_call (this_ins, BPF_FUNC_map_get_next_key, 5);
   this_prog.mk_jcond (this_ins, NE, this_prog.lookup_reg(BPF_REG_0), i0,
                       join_block, load_block_1);
 
-  // Load next key, decrement limit if applicable
+  // Load from newkey_ofs to keyref
   set_block(load_block_1);
+  this_prog.mk_ld (this_ins, BPF_DW, keyref,
+                   frame, -keyref_size-keyref_size /*newkey_ofs*/);
+  // XXX For single-key arrays, keyref already contains the value:
+  // - either the integer value (for a pe_long key)
+  // - or a pointer to the string value (for a pe_string key)
 
-  // Return the key. If it's a string, it's already a string address.
-  this_prog.mk_ld (this_ins, BPF_DW, key, frame, -keysize-keysize);
+  // PR23478: Unpack keyref into individual indices
+  if (composite_key)
+    {
+      for (unsigned k = 0; k < s->indexes.size(); k++)
+        {
+          switch (key_decls[k]->type)
+            {
+            case pe_long:
+              // XXX load the long value
+              this_prog.mk_ld (this_ins, BPF_DW, keys[k], keyref, key_offsets[k]);
+              break;
+            case pe_string:
+              // XXX pass a pointer to the string value
+              this_prog.mk_binary (this_ins, BPF_ADD, keys[k],
+                                   keyref, this_prog.new_imm(key_offsets[k]));
+              break;
+            default:
+              throw SEMANTIC_ERROR (_("unhandled foreach key type"),
+                                    key_decls[k]->tok);
+            }
+        }
+    }
 
-  // If the foreach loop iterates over the value, then fetch it too.
+  // If the foreach loop requests a value, retrieve the value
   if (s->value)
     {
       vardecl *valdecl = s->value->referent;
 
-      auto j = this_locals->find(valdecl);
-      if (j == this_locals->end())
-        throw SEMANTIC_ERROR(_("unknown value"), valdecl->tok);
+      // TODO PR23476: is s->value ever set for a statistic array iteration?
+      if (is_stat_array)
+        throw SEMANTIC_ERROR(_("unsupported value iteration on stat aggregate"), arraydecl->tok);
 
-      value *val = j->second;
+      auto i = this_locals->find(valdecl);
+      if (i == this_locals->end())
+        throw SEMANTIC_ERROR(_("unknown value"), valdecl->tok);
+      value *val = i->second;
+
       block *load_block_2 = this_prog.new_block ();
 
-      // To lookup value, we need to pass a pointer to the key. If the key is an
-      // integer, we need to pass the location in the stack.
       this_prog.load_map (this_ins, this_prog.lookup_reg(BPF_REG_1), map_id);
-      switch (keydecl->type)
+      // To lookup value, we pass a pointer to the key.
+      // If the key is a single integer, we need to pass the integer value's
+      // location in the stack. Otherwise, keyref already holds the pointer.
+      if (!composite_key && key_decls[0]->type == pe_long)
         {
-          case pe_long:
-            this_prog.mk_binary (this_ins, BPF_ADD, this_prog.lookup_reg(BPF_REG_2),
-                                 frame, newkey_ofs);
-            break;
-          case pe_string:
-            this_prog.mk_mov (this_ins, this_prog.lookup_reg(BPF_REG_2), key);
-            break;
-          default:
-            throw SEMANTIC_ERROR (_("unhandled foreach key type"), keydecl->tok);
+          // XXX reuse not-yet-clobbered newkey value from map_get_next_key
+          this_prog.mk_binary (this_ins, BPF_ADD,
+                               this_prog.lookup_reg(BPF_REG_2),
+                               frame, newkey_ofs);
         }
-
-      this_prog.mk_call (this_ins, BPF_FUNC_map_lookup_elem, 2);
+      else
+        {
+          this_prog.mk_mov (this_ins, this_prog.lookup_reg(BPF_REG_2), keyref);
+        }
+      this_prog.mk_call(this_ins, BPF_FUNC_map_lookup_elem, 2);
       this_prog.mk_jcond (this_ins, EQ, this_prog.lookup_reg(BPF_REG_0), i0,
                           join_block, load_block_2);
 
-      // Load the corresponding value if key is valid.
+      // Load the corresponding value if key was valid
       set_block(load_block_2);
-
-      // If the value is an integer, we must deference the pointer.
       switch (valdecl->type)
         {
-          case pe_long:
-            this_prog.mk_ld(this_ins, BPF_DW, val, this_prog.lookup_reg(BPF_REG_0), 0);
-            break;
-          case pe_string:
-            this_prog.mk_mov(this_ins, val, this_prog.lookup_reg(BPF_REG_0));
-            break;
-          default:
-            throw SEMANTIC_ERROR (_("unhandled foreach value type"), valdecl->tok);
+        case pe_long:
+          // If the value is an integer, we must dereference the pointer:
+          this_prog.mk_ld(this_ins, BPF_DW, val, this_prog.lookup_reg(BPF_REG_0), 0);
+          break;
+        case pe_string:
+          this_prog.mk_mov(this_ins, val, this_prog.lookup_reg(BPF_REG_0));
+          break;
+        default:
+          throw SEMANTIC_ERROR (_("unhandled foreach value type"), valdecl->tok);
         }
     }
 
+  // Decrement the iteration limit
   if (s->limit)
-      this_prog.mk_binary (this_ins, BPF_ADD, limit, limit, this_prog.new_imm(-1));
+    this_prog.mk_binary (this_ins, BPF_ADD, limit, limit, this_prog.new_imm(-1));
 
   emit_jmp(body_block);
   set_block(join_block);
@@ -2723,7 +2806,6 @@ bpf_unparser::visit_arrayindex(arrayindex *e)
 
       if (g->second.is_stat())
         throw SEMANTIC_ERROR (_("unhandled statistics variable"), v->tok); // TODOXXX PR23476
-
       unsigned element = v->arity;
       int key_ofs = 0;
 
@@ -4369,6 +4451,40 @@ output_interned_aggregates(BPF_Output &eo, globals& glob)
   agg->shdr->sh_type = SHT_PROGBITS;
 }
 
+static void
+output_foreach_loop_info(BPF_Output &eo, globals& glob)
+{
+  if (glob.foreach_loop_info.empty())
+    return;
+
+  /* XXX This method of serializing the foreach loop info struct is
+     clumsy but not so likely to run into struct ser/de weirdness. */
+  BPF_Section *agg = eo.new_scn("stapbpf_foreach_loop_info");
+  Elf_Data *data = agg->data;
+  size_t interned_foreach_info_len =
+    sizeof(uint64_t) * globals::n_foreach_info_fields;
+  unsigned n_foreach_loops = glob.foreach_loop_info.size();
+  data->d_buf = (void *)calloc(n_foreach_loops, interned_foreach_info_len);
+  data->d_size = interned_foreach_info_len * n_foreach_loops;
+  size_t ofs = 0;
+  uint64_t *ix = (uint64_t *)data->d_buf;
+  for (auto i = glob.foreach_loop_info.begin();
+       i != glob.foreach_loop_info.end(); i++)
+    {
+      globals::interned_foreach_info ifi = globals::intern_foreach_info(*i);
+      for (auto j = ifi.begin(); j != ifi.end(); j++)
+        {
+          *ix = (uint64_t)*j;
+          ofs += sizeof(uint64_t);
+          ix++;
+        }
+    }
+  assert (ofs == data->d_size);
+  data->d_type = ELF_T_BYTE;
+  agg->free_data = true;
+  agg->shdr->sh_type = SHT_PROGBITS;
+}
+
 void
 bpf_unparser::add_prologue()
 {
@@ -4991,6 +5107,7 @@ translate_bpf_pass (systemtap_session& s)
       output_stapbpf_script_name(eo, escaped_literal_string(s.script_basename()));
       output_interned_strings(eo, glob);
       output_interned_aggregates(eo, glob);
+      output_foreach_loop_info(eo, glob);
       output_symbols_sections(eo);
 
       int64_t r = elf_update(eo.elf, ELF_C_WRITE_MMAP);

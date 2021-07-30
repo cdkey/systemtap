@@ -1,4 +1,4 @@
-/* bpfinterp.c - SystemTap BPF interpreter
+/* bpfinterp.cxx - SystemTap BPF interpreter
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2016-2019 Red Hat, Inc.
+ * Copyright (C) 2016-2021 Red Hat, Inc.
  *
  */
 
@@ -23,7 +23,8 @@
 #include <cstdlib>
 #include <cerrno>
 #include <vector>
-#include <map>
+#include <deque>
+#include <algorithm>
 #include <type_traits>
 #include <inttypes.h>
 #include "bpfinterp.h"
@@ -85,156 +86,217 @@ remove_tag(const char *fstr)
   return std::string(fstr, end - fstr);
 }
 
-// Used with map_get_next_key to store and sort key -> <don'tcare> or
-// value -> key mappings. The latter are used to sort by value and
-// return key. The int maps use signed type so that negative values
-// are properly sorted.
-struct map_keys {
-  std::vector<std::map<int64_t, int64_t>> int_keyvals;
-  std::vector<std::map<std::string, std::string>> str_keyvals;
-  std::vector<std::map<std::string, int64_t>> intstr_keyvals;
-  std::vector<std::map<int64_t, std::string>> strint_keyvals;
+// Represents an in-progress foreach loop, including sorted keys/vals:
+struct foreach_state {
+  uint64_t foreach_id;
+
+  // Used to store and sort (col,key) or (val,key) pairs for
+  // iteration, where col is a sort column of the key:
+  std::deque<std::pair<std::string, uint64_t *>> str_sorted;
+  std::deque<std::pair<int64_t, uint64_t *>> int_sorted;
+
+  // Used to track keys for deallocation by foreach_state_cleanup:
+  std::vector<uint64_t *> keys;
 };
 
-void
-convert_int_key(uint64_t *kp, int64_t &key)
-{
-  key = (int64_t)*kp;
-}
+// The interpreter maintains a stack of foreach_states,
+// with each nested foreach loop pushing onto the stack:
+typedef std::vector<foreach_state> foreach_stack;
+
+#define foreach_info bpf::globals::foreach_info
 
 void
-convert_str_key(uint64_t *kp, std::string &key)
+foreach_state_add(const foreach_info &fi, foreach_state &s,
+                  uint64_t *kp, uint64_t *colp,
+                  bool scalar_long)
 {
-  key = std::string((char *)kp, BPF_MAXSTRINGLEN_PLUS);
-}
-
-void
-convert_int_kp(const int64_t &key, uint64_t *kp)
-{
-  *kp = (uint64_t)key;
-}
-
-void
-convert_str_kp(const std::string &key, uint64_t *kp,
-               std::vector<std::string> &strings)
-{
-  std::string str(key);
-  strings.push_back(str);
-  *kp = reinterpret_cast<uint64_t>(strings.back().c_str());
-}
-
-template<typename K>
-void
-convert_key(uint64_t *kp, K &key)
-{
-  if (std::is_same<K, int64_t>::value)
-    convert_int_key(kp, (int64_t&)key);
-  else if (std::is_same<K, std::string>::value)
-    convert_str_key(kp, (std::string&)key);
-  else
-    stapbpf_abort("bpf_map_get_next_key BUG: unknown map key/value type");
-}
-
-template<typename K>
-void
-convert_kp(const K &key, uint64_t *kp, std::vector<std::string> &strings)
-{
-  if (std::is_same<K, int64_t>::value)
-    convert_int_kp((int64_t&)key, kp);
-  else if (std::is_same<K, std::string>::value)
-    convert_str_kp((std::string&)key, kp, strings);
-  else
-    stapbpf_abort("bpf_map_get_next_key BUG: unknown map key/value type");
-}
-
-template<typename K>
-int
-compute_key_size()
-{
-  if (std::is_same<K, int64_t>::value)
-    return sizeof(int64_t);
-  else if (std::is_same<K, std::string>::value)
-    return BPF_MAXSTRINGLEN;
-  else
-    stapbpf_abort("bpf_map_get_next_key BUG: unknown map key/value type");
-  return 0;
-}
-
-template<typename K, typename V>
-int map_sort(std::vector<std::map<V,K>> &keyvals,
-             bool use_key, int map_fd)
-{
-  // Handle both uint64_t and string types.
-  //
-  // XXX: Copy strings with memcpy() and add a safety NUL. This avoids
-  // labyrinth of contradictory compiler warnings on different
-  // platforms. Worth reviewing.
-  char _k[BPF_MAXSTRINGLEN_PLUS], _n[BPF_MAXSTRINGLEN_PLUS];
-  _k[BPF_MAXSTRINGLEN] = _n[BPF_MAXSTRINGLEN] = '\0';
-  uint64_t *kp = (uint64_t *)_k, *np = (uint64_t *)_n;
-  std::map<V,K> s;
-
-  int key_size = compute_key_size<K>();
-  //int value_size = compute_key_size<V>();
-
-  int rc = bpf_get_next_key(map_fd, 0, as_ptr(np));
-  while (!rc)
+  // extract col_str, col_long from colp
+  std::string col_str;
+  bool use_str_col = false;
+  int64_t col_long;
+  //bool use_long_col = false;
+  if (scalar_long)
     {
-      K key; V value;
-      convert_key(np, key);
-      if (use_key)
-        convert_key(np, value);
+      // colp points to a scalar long value
+      //use_long_col = true;
+      col_long = *colp;
+    }
+  else if (fi.sort_column == 0 /* use_value */
+           || fi.sort_column_ofs == -1 /* !key_composite */)
+    {
+      // colp is a single string
+      use_str_col = true;
+      std::string col_str2((char *)colp, BPF_MAXSTRINGLEN);
+      col_str = col_str2;
+    }
+  else
+    {
+      // colp contains a column at fi.sort_column_ofs
+      colp = (uint64_t *)(((char *)colp)+fi.sort_column_ofs);
+      if (fi.sort_column_size == BPF_MAXSTRINGLEN)
+        {
+          use_str_col = true;
+          std::string col_str3((char *)colp, BPF_MAXSTRINGLEN);
+          col_str = col_str3;
+        }
       else
         {
-          char _v[BPF_MAXSTRINGLEN_PLUS];
-          _v[BPF_MAXSTRINGLEN] = '\0';
-          uint64_t *vp = (uint64_t *)_v;
-          int res = bpf_lookup_elem(map_fd, as_ptr(np), as_ptr(vp));
-          if (res) // element could not be found
-            stapbpf_abort("bpf_map_get_next_key BUG: could not find key " \
-                          "returned by bpf_get_next_key");
-          convert_key(vp, value);
+          //use_long_col = true;
+          col_long = *colp;
         }
-      s.insert(std::make_pair(value, key));
-      memcpy(kp, np, key_size);
-      rc = bpf_get_next_key(map_fd, as_ptr(kp), as_ptr(np));
     }
 
-  if (s.empty())
-    return -1;
-  keyvals.push_back(s);
-  return 0;
+  // copy and save key
+  uint64_t *kp2 = (uint64_t *)malloc(fi.keysize);
+  memcpy(kp2, kp, fi.keysize);
+  s.keys.push_back(kp2);
+
+  // save (col,key) pair
+  if (use_str_col)
+    {
+      std::pair<std::string, uint64_t *> item_str(col_str, kp2);
+      s.str_sorted.push_back(item_str);
+    }
+  else // use_long_col
+    {
+      std::pair<int64_t, uint64_t *> item_long(col_long, kp2);
+      s.int_sorted.push_back(item_long);
+    }
 }
 
-template<typename K, typename V>
-int map_next(std::vector<std::map<V,K>> &keyvals,
-             int64_t next_key, int sort_direction,
-             std::vector<std::string> &strings)
+bool
+foreach_cmp_str(const std::pair<std::string, void *> &a,
+                const std::pair<std::string, void *> &b)
 {
-  std::map<V,K> &s = keyvals.back();
-  K skey; V sval;
+  return a.first < b.first;
+}
 
-  if (sort_direction > 0)
+bool
+foreach_cmp_int(const std::pair<int64_t, void *> &a,
+                const std::pair<int64_t, void *> &b)
+{
+  return a.first < b.first;
+}
+
+void
+foreach_state_sort(foreach_state &s)
+{
+  if (!s.str_sorted.empty())
     {
-      auto it = s.begin();
-      if (it == s.end())
-        return -1;
-      skey = it->second;
-      sval = it->first;
-      convert_kp(skey, (uint64_t *)next_key, strings);
+      std::stable_sort(s.str_sorted.begin(), s.str_sorted.end(),
+                       foreach_cmp_str);
+    }
+  if (!s.int_sorted.empty())
+    {
+      std::stable_sort(s.int_sorted.begin(), s.int_sorted.end(),
+                       foreach_cmp_int);
+    }
+}
+
+bool
+foreach_state_empty(const foreach_state &s)
+{
+  return s.str_sorted.empty() && s.int_sorted.empty();
+}
+
+void
+convert_key(const foreach_info &fi,
+            uint64_t *kp, uint64_t *next_kp,
+            std::vector<std::string> &strings,
+            std::vector<uint64_t *> &map_values)
+{
+  bool scalar_long = fi.sort_column_ofs == -1 /* !key_composite */
+    && fi.keysize != BPF_MAXSTRINGLEN /* key_long */;
+  bool scalar_str = fi.sort_column_ofs == -1 /* !key_composite */
+    && fi.keysize == BPF_MAXSTRINGLEN /* key_str */;
+  if (scalar_long)
+    {
+      // handle scalar long keys being passed directly
+      *next_kp = *kp;
+      return;
+    }
+  if (scalar_str)
+    {
+      // handle string keys being passed as pointers
+      // TODO: Could merge strings into map_values:
+      std::string str((char*)kp, BPF_MAXSTRINGLEN);
+      strings.push_back(str);
+      *next_kp = reinterpret_cast<uint64_t>(strings.back().c_str());
+      return;
+    }
+
+  // handle string composite keys being passed as pointers
+  // allocate correctly sized buffer and store it in map_values:
+  uint64_t *lookup_tmp = (uint64_t*)malloc(fi.keysize);
+  memcpy(lookup_tmp, kp, fi.keysize);
+  map_values.push_back(lookup_tmp);
+  *next_kp = reinterpret_cast<uint64_t>(map_values.back());
+}
+
+template<typename T>
+int
+_foreach_state_next(const foreach_info &fi, /* XXX foreach_state &s, */
+                    std::deque<std::pair<T,uint64_t*>> sorted,
+                    int64_t key, int64_t next_key,
+                    std::vector<std::string> &strings,
+                    std::vector<uint64_t *> &map_values)
+{
+  (void)key; // XXX unused; see comment in foreach_state_next()
+
+  if (sorted.empty())
+    return -1;
+
+  if (fi.sort_direction > 0)
+    {
+      std::pair<T,uint64_t*> item = sorted.front();
+      convert_key(fi, item.second, (uint64_t *)next_key,
+                  strings, map_values);
+      sorted.pop_front();
     }
   else // sort_direction < 0
     {
-      auto it = s.rbegin();
-      if (it == s.rend())
-        return -1;
-      skey = it->second;
-      sval = it->first;
-      convert_kp(skey, (uint64_t *)next_key, strings);
+      std::pair<T,uint64_t*> item = sorted.back();
+      convert_key(fi, item.second, (uint64_t *)next_key,
+                  strings, map_values);
+      sorted.pop_back();
     }
-
-  s.erase(sval);
   return 0;
+}
+
+int
+foreach_state_next(const foreach_info &fi, foreach_state &s,
+                   int64_t key, int64_t next_key,
+                   std::vector<std::string> &strings,
+                   std::vector<uint64_t *> &map_values)
+{
+  // TODO: Sanity check that we are continuing the same iteration?
+  // Would require storing key in foreach_state.
+  //
+  // XXX Otherwise the code assumes that the BPF probe exactly follows
+  // a foreach pattern, always passing the returned key as the next
+  // key and not trying to 'start iteration in the middle'.
+  if (!s.str_sorted.empty())
+    {
+      return _foreach_state_next<std::string>(fi, /* XXX s, */
+                                              s.str_sorted,
+                                              key, next_key,
+                                              strings, map_values);
+    }
+  if (!s.int_sorted.empty())
+    {
+      return _foreach_state_next<int64_t>(fi, /* XXX s, */
+                                          s.int_sorted,
+                                          key, next_key,
+                                          strings, map_values);
+    }
+  return -1;
+}
+
+void
+foreach_state_cleanup(foreach_state &s)
+{
+  for (uint64_t *ptr : s.keys)
+    free(ptr);
 }
 
 // Wrapper for bpf_get_next_key that includes logic for accessing
@@ -242,139 +304,165 @@ int map_next(std::vector<std::map<V,K>> &keyvals,
 // (PR23858) in ascending or descending order by value.
 int
 map_get_next_key(int fd_idx, int64_t key, int64_t next_key,
-                 uint64_t sort_flags, int64_t limit,
-                 bpf_transport_context *ctx, map_keys &keys,
-                 std::vector<std::string> &strings)
+                 uint64_t foreach_id, int64_t limit,
+                 bpf_transport_context *ctx, foreach_stack &foreach_ctx,
+                 std::vector<std::string> &strings,
+                 std::vector<uint64_t *> &map_values)
 {
   int fd = (*ctx->map_fds)[fd_idx];
-  unsigned sort_column = GET_SORT_COLUMN(sort_flags);
-  int sort_direction = GET_SORT_DIRECTION(sort_flags);
-  // TODO PR24528: also handle s->sort_aggr for stat aggregates.
-  //fprintf(stderr, "DEBUG called map_get_next_key fd=%d sort_column=%u sort_direction=%d key=%lx next_key=%lx limit=%ld\n", fd, sort_column, sort_direction, key, next_key, limit);
 
-  // XXX: s->sort_column may be uninitialized if s->sort_direction == 0
-  if (sort_direction == 0)
-    sort_column = 0;
+  // Retrieve foreach loop info
+  foreach_info fi;
+  bool have_fi = !ctx->foreach_loop_info->empty()
+    && ctx->foreach_loop_info->size() > foreach_id;
+  fi.sort_column = 1;
+  fi.sort_direction = 0;
+  fi.keysize = 0;
+  fi.sort_column_size = 0;
+  fi.sort_column_ofs = 0;
+  if (!have_fi)
+    {
+      // XXX Backwards compatibility for older .bo's using
+      // sort_flags and no foreach_loop_info table.
+      uint64_t sort_flags = foreach_id;
+      fi.sort_column = GET_SORT_COLUMN(sort_flags);
+      fi.sort_direction = GET_SORT_DIRECTION(sort_flags);
 
-  bool use_value = (sort_column == 0);
-  bool use_key = (sort_column == 1);
-
-  // XXX: May want to pass the actual key/value type. For now guess from size:
-  bool key_str = (ctx->map_attrs[fd_idx].key_size == BPF_MAXSTRINGLEN);
-  bool is_str = false;
-  if (use_value)
-    is_str = (ctx->map_attrs[fd_idx].value_size == BPF_MAXSTRINGLEN);
-  else if (use_key)
-    is_str = key_str;
+      // XXX The entire key is a single column.
+      fi.keysize = ctx->map_attrs[fd_idx].key_size;
+      fi.sort_column_size = fi.keysize;
+      fi.sort_column_ofs = -1; // XXX use entire key
+    }
   else
-    stapbpf_abort("unknown sort column");
+    {
+      fi = ctx->foreach_loop_info->operator[](foreach_id);
+      //assert(fi.keysize == ctx->map_attrs[fd_idx].key_size);
+      // TODO PR24528: also handle s->sort_aggr for stat aggregates
+    }
+  //fprintf(stderr, "DEBUG called map_get_next_key fd=%d sort_column=%u sort_direction=%d key=%lx next_key=%lx limit=%ld\n", fd, fi.sort_column, fi.sort_direction, key, next_key, limit);
 
-  //std::cerr << "DEBUG limit==" << limit << ", keys.str_keyvals.size()==" << keys.str_keyvals.size() << std::endl;
-  // Final iteration, therefore keys.back() is no longer needed:
+  // Identify type of key, value
+  bool use_val = fi.sort_column == 0;
+  bool key_composite = fi.sort_column_ofs != -1;
+  bool key_long = false;
+  bool key_str = false;
+  if (!key_composite)
+    {
+      // XXX If the key has one column, it is either
+      // a string (BPF_MAXSTRINGLEN) or a scalar long.
+      key_long = fi.keysize != BPF_MAXSTRINGLEN;
+      key_str = fi.keysize == BPF_MAXSTRINGLEN;
+    }
+  bool val_long = ctx->map_attrs[fd_idx].value_size != BPF_MAXSTRINGLEN;
+  //bool val_str = !val_long;
+
+  // Check iteration limit
   if (limit == 0)
     {
-      if (!key)
-        // PR24811: If key is not set, there's nothing to pop.
+      // Final iteration, therefore foreach_ctx.back() is no longer needed
+
+      // PR24811 att1: If key is not set, the map is empty and the
+      // context wasn't created. Only pop with a nonzero key.
+      //
+      // XXX: A malformed .bo could still mess with this check
+      // by issuing map_get_next_key(key=?,limit=0) calls
+      // outside the usual foreach pattern.
+      //if (!key)
+      //  return -1;
+
+      // PR24811 att2: Check if the context for this foreach_id was created.
+      // It might not have been if the limit is zero on the first call.
+      if (foreach_ctx.empty()
+          || foreach_ctx.back().foreach_id != foreach_id)
         return -1;
 
-      if (key_str && is_str)
-        keys.str_keyvals.pop_back();
-      else if (!key_str && !is_str)
-        keys.int_keyvals.pop_back();
-      else if (!key_str && is_str)
-        keys.intstr_keyvals.pop_back();
-      else if (key_str && !is_str)
-        keys.strint_keyvals.pop_back();
-      //std::cerr << "DEBUG after pop keys.str_keyvals.size()==" << keys.str_keyvals.size() << std::endl;
+      foreach_state_cleanup(foreach_ctx.back());
+      foreach_ctx.pop_back();
       return -1;
     }
 
-  if (sort_direction == 0)
+  // Handle fi.sort_direction==0, where no foreach_ctx is needed
+  if (fi.sort_direction == 0)
     {
-      if (!key_str)
+      // handle scalar long values being passed directly
+      if (key_long)
         return bpf_get_next_key(fd, as_ptr(key), as_ptr(next_key));
 
-      // XXX Handle string values being passed as pointers.
-      char _n[BPF_MAXSTRINGLEN_PLUS];
+      // handle string and composite keys being passed as pointers
+      char _n[BPF_MAXKEYLEN_PLUS];
       uint64_t *kp = key == 0x0 ? (uint64_t *)0x0 : *(uint64_t **)key;
       uint64_t *np = (uint64_t *)_n;
       int rc = bpf_get_next_key(fd, as_ptr(kp), as_ptr(np));
-      if (!rc)
+      if (!rc && key_str)
         {
+          // TODO: Could merge strings into map_values:
           std::string next_key2(_n, BPF_MAXSTRINGLEN);
-          convert_kp(next_key2, (uint64_t *)next_key, strings);
+          strings.push_back(next_key2);
+          *(uint64_t *)next_key =
+            reinterpret_cast<uint64_t>(strings.back().c_str());
+        }
+      else if (!rc)
+        {
+          // allocate correctly sized buffer and store it in map_values:
+          uint64_t *lookup_tmp = (uint64_t*)malloc(fi.keysize);
+          memcpy(lookup_tmp, _n, fi.keysize);
+          map_values.push_back(lookup_tmp);
+          *(uint64_t *)next_key =
+            reinterpret_cast<uint64_t>(map_values.back());
         }
       return rc;
     }
 
-  // Beginning of iteration; populate a new set of keys/values for
-  // the map specified by fd. Multiple sets can be associated
-  // with a single map during execution of nested foreach loops.
-  int rc = 0;
-  if (!key && key_str && is_str)
+  // Sort the map on initial iteration
+  if (!key)
     {
-      rc = map_sort<std::string, std::string>(keys.str_keyvals, use_key, fd);
-      //std::cerr << "DEBUG after push keys.str_keyvals.size()==" << keys.str_keyvals.size() << " " << keys.str_keyvals.back().size() << std::endl;
-      //for (auto kv : keys.str_keyvals.back()) std::cerr << "DEBUG " << kv.first << " --> " << kv.second << std::endl;
-    }
-  else if (!key && !key_str && !is_str)
-    {
-      rc = map_sort<int64_t, int64_t>(keys.int_keyvals, use_key, fd);
-    }
-  else if (!key && !key_str && is_str)
-    {
-      rc = map_sort<int64_t, std::string>(keys.intstr_keyvals, use_key, fd);
-    }
-  else if (!key && key_str && !is_str)
-    {
-      rc = map_sort<std::string, int64_t>(keys.strint_keyvals, use_key, fd);
-    }
-  else if (!key)
-    stapbpf_abort("BUG: bpf_map_get_next_key unidentified key/val types");
-  if (rc < 0) // map is empty
-    return -1;
+      // handle both uint64_t and string column types
+      char _k[BPF_MAXKEYLEN_PLUS], _n[BPF_MAXKEYLEN_PLUS];
+      _k[BPF_MAXSTRINGLEN] = _k[BPF_MAXKEYLEN] = '\0';
+      _n[BPF_MAXSTRINGLEN] = _n[BPF_MAXKEYLEN] = '\0';
+      uint64_t *kp = (uint64_t *)_k;
+      uint64_t *np = (uint64_t *)_n;
+      foreach_state s;
 
-  if (key_str && is_str)
-    {
-      rc = map_next<std::string, std::string>(keys.str_keyvals, next_key,
-                                              sort_direction, strings);
-      //std::cerr << "DEBUG after next keys.str_keyvals.size()==" << keys.str_keyvals.size() << " " << keys.str_keyvals.back().size() << std::endl;
-      if (rc < 0) // map is empty
+      int rc = bpf_get_next_key(fd, 0, as_ptr(np));
+      while (!rc)
         {
-          keys.str_keyvals.pop_back();
-          //std::cerr << "DEBUG NOLIMIT after pop keys.str_keyvals.size()==" << keys.str_keyvals.size() << std::endl;
-          return -1;
+          if (use_val)
+            {
+              char _v[BPF_MAXKEYLEN_PLUS];
+              _v[BPF_MAXSTRINGLEN] = _v[BPF_MAXKEYLEN] = '\0';
+              uint64_t *vp = (uint64_t *)_v;
+              int res = bpf_lookup_elem(fd, as_ptr(np), as_ptr(vp));
+              if (res) // element could not be found
+                stapbpf_abort("bpf_map_get_next_key BUG: could not find key " \
+                              "returned by bpf_get_next_key");
+              foreach_state_add(fi, s, np, vp, val_long);
+            }
+          else
+            {
+              // foreach_state_add extracts the column from np
+              foreach_state_add(fi, s, np, np, key_long);
+            }
+          memcpy(kp, np, fi.keysize);
+          rc = bpf_get_next_key(fd, as_ptr(kp), as_ptr(np));
         }
+      foreach_state_sort(s);
+      if (foreach_state_empty(s))
+        return -1;
+      foreach_ctx.push_back(s);
     }
-  else if (!key_str && !is_str)
+
+  if (foreach_ctx.empty())
+    stapbpf_abort("bpf_map_get_next_key BUG: called outside a foreach loop");
+
+  // Get next value from sorted data
+  int rc = foreach_state_next(fi, foreach_ctx.back(), key, next_key,
+                              strings, map_values);
+  if (rc < 0) // no more elements to return
     {
-      rc = map_next<int64_t, int64_t>(keys.int_keyvals, next_key,
-                                      sort_direction, strings);
-      if (rc < 0) // map is empty
-        {
-          keys.int_keyvals.pop_back();
-          return -1;
-        }
-    }
-  else if (!key_str && is_str)
-    {
-      rc = map_next<int64_t, std::string>(keys.intstr_keyvals, next_key,
-                                          sort_direction, strings);
-      if (rc < 0) // map is empty
-        {
-          keys.intstr_keyvals.pop_back();
-          return -1;
-        }
-    }
-  else // key_str && !is_str
-    {
-      rc = map_next<std::string, int64_t>(keys.strint_keyvals, next_key,
-                                          sort_direction, strings);
-      if (rc < 0) // map is empty
-        {
-          keys.strint_keyvals.pop_back();
-          return -1;
-        }
+      foreach_state_cleanup(foreach_ctx.back());
+      foreach_ctx.pop_back();
+      return -1;
     }
   return 0;
 }
@@ -748,7 +836,7 @@ bpf_interpret(size_t ninsns, const struct bpf_insn insns[],
   std::vector<int> &map_fds = *ctx->map_fds;
   FILE *output_f = ctx->output_f;
 
-  map_keys keys[map_fds.size()];
+  foreach_stack foreach_ctxs[map_fds.size()];
 
   map_values.clear(); // XXX: avoid double free
 
@@ -1013,7 +1101,8 @@ bpf_interpret(size_t ninsns, const struct bpf_insn insns[],
             case bpf::BPF_FUNC_map_get_next_key:
               dr = map_get_next_key(regs[1], regs[2], regs[3],
                                     regs[4], regs[5],
-                                    ctx, keys[regs[1]], strings);
+                                    ctx, foreach_ctxs[regs[1]],
+                                    strings, map_values);
               break;
             case bpf::BPF_FUNC_stapbpf_stat_get:
               dr = stapbpf_stat_get((bpf::globals::agg_idx)regs[1], regs[2],

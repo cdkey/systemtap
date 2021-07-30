@@ -45,6 +45,7 @@ struct bpf_transport_context {
   FILE *output_f;
   std::vector<std::string> *interned_strings;
   std::unordered_map<bpf::globals::agg_idx, bpf::globals::stats_map> *aggregates;
+  std::vector<bpf::globals::foreach_info> *foreach_loop_info;
   // XXX: Could be refactored into a single global struct bpf_global_context.
   
   // Data for procfs probes. Multiple threads will be accessing this variable.
@@ -72,10 +73,12 @@ struct bpf_transport_context {
                         std::vector<std::string> *interned_strings,
                         std::unordered_map<bpf::globals::agg_idx,
                                            bpf::globals::stats_map> *aggregates,
+                        std::vector<bpf::globals::foreach_info> *foreach_loop_info,
                         bool* error)
     : cpu(cpu), pmu_fd(pmu_fd), ncpus(ncpus),
       map_attrs(map_attrs), map_fds(map_fds), output_f(output_f),
       interned_strings(interned_strings), aggregates(aggregates),
+      foreach_loop_info(foreach_loop_info),
       in_printf(false), format_no(-1), expected_args(0), error(error) {}
 };
 

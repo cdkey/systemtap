@@ -145,6 +145,9 @@ static std::vector<std::string> interned_strings;
 // Table of map id's for statistical aggregates:
 static std::unordered_map<bpf::globals::agg_idx, bpf::globals::stats_map> aggregates;
 
+// Table of foreach loop information:
+static std::vector<bpf::globals::foreach_info> foreach_loop_info;
+
 // XXX: Required static data and methods from bpf::globals, shared with translator.
 #include "../bpf-shared-globals.h"
 
@@ -1385,7 +1388,8 @@ init_perf_transport()
       // Create a data structure to track what's happening on each CPU:
       bpf_transport_context *ctx
         = new bpf_transport_context(cpu, pmu_fd, ncpus, map_attrs, &map_fds,
-                                    output_f, &interned_strings, &aggregates, &error);
+                                    output_f, &interned_strings, &aggregates,
+                                    &foreach_loop_info, &error);
       transport_contexts.push_back(ctx);
     }
 
@@ -1503,6 +1507,7 @@ load_bpf_file(const char *module)
   unsigned script_name_idx = 0;
   unsigned interned_strings_idx = 0;
   unsigned aggregates_idx = 0;
+  unsigned foreach_loop_info_idx = 0;
   unsigned kprobes_idx = 0;
   unsigned begin_idx = 0;
   unsigned end_idx = 0;
@@ -1546,6 +1551,8 @@ load_bpf_file(const char *module)
         interned_strings_idx = i;
       else if (strcmp(shname, "stapbpf_aggregates") == 0)
         aggregates_idx = i;
+      else if (strcmp(shname, "stapbpf_foreach_loop_info") == 0)
+        foreach_loop_info_idx = i;
       else if (strcmp(shname, "version") == 0)
 	version_idx = i;
       else if (strcmp(shname, "maps") == 0)
@@ -1626,6 +1633,25 @@ load_bpf_file(const char *module)
             }
           aggregates[agg_id] = bpf::globals::deintern_stats_map(ism);
           i += 1 + bpf::globals::stat_fields.size();
+          ofs = sizeof(uint64_t) * i;
+        }
+    }
+
+  // PR23478: Initialize table of foreach loop information.
+  if (foreach_loop_info_idx != 0)
+    {
+      uint64_t *foreachtab = static_cast<uint64_t *>(sh_data[foreach_loop_info_idx]->d_buf);
+      unsigned long long foreachtab_size = shdrs[foreach_loop_info_idx]->sh_size;
+      unsigned ofs = 0; unsigned i = 0;
+      while (ofs < foreachtab_size)
+        {
+          bpf::globals::interned_foreach_info ifi;
+          for (unsigned j = 0; j < bpf::globals::n_foreach_info_fields; j++)
+            {
+              ifi.push_back(foreachtab[i+j]);
+            }
+          foreach_loop_info.push_back(bpf::globals::deintern_foreach_info(ifi));
+          i += bpf::globals::n_foreach_info_fields;
           ofs = sizeof(uint64_t) * i;
         }
     }
@@ -2227,7 +2253,8 @@ main(int argc, char **argv)
   unsigned ncpus = map_attrs[bpf::globals::perf_event_map_idx].max_entries;
   bpf_transport_context uctx(default_cpu, -1/*pmu_fd*/, ncpus,
                              map_attrs, &map_fds, output_f,
-                             &interned_strings, &aggregates, &error);
+                             &interned_strings, &aggregates,
+                             &foreach_loop_info, &error);
 
   if (create_group_fds() < 0)
     fatal("Error creating perf event group: %s\n", strerror(errno));

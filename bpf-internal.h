@@ -1,5 +1,5 @@
 // bpf internal classes
-// Copyright (C) 2016-2019 Red Hat Inc.
+// Copyright (C) 2016-2021 Red Hat Inc.
 //
 // This file is part of systemtap, and is free software.  You can
 // redistribute it and/or modify it under the terms of the GNU General
@@ -65,6 +65,9 @@ enum bpf_target {
 #define BPF_MAXSTRINGLEN_PLUS 65
 // #define BPF_MAXSTRINGLEN 128 // TODO: Longer strings require a smarter storage allocator.
 // #define BPF_MAXSTRINGLEN_PLUS 129
+// For foreach sorting, composite map keys cannot exceed kernel stack size:
+#define BPF_MAXKEYLEN 512
+#define BPF_MAXKEYLEN_PLUS 513
 #define BPF_MAXFORMATLEN 256
 #define BPF_MAXPRINTFARGS 32
 // #define BPF_MAXPRINTFARGS 3 // Maximum for trace_printk() method.
@@ -79,7 +82,9 @@ enum bpf_target {
 #define BPF_TRANSPORT_ARG uint64_t
 // XXX: BPF_TRANSPORT_ARG is for small numerical arguments, not pe_long values.
 
-// Constants for array sorting.
+// DEPRECATED constants for foreach sorting.
+// Kept in the unlikely case we want to use new stapbpf to load old .bo's.
+// Use globals::foreach_info instead for generating new .bo's.
 //
 // XXX Helpers take at most 5 arguments from BPF code.  Hence we
 // combine a couple arguments into one sort_flags for the
@@ -92,7 +97,6 @@ enum bpf_target {
   ((int64_t)((sort_flags) & 0xf) - 1)
 // int sort_direction; // -1: decreasing, 0: none, 1: increasing
 // unsigned sort_column; // 0: value, 1..N: index
-// TODO PR24528: also encode s->sort_aggr
 
 // Will print out bpf assembly before and after optimization:
 //#define DEBUG_CODEGEN
@@ -473,6 +477,33 @@ struct globals
   std::unordered_map<vardecl *, agg_idx> aggregates;
 
   // The .bo ELF file will have a section (agg_idx -> interned_stats_map).
+
+  // PR23478: To pass foreach iteration settings, assign each foreach loop
+  // a numerical index into a table of these foreach_info structs.
+  // Pass the index into the map_get_next_key userspace-only helper.
+  struct foreach_info {
+    // XXX replicate fields from struct foreach_loop in staptree.h
+    int sort_direction; // -1: decreasing, 0: none, 1: increasing
+    unsigned sort_column; // 0: value, 1..N: index
+    // TODO PR24908: also encode s->sort_aggr
+
+    // used to locate the sort column in a composite map key
+    size_t keysize;
+    size_t sort_column_size; // 0: sort_column is value
+    int sort_column_ofs; // -1: key is scalar long or str
+  };
+  std::vector<foreach_info> foreach_loop_info;
+
+  /// XXX Used to store loop_info structs for serialization:
+  typedef std::vector<uint64_t> interned_foreach_info;
+  static const size_t n_foreach_info_fields = 5;
+  static interned_foreach_info intern_foreach_info(const foreach_info &fi);
+  static foreach_info deintern_foreach_info(const interned_foreach_info &ifi);
+
+  using loop_idx = int;
+  // XXX: Not actually used in any tables.
+
+  // The .bo ELF file will have a section (loop_idx -> interned_loop_info).
 
   // Index into globals. This element represents the map of internal globals
   // used for sharing data between stapbpf and kernel-side bpf programs.
