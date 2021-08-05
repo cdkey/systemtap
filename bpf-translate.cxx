@@ -1968,8 +1968,8 @@ bpf_unparser::visit_foreach_loop(foreach_loop* s)
     }
 
   // Save foreach_info to foreach_loop_info_table
-  glob.foreach_loop_info.push_back(info);
   globals::loop_idx foreach_id = glob.foreach_loop_info.size();
+  glob.foreach_loop_info.push_back(info);
 
   // Get map_slot for arraydecl
   auto g = glob.globals.find(arraydecl);

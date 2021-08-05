@@ -236,7 +236,7 @@ convert_key(const foreach_info &fi,
 template<typename T>
 int
 _foreach_state_next(const foreach_info &fi, /* XXX foreach_state &s, */
-                    std::deque<std::pair<T,uint64_t*>> sorted,
+                    std::deque<std::pair<T,uint64_t*>> &sorted,
                     int64_t key, int64_t next_key,
                     std::vector<std::string> &strings,
                     std::vector<uint64_t *> &map_values)
