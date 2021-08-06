@@ -93,6 +93,7 @@ int main()
     child_pid = fork();
     if (child_pid == 0) {
 	/* Child */
+        alarm(30);
 	do_child();
 	exit(0);
     }

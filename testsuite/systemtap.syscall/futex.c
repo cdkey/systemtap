@@ -38,7 +38,8 @@ int main()
 
     pid = fork();
     if (pid == 0) {		/* child */
-	do_child();
+        alarm(30);
+        do_child();
 	exit(0);
     }
 

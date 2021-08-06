@@ -122,6 +122,7 @@ start_server(struct sockaddr_in *ssin, struct sockaddr_un *ssun)
 
     switch (pid = fork()) {
     case 0:		/* child */
+        alarm(30);
 	do_child();
 	break;
     case -1:			/* fall through */

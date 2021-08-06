@@ -73,7 +73,8 @@ start_server(struct sockaddr_in *sin0)
 
     switch (pid = fork()) {
     case 0:		/* child */
-	do_child();
+        alarm(30);
+        do_child();
 	break;
     case -1:			/* fall through */
     default:			/* parent */
