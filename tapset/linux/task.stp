@@ -706,7 +706,11 @@ function task_fd_lookup:long(task:long, fd:long)
 		(void)kderef_buffer(NULL, files, sizeof(struct files_struct));
 
 		spin_lock(&files->file_lock);
+#ifdef STAPCONF_FILES_LOOKUP_FD_RAW
+		file = files_lookup_fd_raw(files, fd);
+#else
 		file = fcheck_files(files, fd);
+#endif
 		spin_unlock(&files->file_lock);
 	}
 

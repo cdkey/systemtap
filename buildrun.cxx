@@ -529,6 +529,8 @@ compile_pass (systemtap_session& s)
   output_autoconf(s, o, cs, "autoconf-lockdown-kernel.c", "STAPCONF_LOCKDOWN_KERNEL", NULL);
   output_autoconf(s, o, cs, "autoconf-hlist_add_tail_rcu.c",
 		  "STAPCONF_HLIST_ADD_TAIL_RCU", NULL);
+  output_autoconf(s, o, cs, "autoconf-files_lookup_fd_raw.c",
+                  "STAPCONF_FILES_LOOKUP_FD_RAW", NULL);
   output_autoconf(s, o, cs, "autoconf-task-state.c", "STAPCONF_TASK_STATE", NULL);
   
   // used by runtime/linux/netfilter.c
