@@ -177,6 +177,42 @@
   (pt_regs->regs[regno] = (value))
 #define pt_regs_maxno 31 /* ignore special registers */
 
+#elif defined __riscv
+
+#define pt_dwarf_register_0(regs)	regs->epc
+#define pt_dwarf_register_1(regs)	regs->ra
+#define pt_dwarf_register_2(regs)	regs->sp
+#define pt_dwarf_register_3(regs)	regs->gp
+#define pt_dwarf_register_4(regs)	regs->tp
+#define pt_dwarf_register_5(regs)	regs->t0
+#define pt_dwarf_register_6(regs)	regs->t1
+#define pt_dwarf_register_7(regs)	regs->t2
+#define pt_dwarf_register_8(regs)	regs->s0
+#define pt_dwarf_register_9(regs)	regs->s1
+#define pt_dwarf_register_10(regs)	regs->a0
+#define pt_dwarf_register_11(regs)	regs->a1
+#define pt_dwarf_register_12(regs)	regs->a2
+#define pt_dwarf_register_13(regs)	regs->a3
+#define pt_dwarf_register_14(regs)	regs->a4
+#define pt_dwarf_register_15(regs)	regs->a5
+#define pt_dwarf_register_16(regs)	regs->a6
+#define pt_dwarf_register_17(regs)	regs->a7
+#define pt_dwarf_register_18(regs)	regs->s2
+#define pt_dwarf_register_19(regs)	regs->s3
+#define pt_dwarf_register_20(regs)	regs->s4
+#define pt_dwarf_register_21(regs)	regs->s5
+#define pt_dwarf_register_22(regs)	regs->s6
+#define pt_dwarf_register_23(regs)	regs->s7
+#define pt_dwarf_register_24(regs)	regs->s8
+#define pt_dwarf_register_25(regs)	regs->s9
+#define pt_dwarf_register_26(regs)	regs->s10
+#define pt_dwarf_register_27(regs)	regs->s11
+#define pt_dwarf_register_28(regs)	regs->t3
+#define pt_dwarf_register_29(regs)	regs->t4
+#define pt_dwarf_register_30(regs)	regs->t5
+#define pt_dwarf_register_31(regs)	regs->t6
+#define pt_regs_maxno 31
+
 #elif defined (__aarch64__)
 
 #define pt_dwarf_register_0(pt_regs)	pt_regs->regs[0]
