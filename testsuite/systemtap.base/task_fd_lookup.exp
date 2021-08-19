@@ -28,8 +28,8 @@ if {[catch {exec mkdir -p ${full_tmpdir}} res]} {
     return
 }
 
-spawn stap $srcdir/$subdir/$test.stp -c "$exepath $full_tmpdir"
-verbose -log "stap $srcdir/$subdir/$test.stp -c \"$exepath $full_tmpdir\""
+spawn stap $srcdir/$subdir/$test.stp --compatible 4.0 -c "$exepath $full_tmpdir"
+verbose -log "stap $srcdir/$subdir/$test.stp --compatible 4.0 -c \"$exepath $full_tmpdir\""
 set found_root 0
 set found_tmpdir 0
 set found_pipe 0
