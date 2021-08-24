@@ -1,0 +1,79 @@
+// PR23478: Multi-key associative arrays
+
+global a, b, c
+global vs1, vs2
+
+probe never {
+  c[0,"woosh"] = 0
+}
+
+probe begin {
+  printf("BEGIN\n")
+
+  a[-1,"c"] = -1
+  a[0,"b"] = 0
+  a[1,"a"] = 1
+
+  // 1st column -1,1,0, 2nd column 1,-1,0, value -1,0,1
+  b["a","b"] = -1
+  b["b","a"] = 1
+  b["c","c"] = 0
+
+  vs1[0] = -1
+  vs1[1] = 1
+  vs1[2] = 0
+
+  vs2[0] = 1
+  vs2[1] = -1
+  vs2[2] = 0
+
+  exit()
+}
+
+probe end {
+  flag = 1
+
+  x = -1
+  foreach (v = [n1+,k2] in a) // v -1,0,1
+  {
+    flag = flag && x++ == v && v == a[n1,k2]
+    //printf("a v %d, n1+ %d, k2 %s\n", v, n1, k2)
+  }
+  flag = flag && x == 2
+
+  x = 1
+  foreach (v = [n1-,k2] in a) // v 1,0,-1
+  {
+    flag = flag && x-- == v && v == a[n1,k2]
+    //printf("a v %d, n1- %d, k2 %s\n", v, n1, k2)
+  }
+  flag = flag && x == -2
+
+  x = 0
+  foreach (v = [k1+,k2] in b) // v -1,1,0
+  {
+    flag = flag && v == vs1[x++] && v == b[k1,k2]
+    //printf("b v %d, k1+ %s, k2 %s\n", v, k1, k2)
+  }
+
+  x = 0
+  foreach (v = [k1,k2+] in b) // v 1,-1,0
+  {
+    flag = flag && v == vs2[x++] && v == b[k1,k2]
+    //printf("b v %d, k1 %s, k2+ %s\n", v, k1, k2)
+  }
+  flag = flag && x == 3
+
+  x = -1
+  foreach (v+ = [k1,k2] in b) // v -1,0,1
+  {
+    flag = flag && x++ == v && v == b[k1,k2]
+    //printf("b v+ %d, k1 %s, k2 %s\n", v, k1, k2)
+  }
+  flag = flag && x == 2
+
+	if (flag)
+		printf("END PASS\n")
+	else
+		printf("END FAIL\n")
+}
