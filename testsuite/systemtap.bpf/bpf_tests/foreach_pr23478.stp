@@ -1,6 +1,7 @@
 // PR23478: Multi-key associative arrays
 
 global a, b, c
+global nu
 global vs1, vs2
 
 probe never {
@@ -26,6 +27,14 @@ probe begin {
   vs2[0] = 1
   vs2[1] = -1
   vs2[2] = 0
+
+  // iterate by non-unique keys/vals
+  nu["a","a"] = 1
+  nu["a","b"] = 1
+  nu["b","b"] = 1
+  nu["c","c"] = -1
+  nu["c","d"] = -1
+  nu["d","c"] = -1
 
   exit()
 }
@@ -71,6 +80,24 @@ probe end {
     //printf("b v+ %d, k1 %s, k2 %s\n", v, k1, k2)
   }
   flag = flag && x == 2
+
+  x = 0
+  foreach (v+ = [k1,k2] in nu)
+  {
+    x += v
+    flag = flag && v == nu[k1,k2]
+    //printf("nu v+ %d, k1 %s, k2 %s\n", v, k1, k2)
+  }
+  flag = flag && x == 0
+
+  x = 0
+  foreach (v = [k1-,k2] in nu)
+  {
+    x += v
+    flag = flag && v == nu[k1,k2]
+    //printf("nu v %d, k1- %s, k2 %s\n", v, k1, k2)
+  }
+  flag = flag && x == 0
 
 	if (flag)
 		printf("END PASS\n")
