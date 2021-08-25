@@ -667,10 +667,42 @@ static ssize_t _stp_ctl_read_cmd(struct file *file, char __user *buf,
 
 static int _stp_ctl_open_cmd(struct inode *inode, struct file *file)
 {
+	static struct file_operations _stp_ctl_fops;
+
 	if (atomic_inc_return (&_stp_ctl_attached) > 1) {
                 atomic_dec (&_stp_ctl_attached);
 		return -EBUSY;
         }
+
+	/*
+	 * Replace the file's f_op with our own which has the module owner set.
+	 * This is needed because, in do_select(), the only thing that can stop
+	 * this module from disappearing while data from our procfs file is in
+	 * use is the module reference counter. So we need to set the module
+	 * owner pointer and then add a reference to our module, since the
+	 * reference addition from the open() has already been skipped by the
+	 * time this code is reached. The data which can be used after the
+	 * module is freed is `&_stp_ctl_wq`, which is stored and later
+	 * dereferenced in do_select(). This pointer is passed to do_select()
+	 * from the poll_wait() in _stp_ctl_poll_cmd(), which stores it in
+	 * `entry->wait_address`. The reason this use-after-free problem exists
+	 * is because procfs doesn't allow for passing in a module owner: all
+	 * procfs files use an internal `struct file_operations` located in
+	 * fs/proc/inode.c. So we patch in a module owner the hard way. No
+	 * locking is needed here due to the `_stp_ctl_attached` guard above.
+	 * Note that `_stp_ctl_fops` can only be initialized once; initializing
+	 * it more than once could cause a bad race because _stp_ctl_close_cmd()
+	 * is called *before* the final `file->f_op` usage, meaning that the
+	 * `_stp_ctl_attached` guard won't stop us from mangling `_stp_ctl_fops`
+	 * while it's in use for closing an old control channel fd.
+	 */
+	if (_stp_ctl_fops.owner != THIS_MODULE) {
+		_stp_ctl_fops = *file->f_op;
+		_stp_ctl_fops.owner = THIS_MODULE;
+	}
+	__module_get(THIS_MODULE);
+	file->f_op = &_stp_ctl_fops;
+
 	_stp_attach();
 	return 0;
 }

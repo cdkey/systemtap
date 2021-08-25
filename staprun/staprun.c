@@ -279,7 +279,7 @@ static int remove_module(const char *name, int verb)
 
 	for (i = 0; i < MAX_EINTR_TRIES; i++) {
 		ret = delete_module (name, O_NONBLOCK);
-		if (ret == 0 || errno != EINTR)
+		if (ret == 0 || (errno != EINTR && errno != EWOULDBLOCK))
 			break;
 		usleep(100 * i);
 	}
