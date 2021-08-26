@@ -58,6 +58,9 @@ extern "C" {
 #define STAP_T_06 _("\"empty aggregate\";")
 #define STAP_T_07 _("\"histogram index out of range\";")
 
+// This matches MAX_NAME_LEN in linux objtool/elf.c used by kbuild
+#define MAX_NAME_LEN 128
+
 using namespace std;
 
 class var;
@@ -183,6 +186,7 @@ struct c_unparser: public unparser, public visitor
   virtual string c_localname (const string& e, bool mangle_oldstyle = false);
   virtual string c_globalname (const string &e);
   virtual string c_funcname (const string &e);
+  virtual string c_funcname (const string &e, bool &funcname_shortened);
 
   string c_arg_define (const string& e);
   string c_arg_undef (const string& e);
@@ -1755,7 +1759,11 @@ c_unparser::emit_global_init_type (vardecl *v)
 void
 c_unparser::emit_functionsig (functiondecl* v)
 {
-  o->newline() << "static void " << c_funcname(v->name)
+  bool funcname_shortened;
+  string funcname = c_funcname (v->name, funcname_shortened);
+  if (funcname_shortened)
+    o->newline() << "/* " << v->name << " */";
+  o->newline() << "static void " << funcname
 	       << " (struct context * __restrict__ c);";
 }
 
@@ -2520,7 +2528,11 @@ c_tmpcounter::emit_function (functiondecl* fd)
   // indent the dummy output as if we were already in a block
   this->o->indent (1);
 
-  o->newline() << "struct " << c_funcname (fd->name) << "_locals {";
+  bool funcname_shortened;
+  string funcname = c_funcname (fd->name, funcname_shortened);
+  if (funcname_shortened)
+    o->newline() << "/* " << fd->name << " */";
+  o->newline() << "struct " << funcname << "_locals {";
   o->indent(1);
 
   for (unsigned j=0; j<fd->locals.size(); j++)
@@ -2615,7 +2627,11 @@ c_unparser::emit_function (functiondecl* v)
   this->action_counter = 0;
   this->already_checked_action_count = false;
 
-  o->newline() << "static void " << c_funcname (v->name)
+  bool funcname_shortened;
+  string funcname = c_funcname (v->name, funcname_shortened);
+  if (funcname_shortened)
+    o->newline() << "/* " << v->name << " */";
+  o->newline() << "static void " << funcname
             << " (struct context* __restrict__ c) {";
   o->indent(1);
 
@@ -3385,11 +3401,41 @@ c_unparser::c_globalname (const string& e)
 
 
 string
+c_unparser::c_funcname (const string& e, bool& funcname_shortened)
+{
+    const string function_prefix = "function_";
+  // XXX uncomment to test custom mangling:
+  // return function_prefix + e + "_" + lex_cast(do_hash(e.c_str()));
+
+  // The kernel objtool used by kbuild has a hardcoded function length limit
+  if (e.length() > MAX_NAME_LEN - function_prefix.length())
+    {
+      int function_index = 0;
+      for (map<string,functiondecl*>::iterator it = session->functions.begin();
+          it != session->functions.end(); it++)
+        {
+          if (it->first == e)
+            {
+              funcname_shortened = true;
+              return function_prefix + to_string(function_index);
+            }
+          function_index += 1;
+        }
+        throw SEMANTIC_ERROR (_("unresolved symbol: ") + e); // should not happen
+    }
+  else
+    {
+      funcname_shortened = false;
+      return function_prefix + e;
+    }
+}
+
+
+string
 c_unparser::c_funcname (const string& e)
 {
-  // XXX uncomment to test custom mangling:
-  // return "function_" + e + "_" + lex_cast(do_hash(e.c_str()));
-  return "function_" + e;
+  bool funcname_shortened;
+  return c_funcname (e, funcname_shortened);
 }
 
 

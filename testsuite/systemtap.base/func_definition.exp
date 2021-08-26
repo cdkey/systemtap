@@ -5,9 +5,25 @@ if {![installtest_p]} { untested "$test"; return }
 
 foreach runtime [get_runtime_list] {
     if {$runtime != ""} {
-	stap_run $test no_load (${all_pass_string}){5} \
+	stap_run $test no_load (${all_pass_string}){6} \
 	    --runtime=$runtime $srcdir/$subdir/$test.stp
     } else {
-	stap_run $test no_load (${all_pass_string}){5} $srcdir/$subdir/$test.stp
+	stap_run $test no_load (${all_pass_string}){6} $srcdir/$subdir/$test.stp
     }
+}
+
+set ok 0
+set cmd "bash -c {$env(SYSTEMTAP_PATH)/stap --runtime=$runtime -v -v -p3 $srcdir/$subdir/$test.stp |& grep -A 1 'function_names_over_128'}"
+eval spawn $cmd
+expect {
+    -timeout 180
+    # Match shortened function declaration, definition, and reference
+    -re { function_[0-9] } { incr ok; exp_continue }
+    eof { }
+}
+
+if {$ok == 3} {
+    pass "$test function name shorten"
+} else {
+    fail "$test function name shorten ($ok!=3)"
 }

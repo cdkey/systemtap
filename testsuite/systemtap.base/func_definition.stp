@@ -39,6 +39,11 @@ function f5()
     println("systemtap test success")
 }
 
+function function_names_over_128_characters_exceed_MAX_NAME_LEN_in_linux_objtool_which_is_invoked_by_kbuild_and_are_therefore_shortened()
+{
+    return 2021
+}
+
 probe end {
     println("systemtap ending probe")
 
@@ -57,4 +62,7 @@ probe end {
         printf("systemtap test failure - return_value of f4:%d != 2015\n", f4())
 
     f5()
+
+    if (function_names_over_128_characters_exceed_MAX_NAME_LEN_in_linux_objtool_which_is_invoked_by_kbuild_and_are_therefore_shortened() == 2021)
+        println("systemtap test success")
 }
