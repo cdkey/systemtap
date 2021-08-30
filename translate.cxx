@@ -3410,14 +3410,14 @@ c_unparser::c_funcname (const string& e, bool& funcname_shortened)
   // The kernel objtool used by kbuild has a hardcoded function length limit
   if (e.length() > MAX_NAME_LEN - function_prefix.length())
     {
-      int function_index = 0;
+      long function_index = 0;
       for (map<string,functiondecl*>::iterator it = session->functions.begin();
           it != session->functions.end(); it++)
         {
           if (it->first == e)
             {
               funcname_shortened = true;
-              return function_prefix + to_string(function_index);
+              return function_prefix + lex_cast (function_index);
             }
           function_index += 1;
         }

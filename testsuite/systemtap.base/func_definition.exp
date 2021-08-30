@@ -13,7 +13,7 @@ foreach runtime [get_runtime_list] {
 }
 
 set ok 0
-set cmd "bash -c {$env(SYSTEMTAP_PATH)/stap --runtime=$runtime -v -v -p3 $srcdir/$subdir/$test.stp |& grep -A 1 'function_names_over_128'}"
+set cmd "bash -c {$env(SYSTEMTAP_PATH)/stap -v -v -p3 $srcdir/$subdir/$test.stp |& grep -A 1 'function_names_over_128'}"
 eval spawn $cmd
 expect {
     -timeout 180
