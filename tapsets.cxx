@@ -560,6 +560,7 @@ struct dwarf_derived_probe: public generic_kprobe_derived_probe
   bool access_vars;
 
   void printsig (std::ostream &o) const;
+  void printsig_nonest (std::ostream &o) const;
   virtual void join_group (systemtap_session& s);
   void emit_probe_local_init(systemtap_session& s, translator_output * o);
   void getargs(std::list<std::string> &arg_set) const;
@@ -5386,6 +5387,16 @@ dwarf_derived_probe::printsig (ostream& o) const
   printsig_nested (o);
 }
 
+
+void
+dwarf_derived_probe::printsig_nonest (ostream& o) const
+{
+  sole_location()->print (o);
+  if (symbol_name != "")
+    o << " /* pc=<" << symbol_name << "+" << offset << "> */";
+  else
+    o << " /* pc=" << section << "+0x" << hex << addr << dec << " */";
+}
 
 
 void

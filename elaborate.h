@@ -204,7 +204,7 @@ struct derived_probe: public probe
   virtual probe_point* sole_location () const;
   virtual probe_point* script_location () const;
   virtual void printsig (std::ostream &o) const cxx_override;
-  void printsig_nonest (std::ostream &o) const;
+  virtual void printsig_nonest (std::ostream &o) const;
   // return arguments of probe if there
   virtual void getargs (std::list<std::string> &) const {}
   void printsig_nested (std::ostream &o) const;
