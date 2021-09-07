@@ -32,6 +32,11 @@
 #define EM_AARCH64 183
 #endif
 
+#ifndef EM_RISCV
+#define EM_RISCV 243
+#endif
+
+
 
 extern "C" {
 #include <elfutils/libdwfl.h>
