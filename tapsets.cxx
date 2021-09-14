@@ -7061,7 +7061,8 @@ sdt_uprobe_var_expanding_visitor::try_parse_arg_register (target_symbol *e,
   // NB: Because PR11821, we must use percent_regnames here.
   string regexp;
   if (elf_machine == EM_PPC || elf_machine == EM_PPC64
-     || elf_machine == EM_ARM || elf_machine == EM_AARCH64)
+     || elf_machine == EM_ARM || elf_machine == EM_AARCH64
+     || elf_machine == EM_RISCV)
     regexp = "^(" + regnames + ")$";
   else
     regexp = "^(" + percent_regnames + ")$";
@@ -7444,6 +7445,7 @@ sdt_uprobe_var_expanding_visitor::visit_target_symbol_arg (target_symbol *e)
       // arm    #N      rR  [rR]     [rR, #N]
       // arm64  N       rR  [rR]     [rR, N]
       // mips   N       $r           N($r)
+      // riscv  N       r            N(r)
 
       expression* argexpr = 0; // filled in in case of successful parse
 
