@@ -99,7 +99,7 @@ probe kernel.trace("sched_switch")
   // Task $prev is scheduled off this cpu
   if (task_targeted($prev)) {
     pid = $prev->pid
-    state = $prev->state
+    state = task_state($prev)
     update_times(pid, timestamp())
 
     if (state > 0) {

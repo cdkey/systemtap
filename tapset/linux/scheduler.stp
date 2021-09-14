@@ -138,7 +138,7 @@ probe scheduler.ctxswitch = kernel.trace("sched_switch") !,
 		prev_tid = $prev_p->pid
 		prev_task = $prev_p
 		prev_task_name = task_execname($prev_p)
-		prevtsk_state = $prev_p->state
+		prevtsk_state = task_state($prev_p)
 	}
 	else {
 		prev_priority = $prev->prio
@@ -146,7 +146,7 @@ probe scheduler.ctxswitch = kernel.trace("sched_switch") !,
 		prev_tid = $prev->pid
 		prev_task = $prev
 		prev_task_name = task_execname($prev)
-		prevtsk_state = $prev->state
+		prevtsk_state = task_state($prev)
 	}
 
 	if (@defined($next)) {
@@ -155,7 +155,7 @@ probe scheduler.ctxswitch = kernel.trace("sched_switch") !,
 		next_tid = $next->pid
 		next_task = $next
 		next_task_name = task_execname($next)
-		nexttsk_state = $next->state
+		nexttsk_state = task_state($next)
 	}
 	else if (@defined($next_p)) {
 		next_priority = $next_p->prio
@@ -163,7 +163,7 @@ probe scheduler.ctxswitch = kernel.trace("sched_switch") !,
 		next_tid = $next_p->pid
 		next_task = $next_p
 		next_task_name = task_execname($next_p)
-		nexttsk_state = $next_p->state
+		nexttsk_state = task_state($next_p)
 	}
 	else {
 		next_priority = $new->prio
@@ -171,7 +171,7 @@ probe scheduler.ctxswitch = kernel.trace("sched_switch") !,
 		next_tid = $new->pid
 		next_task = $new
 		next_task_name = task_execname($new)
-		nexttsk_state = $new->state
+		nexttsk_state = task_state($new)
 	}
 }
 
