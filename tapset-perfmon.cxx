@@ -153,13 +153,15 @@ perf_derived_probe_group::emit_module_decls (systemtap_session& s)
       s.op->newline() << "int rc = 0;";
       s.op->newline() << "struct stap_perf_probe *p = container_of(tgt, struct stap_perf_probe, e.t.tgt);";
       
+      s.op->newline() << "mutex_lock(&p->cb_lock);";
       s.op->newline() << "if (register_p) ";
       s.op->indent(1);
       
       s.op->newline() << "rc = _stp_perf_init(p, tsk);";
       s.op->newline(-1) << "else";
       s.op->newline(1) << "_stp_perf_del(p);";
-      s.op->newline(-1) << "return rc;";
+      s.op->newline(-1) << "mutex_unlock(&p->cb_lock);";
+      s.op->newline() << "return rc;";
       s.op->newline(-1) << "}";
     }
 
@@ -207,6 +209,7 @@ perf_derived_probe_group::emit_module_decls (systemtap_session& s)
 	}
       else
 	s.op->newline() << ".system_wide=" << "1, ";
+      s.op->newline() << ".cb_lock = __MUTEX_INITIALIZER(stap_perf_probes[" << i << "].cb_lock),";
       s.op->newline(-1) << "},";
     }
   s.op->newline(-1) << "};";

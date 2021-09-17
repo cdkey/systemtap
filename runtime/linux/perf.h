@@ -32,6 +32,7 @@ struct stap_perf_probe {
 	} e;
 	unsigned system_wide : 1;
 	unsigned task_finder : 1;
+	struct mutex cb_lock;
 };
 
 static long _stp_perf_init (struct stap_perf_probe *stp, struct task_struct* task);
