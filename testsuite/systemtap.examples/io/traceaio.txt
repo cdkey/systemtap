@@ -1,0 +1,44 @@
+traceaio.stp - Trace io_submit calls
+
+  Trace calls to io_submit(), logging iocbs and iovecs. When processing calls
+  with large number of iocbs and iovecs, you may need to increase MAXACTION.
+
+# stap -D MAXACTION=2000 traceaio.stp -x {pid}
+Tracing started
+[     0 IO iothread1(21364):] io_submit(140719456722944, 1, 0x7ffbcf8b2410)
+    iocb[   0]=0x7ffb1d9d98c0, fd=15, opcode=8, offset=0, nbytes=1, buf=0x7ffbc801b6a8
+        iovec[   0]=0x7ffbc801b6a8, base=0x7ffb4f9dc000, len=4096
+[     0 IO iothread1(21364):] io_submit(140719456722944, 1, 0x7ffbcf8b2410)
+    iocb[   0]=0x7ffb1d9d9920, fd=15, opcode=7, offset=0, nbytes=1, buf=0x7ffbc801b688
+        iovec[   0]=0x7ffbc801b688, base=0x7ffbb3d11000, len=4096
+[     0 IO iothread1(21364):] io_submit(140719456722944, 4, 0x7ffbcf8b2410)
+    iocb[   0]=0x7ffb1d9d9920, fd=15, opcode=7, offset=8192, nbytes=1, buf=0x7ffbc801b688
+        iovec[   0]=0x7ffbc801b688, base=0x7ffb9d82f000, len=4096
+    iocb[   1]=0x7ffb251dc920, fd=15, opcode=7, offset=20480, nbytes=2, buf=0x7ffbc80315f0
+        iovec[   0]=0x7ffbc80315f0, base=0x7ffbb3f69000, len=4096
+        iovec[   1]=0x7ffbc8031600, base=0x7ffb7dc48000, len=4096
+    iocb[   2]=0x7ffb19999920, fd=15, opcode=7, offset=36864, nbytes=6, buf=0x7ffbc8025320
+        iovec[   0]=0x7ffbc8025320, base=0x7ffb4f676000, len=4096
+        iovec[   1]=0x7ffbc8025330, base=0x7ffbb6f75000, len=4096
+        iovec[   2]=0x7ffbc8025340, base=0x7ffb9ddab000, len=4096
+        iovec[   3]=0x7ffbc8025350, base=0x7ffbbab7d000, len=4096
+        iovec[   4]=0x7ffbc8025360, base=0x7ffb7c3fb000, len=4096
+        iovec[   5]=0x7ffbc8025370, base=0x7ffb7cff5000, len=4096
+    iocb[   3]=0x7ffb16f6f920, fd=15, opcode=7, offset=69632, nbytes=15, buf=0x7ffbc80662b8
+        iovec[   0]=0x7ffbc80662b8, base=0x7ffbb3f44000, len=4096
+        iovec[   1]=0x7ffbc80662c8, base=0x7ffbb85cd000, len=4096
+        iovec[   2]=0x7ffbc80662d8, base=0x7ffbb81de000, len=4096
+        iovec[   3]=0x7ffbc80662e8, base=0x7ffbba3b7000, len=4096
+        iovec[   4]=0x7ffbc80662f8, base=0x7ffb7daf3000, len=4096
+        iovec[   5]=0x7ffbc8066308, base=0x7ffbb1ec3000, len=4096
+        iovec[   6]=0x7ffbc8066318, base=0x7ffbb1ece000, len=4096
+        iovec[   7]=0x7ffbc8066328, base=0x7ffb7cff7000, len=4096
+        iovec[   8]=0x7ffbc8066338, base=0x7ffb7cd60000, len=4096
+        iovec[   9]=0x7ffbc8066348, base=0x7ffbba865000, len=4096
+        iovec[  10]=0x7ffbc8066358, base=0x7ffbb80cc000, len=4096
+        iovec[  11]=0x7ffbc8066368, base=0x7ffbb826c000, len=4096
+        iovec[  12]=0x7ffbc8066378, base=0x7ffbbaa19000, len=4096
+        iovec[  13]=0x7ffbc8066388, base=0x7ffbb8230000, len=4096
+        iovec[  14]=0x7ffbc8066398, base=0x7ffbb6ed0000, len=4096
+...
+^CTracing stopped

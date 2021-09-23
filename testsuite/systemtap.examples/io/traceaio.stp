@@ -1,0 +1,43 @@
+#! /usr/bin/env stap
+#
+# Copyright (C) 2021 Red Hat, Inc.
+# Written by Nir Soffer <nsoffer@redhat.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation.
+#
+
+probe begin {
+    println("Tracing started");
+}
+
+probe syscall.io_submit
+{
+    if (pid() == target()) {
+        printf("[%s] io_submit(%s)\n", thread_indent(0), argstr);
+
+        for (i = 0; i < nr; i++) {
+            iocbp = user_uint64(iocbpp_uaddr + i * 8)
+            fd = user_uint32(&@cast(iocbp, "iocb", "kernel")->aio_fildes)
+            opcode = user_uint16(&@cast(iocbp, "iocb", "kernel")->aio_lio_opcode)
+            offset = user_int64(&@cast(iocbp, "iocb", "kernel")->aio_offset)
+            nbytes = user_uint64(&@cast(iocbp, "iocb", "kernel")->aio_nbytes)
+            buf = user_uint64(&@cast(iocbp, "iocb", "kernel")->aio_buf)
+            printf("    iocb[%4d]=%p, fd=%d, opcode=%d, offset=%d, nbytes=%d, buf=%p\n",
+                   i, iocbp, fd, opcode, offset, nbytes, buf)
+
+            for (j = 0; j < nbytes; j++) {
+                iovecp = &@cast(buf, "iovec", "kernel")[j]
+                base = user_uint64(&@cast(iovecp, "iovec", "kernel")->iov_base)
+                len = user_uint32(&@cast(iovecp, "iovec", "kernel")->iov_len)
+                printf("        iovec[%4d]=%p, base=%p, len=%d\n",
+                       j, iovecp, base, len)
+            }
+        }
+    }
+}
+
+probe end {
+    println("Tracing stopped");
+}

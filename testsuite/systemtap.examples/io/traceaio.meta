@@ -1,0 +1,13 @@
+title: Trace calls to io_submit
+name: traceaio.stp
+version: 1.0
+author: Nir Soffer
+keywords: io
+subsystem: io
+status: production
+exit: user-controlled
+output: trace
+scope: process
+description: Trace calls to io_submit, logging iocbs and iovecs.
+test_check: stap -p4 traceaio.stp -x 1
+test_installcheck: stap traceaio.stp -x 1 -T 1

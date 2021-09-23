@@ -2,7 +2,7 @@ SYSTEMTAP EXAMPLES INDEX
 (see also keyword-index.txt)
 
 
-For systemtap version 4.5.
+For systemtap version 4.6.
 
 apps/gmalloc_watch.stp - Tracing glib2 memory allocations
 keywords: trace
@@ -610,6 +610,14 @@ keywords: io
   seconds.
 
   # stap -o /tmp/switchfile.stp.out switchfile.stp -T 8
+
+
+io/traceaio.stp - Trace calls to io_submit
+keywords: io
+
+  Trace calls to io_submit, logging iocbs and iovecs.
+
+  # stap traceaio.stp -x 1 -T 1
 
 
 io/traceio.stp - Track Cumulative IO Activity by Process Name

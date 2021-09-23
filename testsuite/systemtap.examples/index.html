@@ -38,7 +38,7 @@
            		<li><a href="keyword-index.html">By Keyword</a></li>
          	</ul>
 
-<p><em>For systemtap version 4.5.</em></p><h2>Best Examples</h2>
+<p><em>For systemtap version 4.6.</em></p><h2>Best Examples</h2>
 <ul>
 <li><a href="#general/helloworld.stp">general/helloworld.stp - SystemTap "Hello World" Program</a></li>
 <li><a href="#general/para-callgraph.stp">general/para-callgraph.stp - Callgraph Tracing with Arguments</a></li>
@@ -59,7 +59,7 @@
 <li><a href="#virtualization/kvm_service_time.stp">virtualization/kvm_service_time.stp - Time Statistics on KVM Exit Reasons</a></li>
 </ul>
 
-<h2>All 191 Examples</h2>
+<h2>All 192 Examples</h2>
 <ul>
 <li><a name="apps/gmalloc_watch.stp"></a><a href="#apps/gmalloc_watch.stp">&para;</a> <a href="apps/gmalloc_watch.stp">apps/gmalloc_watch.stp</a> - Tracing glib2 memory allocations<br>
 keywords: <a href="keyword-index.html#TRACE">TRACE</a> <br>
@@ -224,6 +224,9 @@ keywords: <a href="keyword-index.html#IO">IO</a> <a href="keyword-index.html#SIM
 </li><li><a name="io/switchfile.stp"></a><a href="#io/switchfile.stp">&para;</a> <a href="io/switchfile.stp">io/switchfile.stp</a> - Switch log files<br>
 keywords: <a href="keyword-index.html#IO">IO</a> <br>
 <p>Every second print a log message and switch log files every 5 seconds.</p><p><font size="-2"><pre># stap -o /tmp/switchfile.stp.out switchfile.stp -T 8</pre></font></p>
+</li><li><a name="io/traceaio.stp"></a><a href="#io/traceaio.stp">&para;</a> <a href="io/traceaio.stp">io/traceaio.stp</a> - Trace calls to io_submit<br>
+keywords: <a href="keyword-index.html#IO">IO</a> <br>
+<p>Trace calls to io_submit, logging iocbs and iovecs.</p><p><i><a href="io/traceaio.txt">sample usage in io/traceaio.txt</i></font></p>
 </li><li><a name="io/traceio.stp"></a><a href="#io/traceio.stp">&para;</a> <a href="io/traceio.stp">io/traceio.stp</a> - Track Cumulative IO Activity by Process Name<br>
 keywords: <a href="keyword-index.html#IO">IO</a> <br>
 <p>Every second print out the top ten executables sorted in descending order based on cumulative I/O traffic observed.</p><p><font size="-2"><pre># stap traceio.stp -T 1</pre></font></p>
