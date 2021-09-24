@@ -235,7 +235,11 @@ probe _nfs.proc2.lookup = kernel.function("nfs_proc_lookup") !,
 probe _nfs.proc2.missing_lookup = never
 {
 	client = 0
+%( systemtap_v >= "4.3" %?
+	server_ip = ""
+%:
 	server_ip = 0
+%)
 	prot = 0
 
 	name_len = 0
@@ -361,7 +365,11 @@ probe _nfs.proc2.read = kernel.function("nfs_proc_read") !,
 }
 probe _nfs.proc2.missing_read = never
 {
+%( systemtap_v >= "4.3" %?
+	server_ip = ""
+%:
 	server_ip = 0
+%)
 	prot = 0
 
 	flags = 0
@@ -496,7 +504,11 @@ probe _nfs.proc2.write = kernel.function("nfs_proc_write") !,
 }
 probe _nfs.proc2.missing_write = never
 {
+%( systemtap_v >= "4.3" %?
+	server_ip = ""
+%:
 	server_ip = 0
+%)
 	prot = 0
 
 	flags = 0
@@ -759,7 +771,7 @@ probe _nfs.proc2.missing_read_setup = never
 	inode = 0
 	client = 0
 %( systemtap_v >= "4.3" %?
-	server_ip = "0"
+	server_ip = ""
 %:
 	server_ip = 0
 %)
@@ -895,7 +907,11 @@ probe _nfs.proc2.read_done = kernel.function("nfs_read_done") !,
 }
 probe _nfs.proc2.missing_read_done = never
 {
+%( systemtap_v >= "4.3" %?
+	server_ip = ""
+%:
 	server_ip = 0
+%)
 	prot = 0
 	count = 0
 	status = 0
@@ -1054,7 +1070,11 @@ probe _nfs.proc2.missing_write_setup = never
 {
 	inode = 0
 	client = 0
+%( systemtap_v >= "4.3" %?
+	server_ip = ""
+%:
 	server_ip = 0
+%)
 	prot = 0
 
 	count = 0
@@ -1201,7 +1221,11 @@ probe _nfs.proc2.write_done = kernel.function("nfs_write_done") !,
 }
 probe _nfs.proc2.missing_write_done = never
 {
+%( systemtap_v >= "4.3" %?
+	server_ip = ""
+%:
 	server_ip = 0
+%)
 	prot = 0
 	count = 0
 	valid = 0
@@ -1826,7 +1850,11 @@ probe _nfs.proc2.create = kernel.function("nfs_proc_create") !,
 probe _nfs.proc2.missing_create = never
 {
 	client = 0
+%( systemtap_v >= "4.3" %?
+	server_ip = ""
+%:
 	server_ip = 0
+%)
 	prot = 0
 
 	fh = 0
@@ -1946,7 +1974,11 @@ probe _nfs.proc2.remove = kernel.function("nfs_proc_remove") !,
 probe _nfs.proc2.missing_remove = never
 {
 	client = 0
+%( systemtap_v >= "4.3" %?
+	server_ip = ""
+%:
 	server_ip = 0
+%)
 	prot = 0
 
 	fh = 0
@@ -2067,7 +2099,11 @@ probe _nfs.proc2.rename = kernel.function("nfs_proc_rename") !,
 probe _nfs.proc2.missing_rename = never
 {
 	client = 0
+%( systemtap_v >= "4.3" %?
+	server_ip = ""
+%:
 	server_ip = 0
+%)
 	prot = 0
 
 	old_fh = 0
@@ -2114,7 +2150,11 @@ probe _nfs.proc3.rename = kernel.function("nfs3_proc_rename") !,
 probe _nfs.proc3.missing_rename = never
 {
 	client = 0
+%( systemtap_v >= "4.3" %?
+	server_ip = ""
+%:
 	server_ip = 0
+%)
 	prot = 0
 
 	old_fh = 0
@@ -2161,7 +2201,11 @@ probe _nfs.proc4.rename = kernel.function("nfs4_proc_rename") !,
 probe _nfs.proc4.missing_rename = never
 {
 	client = 0
+%( systemtap_v >= "4.3" %?
+	server_ip = ""
+%:
 	server_ip = 0
+%)
 	prot = 0
 
 	old_fh = 0
