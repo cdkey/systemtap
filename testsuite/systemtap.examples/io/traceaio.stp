@@ -8,8 +8,8 @@
 # published by the Free Software Foundation.
 #
 
-@define IO_CMD_PREADV   %( 7 %)
-@define IO_CMD_PWRITEV  %( 8 %)
+@define IOCB_CMD_PREADV   %( 7 %)
+@define IOCB_CMD_PWRITEV  %( 8 %)
 
 probe begin {
     println("Tracing started");
@@ -22,19 +22,19 @@ probe syscall.io_submit
 
         for (i = 0; i < nr; i++) {
             iocbp = user_uint64(iocbpp_uaddr + i * 8)
-            fd = user_uint32(&@cast(iocbp, "iocb", "kernel")->aio_fildes)
-            opcode = user_uint16(&@cast(iocbp, "iocb", "kernel")->aio_lio_opcode)
-            offset = user_int64(&@cast(iocbp, "iocb", "kernel")->aio_offset)
-            nbytes = user_uint64(&@cast(iocbp, "iocb", "kernel")->aio_nbytes)
-            buf = user_uint64(&@cast(iocbp, "iocb", "kernel")->aio_buf)
+            fd = user_uint32(&@cast(iocbp, "iocb", "kernel<linux/aio.h>")->aio_fildes)
+            opcode = user_uint16(&@cast(iocbp, "iocb", "kernel<linux/aio.h>")->aio_lio_opcode)
+            offset = user_int64(&@cast(iocbp, "iocb", "kernel<linux/aio.h>")->aio_offset)
+            nbytes = user_uint64(&@cast(iocbp, "iocb", "kernel<linux/aio.h>")->aio_nbytes)
+            buf = user_uint64(&@cast(iocbp, "iocb", "kernel<linux/aio.h>")->aio_buf)
             printf("    iocb[%4d]=%p, fd=%d, opcode=%d, offset=%d, nbytes=%d, buf=%p\n",
                    i, iocbp, fd, opcode, offset, nbytes, buf)
 
-            if (opcode == @IO_CMD_PREADV || opcode == @IO_CMD_PREADV) {
+            if (opcode == @IOCB_CMD_PREADV || opcode == @IOCB_CMD_PREADV) {
                 for (j = 0; j < nbytes; j++) {
-                    iovecp = &@cast(buf, "iovec", "kernel")[j]
-                    base = user_uint64(&@cast(iovecp, "iovec", "kernel")->iov_base)
-                    len = user_uint32(&@cast(iovecp, "iovec", "kernel")->iov_len)
+                    iovecp = &@cast(buf, "iovec", "kernel<linux/uio.h>")[j]
+                    base = user_uint64(&@cast(iovecp, "iovec", "kernel<linux/uio.h>")->iov_base)
+                    len = user_uint32(&@cast(iovecp, "iovec", "kernel<linux/uio.h>")->iov_len)
                     printf("        iovec[%4d]=%p, base=%p, len=%d\n",
                            j, iovecp, base, len)
                 }
