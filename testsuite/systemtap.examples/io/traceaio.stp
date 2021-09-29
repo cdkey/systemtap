@@ -30,7 +30,7 @@ probe syscall.io_submit
             printf("    iocb[%4d]=%p, fd=%d, opcode=%d, offset=%d, nbytes=%d, buf=%p\n",
                    i, iocbp, fd, opcode, offset, nbytes, buf)
 
-            if (opcode == @IOCB_CMD_PREADV || opcode == @IOCB_CMD_PREADV) {
+            if (opcode == @IOCB_CMD_PREADV || opcode == @IOCB_CMD_PWRITEV) {
                 for (j = 0; j < nbytes; j++) {
                     iovecp = &@cast(buf, "iovec", "kernel<linux/uio.h>")[j]
                     base = user_uint64(&@cast(iovecp, "iovec", "kernel<linux/uio.h>")->iov_base)
